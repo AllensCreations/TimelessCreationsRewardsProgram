@@ -58,12 +58,21 @@ async function sendBrevoEmail(recipientEmail, otpCode, titleName) {
   }
 }
 
-async function setupPersistentMenu() {
+// SETUP GET STARTED BUTTON & GREETING TEXT STRICTLY
+async function setupMessengerProfile() {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
 
   const payload = {
-    get_started: { payload: "GET_STARTED" },
+    get_started: {
+      payload: "GET_STARTED_PAYLOAD"
+    },
+    greeting: [
+      {
+        locale: "default",
+        text: "Welcome to Timeless Creations Rewards Program! Tap 'Get Started' below to begin your setup and claim custom missionary gear."
+      }
+    ],
     persistent_menu: [
       {
         locale: "default",
@@ -83,7 +92,9 @@ async function setupPersistentMenu() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-  } catch (err) {}
+  } catch (err) {
+    console.error("Messenger Profile Setup Error:", err);
+  }
 }
 
 async function callSendAPI(senderPsid, responseText, quickReplies = null) {
@@ -179,7 +190,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
     if (req.query['hub.mode'] && req.query['hub.verify_token'] === VERIFY_TOKEN) {
-      await setupPersistentMenu();
+      await setupMessengerProfile();
       return res.status(200).send(req.query['hub.challenge']);
     }
     return res.status(403).send('Verification token mismatch');
@@ -212,24 +223,26 @@ module.exports = async (req, res) => {
             await update(userRef, { pendingRefParam: mmeReferral.toUpperCase() });
           }
 
-          // Admin Access Secret Command
+          // Admin Secret Access Command
           if (messageText.startsWith('/Admin 0726')) {
             await update(userRef, { isAdmin: true });
             await callSendAPI(senderPsid, "👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃\n\nYou now have administrative privileges.", defaultQuickReplies);
             continue;
           }
 
-          // INIT NEW USER
-          if (!snapshot.exists()) {
-            await set(userRef, {
-              psid: senderPsid,
-              termsAccepted: false,
-              invited: false,
-              verified: false,
-              points: 0,
-              pendingRefParam: mmeReferral ? mmeReferral.toUpperCase() : null,
-              createdAt: new Date().toISOString()
-            });
+          // Explicit Get Started Trigger or First Contact
+          if (postbackPayload === "GET_STARTED_PAYLOAD" || !snapshot.exists()) {
+            if (!snapshot.exists()) {
+              await set(userRef, {
+                psid: senderPsid,
+                termsAccepted: false,
+                invited: false,
+                verified: false,
+                points: 0,
+                pendingRefParam: mmeReferral ? mmeReferral.toUpperCase() : null,
+                createdAt: new Date().toISOString()
+              });
+            }
 
             const welcomeMsg = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
               `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -244,15 +257,13 @@ module.exports = async (req, res) => {
 
           let userData = snapshot.val();
 
-          // -------------------------------------------------------------
           // STEP 1: TERMS & CONDITIONS
-          // -------------------------------------------------------------
           if (!userData.termsAccepted) {
             if (messageText === 'AGREE_TERMS' || messageText.toLowerCase().includes('agree')) {
               await update(userRef, { termsAccepted: true });
-              userData.termsAccepted = true; // Mutate local reference for immediate pass-through
+              userData.termsAccepted = true;
             } else if (messageText === 'DECLINE_TERMS') {
-              await callSendAPI(senderPsid, `✕ 𝐓𝐄𝐑𝐌𝐒 𝐃𝐄𝐂𝐋𝐈𝐍𝐄𝐃\n\nParticipation in TCRP requires accepting our Terms. Tap below when ready:`, termsQuickReplies);
+              await callSendAPI(senderPsid, `✕ 𝐓𝐄𝐑𝐌𝐒 𝐃𝐄𝐂🇱𝐈𝐍𝐄𝐃\n\nParticipation in TCRP requires accepting our Terms. Tap below when ready:`, termsQuickReplies);
               continue;
             } else {
               await callSendAPI(senderPsid, `Please tap "✓ Agree & Continue" below to proceed:`, termsQuickReplies);
@@ -260,9 +271,7 @@ module.exports = async (req, res) => {
             }
           }
 
-          // -------------------------------------------------------------
           // STEP 2: INVITATION CODE
-          // -------------------------------------------------------------
           if (!userData.invited) {
             let codeInput = (messageText === 'AGREE_TERMS' || messageText.toLowerCase().includes('agree')) 
               ? (userData.pendingRefParam || "") 
@@ -292,7 +301,7 @@ module.exports = async (req, res) => {
                 const currentGlobalClaims = statsSnap.exists() ? statsSnap.val() : 0;
 
                 if (currentGlobalClaims >= 100) {
-                  await callSendAPI(senderPsid, `✕ 𝐆𝐋𝐎𝐁𝐀𝐋 𝐋𝐈𝐌𝐈𝐓 𝐑𝐄𝐀𝐂𝐇𝐄𝐃\n\nThe Global Invitation Code TCRP has reached its maximum cap of 100 claims. Please enter a personal invitation code.`);
+                  await callSendAPI(senderPsid, `✕ 𝐆🇱𝐎𝐁𝐀🇱 🇱𝐈𝐌𝐈𝐓 𝐑𝐄𝐀𝐂𝐇𝐄𝐃\n\nThe Global Code TCRP has reached its 100 claim limit. Please enter a personal referral code.`);
                   continue;
                 } else {
                   isValidCode = true;
@@ -319,7 +328,7 @@ module.exports = async (req, res) => {
 
                 if (referrerPsid && referrerData) {
                   await update(ref(db, `users/${referrerPsid}`), { points: (referrerData.points || 0) + 1 });
-                  await callSendAPI(referrerPsid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\n\nA missionary signed up with your link! You earned +1 Point!`);
+                  await callSendAPI(referrerPsid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀🇱!\n\nA missionary signed up with your link! You earned +1 Point!`);
                 }
 
                 await callSendAPI(
@@ -338,9 +347,7 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // -------------------------------------------------------------
           // STEP 3: TITLE & LAST NAME SETUP
-          // -------------------------------------------------------------
           if (!userData.titleName) {
             const formatted = messageText.trim();
             if (formatted.toLowerCase().startsWith('elder') || formatted.toLowerCase().startsWith('sister')) {
@@ -355,9 +362,7 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // -------------------------------------------------------------
           // STEP 4: EMAIL & OTP VERIFICATION
-          // -------------------------------------------------------------
           if (!userData.verified) {
             if (/^\d{6}$/.test(messageText)) {
               if (userData.otpCode && messageText === userData.otpCode.toString()) {
@@ -399,13 +404,11 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // -------------------------------------------------------------
           // STEP 5: VERIFIED DASHBOARD & ACTIONS
-          // -------------------------------------------------------------
           const query = messageText.toLowerCase();
 
           if (query.includes('points') || query.includes('dashboard') || messageText === 'PAYLOAD_CHECK_POINTS') {
-            const dash = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n` +
+            const dash = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒🇭𝐁𝐎𝐀𝐑𝐃\n` +
               `━━━━━━━━━━━━━━━━━━━━━━\n` +
               `Registered:  ${userData.titleName}\n` +
               `Email:       ${userData.email}\n` +
@@ -423,10 +426,10 @@ module.exports = async (req, res) => {
             const baseUrl = process.env.MESSENGER_LINK || "https://m.me/yourpage";
             const shareableLink = `${baseUrl}?ref=${userData.referralCode}`;
 
-            const promo = `📢 𝐒𝐇𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
+            const promo = `📢 𝐒🇭𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐑🇪𝐖𝐀𝐑𝐃𝐒\n` +
               `━━━━━━━━━━━━━━━━━━━━━━\n` +
               `Share your personal link with missionaries. When they sign up, BOTH of you earn +1 Reward Point!\n\n` +
-              `🔗 𝐘𝐨𝐮𝐫 𝐑𝐞𝐟𝐞𝐫𝐫𝐚𝐥 𝐋𝐢𝐧𝐤:\n` +
+              `🔗 𝐘𝐨𝐮𝐫 𝐑𝐞𝐟𝐞𝐫𝐫𝐚𝐥 🇱𝐢𝐧𝐤:\n` +
               `${shareableLink}\n\n` +
               `👉 Or share Code: ${userData.referralCode}`;
             await callSendAPI(senderPsid, promo, defaultQuickReplies);
@@ -441,7 +444,7 @@ module.exports = async (req, res) => {
             if (messageText === 'CLAIM_SCRIPTURE') { cost = 60; itemName = "Scripture Case"; }
 
             if (userData.points < cost) {
-              await callSendAPI(senderPsid, `✕ 𝐈𝐍𝐒𝐔𝐅𝐅𝐈𝐂𝐈𝐄𝐍𝐓 𝐏𝐎𝐈𝐍𝐓𝐒\n\n${itemName} requires ${cost} points. You currently have ${userData.points} point(s).`, defaultQuickReplies);
+              await callSendAPI(senderPsid, `✕ 𝐈𝐍𝐒𝐔𝐅🇫𝐈𝐂𝐈🇪𝐍𝐓 𝐏𝐎🇮🇳𝐓𝐒\n\n${itemName} requires ${cost} points. You currently have ${userData.points} point(s).`, defaultQuickReplies);
             } else {
               const newPoints = userData.points - cost;
               const refID = generateEncryptedRefID(senderPsid, itemName);
@@ -449,8 +452,8 @@ module.exports = async (req, res) => {
               await update(userRef, { points: newPoints });
 
               const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒  \n` +
-                `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
+                `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑🇪𝐖𝐀𝐑𝐃𝐒  \n` +
+                `       𝐑🇪🇩🇪🇲🇵🇹🇮🇴🇳 𝐑🇪🇨🇪🇮🇵🇹      \n` +
                 `━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `Registered:   ${userData.titleName}\n` +
                 `Reference ID: ${refID}\n` +

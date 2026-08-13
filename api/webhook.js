@@ -25,7 +25,6 @@ function generateEncryptedRefID(psid, rewardName) {
   return `TX-${hash.substring(0, 8)}`;
 }
 
-// Send standard text with optional Quick Replies
 async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -50,12 +49,10 @@ async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   }
 }
 
-// Send Generic Template Cards (Catalog Carousel with Images & Redeem Buttons)
 async function sendCatalogCarousel(senderPsid) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
 
-  // Image URLs sourced directly from Vercel Environment Variables
   const imgKeychain = process.env.IMG_KEYCHAIN || "https://dummyimage.com/600x400/0f172a/ffffff.png&text=Temple+Keychain";
   const imgNametag = process.env.IMG_NAMETAG || "https://dummyimage.com/600x400/0f172a/ffffff.png&text=Nametag+Keychain";
   const imgSalvation = process.env.IMG_SALVATION || "https://dummyimage.com/600x400/0f172a/ffffff.png&text=Salvation+Kit";
@@ -110,7 +107,6 @@ async function sendCatalogCarousel(senderPsid) {
   }
 }
 
-// Quick Reply Button Presets
 const defaultQuickReplies = [
   { content_type: "text", title: "🏆 Dashboard & Points", payload: "PAYLOAD_CHECK_POINTS" },
   { content_type: "text", title: "🎁 Catalog & Redeem", payload: "PAYLOAD_CATALOG" },
@@ -146,19 +142,26 @@ module.exports = async (req, res) => {
         if (!entry.messaging) continue;
         for (const event of entry.messaging) {
           const senderPsid = event.sender.id;
-          let messageText = event.message?.text?.trim() || event.postback?.payload || "";
+
+          // EXTRACT PAYLOAD FROM EVERY POSSIBLE FACEBOOK MESSENGER PROPERTY
+          let rawText = event.message?.text?.trim() || "";
+          let quickReplyPayload = event.message?.quick_reply?.payload || "";
+          let postbackPayload = event.postback?.payload || "";
+
+          let messageText = quickReplyPayload || postbackPayload || rawText;
           if (!messageText) continue;
 
           const userRef = ref(db, `users/${senderPsid}`);
           const snapshot = await get(userRef);
 
-          // Secret Admin Command
+          // Admin Secret Trigger
           if (messageText.startsWith('/Admin 0726')) {
             await update(userRef, { isAdmin: true });
             await callSendAPI(senderPsid, "👑 Admin access granted for TCRP!", defaultQuickReplies);
             continue;
           }
 
+          // Initial Welcome if User Does Not Exist in Realtime DB
           if (!snapshot.exists()) {
             await set(userRef, {
               psid: senderPsid,
@@ -176,195 +179,199 @@ module.exports = async (req, res) => {
               `You must accept to proceed.`;
 
             await callSendAPI(senderPsid, welcomeMsg, termsQuickReplies);
-          } else {
-            let userData = snapshot.val();
+            continue;
+          }
 
-            // STEP 1: Terms & Conditions Check (Fixed Loop Error)
-            if (!userData.termsAccepted) {
-              if (messageText === 'AGREE_TERMS') {
-                userData.termsAccepted = true; // Update local memory immediately
-                await update(userRef, { termsAccepted: true });
+          let userData = snapshot.val();
 
-                await callSendAPI(
-                  senderPsid, 
-                  `✅ Terms Accepted!\n\n🔑 Invitation Code Required:\nTo join TCRP, please enter an Invitation Code from a fellow missionary, or tap the button below to use the Global Code: TCRP`, 
-                  globalInviteQuickReply
-                );
-              } else if (messageText === 'DECLINE_TERMS') {
-                await callSendAPI(
-                  senderPsid, 
-                  `⚠️ Terms Declined.\n\nYou must accept the Terms & Conditions to participate in TCRP. Tap below to accept:`, 
-                  termsQuickReplies
-                );
+          // FORCE-FIX 1: IMMEDIATE HANDLE FOR "AGREE_TERMS"
+          if (messageText === 'AGREE_TERMS' || messageText.toLowerCase().includes('agree')) {
+            await update(userRef, { termsAccepted: true });
+            userData.termsAccepted = true; // Hard update local instance
+
+            await callSendAPI(
+              senderPsid, 
+              `✅ Terms Accepted!\n\n🔑 Invitation Code Required:\nTo join TCRP, please enter an Invitation Code from a fellow missionary, or tap the button below to use the Global Code: TCRP`, 
+              globalInviteQuickReply
+            );
+            continue; // Break out immediately to avoid falling into lower state conditionals
+          }
+
+          if (messageText === 'DECLINE_TERMS') {
+            await callSendAPI(
+              senderPsid, 
+              `⚠️ Terms Declined.\n\nYou must accept the Terms & Conditions to participate in TCRP. Tap below to accept:`, 
+              termsQuickReplies
+            );
+            continue;
+          }
+
+          // STEP 1: TERMS CHECK (Fallback loop prevention)
+          if (!userData.termsAccepted) {
+            await callSendAPI(
+              senderPsid, 
+              `Please tap "✅ Agree & Continue" below to proceed:`, 
+              termsQuickReplies
+            );
+            continue;
+          }
+
+          // STEP 2: INVITATION CODE GATE
+          if (!userData.invited) {
+            const codeInput = messageText.toUpperCase();
+            
+            if (codeInput === 'TCRP' || codeInput.startsWith('TCRP-')) {
+              let isValidCode = false;
+              let referrerPsid = null;
+              let referrerData = null;
+
+              if (codeInput === 'TCRP') {
+                isValidCode = true;
               } else {
-                await callSendAPI(senderPsid, `Please accept the Terms & Conditions to continue:`, termsQuickReplies);
-              }
-            }
-
-            // STEP 2: Required Invitation Code Gate
-            else if (!userData.invited) {
-              const codeInput = messageText.toUpperCase();
-              
-              if (codeInput === 'TCRP' || codeInput.startsWith('TCRP-')) {
-                let isValidCode = false;
-                let referrerPsid = null;
-                let referrerData = null;
-
-                if (codeInput === 'TCRP') {
-                  isValidCode = true;
-                } else {
-                  const usersSnap = await get(ref(db, 'users'));
-                  if (usersSnap.exists()) {
-                    const allUsers = usersSnap.val();
-                    for (const id in allUsers) {
-                      if (allUsers[id].referralCode === codeInput) {
-                        referrerPsid = id;
-                        referrerData = allUsers[id];
-                        isValidCode = true;
-                        break;
-                      }
+                const usersSnap = await get(ref(db, 'users'));
+                if (usersSnap.exists()) {
+                  const allUsers = usersSnap.val();
+                  for (const id in allUsers) {
+                    if (allUsers[id].referralCode === codeInput) {
+                      referrerPsid = id;
+                      referrerData = allUsers[id];
+                      isValidCode = true;
+                      break;
                     }
                   }
                 }
+              }
 
-                if (isValidCode) {
-                  userData.invited = true; // Update local memory immediately
-                  await update(userRef, { invited: true, usedInviteCode: codeInput });
+              if (isValidCode) {
+                await update(userRef, { invited: true, usedInviteCode: codeInput });
+                userData.invited = true;
 
-                  if (referrerPsid && referrerData) {
-                    await update(ref(db, `users/${referrerPsid}`), { points: (referrerData.points || 0) + 1 });
-                    await callSendAPI(referrerPsid, `🎉 A new missionary used your invitation code! You earned +1 Point!`);
-                  }
-
-                  await callSendAPI(
-                    senderPsid, 
-                    `✅ Invitation Code Accepted!\n\nPlease enter your Missionary Title and Last Name (e.g., Elder Smith or Sister Johnson):`
-                  );
-                } else {
-                  await callSendAPI(senderPsid, `❌ Invalid Invitation Code. Please enter a valid code or tap below:`, globalInviteQuickReply);
+                if (referrerPsid && referrerData) {
+                  await update(ref(db, `users/${referrerPsid}`), { points: (referrerData.points || 0) + 1 });
+                  await callSendAPI(referrerPsid, `🎉 A new missionary used your invitation code! You earned +1 Point!`);
                 }
+
+                await callSendAPI(
+                  senderPsid, 
+                  `✅ Invitation Code Accepted!\n\nPlease enter your Missionary Title and Last Name (e.g., Elder Smith or Sister Johnson):`
+                );
               } else {
-                await callSendAPI(senderPsid, `🔑 An Invitation Code is required. Enter your code or tap below:`, globalInviteQuickReply);
+                await callSendAPI(senderPsid, `❌ Invalid Invitation Code. Enter a valid code or tap below:`, globalInviteQuickReply);
               }
+            } else {
+              await callSendAPI(senderPsid, `🔑 An Invitation Code is required. Enter your code or tap below:`, globalInviteQuickReply);
             }
+            continue;
+          }
 
-            // STEP 3: Title & Last Name Setup
-            else if (!userData.titleName) {
-              if (messageText.toLowerCase().startsWith('elder') || messageText.toLowerCase().startsWith('sister')) {
-                const formattedName = messageText.charAt(0).toUpperCase() + messageText.slice(1);
-                userData.titleName = formattedName; // Update local memory
-                await update(userRef, { titleName: formattedName });
-                await callSendAPI(senderPsid, `Pleased to meet you, ${formattedName}!\n\nNow, enter your official email address ending in @missionary.org to complete verification:`);
+          // STEP 3: TITLE & LAST NAME SETUP
+          if (!userData.titleName) {
+            if (messageText.toLowerCase().startsWith('elder') || messageText.toLowerCase().startsWith('sister')) {
+              const formattedName = messageText.charAt(0).toUpperCase() + messageText.slice(1);
+              await update(userRef, { titleName: formattedName });
+              userData.titleName = formattedName;
+
+              await callSendAPI(senderPsid, `Pleased to meet you, ${formattedName}!\n\nNow, enter your official email address ending in @missionary.org to complete verification:`);
+            } else {
+              await callSendAPI(senderPsid, `⚠️ Please start with "Elder" or "Sister" followed by your last name (e.g., Elder Smith or Sister Johnson):`);
+            }
+            continue;
+          }
+
+          // STEP 4: EMAIL & OTP VERIFICATION
+          if (!userData.verified) {
+            if (/^\d{6}$/.test(messageText)) {
+              if (userData.otpCode && messageText === userData.otpCode.toString()) {
+                const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
+                await update(userRef, {
+                  verified: true,
+                  referralCode: personalRefCode,
+                  points: 1,
+                  otpCode: null
+                });
+
+                await callSendAPI(
+                  senderPsid, 
+                  `🎉 Account Verified!\n\nRegistered: ${userData.titleName}\n• Welcome Bonus: 1 Point\n• Personal Referral Code: ${personalRefCode}\n\nRule: 1 Referral = 1 Point! Share your code to unlock rewards!`, 
+                  defaultQuickReplies
+                );
               } else {
-                await callSendAPI(senderPsid, `⚠️ Please start with "Elder" or "Sister" followed by your last name (e.g., Elder Smith or Sister Johnson):`);
+                await callSendAPI(senderPsid, "❌ Incorrect verification code. Please check your email inbox and enter the 6-digit code.");
               }
+            } else if (messageText.toLowerCase().endsWith('@missionary.org')) {
+              const passCode = Math.floor(100000 + Math.random() * 900000).toString();
+              await update(userRef, { email: messageText.toLowerCase(), otpCode: passCode });
+
+              await callSendAPI(senderPsid, `📧 Verification email sent to ${messageText.toLowerCase()}!\n\nPlease check your inbox and reply here with the 6-digit code.`);
+            } else {
+              await callSendAPI(senderPsid, "⚠️ Please provide a valid email ending in @missionary.org");
             }
+            continue;
+          }
 
-            // STEP 4: Email & 6-Digit OTP Verification
-            else if (!userData.verified) {
-              if (/^\d{6}$/.test(messageText)) {
-                if (userData.otpCode && messageText === userData.otpCode.toString()) {
-                  const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
-                  userData.verified = true;
-                  await update(userRef, {
-                    verified: true,
-                    referralCode: personalRefCode,
-                    points: 1,
-                    otpCode: null
-                  });
+          // STEP 5: VERIFIED USER MENU & CATALOG
+          const query = messageText.toLowerCase();
 
-                  await callSendAPI(
-                    senderPsid, 
-                    `🎉 Account Verified!\n\nRegistered: ${userData.titleName}\n• Welcome Bonus: 1 Point\n• Personal Referral Code: ${personalRefCode}\n\nRule: 1 Referral = 1 Point! Share your code to unlock rewards!`, 
-                    defaultQuickReplies
-                  );
-                } else {
-                  await callSendAPI(senderPsid, "❌ Incorrect verification code. Please check your email inbox and enter the 6-digit code.");
-                }
-              } else if (messageText.toLowerCase().endsWith('@missionary.org')) {
-                const passCode = Math.floor(100000 + Math.random() * 900000).toString();
-                await update(userRef, { email: messageText.toLowerCase(), otpCode: passCode });
+          if (query.includes('points') || query.includes('dashboard') || messageText === 'PAYLOAD_CHECK_POINTS') {
+            const dash = `🏆 TCRP MISSIONARY DASHBOARD\n` +
+              `=============================\n` +
+              `Registered: ${userData.titleName}\n` +
+              `Email: ${userData.email}\n` +
+              `Current Points: ${userData.points} Point(s)\n` +
+              `Referral Code: ${userData.referralCode}\n` +
+              `=============================\n` +
+              `Rule: 1 Referral = 1 Point!\n` +
+              `Share your code with other missionaries to earn rewards.`;
+            await callSendAPI(senderPsid, dash, defaultQuickReplies);
+          }
+          else if (query.includes('catalog') || query.includes('redeem') || messageText === 'PAYLOAD_CATALOG') {
+            await callSendAPI(senderPsid, "🎁 Here is the Timeless Creations Rewards Catalog. Swipe right to view all items:");
+            await sendCatalogCarousel(senderPsid);
+            await callSendAPI(senderPsid, "Tap any button on the cards above to redeem your reward!", defaultQuickReplies);
+          }
+          else if (query.includes('promo') || query.includes('refer') || messageText === 'PAYLOAD_PROMO') {
+            const promo = `📢 SHARE TIMELESS CREATIONS & EARN REWARDS!\n\n` +
+              `Timeless Creations is your provider for custom missionary keychains, nametag holders, and gifts!\n\n` +
+              `🎁 Invite fellow missionaries to join TCRP using your personal code:\n\n` +
+              `👉 YOUR CODE: ${userData.referralCode}\n\n` +
+              `When they sign up using your code, BOTH of you earn +1 Reward Point! (Global fallback code: TCRP)`;
+            await callSendAPI(senderPsid, promo, defaultQuickReplies);
+          }
+          else if (messageText.startsWith('CLAIM_')) {
+            let cost = 0;
+            let itemName = "";
 
-                // (Brevo sending routine call)
-                await callSendAPI(senderPsid, `📧 Verification email sent to ${messageText.toLowerCase()}!\n\nPlease check your inbox and reply here with the 6-digit code.`);
-              } else {
-                await callSendAPI(senderPsid, "⚠️ Please provide a valid email ending in @missionary.org");
-              }
+            if (messageText === 'CLAIM_KEYCHAIN') { cost = 6; itemName = "Temple Keychain"; }
+            if (messageText === 'CLAIM_NAMETAG') { cost = 24; itemName = "Nametag Keychain"; }
+            if (messageText === 'CLAIM_SALVATION') { cost = 42; itemName = "Salvation Kit"; }
+            if (messageText === 'CLAIM_SCRIPTURE') { cost = 60; itemName = "Scripture Case"; }
+
+            if (userData.points < cost) {
+              await callSendAPI(senderPsid, `❌ Insufficient Points!\n\n${itemName} requires ${cost} points. Registered (${userData.titleName}) currently has ${userData.points} point(s).`, defaultQuickReplies);
+            } else {
+              const newPoints = userData.points - cost;
+              const refID = generateEncryptedRefID(senderPsid, itemName);
+
+              await update(userRef, { points: newPoints });
+
+              const receipt = `=================================\n` +
+                `     TIMELLESS CREATIONS REWARDS   \n` +
+                `         REDEMPTION RECEIPT        \n` +
+                `=================================\n` +
+                `Registered:    ${userData.titleName}\n` +
+                `Reference ID:  ${refID}\n` +
+                `Item Claimed:  ${itemName}\n` +
+                `Points Spent:  ${cost} Point(s)\n` +
+                `Remaining:     ${newPoints} Point(s)\n` +
+                `=================================\n` +
+                `Status: PENDING DISPATCH\n` +
+                `Present this Reference ID to claim!`;
+
+              await callSendAPI(senderPsid, receipt, defaultQuickReplies);
             }
-
-            // STEP 5: Main Verified Operations
-            else {
-              const query = messageText.toLowerCase();
-
-              // Dashboard
-              if (query.includes('points') || query.includes('dashboard') || messageText === 'PAYLOAD_CHECK_POINTS') {
-                const dash = `🏆 TCRP MISSIONARY DASHBOARD\n` +
-                  `=============================\n` +
-                  `Registered: ${userData.titleName}\n` +
-                  `Email: ${userData.email}\n` +
-                  `Current Points: ${userData.points} Point(s)\n` +
-                  `Referral Code: ${userData.referralCode}\n` +
-                  `=============================\n` +
-                  `Rule: 1 Referral = 1 Point!\n` +
-                  `Share your code with other missionaries to earn rewards.`;
-                await callSendAPI(senderPsid, dash, defaultQuickReplies);
-              }
-
-              // Merged Catalog & Redeem Carousel with 4 Images
-              else if (query.includes('catalog') || query.includes('redeem') || messageText === 'PAYLOAD_CATALOG') {
-                await callSendAPI(senderPsid, "🎁 Here is the Timeless Creations Rewards Catalog. Swipe right to view all items:");
-                await sendCatalogCarousel(senderPsid);
-                await callSendAPI(senderPsid, "Tap any button on the cards above to redeem your reward!", defaultQuickReplies);
-              }
-
-              // Refer a Friend Promotion
-              else if (query.includes('promo') || query.includes('refer') || messageText === 'PAYLOAD_PROMO') {
-                const promo = `📢 SHARE TIMELESS CREATIONS & EARN REWARDS!\n\n` +
-                  `Timeless Creations is your provider for custom missionary keychains, nametag holders, and gifts!\n\n` +
-                  `🎁 Invite fellow missionaries to join TCRP using your personal code:\n\n` +
-                  `👉 YOUR CODE: ${userData.referralCode}\n\n` +
-                  `When they sign up using your code, BOTH of you earn +1 Reward Point! (Global fallback code: TCRP)`;
-                await callSendAPI(senderPsid, promo, defaultQuickReplies);
-              }
-
-              // Handle Reward Claim & Encrypted Receipt Generation
-              else if (messageText.startsWith('CLAIM_')) {
-                let cost = 0;
-                let itemName = "";
-
-                if (messageText === 'CLAIM_KEYCHAIN') { cost = 6; itemName = "Temple Keychain"; }
-                if (messageText === 'CLAIM_NAMETAG') { cost = 24; itemName = "Nametag Keychain"; }
-                if (messageText === 'CLAIM_SALVATION') { cost = 42; itemName = "Salvation Kit"; }
-                if (messageText === 'CLAIM_SCRIPTURE') { cost = 60; itemName = "Scripture Case"; }
-
-                if (userData.points < cost) {
-                  await callSendAPI(senderPsid, `❌ Insufficient Points!\n\n${itemName} requires ${cost} points. Registered (${userData.titleName}) currently has ${userData.points} point(s).`, defaultQuickReplies);
-                } else {
-                  const newPoints = userData.points - cost;
-                  const refID = generateEncryptedRefID(senderPsid, itemName);
-
-                  await update(userRef, { points: newPoints });
-
-                  const receipt = `=================================\n` +
-                    `     TIMELLESS CREATIONS REWARDS   \n` +
-                    `         REDEMPTION RECEIPT        \n` +
-                    `=================================\n` +
-                    `Registered:    ${userData.titleName}\n` +
-                    `Reference ID:  ${refID}\n` +
-                    `Item Claimed:  ${itemName}\n` +
-                    `Points Spent:  ${cost} Point(s)\n` +
-                    `Remaining:     ${newPoints} Point(s)\n` +
-                    `=================================\n` +
-                    `Status: PENDING DISPATCH\n` +
-                    `Present this Reference ID to claim!`;
-
-                  await callSendAPI(senderPsid, receipt, defaultQuickReplies);
-                }
-              }
-              else {
-                await callSendAPI(senderPsid, `Hello ${userData.titleName}! Select an option below:`, defaultQuickReplies);
-              }
-            }
+          }
+          else {
+            await callSendAPI(senderPsid, `Hello ${userData.titleName}! Select an option below:`, defaultQuickReplies);
           }
         }
       }

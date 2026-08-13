@@ -143,7 +143,6 @@ module.exports = async (req, res) => {
         for (const event of entry.messaging) {
           const senderPsid = event.sender.id;
 
-          // EXTRACT PAYLOAD FROM EVERY POSSIBLE FACEBOOK MESSENGER PROPERTY
           let rawText = event.message?.text?.trim() || "";
           let quickReplyPayload = event.message?.quick_reply?.payload || "";
           let postbackPayload = event.postback?.payload || "";
@@ -154,14 +153,14 @@ module.exports = async (req, res) => {
           const userRef = ref(db, `users/${senderPsid}`);
           const snapshot = await get(userRef);
 
-          // Admin Secret Trigger
+          // Secret Admin Command
           if (messageText.startsWith('/Admin 0726')) {
             await update(userRef, { isAdmin: true });
             await callSendAPI(senderPsid, "👑 Admin access granted for TCRP!", defaultQuickReplies);
             continue;
           }
 
-          // Initial Welcome if User Does Not Exist in Realtime DB
+          // Initial Setup for New User
           if (!snapshot.exists()) {
             await set(userRef, {
               psid: senderPsid,
@@ -184,17 +183,17 @@ module.exports = async (req, res) => {
 
           let userData = snapshot.val();
 
-          // FORCE-FIX 1: IMMEDIATE HANDLE FOR "AGREE_TERMS"
+          // Terms Acceptance Handler
           if (messageText === 'AGREE_TERMS' || messageText.toLowerCase().includes('agree')) {
             await update(userRef, { termsAccepted: true });
-            userData.termsAccepted = true; // Hard update local instance
+            userData.termsAccepted = true;
 
             await callSendAPI(
               senderPsid, 
-              `✅ Terms Accepted!\n\n🔑 Invitation Code Required:\nTo join TCRP, please enter an Invitation Code from a fellow missionary, or tap the button below to use the Global Code: TCRP`, 
+              `✅ Terms Accepted!\n\n🔑 Invitation Code Required:\nTo join TCRP, please enter an Invitation Code from a fellow missionary, or tap below to use the Global Code: TCRP (Limited to first 100 claims)`, 
               globalInviteQuickReply
             );
-            continue; // Break out immediately to avoid falling into lower state conditionals
+            continue;
           }
 
           if (messageText === 'DECLINE_TERMS') {
@@ -206,7 +205,7 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // STEP 1: TERMS CHECK (Fallback loop prevention)
+          // STEP 1: TERMS CHECK
           if (!userData.termsAccepted) {
             await callSendAPI(
               senderPsid, 
@@ -216,18 +215,35 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // STEP 2: INVITATION CODE GATE
+          // STEP 2: INVITATION CODE GATE (WITH 100 GLOBAL CLAIM LIMIT)
           if (!userData.invited) {
             const codeInput = messageText.toUpperCase();
             
             if (codeInput === 'TCRP' || codeInput.startsWith('TCRP-')) {
               let isValidCode = false;
+              let isGlobalCode = (codeInput === 'TCRP');
               let referrerPsid = null;
               let referrerData = null;
 
-              if (codeInput === 'TCRP') {
-                isValidCode = true;
+              if (isGlobalCode) {
+                // Check Global Code Claim Count in Realtime DB
+                const statsRef = ref(db, 'stats/globalInvitesClaimed');
+                const statsSnap = await get(statsRef);
+                const currentGlobalClaims = statsSnap.exists() ? statsSnap.val() : 0;
+
+                if (currentGlobalClaims >= 100) {
+                  await callSendAPI(
+                    senderPsid, 
+                    `❌ The Global Invitation Code TCRP has reached its maximum limit of 100 claims!\n\nPlease request a personal referral code from a fellow missionary to join.`
+                  );
+                  continue;
+                } else {
+                  isValidCode = true;
+                  // Increment Global Claim Count
+                  await set(statsRef, currentGlobalClaims + 1);
+                }
               } else {
+                // Check Personal Referral Code
                 const usersSnap = await get(ref(db, 'users'));
                 if (usersSnap.exists()) {
                   const allUsers = usersSnap.val();
@@ -334,7 +350,7 @@ module.exports = async (req, res) => {
               `Timeless Creations is your provider for custom missionary keychains, nametag holders, and gifts!\n\n` +
               `🎁 Invite fellow missionaries to join TCRP using your personal code:\n\n` +
               `👉 YOUR CODE: ${userData.referralCode}\n\n` +
-              `When they sign up using your code, BOTH of you earn +1 Reward Point! (Global fallback code: TCRP)`;
+              `When they sign up using your code, BOTH of you earn +1 Reward Point!`;
             await callSendAPI(senderPsid, promo, defaultQuickReplies);
           }
           else if (messageText.startsWith('CLAIM_')) {

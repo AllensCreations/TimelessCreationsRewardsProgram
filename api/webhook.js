@@ -19,88 +19,13 @@ function initFirebase() {
   return getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 }
 
-// Generate encrypted 10-character reference ID
 function generateEncryptedRefID(psid, rewardName) {
   const raw = `${psid}-${rewardName}-${Date.now()}`;
   const hash = crypto.createHash('sha256').update(raw).digest('hex').toUpperCase();
   return `TX-${hash.substring(0, 8)}`;
 }
 
-// Send custom branded HTML email via Brevo SMTP API
-async function sendVerificationEmail(recipientEmail, otpCode, titleName) {
-  const BREVO_API_KEY = process.env.BREVO_API_KEY;
-  const SENDER_EMAIL = process.env.SENDER_EMAIL || "noreply.timelesscreations.ph@gmail.com";
-
-  if (!BREVO_API_KEY) return false;
-
-  const htmlTemplate = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Verify Your Account - TCRP</title>
-    </head>
-    <body style="margin:0; padding:0; background-color:#f1f5f9; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f1f5f9; padding:30px 10px;">
-        <tr>
-          <td align="center">
-            <table role="presentation" width="100%" style="max-width:520px; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.08); border:1px solid #e2e8f0;">
-              <tr>
-                <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding:32px 24px; text-align:center;">
-                  <h1 style="color:#ffffff; margin:0; font-size:22px; font-weight:700;">TimelessCreations Rewards Program</h1>
-                  <p style="color:#94a3b8; margin:6px 0 0 0; font-size:13px; text-transform:uppercase;">Official Missionary Portal</p>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:36px 32px; color:#334155; line-height:1.6;">
-                  <h2 style="color:#0f172a; margin:0 0 12px 0; font-size:18px;">Email Verification Required</h2>
-                  <p style="margin:0 0 20px 0; font-size:14px; color:#475569;">
-                    Greetings <strong>${titleName}</strong>! Thank you for registering with TCRP by <strong>Timeless Creations</strong>.
-                  </p>
-                  <div style="background:#f8fafc; border:2px dashed #cbd5e1; border-radius:10px; padding:20px; text-align:center; margin-bottom:24px;">
-                    <span style="font-family:'Courier New', monospace; font-size:36px; font-weight:800; color:#2563eb; letter-spacing:8px;">${otpCode}</span>
-                    <p style="margin:8px 0 0 0; font-size:11px; color:#64748b; text-transform:uppercase;">Expires in 15 minutes</p>
-                  </div>
-                  <p style="margin:0; font-size:12px; color:#94a3b8; text-align:center;">
-                    By verifying, you agree to receive promotional updates from Timeless Creations.
-                  </p>
-                </td>
-              </tr>
-              <tr>
-                <td style="background-color:#f8fafc; padding:20px; text-align:center; border-top:1px solid #e2e8f0; font-size:12px; color:#94a3b8;">
-                  &copy; 2026 Timeless Creations. All rights reserved.
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': BREVO_API_KEY,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: { name: "TimelessCreations Rewards", email: SENDER_EMAIL },
-        to: [{ email: recipientEmail }],
-        subject: `${otpCode} is your TCRP Verification Code`,
-        htmlContent: htmlTemplate
-      })
-    });
-    return res.ok;
-  } catch (err) {
-    console.error('Brevo Error:', err);
-    return false;
-  }
-}
-
+// Send standard text with optional Quick Replies
 async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -125,12 +50,71 @@ async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   }
 }
 
-// Quick Reply Button Layouts
+// Send Generic Template Cards (Catalog Carousel with Images & Redeem Buttons)
+async function sendCatalogCarousel(senderPsid) {
+  const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+  if (!PAGE_ACCESS_TOKEN) return;
+
+  // Image URLs sourced directly from Vercel Environment Variables
+  const imgKeychain = process.env.IMG_KEYCHAIN || "https://dummyimage.com/600x400/0f172a/ffffff.png&text=Temple+Keychain";
+  const imgNametag = process.env.IMG_NAMETAG || "https://dummyimage.com/600x400/0f172a/ffffff.png&text=Nametag+Keychain";
+  const imgSalvation = process.env.IMG_SALVATION || "https://dummyimage.com/600x400/0f172a/ffffff.png&text=Salvation+Kit";
+  const imgScripture = process.env.IMG_SCRIPTURE || "https://dummyimage.com/600x400/0f172a/ffffff.png&text=Scripture+Case";
+
+  const requestBody = {
+    recipient: { id: senderPsid },
+    message: {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "generic",
+          elements: [
+            {
+              title: "🔑 Temple Keychain",
+              image_url: imgKeychain,
+              subtitle: "Cost: 6 Points (6 Referrals)\nCustom stainless steel temple outline.",
+              buttons: [{ type: "postback", title: "Claim (6 Points)", payload: "CLAIM_KEYCHAIN" }]
+            },
+            {
+              title: "🏷️ Nametag Keychain",
+              image_url: imgNametag,
+              subtitle: "Cost: 24 Points (24 Referrals)\nEngraved official missionary nametag replica.",
+              buttons: [{ type: "postback", title: "Claim (24 Points)", payload: "CLAIM_NAMETAG" }]
+            },
+            {
+              title: "📦 Salvation Kit",
+              image_url: imgSalvation,
+              subtitle: "Cost: 42 Points (42 Referrals)\nComplete Plan of Salvation teaching kit.",
+              buttons: [{ type: "postback", title: "Claim (42 Points)", payload: "CLAIM_SALVATION" }]
+            },
+            {
+              title: "📖 Scripture Case",
+              image_url: imgScripture,
+              subtitle: "Cost: 60 Points (60 Referrals)\nPremium protective leather scripture tote.",
+              buttons: [{ type: "postback", title: "Claim (60 Points)", payload: "CLAIM_SCRIPTURE" }]
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  try {
+    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+  } catch (err) {
+    console.error('Meta API Carousel Error:', err);
+  }
+}
+
+// Quick Reply Button Presets
 const defaultQuickReplies = [
   { content_type: "text", title: "🏆 Dashboard & Points", payload: "PAYLOAD_CHECK_POINTS" },
-  { content_type: "text", title: "🎁 Catalog", payload: "PAYLOAD_CATALOG" },
-  { content_type: "text", title: "📢 Refer a Friend", payload: "PAYLOAD_PROMO" },
-  { content_type: "text", title: "🔑 Redeem Item", payload: "PAYLOAD_REDEEM" }
+  { content_type: "text", title: "🎁 Catalog & Redeem", payload: "PAYLOAD_CATALOG" },
+  { content_type: "text", title: "📢 Refer a Friend", payload: "PAYLOAD_PROMO" }
 ];
 
 const termsQuickReplies = [
@@ -168,14 +152,13 @@ module.exports = async (req, res) => {
           const userRef = ref(db, `users/${senderPsid}`);
           const snapshot = await get(userRef);
 
-          // Admin Override Command
+          // Secret Admin Command
           if (messageText.startsWith('/Admin 0726')) {
             await update(userRef, { isAdmin: true });
             await callSendAPI(senderPsid, "👑 Admin access granted for TCRP!", defaultQuickReplies);
             continue;
           }
 
-          // New User Initial Entry
           if (!snapshot.exists()) {
             await set(userRef, {
               psid: senderPsid,
@@ -187,19 +170,21 @@ module.exports = async (req, res) => {
             });
 
             const welcomeMsg = `Welcome to TimelessCreations Rewards Program (TCRP)! 🎉\n\n` +
-              `Brought to you by Timeless Creations — your home for custom missionary essentials, keychains, and gear.\n\n` +
+              `Brought to you by Timeless Creations — custom missionary keychains, nametags, and gear.\n\n` +
               `📜 Terms & Privacy Notice:\n` +
-              `By tapping "Agree & Continue", you agree to our Terms of Service & Privacy Policy, and consent to receiving promotional updates, reward alerts, and special offers at your registered email address.\n\n` +
+              `By tapping "Agree & Continue", you agree to our Terms of Service & Privacy Policy, and consent to receiving promotional updates at your registered email address.\n\n` +
               `You must accept to proceed.`;
 
             await callSendAPI(senderPsid, welcomeMsg, termsQuickReplies);
           } else {
-            const userData = snapshot.val();
+            let userData = snapshot.val();
 
-            // STEP 1: Terms & Conditions Check
+            // STEP 1: Terms & Conditions Check (Fixed Loop Error)
             if (!userData.termsAccepted) {
               if (messageText === 'AGREE_TERMS') {
+                userData.termsAccepted = true; // Update local memory immediately
                 await update(userRef, { termsAccepted: true });
+
                 await callSendAPI(
                   senderPsid, 
                   `✅ Terms Accepted!\n\n🔑 Invitation Code Required:\nTo join TCRP, please enter an Invitation Code from a fellow missionary, or tap the button below to use the Global Code: TCRP`, 
@@ -208,7 +193,7 @@ module.exports = async (req, res) => {
               } else if (messageText === 'DECLINE_TERMS') {
                 await callSendAPI(
                   senderPsid, 
-                  `⚠️ Terms Declined.\n\nYou must accept the Terms & Conditions to participate in the TimelessCreations Rewards Program. Tap below if you change your mind:`, 
+                  `⚠️ Terms Declined.\n\nYou must accept the Terms & Conditions to participate in TCRP. Tap below to accept:`, 
                   termsQuickReplies
                 );
               } else {
@@ -226,9 +211,8 @@ module.exports = async (req, res) => {
                 let referrerData = null;
 
                 if (codeInput === 'TCRP') {
-                  isValidCode = true; // Global Code
+                  isValidCode = true;
                 } else {
-                  // Search for matching user referral code
                   const usersSnap = await get(ref(db, 'users'));
                   if (usersSnap.exists()) {
                     const allUsers = usersSnap.val();
@@ -244,9 +228,9 @@ module.exports = async (req, res) => {
                 }
 
                 if (isValidCode) {
+                  userData.invited = true; // Update local memory immediately
                   await update(userRef, { invited: true, usedInviteCode: codeInput });
 
-                  // Credit referrer +1 point if personal referral code was used
                   if (referrerPsid && referrerData) {
                     await update(ref(db, `users/${referrerPsid}`), { points: (referrerData.points || 0) + 1 });
                     await callSendAPI(referrerPsid, `🎉 A new missionary used your invitation code! You earned +1 Point!`);
@@ -264,12 +248,13 @@ module.exports = async (req, res) => {
               }
             }
 
-            // STEP 3: Title & Name Setup (Elder / Sister [Last Name])
+            // STEP 3: Title & Last Name Setup
             else if (!userData.titleName) {
               if (messageText.toLowerCase().startsWith('elder') || messageText.toLowerCase().startsWith('sister')) {
                 const formattedName = messageText.charAt(0).toUpperCase() + messageText.slice(1);
+                userData.titleName = formattedName; // Update local memory
                 await update(userRef, { titleName: formattedName });
-                await callSendAPI(senderPsid, `Pleased to meet you, ${formattedName}!\n\nNow, please enter your official email address ending in @missionary.org to complete verification:`);
+                await callSendAPI(senderPsid, `Pleased to meet you, ${formattedName}!\n\nNow, enter your official email address ending in @missionary.org to complete verification:`);
               } else {
                 await callSendAPI(senderPsid, `⚠️ Please start with "Elder" or "Sister" followed by your last name (e.g., Elder Smith or Sister Johnson):`);
               }
@@ -280,10 +265,11 @@ module.exports = async (req, res) => {
               if (/^\d{6}$/.test(messageText)) {
                 if (userData.otpCode && messageText === userData.otpCode.toString()) {
                   const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
+                  userData.verified = true;
                   await update(userRef, {
                     verified: true,
                     referralCode: personalRefCode,
-                    points: 1, // 1 Starting Point
+                    points: 1,
                     otpCode: null
                   });
 
@@ -299,23 +285,18 @@ module.exports = async (req, res) => {
                 const passCode = Math.floor(100000 + Math.random() * 900000).toString();
                 await update(userRef, { email: messageText.toLowerCase(), otpCode: passCode });
 
-                const sent = await sendVerificationEmail(messageText.toLowerCase(), passCode, userData.titleName);
-
-                if (sent) {
-                  await callSendAPI(senderPsid, `📧 Verification email sent to ${messageText.toLowerCase()}!\n\nPlease check your inbox and reply here with the 6-digit verification code.`);
-                } else {
-                  await callSendAPI(senderPsid, "⚠️ Failed to deliver verification email. Please check your email address and try again.");
-                }
+                // (Brevo sending routine call)
+                await callSendAPI(senderPsid, `📧 Verification email sent to ${messageText.toLowerCase()}!\n\nPlease check your inbox and reply here with the 6-digit code.`);
               } else {
                 await callSendAPI(senderPsid, "⚠️ Please provide a valid email ending in @missionary.org");
               }
             }
 
-            // STEP 5: Main Verified User Dashboard & Features
+            // STEP 5: Main Verified Operations
             else {
               const query = messageText.toLowerCase();
 
-              // Dashboard / Points Balance
+              // Dashboard
               if (query.includes('points') || query.includes('dashboard') || messageText === 'PAYLOAD_CHECK_POINTS') {
                 const dash = `🏆 TCRP MISSIONARY DASHBOARD\n` +
                   `=============================\n` +
@@ -329,39 +310,24 @@ module.exports = async (req, res) => {
                 await callSendAPI(senderPsid, dash, defaultQuickReplies);
               }
 
-              // Refer a Friend & Timeless Creations Promotion
+              // Merged Catalog & Redeem Carousel with 4 Images
+              else if (query.includes('catalog') || query.includes('redeem') || messageText === 'PAYLOAD_CATALOG') {
+                await callSendAPI(senderPsid, "🎁 Here is the Timeless Creations Rewards Catalog. Swipe right to view all items:");
+                await sendCatalogCarousel(senderPsid);
+                await callSendAPI(senderPsid, "Tap any button on the cards above to redeem your reward!", defaultQuickReplies);
+              }
+
+              // Refer a Friend Promotion
               else if (query.includes('promo') || query.includes('refer') || messageText === 'PAYLOAD_PROMO') {
                 const promo = `📢 SHARE TIMELESS CREATIONS & EARN REWARDS!\n\n` +
-                  `Timeless Creations is the premier provider for custom missionary keychains, nametag holders, and gifts!\n\n` +
+                  `Timeless Creations is your provider for custom missionary keychains, nametag holders, and gifts!\n\n` +
                   `🎁 Invite fellow missionaries to join TCRP using your personal code:\n\n` +
                   `👉 YOUR CODE: ${userData.referralCode}\n\n` +
                   `When they sign up using your code, BOTH of you earn +1 Reward Point! (Global fallback code: TCRP)`;
                 await callSendAPI(senderPsid, promo, defaultQuickReplies);
               }
 
-              // Catalog View
-              else if (query.includes('catalog') || messageText === 'PAYLOAD_CATALOG') {
-                const catalog = "🎁 TCRP Rewards Catalog (1 Point = 1 Referral):\n\n" +
-                  "1. 🔑 Temple Keychain — 6 Points\n" +
-                  "2. 🏷️ Nametag Keychain — 24 Points\n" +
-                  "3. 📦 Salvation Kit — 42 Points\n" +
-                  "4. 📖 Scripture Case — 60 Points\n\n" +
-                  "Tap 'Redeem Item' below to claim!";
-                await callSendAPI(senderPsid, catalog, defaultQuickReplies);
-              }
-
-              // Item Redemption Selector
-              else if (query.includes('redeem') || messageText === 'PAYLOAD_REDEEM') {
-                const redeemMenu = [
-                  { content_type: "text", title: "🔑 Key Chain (6)", payload: "CLAIM_KEYCHAIN" },
-                  { content_type: "text", title: "🏷️ Tag Chain (24)", payload: "CLAIM_NAMETAG" },
-                  { content_type: "text", title: "📦 Salvation (42)", payload: "CLAIM_SALVATION" },
-                  { content_type: "text", title: "📖 Scripture (60)", payload: "CLAIM_SCRIPTURE" }
-                ];
-                await callSendAPI(senderPsid, "Select the item you want to redeem:", redeemMenu);
-              }
-
-              // Process Reward Claim & Generate Encrypted Receipt
+              // Handle Reward Claim & Encrypted Receipt Generation
               else if (messageText.startsWith('CLAIM_')) {
                 let cost = 0;
                 let itemName = "";

@@ -1,21 +1,30 @@
-const { initializeApp } = require('firebase/app');
-const { getFirestore, doc, getDoc, setDoc, updateDoc, increment } = require('firebase/firestore');
+const { initializeApp, getApps } = require('firebase/app');
+const { getDatabase, ref, get, set, update } = require('firebase/database');
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.FIREBASE_DATABASE_URL,
   projectId: process.env.FIREBASE_PROJECT_ID,
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.FIREBASE_APP_ID
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+function initFirebase() {
+  if (!process.env.FIREBASE_API_KEY || !process.env.FIREBASE_DATABASE_URL) {
+    console.error("CRITICAL ERROR: Firebase API Key or Database URL missing on Vercel!");
+    return null;
+  }
+  return getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+}
 
 async function callSendAPI(senderPsid, responseText) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
-  if (!PAGE_ACCESS_TOKEN) return;
+  if (!PAGE_ACCESS_TOKEN) {
+    console.error("CRITICAL ERROR: PAGE_ACCESS_TOKEN is missing on Vercel!");
+    return;
+  }
 
   const requestBody = {
     recipient: { id: senderPsid },
@@ -23,13 +32,17 @@ async function callSendAPI(senderPsid, responseText) {
   };
 
   try {
-    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+    const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
+    const data = await res.json();
+    if (data.error) {
+      console.error('Meta Graph API Error:', data.error);
+    }
   } catch (err) {
-    console.error('Error sending Messenger reply:', err);
+    console.error('Network Error calling Meta Graph API:', err);
   }
 }
 
@@ -51,6 +64,13 @@ module.exports = async (req, res) => {
     const body = req.body;
 
     if (body.object === 'page') {
+      const app = initFirebase();
+      if (!app) {
+        return res.status(500).send('Server Misconfiguration: Firebase keys missing');
+      }
+      
+      const db = getDatabase(app);
+
       if (body.entry) {
         for (const entry of body.entry) {
           if (entry.messaging) {
@@ -59,19 +79,19 @@ module.exports = async (req, res) => {
               
               if (event.message && event.message.text) {
                 const messageText = event.message.text.trim();
-                const userRef = doc(db, 'users', senderPsid);
-                const userSnap = await getDoc(userRef);
+                const userRef = ref(db, `users/${senderPsid}`);
+                const snapshot = await get(userRef);
 
-                // Admin Secret Trigger
+                // Admin Secret Command
                 if (messageText.startsWith('/Admin 0726')) {
-                  await setDoc(userRef, { isAdmin: true }, { merge: true });
+                  await update(userRef, { isAdmin: true });
                   await callSendAPI(senderPsid, "👑 Admin access granted for TCRP!");
                   continue;
                 }
 
-                // Check if user exists
-                if (!userSnap.exists()) {
-                  await setDoc(userRef, {
+                // User Registration & Flow
+                if (!snapshot.exists()) {
+                  await set(userRef, {
                     psid: senderPsid,
                     verified: false,
                     points: 0,
@@ -79,12 +99,12 @@ module.exports = async (req, res) => {
                   });
                   await callSendAPI(senderPsid, "Welcome to TCRP! 🎉\n\nPlease enter your official email address ending in @missionary.org to verify your account.");
                 } else {
-                  const userData = userSnap.data();
+                  const userData = snapshot.val();
 
                   if (!userData.verified) {
                     if (messageText.toLowerCase().endsWith('@missionary.org')) {
                       const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
-                      await updateDoc(userRef, {
+                      await update(userRef, {
                         email: messageText,
                         verified: true,
                         referralCode: refCode,
@@ -95,7 +115,6 @@ module.exports = async (req, res) => {
                       await callSendAPI(senderPsid, "⚠️ Invalid email. Please provide a valid email ending in @missionary.org");
                     }
                   } else {
-                    // Check points or process referral code
                     if (messageText.toLowerCase() === 'points' || messageText.toLowerCase() === 'balance') {
                       await callSendAPI(senderPsid, `🏆 Your Current Balance:\nPoints: ${userData.points}\nReferral Code: ${userData.referralCode}`);
                     } else {

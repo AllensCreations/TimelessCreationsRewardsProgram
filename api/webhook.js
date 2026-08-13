@@ -29,7 +29,7 @@ function generateEncryptedRefID(psid, rewardName) {
 // Function to send custom branded HTML email via Brevo SMTP API
 async function sendVerificationEmail(recipientEmail, otpCode) {
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
-  const SENDER_EMAIL = process.env.SENDER_EMAIL || "2ndsalviejomark2019@gmail.com";
+  const SENDER_EMAIL = process.env.SENDER_EMAIL || "noreply.timelesscreations.ph@gmail.com";
 
   if (!BREVO_API_KEY) {
     console.error("CRITICAL: BREVO_API_KEY is missing!");
@@ -114,7 +114,6 @@ async function sendVerificationEmail(recipientEmail, otpCode) {
       })
     });
 
-    const data = await res.json();
     return res.ok;
   } catch (err) {
     console.error('Brevo API Connection Error:', err);
@@ -146,7 +145,6 @@ async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   }
 }
 
-// Quick Reply Preset Buttons
 const defaultQuickReplies = [
   { content_type: "text", title: "🏆 Points & Code", payload: "PAYLOAD_CHECK_POINTS" },
   { content_type: "text", title: "🎁 Catalog", payload: "PAYLOAD_CATALOG" },
@@ -203,9 +201,7 @@ module.exports = async (req, res) => {
           } else {
             const userData = snapshot.val();
 
-            // Unverified Account Flow
             if (!userData.verified) {
-              // Resend option
               if (messageText === 'PAYLOAD_RESEND' && userData.email) {
                 const passCode = Math.floor(100000 + Math.random() * 900000).toString();
                 await update(userRef, { otpCode: passCode });
@@ -214,17 +210,16 @@ module.exports = async (req, res) => {
                 if (sent) {
                   await callSendAPI(senderPsid, `📩 Resent verification email to ${userData.email}!\n\nPlease check your inbox and reply here with the 6-digit code.`, pendingQuickReplies);
                 } else {
-                  await callSendAPI(senderPsid, "⚠️ Failed to deliver email via Brevo. Please verify your email address and try again.", pendingQuickReplies);
+                  await callSendAPI(senderPsid, "⚠️ Failed to deliver email via Brevo. Please check your email address and try again.", pendingQuickReplies);
                 }
               }
-              // Verify 6-digit OTP Code
               else if (/^\d{6}$/.test(messageText)) {
                 if (userData.otpCode && messageText === userData.otpCode.toString()) {
                   const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
                   await update(userRef, {
                     verified: true,
                     referralCode: refCode,
-                    points: 1, // 1 Starting Point
+                    points: 1,
                     otpCode: null
                   });
                   await callSendAPI(senderPsid, `🎉 Account verified successfully!\n\n• Welcome Bonus: 1 Point\n• Referral Code: ${refCode}\n\nRule: 1 Referral = 1 Point! Share your code with fellow missionaries to unlock rewards.`, defaultQuickReplies);
@@ -232,7 +227,6 @@ module.exports = async (req, res) => {
                   await callSendAPI(senderPsid, "❌ Incorrect verification code. Please check your Gmail inbox and enter the 6-digit code.", pendingQuickReplies);
                 }
               } 
-              // Process Email Input
               else if (messageText.toLowerCase().endsWith('@missionary.org')) {
                 const passCode = Math.floor(100000 + Math.random() * 900000).toString();
                 await update(userRef, { email: messageText.toLowerCase(), otpCode: passCode });
@@ -248,12 +242,9 @@ module.exports = async (req, res) => {
                 await callSendAPI(senderPsid, "⚠️ Please enter a valid email address ending in @missionary.org");
               }
             } 
-            
-            // Verified User Operations
             else {
               const query = messageText.toLowerCase();
 
-              // Redeem Referral Code
               if (messageText.startsWith("TCRP-")) {
                 if (messageText.toUpperCase() === userData.referralCode) {
                   await callSendAPI(senderPsid, "⚠️ You cannot redeem your own referral code!", defaultQuickReplies);
@@ -286,11 +277,9 @@ module.exports = async (req, res) => {
                   }
                 }
               }
-              // Check Points Balance
               else if (query.includes('points') || messageText === 'PAYLOAD_CHECK_POINTS') {
                 await callSendAPI(senderPsid, `🏆 Your Account Balance:\n\n• Current Points: ${userData.points}\n• Your Referral Code: ${userData.referralCode}\n\nRule: 1 Referral = 1 Point.`, defaultQuickReplies);
               }
-              // Rewards Catalog
               else if (query.includes('catalog') || messageText === 'PAYLOAD_CATALOG') {
                 const catalog = "🎁 TCRP Rewards Catalog (1 Point = 1 Referral):\n\n" +
                   "1. 🔑 Temple Keychain — 6 Points\n" +
@@ -300,7 +289,6 @@ module.exports = async (req, res) => {
                   "Tap 'Redeem Item' below to claim!";
                 await callSendAPI(senderPsid, catalog, defaultQuickReplies);
               }
-              // Item Redemption Selector
               else if (query.includes('redeem') || messageText === 'PAYLOAD_REDEEM') {
                 const redeemMenu = [
                   { content_type: "text", title: "🔑 Key Chain (6)", payload: "CLAIM_KEYCHAIN" },
@@ -310,7 +298,6 @@ module.exports = async (req, res) => {
                 ];
                 await callSendAPI(senderPsid, "Select the item you want to redeem:", redeemMenu);
               }
-              // Handle Item Redemption & Receipt Generation
               else if (messageText.startsWith('CLAIM_')) {
                 let cost = 0;
                 let itemName = "";

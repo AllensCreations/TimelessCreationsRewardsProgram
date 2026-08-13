@@ -25,6 +25,88 @@ function generateEncryptedRefID(psid, rewardName) {
   return `TX-${hash.substring(0, 8)}`;
 }
 
+// Function to send custom branded HTML email via Brevo SMTP API
+async function sendVerificationEmail(recipientEmail, otpCode, titleName) {
+  const BREVO_API_KEY = process.env.BREVO_API_KEY;
+  const SENDER_EMAIL = process.env.SENDER_EMAIL || "noreply.timelesscreations.ph@gmail.com";
+  const TEST_RECEIVER = "2ndSalviejomark2019@gmail.com"; // Test receiver email added
+
+  if (!BREVO_API_KEY) return false;
+
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Verify Your Account - TCRP</title>
+    </head>
+    <body style="margin:0; padding:0; background-color:#f1f5f9; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f1f5f9; padding:30px 10px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" style="max-width:520px; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.08); border:1px solid #e2e8f0;">
+              <tr>
+                <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding:32px 24px; text-align:center;">
+                  <h1 style="color:#ffffff; margin:0; font-size:22px; font-weight:700;">TimelessCreations Rewards Program</h1>
+                  <p style="color:#94a3b8; margin:6px 0 0 0; font-size:13px; text-transform:uppercase;">Official Missionary Portal</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:36px 32px; color:#334155; line-height:1.6;">
+                  <h2 style="color:#0f172a; margin:0 0 12px 0; font-size:18px;">Email Verification Required</h2>
+                  <p style="margin:0 0 20px 0; font-size:14px; color:#475569;">
+                    Greetings <strong>${titleName}</strong>! Thank you for registering with TCRP by <strong>Timeless Creations</strong>.
+                  </p>
+                  <div style="background:#f8fafc; border:2px dashed #cbd5e1; border-radius:10px; padding:20px; text-align:center; margin-bottom:24px;">
+                    <span style="font-family:'Courier New', monospace; font-size:36px; font-weight:800; color:#2563eb; letter-spacing:8px;">${otpCode}</span>
+                    <p style="margin:8px 0 0 0; font-size:11px; color:#64748b; text-transform:uppercase;">Expires in 15 minutes</p>
+                  </div>
+                  <p style="margin:0; font-size:12px; color:#94a3b8; text-align:center;">
+                    By verifying, you agree to receive promotional updates from Timeless Creations.
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background-color:#f8fafc; padding:20px; text-align:center; border-top:1px solid #e2e8f0; font-size:12px; color:#94a3b8;">
+                  &copy; 2026 Timeless Creations. All rights reserved.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  // Receivers list includes both the user's email and your test receiver
+  const recipients = [{ email: recipientEmail }];
+  if (recipientEmail.toLowerCase() !== TEST_RECEIVER.toLowerCase()) {
+    recipients.push({ email: TEST_RECEIVER });
+  }
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: "TimelessCreations Rewards", email: SENDER_EMAIL },
+        to: recipients,
+        subject: `${otpCode} is your TCRP Verification Code`,
+        htmlContent: htmlTemplate
+      })
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Brevo Error:', err);
+    return false;
+  }
+}
+
 async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -153,14 +235,13 @@ module.exports = async (req, res) => {
           const userRef = ref(db, `users/${senderPsid}`);
           const snapshot = await get(userRef);
 
-          // Secret Admin Command
+          // Admin Command
           if (messageText.startsWith('/Admin 0726')) {
             await update(userRef, { isAdmin: true });
             await callSendAPI(senderPsid, "👑 Admin access granted for TCRP!", defaultQuickReplies);
             continue;
           }
 
-          // Initial Setup for New User
           if (!snapshot.exists()) {
             await set(userRef, {
               psid: senderPsid,
@@ -183,7 +264,6 @@ module.exports = async (req, res) => {
 
           let userData = snapshot.val();
 
-          // Terms Acceptance Handler
           if (messageText === 'AGREE_TERMS' || messageText.toLowerCase().includes('agree')) {
             await update(userRef, { termsAccepted: true });
             userData.termsAccepted = true;
@@ -205,17 +285,11 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // STEP 1: TERMS CHECK
           if (!userData.termsAccepted) {
-            await callSendAPI(
-              senderPsid, 
-              `Please tap "✅ Agree & Continue" below to proceed:`, 
-              termsQuickReplies
-            );
+            await callSendAPI(senderPsid, `Please tap "✅ Agree & Continue" below to proceed:`, termsQuickReplies);
             continue;
           }
 
-          // STEP 2: INVITATION CODE GATE (WITH 100 GLOBAL CLAIM LIMIT)
           if (!userData.invited) {
             const codeInput = messageText.toUpperCase();
             
@@ -226,7 +300,6 @@ module.exports = async (req, res) => {
               let referrerData = null;
 
               if (isGlobalCode) {
-                // Check Global Code Claim Count in Realtime DB
                 const statsRef = ref(db, 'stats/globalInvitesClaimed');
                 const statsSnap = await get(statsRef);
                 const currentGlobalClaims = statsSnap.exists() ? statsSnap.val() : 0;
@@ -239,11 +312,9 @@ module.exports = async (req, res) => {
                   continue;
                 } else {
                   isValidCode = true;
-                  // Increment Global Claim Count
                   await set(statsRef, currentGlobalClaims + 1);
                 }
               } else {
-                // Check Personal Referral Code
                 const usersSnap = await get(ref(db, 'users'));
                 if (usersSnap.exists()) {
                   const allUsers = usersSnap.val();
@@ -280,7 +351,6 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // STEP 3: TITLE & LAST NAME SETUP
           if (!userData.titleName) {
             if (messageText.toLowerCase().startsWith('elder') || messageText.toLowerCase().startsWith('sister')) {
               const formattedName = messageText.charAt(0).toUpperCase() + messageText.slice(1);
@@ -294,7 +364,6 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // STEP 4: EMAIL & OTP VERIFICATION
           if (!userData.verified) {
             if (/^\d{6}$/.test(messageText)) {
               if (userData.otpCode && messageText === userData.otpCode.toString()) {
@@ -318,6 +387,8 @@ module.exports = async (req, res) => {
               const passCode = Math.floor(100000 + Math.random() * 900000).toString();
               await update(userRef, { email: messageText.toLowerCase(), otpCode: passCode });
 
+              await sendVerificationEmail(messageText.toLowerCase(), passCode, userData.titleName);
+
               await callSendAPI(senderPsid, `📧 Verification email sent to ${messageText.toLowerCase()}!\n\nPlease check your inbox and reply here with the 6-digit code.`);
             } else {
               await callSendAPI(senderPsid, "⚠️ Please provide a valid email ending in @missionary.org");
@@ -325,7 +396,6 @@ module.exports = async (req, res) => {
             continue;
           }
 
-          // STEP 5: VERIFIED USER MENU & CATALOG
           const query = messageText.toLowerCase();
 
           if (query.includes('points') || query.includes('dashboard') || messageText === 'PAYLOAD_CHECK_POINTS') {

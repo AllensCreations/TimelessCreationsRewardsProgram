@@ -1,5 +1,5 @@
 const { initializeApp, getApps } = require('firebase/app');
-const { getDatabase, ref, get, set, update } = require('firebase/database');
+const { getDatabase, ref, get, set, update, remove } = require('firebase/database');
 const crypto = require('crypto');
 
 // 1. FIREBASE INITIALIZATION
@@ -182,24 +182,6 @@ module.exports = async (req, res) => {
             const userRef = ref(db, `users/${senderPsid}`);
             const snapshot = await get(userRef);
 
-            // Rate limiter (5 clicks per 10s)
-            if (snapshot.exists()) {
-              const uData = snapshot.val();
-              const now = Date.now();
-              const clickWindow = uData.clickWindowStart || now;
-              const clickCount = uData.clickCount || 0;
-
-              if (now - clickWindow < 10000) {
-                if (clickCount >= 5) {
-                  await callSendAPI(senderPsid, "⚠️ You are clicking too fast! Please wait a moment.");
-                  continue;
-                }
-                await update(userRef, { clickCount: clickCount + 1 });
-              } else {
-                await update(userRef, { clickWindowStart: now, clickCount: 1 });
-              }
-            }
-
             if (mmeReferral) {
               await update(userRef, { pendingRefParam: mmeReferral.toUpperCase() });
             }
@@ -221,8 +203,6 @@ module.exports = async (req, res) => {
                 invited: false,
                 verified: false,
                 points: 0,
-                clickCount: 1,
-                clickWindowStart: Date.now(),
                 createdAt: new Date().toISOString()
               });
 
@@ -239,6 +219,23 @@ module.exports = async (req, res) => {
 
             let userData = snapshot.val();
             let userState = userData.state || "AWAITING_TERMS";
+
+            // RATE LIMITER: ONLY APPLIES TO VERIFIED USERS (Bypasses Registration)
+            if (userData.verified && userState === "VERIFIED") {
+              const now = Date.now();
+              const clickWindow = userData.clickWindowStart || now;
+              const clickCount = userData.clickCount || 0;
+
+              if (now - clickWindow < 10000) {
+                if (clickCount >= 5) {
+                  await callSendAPI(senderPsid, "⚠️ You are clicking too fast! Please wait a moment.");
+                  continue;
+                }
+                await update(userRef, { clickCount: clickCount + 1 });
+              } else {
+                await update(userRef, { clickWindowStart: now, clickCount: 1 });
+              }
+            }
 
             if (messageText === "PAYLOAD_FAQS" || messageText.toLowerCase() === "faq") {
               await callSendAPI(senderPsid, getFaqsText(), unifiedQuickReplies);
@@ -295,7 +292,7 @@ module.exports = async (req, res) => {
                 }
 
                 if (isValidCode) {
-                  await update(userRef, { invited: true, usedInviteCode: inputCode, state: "AWAITING_TITLE" });
+                  await update(userRef, { invited: true, usedInviteCode: inputCode, state: "AWAITING_REGISTRATION" });
                   
                   if (referrerPsid && referrerPsid !== senderPsid) {
                     const referrerSnap = await get(ref(db, `users/${referrerPsid}`));
@@ -305,7 +302,14 @@ module.exports = async (req, res) => {
                     }
                   }
 
-                  await callSendAPI(senderPsid, `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${inputCode})\n\nPlease enter your Missionary Title and Last Name (e.g., Elder Smith):`);
+                  await callSendAPI(
+                    senderPsid,
+                    `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${inputCode})\n` +
+                    `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `Please send your Missionary Title/Name and Email together in this format:\n\n` +
+                    `Elder Smith\n` +
+                    `john.smith@missionary.org`
+                  );
                 } else {
                   await callSendAPI(senderPsid, `✕ Invalid code. Enter a valid code or tap below:`, globalInviteQuickReply);
                 }
@@ -315,28 +319,16 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // STEP 3: TITLE
-            if (userState === "AWAITING_TITLE" || !userData.titleName) {
-              const formatted = messageText.trim();
-              if (formatted.toLowerCase().startsWith("elder ") || formatted.toLowerCase().startsWith("sister ")) {
-                const formattedName = formatted.charAt(0).toUpperCase() + formatted.slice(1);
-                await update(userRef, { titleName: formattedName, state: "AWAITING_EMAIL" });
-
-                await callSendAPI(senderPsid, `Greetings, ${formattedName}!\n\nPlease enter your official email ending in @missionary.org:`);
-              } else {
-                await callSendAPI(senderPsid, `⚠️ Please start with "Elder" or "Sister" followed by your last name:`);
-              }
-              continue;
-            }
-
-            // STEP 4: EMAIL & OTP
-            if (userState === "AWAITING_EMAIL" || userState === "AWAITING_OTP" || !userData.verified) {
+            // STEP 3 & 4: COMBINED TITLE/NAME & EMAIL REGISTRATION OR OTP VERIFICATION
+            if (userState === "AWAITING_REGISTRATION" || userState === "AWAITING_OTP" || !userData.verified) {
               const normalizedInput = messageText.trim().toLowerCase();
 
-              if (/^\d{6}$/.test(normalizedInput)) {
+              // If user is awaiting OTP and enters 6 digits
+              if (userState === "AWAITING_OTP" && /^\d{6}$/.test(normalizedInput)) {
                 if (userData.otpCode && normalizedInput === userData.otpCode.toString()) {
                   const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
 
+                  // Update verified state and automatically delete otpCode from database
                   await update(userRef, {
                     verified: true,
                     referralCode: personalRefCode,
@@ -358,25 +350,51 @@ module.exports = async (req, res) => {
 
                   await callSendAPI(senderPsid, welcomeHub, unifiedQuickReplies);
                 } else {
-                  await callSendAPI(senderPsid, "✕ Incorrect code. Please check your inbox.");
+                  await callSendAPI(senderPsid, "✕ Incorrect code. Please check your inbox and reply with the 6-digit code.");
                 }
-              } else if (normalizedInput.endsWith("@missionary.org")) {
-                const passCode = Math.floor(100000 + Math.random() * 900000).toString();
-                await update(userRef, { email: normalizedInput, otpCode: passCode, state: "AWAITING_OTP" });
+                continue;
+              }
 
-                const emailSent = await sendBrevoEmail(normalizedInput, passCode, userData.titleName);
+              // Parse combined multi-line input (Title + Email)
+              const lines = messageText.split('\n').map(l => l.trim()).filter(Boolean);
+              let foundTitle = null;
+              let foundEmail = null;
+
+              for (const line of lines) {
+                if (line.toLowerCase().startsWith("elder ") || line.toLowerCase().startsWith("sister ")) {
+                  foundTitle = line.charAt(0).toUpperCase() + line.slice(1);
+                } else if (line.toLowerCase().endsWith("@missionary.org")) {
+                  foundEmail = line.toLowerCase();
+                }
+              }
+
+              if (foundTitle && foundEmail) {
+                const passCode = Math.floor(100000 + Math.random() * 900000).toString();
+                await update(userRef, {
+                  titleName: foundTitle,
+                  email: foundEmail,
+                  otpCode: passCode,
+                  state: "AWAITING_OTP"
+                });
+
+                const emailSent = await sendBrevoEmail(foundEmail, passCode, foundTitle);
                 if (emailSent) {
-                  await callSendAPI(senderPsid, `📧 Verification code sent to ${normalizedInput}! Reply here with the 6-digit code.`);
+                  await callSendAPI(senderPsid, `📧 Verification code sent to ${foundEmail}!\n\nPlease reply here with the 6-digit code.`);
                 } else {
-                  await callSendAPI(senderPsid, `📧 Verification Code: ${passCode}\nReply with this 6-digit code.`);
+                  await callSendAPI(senderPsid, `📧 Verification Code: ${passCode}\n\nPlease reply with this 6-digit code.`);
                 }
               } else {
-                await callSendAPI(senderPsid, "⚠️ Please enter a valid email ending in @missionary.org:");
+                await callSendAPI(
+                  senderPsid,
+                  `⚠️ Please send both your Title and Email together in this format:\n\n` +
+                  `Elder Smith\n` +
+                  `john.smith@missionary.org`
+                );
               }
               continue;
             }
 
-            // STEP 5: DASHBOARD & PURCHASE/REDEMPTION HANDLER
+            // STEP 5: VERIFIED DASHBOARD & ACTIONS
             const query = messageText.toLowerCase();
 
             if (query.includes("dashboard") || messageText === "PAYLOAD_UNIFIED_HUB") {
@@ -416,10 +434,8 @@ module.exports = async (req, res) => {
                 const newPoints = userPoints - cost;
                 const refID = generateEncryptedRefID(senderPsid, itemName);
 
-                // Atomically update user balance
                 await update(userRef, { points: newPoints });
 
-                // Save Transaction
                 await set(ref(db, `transactions/${refID}`), {
                   psid: senderPsid,
                   name: userData.titleName,
@@ -431,7 +447,7 @@ module.exports = async (req, res) => {
 
                 const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒  \n` +
-                  `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎🇳 𝐑🇪𝐂🇪🇮🇵🇹      \n` +
+                  `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
                   `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `Registered:   ${userData.titleName}\n` +
                   `Reference ID: ${refID}\n` +

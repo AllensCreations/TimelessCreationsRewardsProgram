@@ -1,21 +1,68 @@
-const { initializeApp, getApps } = require('firebase/app');
-const { getDatabase, ref, get, set, update, remove } = require('firebase/database');
+const { createClient } = require("@libsql/client");
 const crypto = require('crypto');
 
-// 1. FIREBASE INITIALIZATION
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.FIREBASE_DATABASE_URL,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID
-};
+// 1. TURSO DATABASE INITIALIZATION
+function getTursoClient() {
+  if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+    console.error("❌ CRITICAL: Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN");
+    return null;
+  }
+  return createClient({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+}
 
-function initFirebase() {
-  if (!process.env.FIREBASE_API_KEY || !process.env.FIREBASE_DATABASE_URL) return null;
-  return getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+// Ensure database tables exist on cold start
+async function initDatabase(db) {
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        psid TEXT PRIMARY KEY,
+        state TEXT DEFAULT 'AWAITING_TERMS',
+        termsAccepted BOOLEAN DEFAULT 0,
+        invited BOOLEAN DEFAULT 0,
+        verified BOOLEAN DEFAULT 0,
+        points INTEGER DEFAULT 0,
+        titleName TEXT,
+        email TEXT,
+        otpCode TEXT,
+        referralCode TEXT,
+        pendingRefParam TEXT,
+        clickCount INTEGER DEFAULT 0,
+        clickWindowStart INTEGER DEFAULT 0,
+        createdAt TEXT
+      )
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS referralCodes (
+        code TEXT PRIMARY KEY,
+        psid TEXT
+      )
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        refID TEXT PRIMARY KEY,
+        psid TEXT,
+        name TEXT,
+        item TEXT,
+        pointsSpent INTEGER,
+        status TEXT DEFAULT 'PENDING',
+        timestamp TEXT
+      )
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS stats (
+        key TEXT PRIMARY KEY,
+        value INTEGER
+      )
+    `);
+  } catch (err) {
+    console.error("❌ DB Init Error:", err.message);
+  }
 }
 
 function generateEncryptedRefID(psid, rewardName) {
@@ -62,16 +109,40 @@ async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   }
 
   try {
-    const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
-    const data = await res.json();
-    if (!res.ok) console.error("❌ Meta Send API Error:", JSON.stringify(data));
-  } catch (err) {
-    console.error("❌ Meta Fetch Error:", err);
-  }
+  } catch (err) {}
+}
+
+async function sendButtonMessage(senderPsid, text, buttons) {
+  const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+  if (!PAGE_ACCESS_TOKEN) return;
+
+  const requestBody = {
+    messaging_type: "RESPONSE",
+    recipient: { id: senderPsid },
+    message: {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: text,
+          buttons: buttons
+        }
+      }
+    }
+  };
+
+  try {
+    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+  } catch (err) {}
 }
 
 async function sendCatalogCarousel(senderPsid) {
@@ -142,6 +213,11 @@ const unifiedQuickReplies = [
   { content_type: "text", title: "❓ FAQs", payload: "PAYLOAD_FAQS" }
 ];
 
+const adminQuickReplies = [
+  { content_type: "text", title: "📦 View Orders", payload: "ADMIN_VIEW_ORDERS" },
+  { content_type: "text", title: "🏆 User Dashboard", payload: "PAYLOAD_CHECK_POINTS" }
+];
+
 function getFaqsText() {
   return `❓ 𝐅𝐑𝐄𝐐𝐔𝐄𝐍𝐓𝐋𝐘 𝐀𝐒𝐊𝐄𝐃 𝐐𝐔𝐄𝐒𝐓𝐈𝐎𝐍𝐒\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -164,9 +240,9 @@ module.exports = async (req, res) => {
   if (req.method === 'POST') {
     const body = req.body;
     if (body.object === 'page' && body.entry) {
-      const app = initFirebase();
-      if (!app) return res.status(200).send('EVENT_RECEIVED');
-      const db = getDatabase(app);
+      const db = getTursoClient();
+      if (!db) return res.status(200).send('EVENT_RECEIVED');
+      await initDatabase(db);
 
       for (const entry of body.entry) {
         if (!entry.messaging) continue;
@@ -183,36 +259,62 @@ module.exports = async (req, res) => {
             let messageText = quickReplyPayload || postbackPayload || rawText;
             if (!messageText && !mmeReferral) continue;
 
-            const userRef = ref(db, `users/${senderPsid}`);
-            const snapshot = await get(userRef);
+            // Fetch user from Turso
+            let userRes = await db.execute({
+              sql: "SELECT * FROM users WHERE psid = ?",
+              args: [senderPsid]
+            });
+
+            let userData = userRes.rows[0] || null;
 
             if (mmeReferral) {
-              await update(userRef, { pendingRefParam: mmeReferral.toUpperCase() });
+              if (userData) {
+                await db.execute({
+                  sql: "UPDATE users SET pendingRefParam = ? WHERE psid = ?",
+                  args: [mmeReferral.toUpperCase(), senderPsid]
+                });
+              }
             }
 
             // ADMIN SECRET
             if (messageText.startsWith('/Admin 0726')) {
-              await update(userRef, { isAdmin: true });
-              await callSendAPI(senderPsid, "👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃", unifiedQuickReplies);
+              if (userData) {
+                await db.execute({ sql: "UPDATE users SET isAdmin = 1 WHERE psid = ?", args: [senderPsid] });
+              }
+              await callSendAPI(senderPsid, "👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃", adminQuickReplies);
               continue;
             }
 
-            // UNIVERSAL WELCOME FALLBACK: ANY NEW USER AUTOMATICALLY RECEIVES WELCOME
-            const isRestart = (messageText.toLowerCase() === "get started" || messageText.toLowerCase() === "restart" || postbackPayload.includes("GET_STARTED"));
-            
-            if (!snapshot.exists() || isRestart) {
-              const initialUserData = {
-                psid: senderPsid,
-                state: "AWAITING_TERMS",
-                termsAccepted: false,
-                invited: false,
-                verified: false,
-                points: 0,
-                pendingRefParam: mmeReferral ? mmeReferral.toUpperCase() : null,
-                createdAt: new Date().toISOString()
-              };
+            // ADMIN VIEW ORDERS
+            if (userData && userData.isAdmin === 1 && (messageText === "ADMIN_VIEW_ORDERS" || messageText.toLowerCase() === "orders")) {
+              const txRes = await db.execute("SELECT * FROM transactions ORDER BY timestamp DESC LIMIT 6");
+              if (txRes.rows.length === 0) {
+                await callSendAPI(senderPsid, "📦 No redemption transactions found.", adminQuickReplies);
+                continue;
+              }
 
-              await set(userRef, initialUserData);
+              let summary = `📦 𝐑𝐄𝐂𝐄𝐍𝐓 𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐎𝐑𝐃𝐄𝐑𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n`;
+              for (const tx of txRes.rows) {
+                const statusIcon = tx.status === "COMPLETED" ? "✅" : "⏳";
+                summary += `\n${statusIcon} ID: ${tx.refID}\n👤 ${tx.name} (${tx.item})\nStatus: ${tx.status}\nView: /order ${tx.refID}\n`;
+              }
+              await callSendAPI(senderPsid, summary, adminQuickReplies);
+              continue;
+            }
+
+            // UNIVERSAL WELCOME FALLBACK FOR NEW USERS OR RESTART
+            const isRestart = (messageText.toLowerCase() === "get started" || messageText.toLowerCase() === "restart" || postbackPayload.includes("GET_STARTED"));
+
+            if (!userData || isRestart) {
+              await db.execute({
+                sql: `
+                  INSERT INTO users (psid, state, termsAccepted, invited, verified, points, pendingRefParam, createdAt)
+                  VALUES (?, 'AWAITING_TERMS', 0, 0, 0, 0, ?, datetime('now'))
+                  ON CONFLICT(psid) DO UPDATE SET
+                    state = 'AWAITING_TERMS', termsAccepted = 0, invited = 0, verified = 0, points = 0
+                `,
+                args: [senderPsid, mmeReferral ? mmeReferral.toUpperCase() : null]
+              });
 
               const welcomeMsg = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -225,11 +327,10 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            let userData = snapshot.val();
             let userState = userData.state || "AWAITING_TERMS";
 
             // RATE LIMITER: ONLY APPLIES TO VERIFIED USERS
-            if (userData.verified && userState === "VERIFIED") {
+            if (userData.verified === 1 && userState === "VERIFIED") {
               const now = Date.now();
               const clickWindow = userData.clickWindowStart || now;
               const clickCount = userData.clickCount || 0;
@@ -239,9 +340,9 @@ module.exports = async (req, res) => {
                   await callSendAPI(senderPsid, "⚠️ You are clicking too fast! Please wait a moment.");
                   continue;
                 }
-                await update(userRef, { clickCount: clickCount + 1 });
+                await db.execute({ sql: "UPDATE users SET clickCount = ? WHERE psid = ?", args: [clickCount + 1, senderPsid] });
               } else {
-                await update(userRef, { clickWindowStart: now, clickCount: 1 });
+                await db.execute({ sql: "UPDATE users SET clickWindowStart = ?, clickCount = 1 WHERE psid = ?", args: [now, senderPsid] });
               }
             }
 
@@ -253,13 +354,16 @@ module.exports = async (req, res) => {
             // STEP 1: TERMS
             if (userState === "AWAITING_TERMS" || !userData.termsAccepted) {
               if (messageText === "AGREE_TERMS" || messageText.toLowerCase().includes("agree")) {
-                await update(userRef, { termsAccepted: true, state: "AWAITING_INVITE" });
-                
+                await db.execute({
+                  sql: "UPDATE users SET termsAccepted = 1, state = 'AWAITING_INVITE' WHERE psid = ?",
+                  args: [senderPsid]
+                });
+
                 await callSendAPI(
                   senderPsid,
                   `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n` +
                   `━━━━━━━━━━━━━━━━━━━━━━\n` +
-                  `🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\n` +
+                  `🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝑑:\n` +
                   `Please enter an Invitation Code provided by a fellow missionary, or tap below to join using Global Code: TCRP`,
                   globalInviteQuickReply
                 );
@@ -280,32 +384,38 @@ module.exports = async (req, res) => {
                 let referrerPsid = null;
 
                 if (isGlobalCode) {
-                  const statsRef = ref(db, 'stats/globalInvitesClaimed');
-                  const statsSnap = await get(statsRef);
-                  const currentGlobalClaims = statsSnap.exists() ? statsSnap.val() : 0;
+                  const statRes = await db.execute({ sql: "SELECT value FROM stats WHERE key = 'globalClaims'", args: [] });
+                  const currentClaims = statRes.rows[0] ? Number(statRes.rows[0].value) : 0;
 
-                  if (currentGlobalClaims >= 100) {
+                  if (currentClaims >= 100) {
                     await callSendAPI(senderPsid, `✕ Global code limit reached.`);
                     continue;
                   } else {
                     isValidCode = true;
-                    await set(statsRef, currentGlobalClaims + 1);
+                    await db.execute({
+                      sql: "INSERT INTO stats (key, value) VALUES ('globalClaims', ?) ON CONFLICT(key) DO UPDATE SET value = value + 1",
+                      args: [currentClaims + 1]
+                    });
                   }
                 } else {
-                  const codeLookupSnap = await get(ref(db, `referralCodes/${inputCode}`));
-                  if (codeLookupSnap.exists()) {
-                    referrerPsid = codeLookupSnap.val();
+                  const codeRes = await db.execute({ sql: "SELECT psid FROM referralCodes WHERE code = ?", args: [inputCode] });
+                  if (codeRes.rows.length > 0) {
+                    referrerPsid = codeRes.rows[0].psid;
                     isValidCode = true;
                   }
                 }
 
                 if (isValidCode) {
-                  await update(userRef, { invited: true, usedInviteCode: inputCode, state: "AWAITING_REGISTRATION" });
-                  
+                  await db.execute({
+                    sql: "UPDATE users SET invited = 1, usedInviteCode = ?, state = 'AWAITING_REGISTRATION' WHERE psid = ?",
+                    args: [inputCode, senderPsid]
+                  });
+
                   if (referrerPsid && referrerPsid !== senderPsid) {
-                    const referrerSnap = await get(ref(db, `users/${referrerPsid}`));
-                    if (referrerSnap.exists()) {
-                      await update(ref(db, `users/${referrerPsid}`), { points: (referrerSnap.val().points || 0) + 1 });
+                    const refUserRes = await db.execute({ sql: "SELECT points FROM users WHERE psid = ?", args: [referrerPsid] });
+                    if (refUserRes.rows.length > 0) {
+                      const refPoints = Number(refUserRes.rows[0].points || 0);
+                      await db.execute({ sql: "UPDATE users SET points = ? WHERE psid = ?", args: [refPoints + 1, referrerPsid] });
                       await callSendAPI(referrerPsid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nYou earned +1 Point!`);
                     }
                   }
@@ -334,21 +444,23 @@ module.exports = async (req, res) => {
               if (userState === "AWAITING_OTP" && /^\d{6}$/.test(normalizedInput)) {
                 if (userData.otpCode && normalizedInput === userData.otpCode.toString()) {
                   const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
+                  const newPoints = Number(userData.points || 0) + 1;
 
-                  await update(userRef, {
-                    verified: true,
-                    referralCode: personalRefCode,
-                    points: (userData.points || 0) + 1,
-                    otpCode: null,
-                    state: "VERIFIED"
+                  // Update verified and automatically delete otpCode (set to NULL)
+                  await db.execute({
+                    sql: `UPDATE users SET verified = 1, referralCode = ?, points = ?, otpCode = NULL, state = 'VERIFIED' WHERE psid = ?`,
+                    args: [personalRefCode, newPoints, senderPsid]
                   });
 
-                  await set(ref(db, `referralCodes/${personalRefCode}`), senderPsid);
+                  await db.execute({
+                    sql: "INSERT INTO referralCodes (code, psid) VALUES (?, ?) ON CONFLICT(code) DO UPDATE SET psid = ?",
+                    args: [personalRefCode, senderPsid, senderPsid]
+                  });
 
                   const welcomeHub = `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n` +
                     `━━━━━━━━━━━━━━━━━━━━━━\n` +
                     `Registered: ${userData.titleName}\n` +
-                    `Balance: ${userData.points || 1} Point(s)\n` +
+                    `Balance: ${newPoints} Point(s)\n` +
                     `Your Code: ${personalRefCode}\n\n` +
                     `🔗 Your Link: https://m.me/timeless.creations.06?ref=${personalRefCode}\n` +
                     `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -375,11 +487,9 @@ module.exports = async (req, res) => {
 
               if (foundTitle && foundEmail) {
                 const passCode = Math.floor(100000 + Math.random() * 900000).toString();
-                await update(userRef, {
-                  titleName: foundTitle,
-                  email: foundEmail,
-                  otpCode: passCode,
-                  state: "AWAITING_OTP"
+                await db.execute({
+                  sql: "UPDATE users SET titleName = ?, email = ?, otpCode = ?, state = 'AWAITING_OTP' WHERE psid = ?",
+                  args: [foundTitle, foundEmail, passCode, senderPsid]
                 });
 
                 const emailSent = await sendBrevoEmail(foundEmail, passCode, foundTitle);
@@ -432,22 +542,21 @@ module.exports = async (req, res) => {
               if (messageText === "CLAIM_SALVATION") { cost = 42; itemName = "Salvation Kit"; }
               if (messageText === "CLAIM_SCRIPTURE") { cost = 60; itemName = "Scripture Case"; }
 
-              const userPoints = userData.points || 0;
+              const userPoints = Number(userData.points || 0);
               if (userPoints < cost) {
                 await callSendAPI(senderPsid, `✕ 𝐈𝐍𝐒𝐔𝐅𝐅𝐈𝐂𝐈𝐄𝐍𝐓 𝐏𝐎𝐈𝐍𝐓𝐒\n\n${itemName} requires ${cost} points. You have ${userPoints} point(s).`, unifiedQuickReplies);
               } else {
                 const newPoints = userPoints - cost;
                 const refID = generateEncryptedRefID(senderPsid, itemName);
 
-                await update(userRef, { points: newPoints });
+                await db.execute({
+                  sql: "UPDATE users SET points = ? WHERE psid = ?",
+                  args: [newPoints, senderPsid]
+                });
 
-                await set(ref(db, `transactions/${refID}`), {
-                  psid: senderPsid,
-                  name: userData.titleName,
-                  item: itemName,
-                  pointsSpent: cost,
-                  status: "PENDING",
-                  timestamp: new Date().toISOString()
+                await db.execute({
+                  sql: `INSERT INTO transactions (refID, psid, name, item, pointsSpent, status, timestamp) VALUES (?, ?, ?, ?, ?, 'PENDING', datetime('now'))`,
+                  args: [refID, senderPsid, userData.titleName, itemName, cost]
                 });
 
                 const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +

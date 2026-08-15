@@ -21,17 +21,20 @@ function initFirebase() {
   return getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 }
 
-// 2. HELPER UTILITIES
+// 2. CRYPTO REFERENCE ID GENERATOR
 function generateEncryptedRefID(psid, rewardName) {
   const raw = `${psid}-${rewardName}-${Date.now()}`;
   const hash = crypto.createHash('sha256').update(raw).digest('hex').toUpperCase();
   return `TX-${hash.substring(0, 8)}`;
 }
 
-// 3. BREVO TRANSACTIONAL EMAIL
+// 3. BREVO TRANSACTIONAL EMAIL DISPATCHER
 async function sendBrevoEmail(recipientEmail, otpCode, titleName) {
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
-  if (!BREVO_API_KEY) return false;
+  if (!BREVO_API_KEY) {
+    console.warn("⚠️ BREVO_API_KEY not configured.");
+    return false;
+  }
 
   const payload = {
     sender: { name: "Timeless Creations Rewards", email: "noreply@timelesscreations.com" },
@@ -52,16 +55,21 @@ async function sendBrevoEmail(recipientEmail, otpCode, titleName) {
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
     return res.ok;
   } catch (err) {
+    console.error('❌ Brevo Email Error:', err);
     return false;
   }
 }
 
-// 4. META GRAPH SEND API HANDLER
+// 4. META GRAPH SEND API HANDLERS
 async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -82,10 +90,11 @@ async function callSendAPI(senderPsid, responseText, quickReplies = null) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
-  } catch (err) {}
+  } catch (err) {
+    console.error('❌ Meta Fetch Error:', err);
+  }
 }
 
-// 5. BUTTON TEMPLATE SENDER
 async function sendButtonMessage(senderPsid, text, buttons) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -111,10 +120,11 @@ async function sendButtonMessage(senderPsid, text, buttons) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
-  } catch (err) {}
+  } catch (err) {
+    console.error('❌ Button Send Error:', err);
+  }
 }
 
-// 6. PRODUCT CATALOG CAROUSEL
 async function sendCatalogCarousel(senderPsid) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -170,10 +180,12 @@ async function sendCatalogCarousel(senderPsid) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
-  } catch (err) {}
+  } catch (err) {
+    console.error('❌ Carousel API Error:', err);
+  }
 }
 
-// 7. MENUS & QUICK REPLIES
+// 5. CONSTANTS & MENUS
 const defaultQuickReplies = [
   { content_type: "text", title: "🏆 Dashboard", payload: "PAYLOAD_CHECK_POINTS" },
   { content_type: "text", title: "🎁 Catalog", payload: "PAYLOAD_CATALOG" },
@@ -216,19 +228,18 @@ function getFaqsText() {
     `Tap 'Refer a Friend' below to copy your personal referral link.`;
 }
 
-// 8. SERVERLESS STREAM BODY PARSER
-async function parseBody(req) {
-  if (req.body && Object.keys(req.body).length > 0) return req.body;
-  return new Promise((resolve) => {
-    let data = '';
-    req.on('data', chunk => { data += chunk; });
-    req.on('end', () => {
-      try { resolve(JSON.parse(data)); } catch (e) { resolve({}); }
-    });
-  });
+// Safe body extractor that works seamlessly in all Vercel serverless modes
+function extractBody(req) {
+  if (req.body) {
+    if (typeof req.body === 'string') {
+      try { return JSON.parse(req.body); } catch (e) { return {}; }
+    }
+    return req.body;
+  }
+  return {};
 }
 
-// 9. CORE WEBHOOK ENGINE
+// 6. MAIN WEBHOOK ROUTER
 module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
@@ -239,7 +250,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST') {
-    const body = await parseBody(req);
+    const body = extractBody(req);
 
     if (body.object === 'page' && Array.isArray(body.entry)) {
       const app = initFirebase();
@@ -258,6 +269,7 @@ module.exports = async (req, res) => {
             const postbackPayload = event.postback?.payload || "";
             const mmeReferral = event.postback?.referral?.ref || event.referral?.ref || "";
 
+            // Prioritize button/payload IDs over plain text
             let messageText = quickReplyPayload || postbackPayload || rawText;
             if (!messageText && !mmeReferral) continue;
 
@@ -305,7 +317,7 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // ADMIN INSPECT & UPDATE STATUS
+            // ADMIN INSPECT & UPDATE ORDER
             if (isAdmin && (messageText.startsWith('/order') || messageText.startsWith('STATUS_'))) {
               let targetRefID = "";
               let newStatus = null;
@@ -378,7 +390,7 @@ module.exports = async (req, res) => {
 
               const welcomeMsg = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `Welcome to TCRP — crafted by Timeless Creations for custom missionary gear.\n\n` +
+                `Welcome to the official TCRP portal — crafted by Timeless Creations for custom missionary gear.\n\n` +
                 `📜 𝐓𝐞𝐫𝐦𝐬 & 𝐏𝐫𝐢𝐯𝐚𝐜𝐲:\n` +
                 `By selecting "Agree & Continue", you accept our Terms of Service and Privacy Policy.\n\n` +
                 `Please select an option below:`;
@@ -572,7 +584,7 @@ module.exports = async (req, res) => {
             const query = messageText.toLowerCase();
 
             if (query.includes("points") || query.includes("dashboard") || messageText === "PAYLOAD_CHECK_POINTS") {
-              const dash = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n` +
+              const dash = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒🇭𝐁𝐎𝐀𝐑𝐃\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `Registered:  ${userData.titleName}\n` +
                 `Email:       ${userData.email}\n` +
@@ -583,17 +595,17 @@ module.exports = async (req, res) => {
               await callSendAPI(senderPsid, dash, defaultQuickReplies);
             }
             else if (query.includes("catalog") || query.includes("redeem") || messageText === "PAYLOAD_CATALOG") {
-              await callSendAPI(senderPsid, "🎁 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐂𝐀𝐓𝐀𝐋𝐎𝐆\nSwipe right to browse items:", catalogQuickReplies);
+              await callSendAPI(senderPsid, "🎁 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐂𝐀𝐓𝐀🇱𝐎𝐆\nSwipe right to browse items:", catalogQuickReplies);
               await sendCatalogCarousel(senderPsid);
             }
             else if (query.includes("promo") || query.includes("refer") || messageText === "PAYLOAD_PROMO") {
               const baseUrl = process.env.MESSENGER_LINK || "https://m.me/timeless.creations.06";
               const shareableLink = `${baseUrl}?ref=${userData.referralCode}`;
 
-              const promo = `📢 𝐒𝐇𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
+              const promo = `📢 𝐒🇭𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐑🇪𝐖𝐀𝐑𝐃𝐒\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `Share your personal link with fellow missionaries. When they register, BOTH of you earn +1 Reward Point!\n\n` +
-                `🔗 𝐘𝐨𝐮𝐫 𝐑𝐞𝐟𝐞𝐫𝐫𝐚𝐥 𝐋𝐢𝐧𝐤:\n` +
+                `🔗 𝐘𝐨𝐮𝐫 𝐑𝐞𝐟𝐞𝐫𝐫𝐚𝐥 🇱𝐢𝐧𝐤:\n` +
                 `${shareableLink}\n\n` +
                 `👉 Or share Code: ${userData.referralCode}`;
               await callSendAPI(senderPsid, promo, defaultQuickReplies);
@@ -609,7 +621,7 @@ module.exports = async (req, res) => {
 
               const userPoints = userData.points || 0;
               if (userPoints < cost) {
-                await callSendAPI(senderPsid, `✕ 𝐈𝐍𝐒𝐔𝐅𝐅𝐈𝐂𝐈𝐄𝐍𝐓 𝐏𝐎𝐈𝐍𝐓𝐒\n\n${itemName} requires ${cost} points. You currently have ${userPoints} point(s).`, defaultQuickReplies);
+                await callSendAPI(senderPsid, `✕ 𝐈🇳🇸🇺🇫🇫🇮🇨🇮🇪🇳🇹 𝐏𝐎🇮🇳🇹🇸\n\n${itemName} requires ${cost} points. You currently have ${userPoints} point(s).`, defaultQuickReplies);
               } else {
                 const newPoints = userPoints - cost;
                 const refID = generateEncryptedRefID(senderPsid, itemName);
@@ -626,8 +638,8 @@ module.exports = async (req, res) => {
                 });
 
                 const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +
-                  `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒  \n` +
-                  `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
+                  `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓🇮🇴🇳𝐒 𝐑🇪𝐖𝐀𝐑𝐃𝐒  \n` +
+                  `       𝐑🇪🇩🇪🇲🇵🇹🇮🇴🇳 𝐑🇪🇨🇪🇮🇵🇹      \n` +
                   `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `Registered:   ${userData.titleName}\n` +
                   `Reference ID: ${refID}\n` +

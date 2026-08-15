@@ -62,12 +62,16 @@ async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   }
 
   try {
-    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+    const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
-  } catch (err) {}
+    const data = await res.json();
+    if (!res.ok) console.error("❌ Meta Send API Error:", JSON.stringify(data));
+  } catch (err) {
+    console.error("❌ Meta Fetch Error:", err);
+  }
 }
 
 async function sendCatalogCarousel(senderPsid) {
@@ -186,25 +190,29 @@ module.exports = async (req, res) => {
               await update(userRef, { pendingRefParam: mmeReferral.toUpperCase() });
             }
 
-            // Admin Secret
+            // ADMIN SECRET
             if (messageText.startsWith('/Admin 0726')) {
               await update(userRef, { isAdmin: true });
               await callSendAPI(senderPsid, "👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃", unifiedQuickReplies);
               continue;
             }
 
-            const isGetStarted = (postbackPayload === "GET_STARTED" || postbackPayload === "GET_STARTED_PAYLOAD" || messageText.toLowerCase() === "get started");
-
-            if (isGetStarted || !snapshot.exists()) {
-              await set(userRef, {
+            // UNIVERSAL WELCOME FALLBACK: ANY NEW USER AUTOMATICALLY RECEIVES WELCOME
+            const isRestart = (messageText.toLowerCase() === "get started" || messageText.toLowerCase() === "restart" || postbackPayload.includes("GET_STARTED"));
+            
+            if (!snapshot.exists() || isRestart) {
+              const initialUserData = {
                 psid: senderPsid,
                 state: "AWAITING_TERMS",
                 termsAccepted: false,
                 invited: false,
                 verified: false,
                 points: 0,
+                pendingRefParam: mmeReferral ? mmeReferral.toUpperCase() : null,
                 createdAt: new Date().toISOString()
-              });
+              };
+
+              await set(userRef, initialUserData);
 
               const welcomeMsg = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -220,7 +228,7 @@ module.exports = async (req, res) => {
             let userData = snapshot.val();
             let userState = userData.state || "AWAITING_TERMS";
 
-            // RATE LIMITER: ONLY APPLIES TO VERIFIED USERS (Bypasses Registration)
+            // RATE LIMITER: ONLY APPLIES TO VERIFIED USERS
             if (userData.verified && userState === "VERIFIED") {
               const now = Date.now();
               const clickWindow = userData.clickWindowStart || now;
@@ -319,16 +327,14 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // STEP 3 & 4: COMBINED TITLE/NAME & EMAIL REGISTRATION OR OTP VERIFICATION
+            // STEP 3 & 4: COMBINED REGISTRATION & OTP
             if (userState === "AWAITING_REGISTRATION" || userState === "AWAITING_OTP" || !userData.verified) {
               const normalizedInput = messageText.trim().toLowerCase();
 
-              // If user is awaiting OTP and enters 6 digits
               if (userState === "AWAITING_OTP" && /^\d{6}$/.test(normalizedInput)) {
                 if (userData.otpCode && normalizedInput === userData.otpCode.toString()) {
                   const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
 
-                  // Update verified state and automatically delete otpCode from database
                   await update(userRef, {
                     verified: true,
                     referralCode: personalRefCode,
@@ -355,7 +361,6 @@ module.exports = async (req, res) => {
                 continue;
               }
 
-              // Parse combined multi-line input (Title + Email)
               const lines = messageText.split('\n').map(l => l.trim()).filter(Boolean);
               let foundTitle = null;
               let foundEmail = null;
@@ -394,7 +399,7 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // STEP 5: VERIFIED DASHBOARD & ACTIONS
+            // STEP 5: DASHBOARD & ACTIONS
             const query = messageText.toLowerCase();
 
             if (query.includes("dashboard") || messageText === "PAYLOAD_UNIFIED_HUB") {

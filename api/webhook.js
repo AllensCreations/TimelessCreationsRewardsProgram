@@ -179,7 +179,6 @@ const globalInviteQuickReply = [
 
 // 7. WEBHOOK ENTRYPOINT
 module.exports = async (req, res) => {
-  // Webhook Verification (GET)
   if (req.method === 'GET') {
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
     if (req.query['hub.mode'] && req.query['hub.verify_token'] === VERIFY_TOKEN) {
@@ -188,7 +187,6 @@ module.exports = async (req, res) => {
     return res.status(403).send('Verification token mismatch');
   }
 
-  // Webhook Event Processing (POST)
   if (req.method === 'POST') {
     const body = req.body;
     if (body.object === 'page' && body.entry) {
@@ -206,25 +204,25 @@ module.exports = async (req, res) => {
           const postbackPayload = event.postback?.payload || "";
           const mmeReferral = event.postback?.referral?.ref || event.referral?.ref || "";
 
+          // Strictly prioritize payload IDs
           let messageText = quickReplyPayload || postbackPayload || rawText;
           if (!messageText && !mmeReferral) continue;
 
           const userRef = ref(db, `users/${senderPsid}`);
           const snapshot = await get(userRef);
 
-          // Save pending referral parameter if present from m.me link
           if (mmeReferral) {
             await update(userRef, { pendingRefParam: mmeReferral.toUpperCase() });
           }
 
-          // Secret Admin Command
+          // Admin Command
           if (messageText.startsWith('/Admin 0726')) {
             await update(userRef, { isAdmin: true });
             await callSendAPI(senderPsid, "👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃\n\nYou now have administrative privileges.", defaultQuickReplies);
             continue;
           }
 
-          // RESET / GET STARTED / NEW SESSION
+          // RESET / GET STARTED
           const isGetStarted = (postbackPayload === "GET_STARTED" || postbackPayload === "GET_STARTED_PAYLOAD" || messageText.toLowerCase() === "get started");
 
           if (isGetStarted || !snapshot.exists()) {
@@ -235,8 +233,8 @@ module.exports = async (req, res) => {
               invited: false,
               verified: false,
               points: 0,
-              pendingRefParam: mmeReferral ? mmeReferral.toUpperCase() : (snapshot.exists() ? (snapshot.val().pendingRefParam || null) : null),
-              createdAt: snapshot.exists() ? (snapshot.val().createdAt || new Date().toISOString()) : new Date().toISOString()
+              pendingRefParam: mmeReferral ? mmeReferral.toUpperCase() : null,
+              createdAt: new Date().toISOString()
             };
 
             await set(userRef, initialUserData);
@@ -256,18 +254,18 @@ module.exports = async (req, res) => {
           let userState = userData.state || "AWAITING_TERMS";
 
           // -------------------------------------------------------------
-          // STEP 1: TERMS & CONDITIONS
+          // STEP 1: TERMS & CONDITIONS (FIXED LOCKUP)
           // -------------------------------------------------------------
           if (userState === "AWAITING_TERMS" || !userData.termsAccepted) {
             if (messageText === "AGREE_TERMS" || messageText.toLowerCase().includes("agree")) {
+              // Atomically update state to prevent looping
               await update(userRef, { termsAccepted: true, state: "AWAITING_INVITE" });
               userData.termsAccepted = true;
               userData.state = "AWAITING_INVITE";
 
-              // Check if auto-filled referral from m.me link is present
               const autoCode = userData.pendingRefParam || mmeReferral;
               if (autoCode) {
-                messageText = autoCode.toUpperCase(); // Fall-through to invite check immediately
+                messageText = autoCode.toUpperCase();
               } else {
                 await callSendAPI(
                   senderPsid,
@@ -312,7 +310,6 @@ module.exports = async (req, res) => {
                   await set(statsRef, currentGlobalClaims + 1);
                 }
               } else {
-                // Direct O(1) Lookup Table
                 const codeLookupSnap = await get(ref(db, `referralCodes/${inputCode}`));
                 if (codeLookupSnap.exists()) {
                   referrerPsid = codeLookupSnap.val();
@@ -330,7 +327,6 @@ module.exports = async (req, res) => {
                 userData.invited = true;
                 userData.state = "AWAITING_TITLE";
 
-                // Award points to referrer
                 if (referrerPsid && referrerPsid !== senderPsid) {
                   const referrerSnap = await get(ref(db, `users/${referrerPsid}`));
                   if (referrerSnap.exists()) {
@@ -378,16 +374,14 @@ module.exports = async (req, res) => {
           // STEP 4: EMAIL & 6-DIGIT OTP VERIFICATION
           // -------------------------------------------------------------
           if (userState === "AWAITING_EMAIL" || userState === "AWAITING_OTP" || !userData.verified) {
-            // Case A: User submitting 6-digit OTP code
             if (/^\d{6}$/.test(messageText)) {
               if (userData.otpCode && messageText === userData.otpCode.toString()) {
                 const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
 
-                // Save user as fully verified and create O(1) referral lookup
                 await update(userRef, {
                   verified: true,
                   referralCode: personalRefCode,
-                  points: (userData.points || 0) + 1, // Welcome bonus
+                  points: (userData.points || 0) + 1,
                   otpCode: null,
                   state: "VERIFIED"
                 });
@@ -407,9 +401,7 @@ module.exports = async (req, res) => {
               } else {
                 await callSendAPI(senderPsid, "✕ Incorrect verification code. Please check your inbox and enter the 6-digit code.");
               }
-            }
-            // Case B: User submitting @missionary.org email
-            else if (messageText.toLowerCase().endsWith("@missionary.org")) {
+            } else if (messageText.toLowerCase().endsWith("@missionary.org")) {
               const passCode = Math.floor(100000 + Math.random() * 900000).toString();
               await update(userRef, {
                 email: messageText.toLowerCase(),
@@ -480,7 +472,6 @@ module.exports = async (req, res) => {
 
               await update(userRef, { points: newPoints });
 
-              // Record Transaction in RTDB
               await set(ref(db, `transactions/${refID}`), {
                 psid: senderPsid,
                 name: userData.titleName,

@@ -273,7 +273,7 @@ module.exports = async (req, res) => {
             await set(ref(db, `admins/${senderPsid}`), true);
             await callSendAPI(
               senderPsid,
-              `👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━\n` +
               `You now receive real-time purchase notices.\n\n` +
               `💡 𝐓𝐢𝐩: To fulfill orders, paste the user's Redemption Receipt or Reference ID directly in this chat.`,
               defaultQuickReplies
@@ -299,7 +299,7 @@ module.exports = async (req, res) => {
                 // Notify Admin of fulfillment
                 await callSendAPI(
                   senderPsid,
-                  `✅ 𝐎𝐑𝐃𝐄𝐑 𝐅𝐔𝐋𝐅𝐈𝐋𝐋𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                  `✅ 𝐎𝐑𝐃𝐄𝐑 𝐅𝐔𝐋𝐅𝐈𝐋𝐋𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━\n` +
                   `Reference ID: ${detectedRefId}\n` +
                   `Recipient:    ${txData.name}\n` +
                   `Item:         ${txData.item}\n` +
@@ -311,7 +311,7 @@ module.exports = async (req, res) => {
                 if (txData.psid) {
                   await callSendAPI(
                     txData.psid,
-                    `🎉 𝐆𝐎𝐎𝐃 𝐍𝐄𝐖𝐒!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `🎉 𝐆𝐎𝐎𝐃 𝐍𝐄𝐖𝐒!\n━━━━━━━━━━━━━━━━━━━━\n` +
                     `Your reward (${txData.item}) under Reference ID ${detectedRefId} has been marked as **FULFILLED** by the team and dispatched!`,
                     defaultQuickReplies
                   );
@@ -339,7 +339,7 @@ module.exports = async (req, res) => {
             await set(userRef, initialUserData);
 
             const welcomeMsg = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
-              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `━━━━━━━━━━━━━━━━━━━━\n` +
               `Welcome to TCRP — crafted by Timeless Creations for custom missionary gear.\n\n` +
               `📜 𝐓𝐞𝐫𝐦𝐬 & 𝐏𝐫𝐢𝐯𝐚𝐜𝐲:\n` +
               `By selecting "Agree & Continue", you confirm acceptance of our Terms of Service & Privacy Policy.\n\n` +
@@ -365,7 +365,7 @@ module.exports = async (req, res) => {
               } else {
                 await callSendAPI(
                   senderPsid,
-                  `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                  `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━\n` +
                   `🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\n` +
                   `Please enter the Invitation Code from a fellow missionary, or tap below to claim using Global Code: TCRP`,
                   globalInviteQuickReply
@@ -431,7 +431,7 @@ module.exports = async (req, res) => {
 
                 await callSendAPI(
                   senderPsid,
-                  `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${inputCode})\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                  `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${inputCode})\n━━━━━━━━━━━━━━━━━━━━\n` +
                   `Please enter your Missionary Title and Last Name:\n` +
                   `(e.g., Elder Smith or Sister Johnson)`
                 );
@@ -478,7 +478,7 @@ module.exports = async (req, res) => {
 
                 await callSendAPI(
                   senderPsid,
-                  `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                  `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━\n` +
                   `Registered: ${userData.titleName}\n` +
                   `◈ Welcome Bonus: +1 Point\n` +
                   `◈ Your Code: ${personalRefCode}\n\n` +
@@ -514,12 +514,12 @@ module.exports = async (req, res) => {
 
           // DASHBOARD
           if (query.includes("points") || query.includes("dashboard") || messageText === "PAYLOAD_CHECK_POINTS") {
-            const dash = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const dash = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n━━━━━━━━━━━━━━━━━━━━\n` +
               `Registered:  ${userData.titleName}\n` +
               `Email:       ${userData.email}\n` +
               `Balance:     ${userData.points || 0} Point(s)\n` +
               `Your Code:   ${userData.referralCode}\n` +
-              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `━━━━━━━━━━━━━━━━━━━━\n` +
               `Rule: 1 Referral = 1 Point`;
             await callSendAPI(senderPsid, dash, defaultQuickReplies);
           }
@@ -534,7 +534,7 @@ module.exports = async (req, res) => {
             const baseUrl = process.env.MESSENGER_LINK || "https://m.me/yourpage";
             const shareableLink = `${baseUrl}?ref=${userData.referralCode}`;
 
-            const promo = `📢 𝐒𝐇𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const promo = `📢 𝐒𝐇𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n━━━━━━━━━━━━━━━━━━━━\n` +
               `Share your personal referral link with fellow missionaries. When they join, BOTH of you receive +1 Reward Point!\n\n` +
               `🔗 𝐘𝐨𝐮𝐫 𝐑𝐞𝐟𝐞𝐫𝐫𝐚𝐥 𝐋𝐢𝐧𝐤:\n` +
               `${shareableLink}\n\n` +
@@ -543,24 +543,24 @@ module.exports = async (req, res) => {
           }
           // FAQ HUB
           else if (query.includes("faq") || messageText === "PAYLOAD_FAQS") {
-            const faqPrompt = `❓ 𝐅𝐑𝐄𝐐𝐔𝐄𝐍𝐓𝐋𝐘 𝐀𝐒𝐊𝐄𝐃 𝐐𝐔𝐄𝐒𝐓𝐈𝐎𝐍𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const faqPrompt = `❓ 𝐅𝐑𝐄𝐐𝐔𝐄𝐍𝐓𝐋𝐘 𝐀𝐒𝐊𝐄𝐃 𝐐𝐔𝐄𝐒𝐓𝐈𝐎𝐍𝐒\n━━━━━━━━━━━━━━━━━━━━\n` +
               `Select any topic below to learn more:`;
             await callSendAPI(senderPsid, faqPrompt, faqMenuQuickReplies);
           }
           // INDIVIDUAL FAQ RESPONSES
           else if (messageText === "FAQ_1") {
-            const resText = `❓ 𝐖𝐡𝐚𝐭 𝐢𝐬 𝐓𝐂𝐑𝐏?\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const resText = `❓ 𝐖𝐡𝐚𝐭 𝐢𝐬 𝐓𝐂𝐑𝐏?\n━━━━━━━━━━━━━━━━━━━━\n` +
               `Timeless Creations Rewards Program (TCRP) is an exclusive rewards platform for missionaries to earn custom missionary gear by inviting their companions and district members.`;
             await callSendAPI(senderPsid, resText, faqMenuQuickReplies);
           }
           else if (messageText === "FAQ_2") {
-            const resText = `❓ 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐞𝐚𝐫𝐧 𝐩𝐨𝐢𝐧𝐭𝐬?\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const resText = `❓ 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐞𝐚𝐫𝐧 𝐩𝐨𝐢𝐧𝐭𝐬?\n━━━━━━━━━━━━━━━━━━━━\n` +
               `◈ +1 Point welcome bonus on account verification.\n` +
               `◈ +1 Point every time a missionary signs up and verifies using your referral code/link.`;
             await callSendAPI(senderPsid, resText, faqMenuQuickReplies);
           }
           else if (messageText === "FAQ_3") {
-            const resText = `❓ 𝐖𝐡𝐚𝐭 𝐚𝐫𝐞 𝐭𝐡𝐞 𝐢𝐭𝐞𝐦𝐬 & 𝐜𝐨𝐬𝐭𝐬?\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const resText = `❓ 𝐖𝐡𝐚𝐭 𝐚𝐫𝐞 𝐭𝐡𝐞 𝐢𝐭𝐞𝐦𝐬 & 𝐜𝐨𝐬𝐭𝐬?\n━━━━━━━━━━━━━━━━━━━━\n` +
               `✦ Temple Keychain: 6 Points\n` +
               `✦ Nametag Keychain: 24 Points\n` +
               `✦ Salvation Kit: 42 Points\n` +
@@ -568,18 +568,18 @@ module.exports = async (req, res) => {
             await callSendAPI(senderPsid, resText, faqMenuQuickReplies);
           }
           else if (messageText === "FAQ_4") {
-            const resText = `❓ 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐫𝐞𝐝𝐞𝐞𝐦?\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const resText = `❓ 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐫𝐞𝐝𝐞𝐞𝐦?\n━━━━━━━━━━━━━━━━━━━━\n` +
               `Browse the 🎁 Catalog and tap Claim. You will receive a unique Reference ID receipt. Present this receipt to our team to arrange dispatch.`;
             await callSendAPI(senderPsid, resText, faqMenuQuickReplies);
           }
           else if (messageText === "FAQ_5") {
-            const resText = `❓ 𝐖𝐡𝐨 𝐜𝐚𝐧 𝐣𝐨𝐢𝐧?\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const resText = `❓ 𝐖𝐡𝐨 𝐜𝐚𝐧 𝐣𝐨𝐢𝐧?\n━━━━━━━━━━━━━━━━━━━━\n` +
               `Currently serving missionaries carrying the title of Elder or Sister with an active @missionary.org email address.`;
             await callSendAPI(senderPsid, resText, faqMenuQuickReplies);
           }
           // TERMS & PRIVACY VIEWER
           else if (messageText === "PAYLOAD_TERMS" || query.includes("terms") || query.includes("privacy")) {
-            const termsMsg = `📜 𝐓𝐄𝐑𝐌𝐒 & 𝐂𝐎𝐍𝐃𝐈𝐓𝐈𝐎𝐍𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+            const termsMsg = `📜 𝐓𝐄𝐑𝐌𝐒 & 𝐂𝐎𝐍𝐃𝐈𝐓𝐈𝐎𝐍𝐒\n━━━━━━━━━━━━━━━━━━━━\n` +
               `1. Eligibility: Active missionaries only.\n` +
               `2. 1 Account per missionary PSID/Email.\n` +
               `3. Points have no cash value and are redeemable only for listed rewards.\n` +
@@ -601,7 +601,7 @@ module.exports = async (req, res) => {
             if (userPoints < cost) {
               await callSendAPI(
                 senderPsid,
-                `✕ 𝐈𝐍𝐒𝐔𝐅🇫𝐈𝐂𝐈🇪🇳𝐓 𝐏𝐎🇮🇳𝐓𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `✕ 𝐈𝐍𝐒𝐔𝐅🇫𝐈𝐂𝐈🇪🇳𝐓 𝐏𝐎🇮🇳𝐓𝐒\n━━━━━━━━━━━━━━━━━━━━\n` +
                 `${itemName} requires ${cost} points. You currently have ${userPoints} point(s).`,
                 defaultQuickReplies
               );
@@ -624,29 +624,29 @@ module.exports = async (req, res) => {
               });
 
               // Generate User Receipt
-              const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              const receipt = `━━━━━━━━━━━━━━━━━━━━\n` +
                 `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒  \n` +
                 `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
-                `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
                 `Registered:   ${userData.titleName}\n` +
                 `Reference ID: ${refID}\n` +
                 `Item Claimed: ${itemName}\n` +
                 `Points Used:  ${cost} Point(s)\n` +
                 `Balance:      ${newPoints} Point(s)\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
                 `Status: PENDING DISPATCH\n` +
                 `Present this Reference ID to an Admin to claim!`;
 
               await callSendAPI(senderPsid, receipt, defaultQuickReplies);
 
               // 📢 Trigger Real-Time Notification to All Admins
-              const adminNotice = `🔔 𝐍𝐄𝐖 𝐑𝐄𝐖𝐀𝐑𝐃 𝐂𝐋𝐀𝐈𝐌\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+              const adminNotice = `🔔 𝐍𝐄𝐖 𝐑𝐄𝐖𝐀𝐑𝐃 𝐂𝐋𝐀𝐈𝐌\n━━━━━━━━━━━━━━━━━━━━\n` +
                 `👤 Registered:   ${userData.titleName}\n` +
                 `📧 Email:        ${userData.email}\n` +
                 `🎁 Item Claimed: ${itemName}\n` +
                 `💎 Points Spent: ${cost} (Remaining: ${newPoints})\n` +
                 `🔖 Reference ID: ${refID}\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
                 `💡 Paste this Reference ID here once fulfilled to notify the user.`;
 
               await notifyAdmins(db, adminNotice);

@@ -1,8 +1,11 @@
-const { createClient } = require("@libsql/client");
+const { createClient } = require("@libsql/client/web");
 const crypto = require('crypto');
 
 function getTursoClient() {
-  if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) return null;
+  if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+    console.error("❌ Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN");
+    return null;
+  }
   return createClient({
     url: process.env.TURSO_DATABASE_URL,
     authToken: process.env.TURSO_AUTH_TOKEN,
@@ -51,15 +54,24 @@ async function initDatabase(db) {
     `);
 
     await db.execute(`
+      CREATE TABLE IF NOT EXISTS stats (
+        key TEXT PRIMARY KEY,
+        value INTEGER
+      )
+    `);
+
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS recipients (
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE,
         name TEXT,
         last_name TEXT,
         cohort TEXT,
-        start_date TEXT,
         max_months INTEGER,
-        status TEXT DEFAULT 'active'
+        months_sent INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'active',
+        batch_month TEXT,
+        psid TEXT
       )
     `);
   } catch (err) {
@@ -240,12 +252,14 @@ module.exports = async (req, res) => {
               await db.execute({ sql: "UPDATE users SET pendingRefParam = ? WHERE psid = ?", args: [mmeReferral.toUpperCase(), senderPsid] });
             }
 
+            // ADMIN SECRET ACCESS
             if (messageText.startsWith('/Admin 0726')) {
               if (userData) await db.execute({ sql: "UPDATE users SET isAdmin = 1 WHERE psid = ?", args: [senderPsid] });
               await callSendAPI(senderPsid, "👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃", adminQuickReplies);
               continue;
             }
 
+            // ADMIN VIEW ORDERS
             if (userData && userData.isAdmin === 1 && (messageText === "ADMIN_VIEW_ORDERS" || messageText.toLowerCase() === "orders")) {
               const txRes = await db.execute("SELECT * FROM transactions ORDER BY timestamp DESC LIMIT 6");
               if (txRes.rows.length === 0) {
@@ -262,6 +276,7 @@ module.exports = async (req, res) => {
               continue;
             }
 
+            // UNIVERSAL WELCOME FALLBACK FOR NEW USERS OR RESTART
             const isRestart = (messageText.toLowerCase() === "get started" || messageText.toLowerCase() === "restart" || postbackPayload.includes("GET_STARTED"));
 
             if (!userData || isRestart) {
@@ -288,6 +303,7 @@ module.exports = async (req, res) => {
 
             let userState = userData.state || "AWAITING_TERMS";
 
+            // RATE LIMITER: ONLY APPLIES TO VERIFIED USERS
             if (userData.verified === 1 && userState === "VERIFIED") {
               const now = Date.now();
               const clickWindow = userData.clickWindowStart || now;
@@ -381,7 +397,7 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // STEP 3 & 4: COMBINED REGISTRATION & OTP
+            // STEP 3 & 4: COMBINED REGISTRATION & OTP VERIFICATION
             if (userState === "AWAITING_REGISTRATION" || userState === "AWAITING_OTP" || !userData.verified) {
               const normalizedInput = messageText.trim().toLowerCase();
 
@@ -390,10 +406,19 @@ module.exports = async (req, res) => {
                   const personalRefCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
                   const newPoints = Number(userData.points || 0) + 1;
 
+                  // 1. Mark user as verified and delete temporary OTP code
                   await db.execute({
                     sql: `UPDATE users SET verified = 1, referralCode = ?, points = ?, otpCode = NULL, state = 'VERIFIED' WHERE psid = ?`,
                     args: [personalRefCode, newPoints, senderPsid]
                   });
+
+                  // 2. Auto-link PSID in the recipients master table
+                  if (userData.email) {
+                    await db.execute({
+                      sql: `UPDATE recipients SET psid = ? WHERE email = ?`,
+                      args: [senderPsid, userData.email]
+                    });
+                  }
 
                   await db.execute({
                     sql: "INSERT INTO referralCodes (code, psid) VALUES (?, ?) ON CONFLICT(code) DO UPDATE SET psid = ?",
@@ -411,7 +436,7 @@ module.exports = async (req, res) => {
 
                   await callSendAPI(senderPsid, welcomeHub, unifiedQuickReplies);
                 } else {
-                  await callSendAPI(senderPsid, "✕ Incorrect code. Please reply with the 6-digit code.");
+                  await callSendAPI(senderPsid, "✕ Incorrect code. Please check your inbox and reply with the 6-digit code.");
                 }
                 continue;
               }
@@ -429,10 +454,6 @@ module.exports = async (req, res) => {
               }
 
               if (foundTitle && foundEmail) {
-                // Optional Whitelist Validation against CSV-imported recipients table
-                const whitelistCheck = await db.execute({ sql: "SELECT * FROM recipients WHERE email = ?", args: [foundEmail] });
-                // (Optional: You can enforce strict whitelist checking here if desired)
-
                 const passCode = Math.floor(100000 + Math.random() * 900000).toString();
                 await db.execute({
                   sql: "UPDATE users SET titleName = ?, email = ?, otpCode = ?, state = 'AWAITING_OTP' WHERE psid = ?",
@@ -504,7 +525,7 @@ module.exports = async (req, res) => {
 
                 const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒  \n` +
-                  `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
+                  `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎🇳 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
                   `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `Registered:   ${userData.titleName}\n` +
                   `Reference ID: ${refID}\n` +

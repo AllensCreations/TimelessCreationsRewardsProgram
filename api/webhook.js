@@ -25,10 +25,10 @@ function initFirebase() {
 function generateEncryptedRefID(psid, rewardName) {
   const raw = `${psid}-${rewardName}-${Date.now()}`;
   const hash = crypto.createHash('sha256').update(raw).digest('hex').toUpperCase();
-  return `TX-${hash.substring(0, 6)}`;
+  return `TX-${hash.substring(0, 8)}`;
 }
 
-// 3. BREVO TRANSACTIONAL EMAIL DISPATCHER
+// 3. BREVO EMAIL SENDER
 async function sendBrevoEmail(recipientEmail, otpCode, titleName) {
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
   if (!BREVO_API_KEY) return false;
@@ -38,25 +38,21 @@ async function sendBrevoEmail(recipientEmail, otpCode, titleName) {
     to: [{ email: recipientEmail, name: titleName || "Missionary" }],
     subject: "Your TCRP Verification Code",
     htmlContent: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 480px;">
-        <h2 style="color: #0f172a; margin-top: 0;">Timeless Creations Rewards</h2>
+      <div style="font-family: Arial, sans-serif; padding: 25px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Timeless Creations Rewards Program</h2>
         <p style="color: #475569;">Greetings <strong>${titleName || 'Missionary'}</strong>,</p>
-        <p style="color: #475569;">Your 6-digit verification code is:</p>
-        <div style="background: #f1f5f9; padding: 12px; text-align: center; border-radius: 6px; margin: 15px 0;">
-          <span style="font-size: 26px; font-weight: bold; letter-spacing: 5px; color: #0284c7;">${otpCode}</span>
+        <p style="color: #475569;">Your 6-digit account verification code is:</p>
+        <div style="background: #f1f5f9; padding: 15px; text-align: center; border-radius: 6px; margin: 20px 0;">
+          <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #0284c7;">${otpCode}</span>
         </div>
-        <p style="color: #64748b; font-size: 12px;">Reply in Messenger with this code to activate your account.</p>
+        <p style="color: #64748b; font-size: 13px;">Enter this code in Messenger to complete your verification.</p>
       </div>`
   };
 
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': BREVO_API_KEY,
-        'content-type': 'application/json'
-      },
+      headers: { 'accept': 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
       body: JSON.stringify(payload)
     });
     return res.ok;
@@ -65,7 +61,7 @@ async function sendBrevoEmail(recipientEmail, otpCode, titleName) {
   }
 }
 
-// 4. PERSISTENT MENU SETUP
+// 4. META MESSENGER PROFILE SETUP
 async function setupMessengerProfile() {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -75,7 +71,7 @@ async function setupMessengerProfile() {
     greeting: [
       {
         locale: "default",
-        text: "Welcome to Timeless Creations Rewards Program (TCRP)! Tap 'Get Started' to activate your account and earn custom missionary gear."
+        text: "Welcome to Timeless Creations Rewards Program! Tap 'Get Started' below to begin and claim custom missionary gear."
       }
     ],
     persistent_menu: [
@@ -83,11 +79,11 @@ async function setupMessengerProfile() {
         locale: "default",
         composer_input_disabled: false,
         call_to_actions: [
-          { type: "postback", title: "🏆 Dashboard", payload: "PAYLOAD_CHECK_POINTS" },
-          { type: "postback", title: "🎁 Rewards Catalog", payload: "PAYLOAD_CATALOG" },
+          { type: "postback", title: "🏆 Dashboard & Points", payload: "PAYLOAD_CHECK_POINTS" },
+          { type: "postback", title: "🎁 Catalog & Redeem", payload: "PAYLOAD_CATALOG" },
           { type: "postback", title: "📢 Refer a Friend", payload: "PAYLOAD_PROMO" },
-          { type: "postback", title: "❓ Top FAQs", payload: "PAYLOAD_FAQS" },
-          { type: "postback", title: "📜 Terms & Conditions", payload: "PAYLOAD_TERMS" }
+          { type: "postback", title: "❓ FAQs", payload: "PAYLOAD_FAQS" },
+          { type: "postback", title: "📜 Terms & Conditions", payload: "PAYLOAD_TERMS_INFO" }
         ]
       }
     ]
@@ -125,7 +121,35 @@ async function callSendAPI(senderPsid, responseText, quickReplies = null) {
   } catch (err) {}
 }
 
-// 6. PRODUCT CATALOG CAROUSEL
+// 6. BUTTON TEMPLATE SENDER
+async function sendButtonMessage(senderPsid, text, buttons) {
+  const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+  if (!PAGE_ACCESS_TOKEN) return;
+
+  const requestBody = {
+    recipient: { id: senderPsid },
+    message: {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: text,
+          buttons: buttons
+        }
+      }
+    }
+  };
+
+  try {
+    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+  } catch (err) {}
+}
+
+// 7. CATALOG CAROUSEL TEMPLATE
 async function sendCatalogCarousel(senderPsid) {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) return;
@@ -147,26 +171,26 @@ async function sendCatalogCarousel(senderPsid) {
             {
               title: "✦ Temple Keychain",
               image_url: imgKeychain,
-              subtitle: "◈ Cost: 6 Points\nEngraved stainless steel temple outline.",
-              buttons: [{ type: "postback", title: "Claim (6 Pts)", payload: "CLAIM_KEYCHAIN" }]
+              subtitle: "◈ Cost: 6 Points\nCustom engraved stainless steel outline.",
+              buttons: [{ type: "postback", title: "Claim (6 Points)", payload: "CLAIM_KEYCHAIN" }]
             },
             {
               title: "✦ Nametag Keychain",
               image_url: imgNametag,
               subtitle: "◈ Cost: 24 Points\nOfficial replica missionary nametag.",
-              buttons: [{ type: "postback", title: "Claim (24 Pts)", payload: "CLAIM_NAMETAG" }]
+              buttons: [{ type: "postback", title: "Claim (24 Points)", payload: "CLAIM_NAMETAG" }]
             },
             {
               title: "✦ Salvation Kit",
               image_url: imgSalvation,
-              subtitle: "◈ Cost: 42 Points\nPlan of Salvation visual visual set.",
-              buttons: [{ type: "postback", title: "Claim (42 Pts)", payload: "CLAIM_SALVATION" }]
+              subtitle: "◈ Cost: 42 Points\nFull Plan of Salvation visual teaching set.",
+              buttons: [{ type: "postback", title: "Claim (42 Points)", payload: "CLAIM_SALVATION" }]
             },
             {
               title: "✦ Scripture Case",
               image_url: imgScripture,
-              subtitle: "◈ Cost: 60 Points\nHandcrafted genuine leather tote.",
-              buttons: [{ type: "postback", title: "Claim (60 Pts)", payload: "CLAIM_SCRIPTURE" }]
+              subtitle: "◈ Cost: 60 Points\nHandcrafted genuine leather tote case.",
+              buttons: [{ type: "postback", title: "Claim (60 Points)", payload: "CLAIM_SCRIPTURE" }]
             }
           ]
         }
@@ -183,7 +207,7 @@ async function sendCatalogCarousel(senderPsid) {
   } catch (err) {}
 }
 
-// 7. MENUS & QUICK REPLIES
+// 8. CONSTANTS & MENUS
 const defaultQuickReplies = [
   { content_type: "text", title: "🏆 Dashboard", payload: "PAYLOAD_CHECK_POINTS" },
   { content_type: "text", title: "🎁 Catalog", payload: "PAYLOAD_CATALOG" },
@@ -192,8 +216,8 @@ const defaultQuickReplies = [
 ];
 
 const catalogQuickReplies = [
-  { content_type: "text", title: "🔙 Back to Menu", payload: "PAYLOAD_MAIN_MENU" },
-  { content_type: "text", title: "🏆 My Points", payload: "PAYLOAD_CHECK_POINTS" }
+  { content_type: "text", title: "🔙 Back to Dashboard", payload: "PAYLOAD_CHECK_POINTS" },
+  { content_type: "text", title: "📢 Refer a Friend", payload: "PAYLOAD_PROMO" }
 ];
 
 const termsQuickReplies = [
@@ -205,35 +229,29 @@ const globalInviteQuickReply = [
   { content_type: "text", title: "Use Global Code: TCRP", payload: "TCRP" }
 ];
 
-// 8. COMBINED FAQS CONTENT (TOP 5)
-const FAQS_TEXT = 
-`❓ 𝐅𝐑𝐄𝐐𝐔𝐄𝐍𝐓𝐋𝐘 𝐀𝐒𝐊𝐄𝐃 𝐐𝐔𝐄𝐒𝐓𝐈𝐎𝐍𝐒
+const adminQuickReplies = [
+  { content_type: "text", title: "📦 View Orders", payload: "ADMIN_VIEW_ORDERS" },
+  { content_type: "text", title: "🏆 User Dashboard", payload: "PAYLOAD_CHECK_POINTS" }
+];
 
-𝟏. 𝐖𝐡𝐚𝐭 𝐢𝐬 𝐓𝐂𝐑𝐏?
-A rewards program by Timeless Creations giving serving missionaries free custom gear through referrals.
+// 9. FAQ TEXT BUILDER (Top 5 Essential FAQs)
+function getFaqsText() {
+  return `❓ 𝐅𝐑𝐄𝐐𝐔𝐄𝐍𝐓𝐋𝐘 𝐀𝐒𝐊𝐄𝐃 𝐐𝐔𝐄𝐒𝐓𝐈𝐎𝐍𝐒\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `𝟏. 𝐖𝐡𝐚𝐭 𝐢𝐬 𝐓𝐂𝐑𝐏?\n` +
+    `An exclusive missionary rewards program by Timeless Creations offering custom gear.\n\n` +
+    `𝟐. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐞𝐚𝐫𝐧 𝐩𝐨𝐢𝐧𝐭𝐬?\n` +
+    `• +1 Welcome Point on signup.\n` +
+    `• +1 Point for every missionary who registers with your link/code.\n\n` +
+    `𝟑. 𝐖𝐡𝐨 𝐜𝐚𝐧 𝐣𝐨𝐢𝐧?\n` +
+    `Currently serving missionaries with a valid @missionary.org email address.\n\n` +
+    `𝟒. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐜𝐥𝐚𝐢𝐦 𝐫𝐞𝐰𝐚𝐫𝐝𝐬?\n` +
+    `Redeem items in the Catalog. You will receive an official Receipt with a Reference ID to arrange dispatch.\n\n` +
+    `𝟓. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐬𝐡𝐚𝐫𝐞 𝐦𝐲 𝐥𝐢𝐧𝐤?\n` +
+    `Tap 'Refer a Friend' below to copy your custom invite link.`;
+}
 
-𝟐. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐞𝐚𝐫𝐧 𝐩𝐨𝐢𝐧𝐭𝐬?
-• +1 Welcome Point upon email verification.
-• +1 Point every time a missionary signs up with your link.
-
-𝟑. 𝐖𝐡𝐨 𝐢𝐬 𝐞𝐥𝐢𝐠𝐢𝐛𝐥𝐞?
-Currently serving missionaries with an active @missionary.org email address.
-
-𝟒. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐜𝐥𝐚𝐢𝐦 𝐫𝐞𝐰𝐚𝐫𝐝𝐬?
-Reach the required point goal, select Claim in the Catalog, and present your Reference ID to the page.
-
-𝟓. 𝐃𝐨 𝐩𝐨𝐢𝐧𝐭𝐬 𝐞𝐱𝐩𝐢𝐫𝐞?
-Your points stay active throughout your entire mission duration!`;
-
-const TERMS_TEXT = 
-`📜 𝐓𝐄𝐑𝐌𝐒 & 𝐂𝐎𝐍𝐃𝐈𝐓𝐈𝐎𝐍𝐒
-━━━━━━━━━━━━━━━━━━
-1. TCRP is dedicated solely to active missionaries.
-2. Verified @missionary.org email is mandatory.
-3. 1 account per missionary. Duplicate accounts are subject to point forfeiture.
-4. Reward items are fulfilled based on stock availability and dispatch schedule.`;
-
-// 9. WEBHOOK HANDLER
+// 10. WEBHOOK ENGINE
 module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
@@ -272,104 +290,107 @@ module.exports = async (req, res) => {
           }
 
           // -------------------------------------------------------------
-          // ADMIN SUITE & COMMANDS
+          // ADMIN COMMANDS & CONTROLS
           // -------------------------------------------------------------
+          // A. Trigger Admin Mode
           if (messageText.startsWith('/Admin 0726')) {
             await update(userRef, { isAdmin: true });
-            const adminMenu = 
-              `👑 𝐀𝐃𝐌𝐈𝐍 𝐏𝐀𝐍𝐄𝐋 𝐀𝐂𝐓𝐈𝐕𝐀𝐓𝐄𝐃\n` +
-              `━━━━━━━━━━━━━━━━━━\n` +
-              `Commands available:\n` +
-              `• /orders - View all active orders\n` +
-              `• /setstatus <REF_ID> <Pending|Complete>\n` +
-              `• /points <PSID> <Amount> - Adjust points`;
-            await callSendAPI(senderPsid, adminMenu, defaultQuickReplies);
+            await callSendAPI(
+              senderPsid,
+              `👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃\n\nYou now have administrative privileges.\n• Tap 'View Orders' or type /order <RefID> to inspect a receipt.`,
+              adminQuickReplies
+            );
             continue;
           }
 
-          // Check Admin status for privileged commands
-          const isAdminUser = snapshot.exists() && snapshot.val().isAdmin === true;
+          // Check Admin Status for special admin actions
+          const isAdmin = snapshot.exists() && snapshot.val().isAdmin === true;
 
-          if (isAdminUser && messageText.toLowerCase() === '/orders') {
+          // B. View Order List
+          if (isAdmin && (messageText === "ADMIN_VIEW_ORDERS" || messageText.toLowerCase() === "orders")) {
             const txSnap = await get(ref(db, 'transactions'));
             if (!txSnap.exists()) {
-              await callSendAPI(senderPsid, "📦 No redemption orders found.", defaultQuickReplies);
-            } else {
-              const allTx = txSnap.val();
-              let orderList = `📦 𝐂𝐔𝐑𝐑𝐄𝐍𝐓 𝐎𝐑𝐃𝐄𝐑𝐒 𝐋𝐈𝐒𝐓\n━━━━━━━━━━━━━━━━━━\n`;
-              let count = 0;
+              await callSendAPI(senderPsid, "📦 No redemption transactions found in the system.", adminQuickReplies);
+              continue;
+            }
 
-              for (const id in allTx) {
-                const o = allTx[id];
-                const statusEmoji = o.status === 'Complete' ? '✅' : '⏳';
-                orderList += `${statusEmoji} 𝐈𝐃: ${id}\n👤 ${o.name}\n🎁 ${o.item} (${o.pointsSpent} pts)\n📌 Status: ${o.status || 'Pending'}\n📅 ${o.timestamp?.substring(0, 10) || 'N/A'}\n──────────────────\n`;
-                count++;
-                if (count >= 8) break; // Keep inside mobile screen limits
+            const allTx = txSnap.val();
+            let summary = `📦 𝐑𝐄𝐂𝐄𝐍𝐓 𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐎𝐑𝐃𝐄𝐑𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n`;
+            let count = 0;
+
+            for (const refID in allTx) {
+              const tx = allTx[refID];
+              const statusIcon = tx.status === "COMPLETED" ? "✅" : "⏳";
+              summary += `\n${statusIcon} ID: ${refID}\n👤 ${tx.name} (${tx.item})\nStatus: ${tx.status || 'PENDING'}\nView: /order ${refID}\n`;
+              count++;
+              if (count >= 8) break;
+            }
+
+            await callSendAPI(senderPsid, summary, adminQuickReplies);
+            continue;
+          }
+
+          // C. Admin Order Inspect & Status Toggles (/order TX-XXXXX or ACTION_SET_STATUS_...)
+          if (isAdmin && (messageText.startsWith('/order') || messageText.startsWith('STATUS_'))) {
+            let targetRefID = "";
+            let newStatus = null;
+
+            if (messageText.startsWith('/order')) {
+              targetRefID = messageText.replace('/order', '').trim().toUpperCase();
+            } else if (messageText.startsWith('STATUS_COMPLETED_')) {
+              targetRefID = messageText.replace('STATUS_COMPLETED_', '');
+              newStatus = "COMPLETED";
+            } else if (messageText.startsWith('STATUS_PENDING_')) {
+              targetRefID = messageText.replace('STATUS_PENDING_', '');
+              newStatus = "PENDING";
+            }
+
+            if (targetRefID) {
+              const txRef = ref(db, `transactions/${targetRefID}`);
+              const txDoc = await get(txRef);
+
+              if (!txDoc.exists()) {
+                await callSendAPI(senderPsid, `✕ Order with ID ${targetRefID} not found.`, adminQuickReplies);
+                continue;
               }
 
-              orderList += `Update status with:\n/setstatus <REF_ID> <Pending|Complete>`;
-              await callSendAPI(senderPsid, orderList, defaultQuickReplies);
-            }
-            continue;
-          }
-
-          if (isAdminUser && messageText.toLowerCase().startsWith('/setstatus')) {
-            const parts = messageText.split(' ');
-            if (parts.length >= 3) {
-              const targetRefId = parts[1].toUpperCase();
-              const newStatus = parts[2].charAt(0).toUpperCase() + parts[2].slice(1).toLowerCase();
-
-              const orderRef = ref(db, `transactions/${targetRefId}`);
-              const orderSnap = await get(orderRef);
-
-              if (orderSnap.exists()) {
-                await update(orderRef, { status: newStatus });
-                const orderData = orderSnap.val();
-
-                // Notify User of status change
-                if (orderData.psid) {
-                  const notifyMsg = 
-                    `📦 𝐎𝐑𝐃𝐄𝐑 𝐔𝐏𝐃𝐀𝐓𝐄\n` +
-                    `━━━━━━━━━━━━━━━━━━\n` +
-                    `Your reward order for ${orderData.item} (${targetRefId}) is now: **${newStatus.toUpperCase()}**`;
-                  await callSendAPI(orderData.psid, notifyMsg, defaultQuickReplies);
-                }
-
-                await callSendAPI(senderPsid, `✅ Order ${targetRefId} marked as ${newStatus}.`, defaultQuickReplies);
-              } else {
-                await callSendAPI(senderPsid, `✕ Order ${targetRefId} not found.`, defaultQuickReplies);
+              if (newStatus) {
+                await update(txRef, { status: newStatus });
+                await callSendAPI(senderPsid, `✓ Order ${targetRefID} updated to: ${newStatus}`);
               }
-            } else {
-              await callSendAPI(senderPsid, `⚠️ Usage: /setstatus <REF_ID> <Pending|Complete>`, defaultQuickReplies);
+
+              const updatedTx = (await get(txRef)).val();
+              const statusEmoji = updatedTx.status === "COMPLETED" ? "✅ COMPLETED" : "⏳ PENDING DISPATCH";
+
+              const receiptDetails = `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `      📦 𝐎𝐑𝐃𝐄𝐑 𝐈𝐍𝐒𝐏𝐄𝐂𝐓𝐈𝐎𝐍      \n` +
+                `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `Reference ID: ${targetRefID}\n` +
+                `Registered:   ${updatedTx.name}\n` +
+                `Item Claimed: ${updatedTx.item}\n` +
+                `Points Spent: ${updatedTx.pointsSpent} Point(s)\n` +
+                `Timestamp:    ${new Date(updatedTx.timestamp).toLocaleString()}\n` +
+                `Current Status: ${statusEmoji}\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `Update status for this order:`;
+
+              const statusButtons = [
+                { type: "postback", title: "✅ Mark COMPLETED", payload: `STATUS_COMPLETED_${targetRefID}` },
+                { type: "postback", title: "⏳ Mark PENDING", payload: `STATUS_PENDING_${targetRefID}` }
+              ];
+
+              await sendButtonMessage(senderPsid, receiptDetails, statusButtons);
+              continue;
             }
-            continue;
           }
 
           // -------------------------------------------------------------
-          // GLOBAL INFO & FAQS
-          // -------------------------------------------------------------
-          if (messageText === "PAYLOAD_FAQS" || messageText.toLowerCase() === "faqs" || messageText.toLowerCase() === "faq") {
-            await callSendAPI(senderPsid, FAQS_TEXT, defaultQuickReplies);
-            continue;
-          }
-
-          if (messageText === "PAYLOAD_TERMS" || messageText.toLowerCase() === "terms") {
-            await callSendAPI(senderPsid, TERMS_TEXT, defaultQuickReplies);
-            continue;
-          }
-
-          if (messageText === "PAYLOAD_MAIN_MENU" || messageText.toLowerCase() === "back" || messageText.toLowerCase() === "menu") {
-            await callSendAPI(senderPsid, `🏠 𝐌𝐀𝐈𝐍 𝐌𝐄𝐍𝐔\nChoose an action below:`, defaultQuickReplies);
-            continue;
-          }
-
-          // -------------------------------------------------------------
-          // USER ONBOARDING
+          // NEW USER ENTRY & RESET
           // -------------------------------------------------------------
           const isGetStarted = (postbackPayload === "GET_STARTED" || postbackPayload === "GET_STARTED_PAYLOAD" || messageText.toLowerCase() === "get started");
 
           if (isGetStarted || !snapshot.exists()) {
-            await set(userRef, {
+            const initialUserData = {
               psid: senderPsid,
               state: "AWAITING_TERMS",
               termsAccepted: false,
@@ -378,17 +399,16 @@ module.exports = async (req, res) => {
               points: 0,
               pendingRefParam: mmeReferral ? mmeReferral.toUpperCase() : (snapshot.exists() ? (snapshot.val().pendingRefParam || null) : null),
               createdAt: snapshot.exists() ? (snapshot.val().createdAt || new Date().toISOString()) : new Date().toISOString()
-            });
+            };
 
-            const welcomeMsg = 
-              `🌟 𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐓𝐂𝐑𝐏!\n` +
-              `━━━━━━━━━━━━━━━━━━\n` +
-              `Timeless Creations Rewards Program provides exclusive custom gear for missionaries.\n\n` +
-              `✨ 𝐖𝐡𝐚𝐭 𝐲𝐨𝐮 𝐠𝐞𝐭:\n` +
-              `• Free Temple & Nametag Keychains\n` +
-              `• Teaching sets & leather scripture cases\n` +
-              `• +1 Free Point just for joining!\n\n` +
-              `Please agree to our Terms to begin:`;
+            await set(userRef, initialUserData);
+
+            const welcomeMsg = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `Welcome to the official TCRP portal — crafted by Timeless Creations for custom missionary gear.\n\n` +
+              `📜 𝐓𝐞𝐫𝐦𝐬 & 𝐏𝐫𝐢𝐯𝐚𝐜𝐲:\n` +
+              `By selecting "Agree & Continue", you accept our Terms of Service and Privacy Policy.\n\n` +
+              `Please select an option below:`;
 
             await callSendAPI(senderPsid, welcomeMsg, termsQuickReplies);
             continue;
@@ -397,7 +417,27 @@ module.exports = async (req, res) => {
           let userData = snapshot.val();
           let userState = userData.state || "AWAITING_TERMS";
 
-          // STEP 1: TERMS
+          // -------------------------------------------------------------
+          // INFORMATIONAL POSTBACKS (FAQS & TERMS)
+          // -------------------------------------------------------------
+          if (messageText === "PAYLOAD_FAQS" || messageText.toLowerCase() === "faq" || messageText.toLowerCase() === "faqs") {
+            await callSendAPI(senderPsid, getFaqsText(), defaultQuickReplies);
+            continue;
+          }
+
+          if (messageText === "PAYLOAD_TERMS_INFO" || messageText.toLowerCase() === "terms") {
+            const termsInfo = `📜 𝐓𝐄𝐑𝐌𝐒 & 𝐂𝐎𝐍𝐃𝐈𝐓𝐈𝐎𝐍𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `• Open exclusively to verified missionaries with active @missionary.org credentials.\n` +
+              `• 1 Valid Referral = 1 Reward Point.\n` +
+              `• Rewards are non-transferable and subject to verification.\n` +
+              `• Timeless Creations reserves the right to verify recipient identity before dispatch.`;
+            await callSendAPI(senderPsid, termsInfo, defaultQuickReplies);
+            continue;
+          }
+
+          // -------------------------------------------------------------
+          // STEP 1: TERMS & CONDITIONS
+          // -------------------------------------------------------------
           if (userState === "AWAITING_TERMS" || !userData.termsAccepted) {
             if (messageText === "AGREE_TERMS" || messageText.toLowerCase().includes("agree")) {
               await update(userRef, { termsAccepted: true, state: "AWAITING_INVITE" });
@@ -411,23 +451,25 @@ module.exports = async (req, res) => {
                 await callSendAPI(
                   senderPsid,
                   `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n` +
-                  `━━━━━━━━━━━━━━━━━━\n` +
+                  `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\n` +
-                  `Enter a referral code from a missionary, or tap below for the Global Code:`,
+                  `Please enter an Invitation Code provided by a fellow missionary, or tap below to join using Global Code: TCRP`,
                   globalInviteQuickReply
                 );
                 continue;
               }
             } else if (messageText === "DECLINE_TERMS") {
-              await callSendAPI(senderPsid, `✕ Terms declined. Tap below when you're ready:`, termsQuickReplies);
+              await callSendAPI(senderPsid, `✕ 𝐓𝐄𝐑𝐌𝐒 𝐃𝐄𝐂𝐋𝐈𝐍𝐄𝐃\n\nParticipation in TCRP requires accepting our Terms of Service. Tap below when ready:`, termsQuickReplies);
               continue;
             } else {
-              await callSendAPI(senderPsid, `Please tap "✓ Agree & Continue" to start:`, termsQuickReplies);
+              await callSendAPI(senderPsid, `Please tap "✓ Agree & Continue" below to proceed:`, termsQuickReplies);
               continue;
             }
           }
 
-          // STEP 2: INVITATION CODE
+          // -------------------------------------------------------------
+          // STEP 2: INVITATION CODE VALIDATION
+          // -------------------------------------------------------------
           if (userState === "AWAITING_INVITE" || !userData.invited) {
             const inputCode = messageText.toUpperCase().trim();
 
@@ -442,7 +484,7 @@ module.exports = async (req, res) => {
                 const currentGlobalClaims = statsSnap.exists() ? statsSnap.val() : 0;
 
                 if (currentGlobalClaims >= 100) {
-                  await callSendAPI(senderPsid, `✕ Global Code reached its limit. Please enter a missionary referral code:`);
+                  await callSendAPI(senderPsid, `✕ 𝐆𝐋𝐎𝐁𝐀🇱 🇱𝐈𝐌𝐈𝐓 𝐑🇪𝐀𝐂𝐇𝐄𝐃\n\nThe Global Code TCRP has reached its limit of 100 claims. Please enter a personal invitation code.`);
                   continue;
                 } else {
                   isValidCode = true;
@@ -471,27 +513,29 @@ module.exports = async (req, res) => {
                   if (referrerSnap.exists()) {
                     const currentPoints = referrerSnap.val().points || 0;
                     await update(ref(db, `users/${referrerPsid}`), { points: currentPoints + 1 });
-                    await callSendAPI(referrerPsid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\n\nA missionary joined with your code! +1 Point added to your balance!`);
+                    await callSendAPI(referrerPsid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀🇱!\n\nA missionary registered using your link! You earned +1 Reward Point!`);
                   }
                 }
 
                 await callSendAPI(
                   senderPsid,
-                  `✓ 𝐂𝐎𝐃𝐄 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${inputCode})\n` +
-                  `━━━━━━━━━━━━━━━━━━\n` +
-                  `Please enter your Title and Last Name:\n` +
+                  `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${inputCode})\n` +
+                  `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                  `Please enter your Missionary Title and Last Name:\n` +
                   `(e.g., Elder Smith or Sister Johnson)`
                 );
               } else {
-                await callSendAPI(senderPsid, `✕ Invalid code. Enter a valid referral code or tap below:`, globalInviteQuickReply);
+                await callSendAPI(senderPsid, `✕ Invalid Invitation Code. Please enter a valid code or tap below:`, globalInviteQuickReply);
               }
             } else {
-              await callSendAPI(senderPsid, `🔑 Please enter your Invitation Code or tap below:`, globalInviteQuickReply);
+              await callSendAPI(senderPsid, `🔑 An Invitation Code is required. Enter your code or tap below:`, globalInviteQuickReply);
             }
             continue;
           }
 
+          // -------------------------------------------------------------
           // STEP 3: TITLE & LAST NAME
+          // -------------------------------------------------------------
           if (userState === "AWAITING_TITLE" || !userData.titleName) {
             const formatted = messageText.trim();
             if (formatted.toLowerCase().startsWith("elder ") || formatted.toLowerCase().startsWith("sister ")) {
@@ -500,14 +544,16 @@ module.exports = async (req, res) => {
               userData.titleName = formattedName;
               userData.state = "AWAITING_EMAIL";
 
-              await callSendAPI(senderPsid, `Greetings, ${formattedName}!\n\nEnter your official email ending in @missionary.org:`);
+              await callSendAPI(senderPsid, `Greetings, ${formattedName}!\n\nPlease enter your official email ending in @missionary.org:`);
             } else {
-              await callSendAPI(senderPsid, `⚠️ Please start with "Elder" or "Sister" (e.g., Elder Smith or Sister Johnson):`);
+              await callSendAPI(senderPsid, `⚠️ Format required: Start with "Elder" or "Sister" followed by your last name (e.g., Elder Smith or Sister Johnson):`);
             }
             continue;
           }
 
-          // STEP 4: EMAIL & OTP
+          // -------------------------------------------------------------
+          // STEP 4: EMAIL & OTP VERIFICATION
+          // -------------------------------------------------------------
           if (userState === "AWAITING_EMAIL" || userState === "AWAITING_OTP" || !userData.verified) {
             if (/^\d{6}$/.test(messageText)) {
               if (userData.otpCode && messageText === userData.otpCode.toString()) {
@@ -525,16 +571,16 @@ module.exports = async (req, res) => {
 
                 await callSendAPI(
                   senderPsid,
-                  `🎉 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n` +
-                  `━━━━━━━━━━━━━━━━━━\n` +
+                  `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n` +
+                  `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `Registered: ${userData.titleName}\n` +
-                  `🎁 Welcome Bonus: +1 Point\n` +
-                  `🔗 Your Code: ${personalRefCode}\n\n` +
-                  `Tap below to explore rewards or check your dashboard:`,
+                  `◈ Welcome Bonus: +1 Point\n` +
+                  `◈ Your Referral Code: ${personalRefCode}\n\n` +
+                  `Rule: 1 Referral = 1 Point. Share your code to unlock custom gear!`,
                   defaultQuickReplies
                 );
               } else {
-                await callSendAPI(senderPsid, "✕ Incorrect code. Please check your email inbox and enter the 6-digit code.");
+                await callSendAPI(senderPsid, "✕ Incorrect verification code. Please check your inbox and enter the 6-digit code.");
               }
             } else if (messageText.toLowerCase().endsWith("@missionary.org")) {
               const passCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -547,47 +593,45 @@ module.exports = async (req, res) => {
               const emailSent = await sendBrevoEmail(messageText.toLowerCase(), passCode, userData.titleName);
 
               if (emailSent) {
-                await callSendAPI(senderPsid, `📧 Code sent to ${messageText.toLowerCase()}!\n\nReply here with the 6-digit verification code:`);
+                await callSendAPI(senderPsid, `📧 Verification code sent to ${messageText.toLowerCase()}!\n\nPlease check your inbox and reply here with the 6-digit code.`);
               } else {
-                await callSendAPI(senderPsid, `📧 Verification Code: ${passCode}\n\nReply with this 6-digit code to complete setup:`);
+                await callSendAPI(senderPsid, `📧 Verification Code: ${passCode}\n\nPlease reply with this 6-digit code to complete setup.`);
               }
             } else {
-              await callSendAPI(senderPsid, "⚠️ Please provide a valid email ending in @missionary.org:");
+              await callSendAPI(senderPsid, "⚠️ Please enter a valid email ending in @missionary.org:");
             }
             continue;
           }
 
           // -------------------------------------------------------------
-          // STEP 5: VERIFIED DASHBOARD & ACTIONS
+          // STEP 5: VERIFIED DASHBOARD, CATALOG & REDEMPTION
           // -------------------------------------------------------------
           const query = messageText.toLowerCase();
 
           if (query.includes("points") || query.includes("dashboard") || messageText === "PAYLOAD_CHECK_POINTS") {
-            const dash = 
-              `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n` +
-              `━━━━━━━━━━━━━━━━━━\n` +
-              `👤 Name:    ${userData.titleName}\n` +
-              `📧 Email:   ${userData.email}\n` +
-              `⭐ Points:  ${userData.points || 0} Point(s)\n` +
-              `🔑 Code:    ${userData.referralCode}\n` +
-              `━━━━━━━━━━━━━━━━━━\n` +
+            const dash = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `Registered:  ${userData.titleName}\n` +
+              `Email:       ${userData.email}\n` +
+              `Balance:     ${userData.points || 0} Point(s)\n` +
+              `Your Code:   ${userData.referralCode}\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━\n` +
               `Rule: 1 Referral = 1 Point`;
             await callSendAPI(senderPsid, dash, defaultQuickReplies);
           }
           else if (query.includes("catalog") || query.includes("redeem") || messageText === "PAYLOAD_CATALOG") {
-            await callSendAPI(senderPsid, "🎁 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐂𝐀𝐓𝐀𝐋𝐎𝐆\nSwipe right to view gear:");
+            await callSendAPI(senderPsid, "🎁 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐂𝐀𝐓𝐀𝐋𝐎𝐆\nSwipe right to browse items:", catalogQuickReplies);
             await sendCatalogCarousel(senderPsid);
-            await callSendAPI(senderPsid, "Tap 'Claim' on any item above, or go back:", catalogQuickReplies);
           }
           else if (query.includes("promo") || query.includes("refer") || messageText === "PAYLOAD_PROMO") {
             const baseUrl = process.env.MESSENGER_LINK || "https://m.me/yourpage";
             const shareableLink = `${baseUrl}?ref=${userData.referralCode}`;
 
-            const promo = 
-              `📢 𝐒𝐇𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐆𝐄𝐀𝐑\n` +
-              `━━━━━━━━━━━━━━━━━━\n` +
-              `Share your link with fellow missionaries. When they join, BOTH of you get +1 Point!\n\n` +
-              `🔗 𝐘𝐨𝐮𝐫 𝐋𝐢𝐧𝐤:\n${shareableLink}\n\n` +
+            const promo = `📢 𝐒𝐇𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `Share your personal link with fellow missionaries. When they register, BOTH of you earn +1 Reward Point!\n\n` +
+              `🔗 𝐘𝐨𝐮𝐫 𝐑𝐞𝐟𝐞𝐫𝐫𝐚𝐥 𝐋𝐢𝐧𝐤:\n` +
+              `${shareableLink}\n\n` +
               `👉 Or share Code: ${userData.referralCode}`;
             await callSendAPI(senderPsid, promo, defaultQuickReplies);
           }
@@ -609,30 +653,41 @@ module.exports = async (req, res) => {
 
               await update(userRef, { points: newPoints });
 
+              // Save Order with PENDING status
               await set(ref(db, `transactions/${refID}`), {
                 psid: senderPsid,
                 name: userData.titleName,
                 item: itemName,
                 pointsSpent: cost,
-                status: "Pending",
+                status: "PENDING",
                 timestamp: new Date().toISOString()
               });
 
-              const receipt = 
-                `━━━━━━━━━━━━━━━━━━\n` +
-                ` 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 \n` +
-                `     𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓    \n` +
-                `━━━━━━━━━━━━━━━━━━\n` +
-                `👤 Name:    ${userData.titleName}\n` +
-                `🔖 Ref ID:  ${refID}\n` +
-                `🎁 Item:    ${itemName}\n` +
-                `⭐ Spent:   ${cost} Pts\n` +
-                `💳 Balance: ${newPoints} Pts\n` +
-                `📌 Status:  PENDING\n` +
-                `━━━━━━━━━━━━━━━━━━\n` +
-                `Present this Ref ID to our page to arrange dispatch!`;
+              const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒  \n` +
+                `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
+                `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `Registered:   ${userData.titleName}\n` +
+                `Reference ID: ${refID}\n` +
+                `Item Claimed: ${itemName}\n` +
+                `Points Used:  ${cost} Point(s)\n` +
+                `Balance:      ${newPoints} Point(s)\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `Status: ⏳ PENDING DISPATCH\n\n` +
+                `Tap the button below to submit your receipt directly for fulfillment!`;
 
-              await callSendAPI(senderPsid, receipt, defaultQuickReplies);
+              const prefilledText = encodeURIComponent(`Hi Timeless Creations! Here is my redemption receipt for fulfillment:\n- Name: ${userData.titleName}\n- Item: ${itemName}\n- Ref ID: ${refID}`);
+              const fulfillmentUrl = `https://m.me/timeless.creations.06?text=${prefilledText}`;
+
+              const claimButtons = [
+                {
+                  type: "web_url",
+                  url: fulfillmentUrl,
+                  title: "💬 Chat to Claim Reward"
+                }
+              ];
+
+              await sendButtonMessage(senderPsid, receipt, claimButtons);
             }
           }
           else {

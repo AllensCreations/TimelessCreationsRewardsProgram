@@ -132,7 +132,6 @@ const globalInviteQuickReply = [
   { content_type: "text", title: "Use Global Code: TCRP", payload: "TCRP" }
 ];
 
-// Unified Dashboard Quick Replies shown across all verified actions
 const unifiedQuickReplies = [
   { content_type: "text", title: "🏆 Dashboard & Share", payload: "PAYLOAD_UNIFIED_HUB" },
   { content_type: "text", title: "🎁 Catalog & Redeem", payload: "PAYLOAD_CATALOG" },
@@ -183,9 +182,7 @@ module.exports = async (req, res) => {
             const userRef = ref(db, `users/${senderPsid}`);
             const snapshot = await get(userRef);
 
-            // -------------------------------------------------------------
-            // RATE LIMITING PROTECTION (Max 5 clicks per 10 seconds)
-            // -------------------------------------------------------------
+            // Rate limiter (5 clicks per 10s)
             if (snapshot.exists()) {
               const uData = snapshot.val();
               const now = Date.now();
@@ -194,7 +191,7 @@ module.exports = async (req, res) => {
 
               if (now - clickWindow < 10000) {
                 if (clickCount >= 5) {
-                  await callSendAPI(senderPsid, "⚠️ You are clicking too fast! Please wait a few seconds before trying again.");
+                  await callSendAPI(senderPsid, "⚠️ You are clicking too fast! Please wait a moment.");
                   continue;
                 }
                 await update(userRef, { clickCount: clickCount + 1 });
@@ -207,14 +204,13 @@ module.exports = async (req, res) => {
               await update(userRef, { pendingRefParam: mmeReferral.toUpperCase() });
             }
 
-            // ADMIN SECRET
+            // Admin Secret
             if (messageText.startsWith('/Admin 0726')) {
               await update(userRef, { isAdmin: true });
               await callSendAPI(senderPsid, "👑 𝐀𝐃𝐌𝐈𝐍 𝐀𝐂𝐂𝐄𝐒𝐒 𝐆𝐑𝐀𝐍𝐓𝐄𝐃", unifiedQuickReplies);
               continue;
             }
 
-            // RESET OR NEW USER
             const isGetStarted = (postbackPayload === "GET_STARTED" || postbackPayload === "GET_STARTED_PAYLOAD" || messageText.toLowerCase() === "get started");
 
             if (isGetStarted || !snapshot.exists()) {
@@ -244,15 +240,12 @@ module.exports = async (req, res) => {
             let userData = snapshot.val();
             let userState = userData.state || "AWAITING_TERMS";
 
-            // FAQS POSTBACK
             if (messageText === "PAYLOAD_FAQS" || messageText.toLowerCase() === "faq") {
               await callSendAPI(senderPsid, getFaqsText(), unifiedQuickReplies);
               continue;
             }
 
-            // -------------------------------------------------------------
             // STEP 1: TERMS
-            // -------------------------------------------------------------
             if (userState === "AWAITING_TERMS" || !userData.termsAccepted) {
               if (messageText === "AGREE_TERMS" || messageText.toLowerCase().includes("agree")) {
                 await update(userRef, { termsAccepted: true, state: "AWAITING_INVITE" });
@@ -266,18 +259,13 @@ module.exports = async (req, res) => {
                   globalInviteQuickReply
                 );
                 continue;
-              } else if (messageText === "DECLINE_TERMS") {
-                await callSendAPI(senderPsid, `✕ Terms declined. Tap below when ready:`, termsQuickReplies);
-                continue;
               } else {
                 await callSendAPI(senderPsid, `Please tap "✓ Agree & Continue" below:`, termsQuickReplies);
                 continue;
               }
             }
 
-            // -------------------------------------------------------------
-            // STEP 2: INVITATION CODE
-            // -------------------------------------------------------------
+            // STEP 2: INVITATION
             if (userState === "AWAITING_INVITE" || !userData.invited) {
               const inputCode = messageText.toUpperCase().trim();
 
@@ -292,7 +280,7 @@ module.exports = async (req, res) => {
                   const currentGlobalClaims = statsSnap.exists() ? statsSnap.val() : 0;
 
                   if (currentGlobalClaims >= 100) {
-                    await callSendAPI(senderPsid, `✕ Global code limit reached. Please enter a personal code.`);
+                    await callSendAPI(senderPsid, `✕ Global code limit reached.`);
                     continue;
                   } else {
                     isValidCode = true;
@@ -327,9 +315,7 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // -------------------------------------------------------------
-            // STEP 3: TITLE & LAST NAME
-            // -------------------------------------------------------------
+            // STEP 3: TITLE
             if (userState === "AWAITING_TITLE" || !userData.titleName) {
               const formatted = messageText.trim();
               if (formatted.toLowerCase().startsWith("elder ") || formatted.toLowerCase().startsWith("sister ")) {
@@ -343,9 +329,7 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // -------------------------------------------------------------
             // STEP 4: EMAIL & OTP
-            // -------------------------------------------------------------
             if (userState === "AWAITING_EMAIL" || userState === "AWAITING_OTP" || !userData.verified) {
               const normalizedInput = messageText.trim().toLowerCase();
 
@@ -392,9 +376,7 @@ module.exports = async (req, res) => {
               continue;
             }
 
-            // -------------------------------------------------------------
-            // STEP 5: UNIFIED DASHBOARD & CATALOG (SHOWS ALL AT ONCE)
-            // -------------------------------------------------------------
+            // STEP 5: DASHBOARD & PURCHASE/REDEMPTION HANDLER
             const query = messageText.toLowerCase();
 
             if (query.includes("dashboard") || messageText === "PAYLOAD_UNIFIED_HUB") {
@@ -410,7 +392,7 @@ module.exports = async (req, res) => {
                 `📢 𝐒𝐇𝐀𝐑𝐄 & 𝐄𝐀𝐑𝐍:\n` +
                 `${shareableLink}\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `Rule: 1 Referral = 1 Point. Tap below to browse catalog or get help:`;
+                `Rule: 1 Referral = 1 Point. Tap below to browse catalog:`;
 
               await callSendAPI(senderPsid, unifiedHub, unifiedQuickReplies);
             }
@@ -434,8 +416,10 @@ module.exports = async (req, res) => {
                 const newPoints = userPoints - cost;
                 const refID = generateEncryptedRefID(senderPsid, itemName);
 
+                // Atomically update user balance
                 await update(userRef, { points: newPoints });
 
+                // Save Transaction
                 await set(ref(db, `transactions/${refID}`), {
                   psid: senderPsid,
                   name: userData.titleName,
@@ -447,7 +431,7 @@ module.exports = async (req, res) => {
 
                 const receipt = `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `   𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒  \n` +
-                  `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐑𝐄𝐂𝐄𝐈𝐏𝐓      \n` +
+                  `       𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎🇳 𝐑🇪𝐂🇪🇮🇵🇹      \n` +
                   `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `Registered:   ${userData.titleName}\n` +
                   `Reference ID: ${refID}\n` +
@@ -456,16 +440,13 @@ module.exports = async (req, res) => {
                   `Balance:      ${newPoints} Point(s)\n` +
                   `━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `Status: ⏳ PENDING DISPATCH\n` +
-                  `Tap below to connect with us on Messenger to finalize delivery!`;
+                  `Present Reference ID ${refID} to claim!`;
 
-                const fulfillmentUrl = `https://m.me/timeless.creations.06?ref=CLAIM_${refID}`;
-                const claimButtons = [{ type: "web_url", url: fulfillmentUrl, title: "💬 Chat to Claim" }];
-
-                await sendButtonMessage(senderPsid, receipt, claimButtons);
+                await callSendAPI(senderPsid, receipt, unifiedQuickReplies);
               }
             }
             else {
-              await callSendAPI(senderPsid, `Greetings, ${userData.titleName}! Choose an option below:`, unifiedQuickReplies);
+              await callSendAPI(senderPsid, `Greetings, ${userData.titleName}! Choose an action below:`, unifiedQuickReplies);
             }
 
           } catch (eventErr) {

@@ -133,7 +133,6 @@ export default async function handler(req, res) {
           const msg = payload || rawText;
           if (!msg) continue;
 
-          // Fetch current user from Turso
           const existing = await queryTurso("SELECT * FROM missionaries WHERE psid = ?", [psid]);
           let user = existing[0] || null;
 
@@ -156,12 +155,15 @@ export default async function handler(req, res) {
           // 1. Initial Start or Reset
           const isStart = msg.toLowerCase() === "get started" || msg.toLowerCase() === "restart";
           if (!user || isStart) {
-            const dummyEmail = `temp_${psid}@missionary.org`;
-            await queryTurso(`
-              INSERT INTO missionaries (email, psid, state, is_prelisted, status, window_start, click_count)
-              VALUES (?, ?, 'AWAITING_TERMS', 0, 'active', ?, 1)
-              ON CONFLICT(psid) DO UPDATE SET state = 'AWAITING_TERMS', window_start = excluded.window_start, click_count = 1
-            `, [dummyEmail, psid, now]);
+            if (!user) {
+              const dummyEmail = `temp_${psid}@missionary.org`;
+              await queryTurso(`
+                INSERT INTO missionaries (email, psid, state, is_prelisted, status, window_start, click_count)
+                VALUES (?, ?, 'AWAITING_TERMS', 0, 'active', ?, 1)
+              `, [dummyEmail, psid, now]);
+            } else {
+              await queryTurso("UPDATE missionaries SET state = 'AWAITING_TERMS', window_start = ?, click_count = 1 WHERE psid = ?", [now, psid]);
+            }
 
             const welcome = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 (𝐓𝐂𝐑𝐏)\n━━━━━━━━━━━━━━━━━━━━━━\nWelcome! Claim exclusive custom missionary rewards.\n\n📜 Please accept the Terms of Service to continue:`;
             await callSendAPI(psid, welcome, termsButtons);
@@ -265,8 +267,10 @@ export default async function handler(req, res) {
               const otp = Math.floor(100000 + Math.random() * 900000).toString();
               const target = await queryTurso("SELECT * FROM missionaries WHERE email = ?", [foundEmail]);
 
+              // Clean up any temp row
+              await queryTurso("DELETE FROM missionaries WHERE psid = ? AND email LIKE 'temp_%'", [psid]);
+
               if (target.length > 0) {
-                await queryTurso("DELETE FROM missionaries WHERE psid = ? AND email LIKE 'temp_%'", [psid]);
                 await queryTurso(`
                   UPDATE missionaries 
                   SET psid = ?, name = ?, otp_code = ?, state = 'AWAITING_OTP'

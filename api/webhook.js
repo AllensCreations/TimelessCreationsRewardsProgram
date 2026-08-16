@@ -1,51 +1,74 @@
 import crypto from 'crypto';
 
-const tursoUrl = (process.env.TURSO_DATABASE_URL || '').replace('libsql://', 'https://') + '/v2/pipeline';
-const tursoToken = process.env.TURSO_AUTH_TOKEN;
+const rawDbUrl = (process.env.TURSO_DATABASE_URL || '').replace(/^['"]|['"]$/g, '').trim();
+const tursoUrl = rawDbUrl.replace('libsql://', 'https://') + '/v2/pipeline';
+const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
 
 async function queryTurso(sql, args = []) {
   try {
+    const formattedArgs = args.map(val => {
+      if (val === null || val === undefined) return { type: "null" };
+      if (typeof val === "number") return { type: "integer", value: String(val) };
+      return { type: "text", value: String(val) };
+    });
+
     const payload = {
       requests: [
         {
           type: "execute",
           stmt: {
             sql: sql,
-            args: args.map(val => (val === null ? { type: "null" } : { type: "text", value: String(val) }))
+            args: formattedArgs
           }
         },
         { type: "close" }
       ]
     };
+
     const res = await fetch(tursoUrl, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${tursoToken}`, 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${tursoToken}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    if (!res.ok) return [];
 
-    const firstBatch = data.batched_results?.[0] || data.results?.[0];
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("❌ Turso DB Error:", JSON.stringify(data));
+      return [];
+    }
+
+    const firstBatch = data.results?.[0] || data.batched_results?.[0];
     if (!firstBatch) return [];
 
     const resultObj = firstBatch.response?.result || firstBatch.result;
     if (!resultObj || !resultObj.cols) return [];
 
-    const cols = resultObj.cols.map(c => c.name);
+    const cols = resultObj.cols.map(c => (typeof c === 'object' ? c.name : c));
     return resultObj.rows.map(row => {
       const obj = {};
       row.forEach((cell, idx) => {
-        obj[cols[idx]] = cell !== null && typeof cell === 'object' ? cell.value : cell;
+        const colName = cols[idx];
+        if (cell === null || cell === undefined) {
+          obj[colName] = null;
+        } else if (typeof cell === 'object' && 'value' in cell) {
+          obj[colName] = cell.value;
+        } else {
+          obj[colName] = cell;
+        }
       });
       return obj;
     });
   } catch (err) {
+    console.error("❌ DB Exception:", err.message);
     return [];
   }
 }
 
 async function sendBrevoEmail(email, otpCode, name) {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
   if (!apiKey) return false;
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -65,7 +88,7 @@ async function sendBrevoEmail(email, otpCode, name) {
 }
 
 async function callSendAPI(psid, text, quickReplies = null) {
-  const token = process.env.PAGE_ACCESS_TOKEN;
+  const token = (process.env.PAGE_ACCESS_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
   if (!token) return;
   
   const body = {
@@ -106,7 +129,7 @@ export default async function handler(req, res) {
   const challenge = req.query?.['hub.challenge'] || urlObj.searchParams.get('hub.challenge');
 
   if (req.method === 'GET') {
-    const verifyToken = process.env.VERIFY_TOKEN;
+    const verifyToken = (process.env.VERIFY_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
     if (mode === 'subscribe' && token === verifyToken) {
       return res.status(200).send(challenge);
     }
@@ -129,11 +152,9 @@ export default async function handler(req, res) {
           const msg = payload || rawText;
           if (!msg) continue;
 
-          // 1. Fetch Session
           const sessionRows = await queryTurso("SELECT * FROM sessions WHERE psid = ?", [psid]);
           let session = sessionRows[0] || null;
 
-          // Rate Limiter: 5 messages/minute
           const now = Date.now();
           if (session) {
             const windowStart = Number(session.window_start) || now;
@@ -150,7 +171,7 @@ export default async function handler(req, res) {
             }
           }
 
-          // 2. Initial Start / Reset
+          // 1. Initial Start / Reset
           const isStart = msg.toLowerCase() === "get started" || msg.toLowerCase() === "restart";
           if (!session || isStart) {
             await queryTurso(`
@@ -164,7 +185,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 3. Terms of Service
+          // 2. Terms of Service
           if (session.state === "AWAITING_TERMS") {
             const isAgree = msg === "AGREE_TERMS" || msg.toLowerCase().includes("agree");
             const isDecline = msg === "DECLINE_TERMS" || msg.toLowerCase().includes("decline");
@@ -184,7 +205,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 4. Invitation Code
+          // 3. Invitation Code
           if (session.state === "AWAITING_INVITE") {
             const code = msg.toUpperCase().trim();
             let valid = false;
@@ -209,7 +230,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 5. Registration & OTP Validation
+          // 4. Registration & OTP Validation
           if (session.state === "AWAITING_REGISTRATION" || session.state === "AWAITING_OTP") {
             const isSixDigit = /^\d{6}$/.test(msg.trim());
 
@@ -219,7 +240,6 @@ export default async function handler(req, res) {
                 const title = session.temp_title || "Missionary";
                 const todayStr = new Date().toISOString().split('T')[0];
 
-                // Check pre-listed missionary status
                 const existingM = await queryTurso("SELECT * FROM missionaries WHERE email = ?", [email]);
                 let isPrelisted = existingM.length > 0 && Number(existingM[0].is_prelisted) === 1;
                 const bonusPoints = isPrelisted ? 2 : 1;
@@ -240,7 +260,6 @@ export default async function handler(req, res) {
                   `, [email, title, psid, newPoints, refCode]);
                 }
 
-                // Award referrer
                 if (session.invite_code && session.invite_code.startsWith("TCRP-")) {
                   const refOwner = await queryTurso("SELECT psid, points FROM missionaries WHERE referral_code = ?", [session.invite_code]);
                   if (refOwner[0] && refOwner[0].psid !== psid) {
@@ -249,7 +268,6 @@ export default async function handler(req, res) {
                   }
                 }
 
-                // Update session to VERIFIED
                 await queryTurso("UPDATE sessions SET state = 'VERIFIED', otp_code = NULL, last_checked_date = ? WHERE psid = ?", [todayStr, psid]);
 
                 const successMsg = `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -266,7 +284,6 @@ export default async function handler(req, res) {
               continue;
             }
 
-            // Parse Title + Email
             const lines = msg.split('\n').map(l => l.trim()).filter(Boolean);
             let foundTitle = null;
             let foundEmail = null;
@@ -292,7 +309,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 6. Verified User Actions
+          // 5. Verified User Actions
           const userRows = await queryTurso("SELECT * FROM missionaries WHERE psid = ?", [psid]);
           const user = userRows[0] || null;
           const today = new Date().toISOString().split('T')[0];

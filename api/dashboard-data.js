@@ -1,28 +1,13 @@
 import 'dotenv/config';
 
-function parseMonthsElapsed(startDateStr) {
-  if (!startDateStr) return 1;
-  const now = new Date();
-  const curYear = now.getFullYear();
-  const curMonth = now.getMonth();
-  const monthNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-  
-  let startYear = curYear;
-  let startMonth = curMonth;
-
-  const str = String(startDateStr).toLowerCase();
-  const yearMatch = str.match(/\b(202[0-9])\b/);
-  if (yearMatch) startYear = parseInt(yearMatch[1], 10);
-
-  for (let i = 0; i < monthNames.length; i++) {
-    if (str.includes(monthNames[i])) {
-      startMonth = i;
-      break;
-    }
+// Helper to extract primitive values from any Turso / libSQL cell response
+function unwrap(cell) {
+  if (cell === null || cell === undefined) return '';
+  if (typeof cell === 'object') {
+    if ('value' in cell) return cell.value ?? '';
+    return '';
   }
-
-  const diff = (curYear - startYear) * 12 + (curMonth - startMonth) + 1;
-  return Math.max(1, diff);
+  return cell;
 }
 
 export default async function handler(req, res) {
@@ -33,11 +18,12 @@ export default async function handler(req, res) {
   token = token.replace(/^['"]|['"]$/g, '').trim();
 
   if (!rawUrl || !token) {
-    return res.status(500).json({ ok: false, error: "Missing database credentials" });
+    return res.status(500).json({ ok: false, error: "Missing database credentials in environment" });
   }
 
   const tursoHttp = `https://${rawUrl}/v2/pipeline`;
 
+  // Toggle Force Stop flag
   if (req.method === 'POST' && req.body?.action === 'toggle_stop') {
     const desiredState = req.body.state ? 1 : 0;
     await fetch(tursoHttp, {
@@ -60,61 +46,106 @@ export default async function handler(req, res) {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [
-          { type: "execute", stmt: { sql: "SELECT full_name, email, cohort, start_date, points, referral_code FROM missionaries ORDER BY id ASC;" } },
-          { type: "execute", stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages ORDER BY month ASC;" } },
-          { type: "execute", stmt: { sql: "SELECT order_id, name, email, item, points_cost, created_at, status FROM orders ORDER BY rowid DESC;" } },
-          { type: "execute", stmt: { sql: "SELECT value FROM stats WHERE key = 'FORCE_STOP';" } },
+          // 1. Missionaries roster (Matching exact schema columns)
+          { 
+            type: "execute", 
+            stmt: { 
+              sql: `SELECT 
+                      email, 
+                      COALESCE(name, 'Missionary') as name, 
+                      COALESCE(last_name, '') as last_name, 
+                      COALESCE(cohort, 'elder') as cohort, 
+                      COALESCE(batch_month, 'August 2026') as batch_month, 
+                      COALESCE(months_sent, 0) as months_sent, 
+                      COALESCE(max_months, 24) as max_months, 
+                      COALESCE(points, 0) as points, 
+                      COALESCE(referral_code, 'TCRP') as referral_code, 
+                      COALESCE(status, 'active') as status 
+                    FROM missionaries 
+                    ORDER BY rowid ASC;` 
+            } 
+          },
+          // 2. 24-Month Messages
+          { 
+            type: "execute", 
+            stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages ORDER BY month ASC;" } 
+          },
+          // 3. Purchase POS Logbook / Orders
+          { 
+            type: "execute", 
+            stmt: { sql: "SELECT order_id, psid, email, name, item, points_cost, status, created_at FROM orders ORDER BY rowid DESC;" } 
+          },
+          // 4. Force Stop Status
+          { 
+            type: "execute", 
+            stmt: { sql: "SELECT value FROM stats WHERE key = 'FORCE_STOP';" } 
+          },
           { type: "close" }
         ]
       })
     });
 
     const data = await dbRes.json();
-    const misRows = data.results?.[0]?.response?.result?.rows || [];
-    const msgRows = data.results?.[1]?.response?.result?.rows || [];
-    const ordRows = data.results?.[2]?.response?.result?.rows || [];
-    const stopVal = data.results?.[3]?.response?.result?.rows?.[0]?.[0]?.value || 0;
+    if (!dbRes.ok) {
+      return res.status(500).json({ ok: false, error: data.message || "Database query failed" });
+    }
 
-    const missionaries = misRows.map(r => {
-      const name = r[0]?.value ?? r[0] ?? 'Missionary';
-      const email = r[1]?.value ?? r[1] ?? '';
-      const rawCohort = r[2]?.value ?? r[2] ?? 'elder';
-      const isSister = String(rawCohort).toLowerCase().includes('sister') || String(name).toLowerCase().startsWith('sister');
-      const cohort = isSister ? 'sister' : 'elder';
-      const start = r[3]?.value ?? r[3] ?? 'August 2026';
-      const points = Number(r[4]?.value ?? r[4] ?? 2);
-      const ref = r[5]?.value ?? r[5] ?? 'TCRP';
-      const limit = isSister ? 18 : 24;
-      const sentCount = parseMonthsElapsed(start);
+    // Process Missionaries
+    const misBatch = data.results?.[0]?.response?.result;
+    const misRows = misBatch?.rows || [];
+    const missionaries = misRows.map(row => {
+      const email = String(unwrap(row[0])).trim();
+      const name = String(unwrap(row[1])).trim();
+      const lastName = String(unwrap(row[2])).trim();
+      const cohort = String(unwrap(row[3])).toLowerCase().trim();
+      const batch = String(unwrap(row[4])).trim();
+      const monthsSent = Number(unwrap(row[5])) || 0;
+      const maxMonths = Number(unwrap(row[6])) || (cohort === 'sister' ? 18 : 24);
+      const points = Number(unwrap(row[7])) || 0;
+      const ref = String(unwrap(row[8])).trim();
+      const status = String(unwrap(row[9])).trim();
 
       return {
-        name,
         email,
-        cohort,
-        start,
-        monthsDiff: sentCount,
+        name: name || 'Missionary',
+        lastName,
+        cohort: cohort.includes('sister') ? 'sister' : 'elder',
+        start: batch || 'August 2026',
+        monthsDiff: monthsSent,
+        limit: maxMonths,
         points,
-        ref,
-        limit
+        ref: ref || 'TCRP',
+        status: status || 'active'
       };
     });
 
-    const messages = msgRows.map(r => ({
-      month: Number(r[0]?.value ?? r[0] ?? 1),
-      theme: r[1]?.value ?? r[1] ?? '',
-      quote: r[2]?.value ?? r[2] ?? '',
-      msg: r[3]?.value ?? r[3] ?? ''
+    // Process Messages
+    const msgBatch = data.results?.[1]?.response?.result;
+    const msgRows = msgBatch?.rows || [];
+    const messages = msgRows.map(row => ({
+      month: Number(unwrap(row[0])) || 1,
+      theme: String(unwrap(row[1])),
+      quote: String(unwrap(row[2])),
+      msg: String(unwrap(row[3]))
     }));
 
-    const orders = ordRows.map(r => ({
-      order_id: r[0]?.value ?? r[0] ?? '',
-      name: r[1]?.value ?? r[1] ?? '',
-      email: r[2]?.value ?? r[2] ?? '—',
-      item: r[3]?.value ?? r[3] ?? '',
-      cost: Number(r[4]?.value ?? r[4] ?? 0),
-      date: r[5]?.value ?? r[5] ?? '',
-      status: r[6]?.value ?? r[6] ?? 'PENDING'
+    // Process Orders
+    const ordBatch = data.results?.[2]?.response?.result;
+    const ordRows = ordBatch?.rows || [];
+    const orders = ordRows.map(row => ({
+      order_id: String(unwrap(row[0])),
+      psid: String(unwrap(row[1])),
+      email: String(unwrap(row[2])),
+      name: String(unwrap(row[3])) || 'Missionary',
+      item: String(unwrap(row[4])),
+      cost: Number(unwrap(row[5])) || 0,
+      status: String(unwrap(row[6])) || 'PENDING',
+      date: String(unwrap(row[7])) || ''
     }));
+
+    // Process Force Stop Flag
+    const stopBatch = data.results?.[3]?.response?.result;
+    const stopVal = unwrap(stopBatch?.rows?.[0]?.[0]);
 
     return res.status(200).json({
       ok: true,

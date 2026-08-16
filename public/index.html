@@ -88,6 +88,25 @@
   .stat-card.red .stat-val{color:var(--red);}
   .stat-sub{font-size:0.6rem;color:var(--muted);}
 
+  /* Admin System Panel Cards */
+  .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px;}
+  .admin-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:14px;}
+  .admin-card h3{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;color:var(--gold);}
+  .admin-card p{font-size:0.68rem;color:var(--muted);line-height:1.5;}
+  
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);}
+  .switch{position:relative;display:inline-block;width:44px;height:24px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;cursor:pointer;inset:0;background-color:var(--muted);transition:.3s;border-radius:24px;}
+  .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%;}
+  input:checked + .slider{background-color:var(--green);}
+  input:checked + .slider:before{transform:translateX(20px);}
+
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group label{font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
+  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;}
+  .form-textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75net;outline:none;resize:vertical;min-height:80px;}
+
   .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;}
   .table-controls{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;}
   .search-input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.7rem;outline:none;}
@@ -100,7 +119,6 @@
   tbody tr:hover{background:var(--surface2);}
   tbody td{padding:10px 14px;font-size:0.68rem;}
 
-  /* Progress UI */
   .prog-container{display:flex;flex-direction:column;gap:4px;min-width:160px;}
   .prog-track{width:100%;height:7px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;position:relative;}
   .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;transition:width 0.4s ease;}
@@ -117,6 +135,8 @@
 
   .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.6rem;transition:all 0.2s;}
   .btn-delete:hover{background:var(--red);color:#fff;}
+  .btn-edit{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(92,141,224,0.3);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.6rem;transition:all 0.2s;}
+  .btn-edit:hover{background:var(--blue);color:#fff;}
 
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999;}
@@ -124,7 +144,6 @@
   .toast.success{border-left-color:var(--green);}
   .toast.error{border-left-color:var(--red);}
 
-  /* Mobile Media Queries for Auto-Adjusting View */
   @media(max-width: 768px) {
     .app{flex-direction:column;height:auto;overflow:auto;}
     .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:1000;box-shadow:10px 0 30px rgba(0,0,0,0.8);}
@@ -159,7 +178,8 @@
       <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Progress <span class="badge" id="badge-missionaries">—</span></div>
       <div class="nav-item" onclick="switchTab('pos-logbook',this)"><span class="icon">📖</span> POS Logbook <span class="badge" id="badge-pos">0</span></div>
-      <div class="nav-label">Campaigns</div>
+      <div class="nav-label">Administration</div>
+      <div class="nav-item" onclick="switchTab('admin-panel',this)"><span class="icon">⚙️</span> Admin System Panel</div>
       <div class="nav-item" onclick="switchTab('messages',this)"><span class="icon">📜</span> 24-Mo Messages</div>
       <div class="nav-item" onclick="switchTab('logs',this)"><span class="icon">🖥️</span> Live Logs</div>
     </nav>
@@ -177,7 +197,7 @@
     <div class="topbar">
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
       <div class="topbar-title" id="topbar-title">Missionary Tracking <span>Overview</span></div>
-      <div class="force-stop-pill" id="force-stop-btn" onclick="toggleForceStop()">
+      <div class="force-stop-pill" id="force-stop-btn" onclick="toggleForceStopUI()">
         <div class="force-stop-dot"></div>
         <span id="force-stop-text">System Sending: Active</span>
       </div>
@@ -239,7 +259,57 @@
       </div>
     </div>
 
-    <!-- 3. POS LOGBOOK -->
+    <!-- 3. ADMIN SYSTEM PANEL -->
+    <div class="panel" id="panel-admin-panel">
+      <div class="section-head">
+        <div><h2>Admin System Control Panel</h2><p>Global automation overrides, maintenance toggles, and test dispatching</p></div>
+        <button class="btn-submit" onclick="doSync()">↻ Refresh Status</button>
+      </div>
+
+      <div class="admin-grid">
+        <!-- System Toggles -->
+        <div class="admin-card">
+          <h3>System Automation Toggles</h3>
+          <p>Instantly pause or resume automated cron jobs, email dispatches, and Messenger bot operations.</p>
+          
+          <div class="toggle-row">
+            <div>
+              <strong style="font-size:0.72rem">Stop Automated Sending</strong>
+              <div style="font-size:0.58rem;color:var(--muted)">Halts daily drip emails across all cohorts</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-stop-input" onchange="toggleForceStop(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <strong style="font-size:0.72rem">Maintenance Mode</strong>
+              <div style="font-size:0.58rem;color:var(--muted)">Puts bot in maintenance notice state</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-maint-input" onchange="toggleMaintenance(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Test Send Email -->
+        <div class="admin-card">
+          <h3>Test Email Dispatcher</h3>
+          <p>Send an immediate test transmission via Brevo to verify API connectivity and template formatting.</p>
+          
+          <div class="form-group">
+            <label>Recipient Email Address</label>
+            <input type="email" id="test-email-input" class="form-input" placeholder="admin@example.com" value="2ndsalviejomark2019@gmail.com"/>
+          </div>
+          <button class="btn-submit" style="width:100%;margin-top:4px;" onclick="sendTestEmail()">🚀 Send Test Email Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. POS LOGBOOK -->
     <div class="panel" id="panel-pos-logbook">
       <div class="section-head">
         <div><h2>Logbook for Purchase POS</h2><p>Points redemptions and merchandise receipts</p></div>
@@ -267,10 +337,10 @@
       </div>
     </div>
 
-    <!-- 4. 24-MONTH MESSAGES -->
+    <!-- 5. 24-MONTH MESSAGES & EDITOR -->
     <div class="panel" id="panel-messages">
       <div class="section-head">
-        <div><h2>24-Month Messages Directory</h2><p>Scheduled scriptural themes and body text</p></div>
+        <div><h2>24-Month Messages Directory &amp; Editor</h2><p>Edit themes, quotes, and body copy for monthly encouragement drips</p></div>
       </div>
       <div class="table-wrap">
         <div style="max-height:500px;overflow-y:auto">
@@ -279,19 +349,20 @@
               <tr>
                 <th style="width:70px">Month</th>
                 <th style="width:180px">Theme / Speaker</th>
-                <th style="width:240px">Quote</th>
+                <th style="width:220px">Quote</th>
                 <th>Message Content</th>
+                <th style="text-align:center;width:90px">Action</th>
               </tr>
             </thead>
             <tbody id="messages-tbody">
-              <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Loading messages...</td></tr>
+              <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Loading messages...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- 5. LIVE LOGS -->
+    <!-- 6. LIVE LOGS -->
     <div class="panel" id="panel-logs">
       <div class="section-head">
         <div><h2>Live Activity Logs</h2><p>Real-time pipeline traces</p></div>
@@ -311,7 +382,8 @@ let state = {
   missionaries: [],
   orders: [],
   messages: [],
-  forceStop: false
+  forceStop: false,
+  maintenanceMode: false
 };
 
 function toggleSidebar() {
@@ -334,12 +406,13 @@ async function doSync() {
       state.messages = data.messages || [];
       state.orders = data.orders || [];
       state.forceStop = Boolean(data.forceStop);
+      state.maintenanceMode = Boolean(data.maintenanceMode);
 
       renderDashboard();
       renderRoster(state.missionaries);
       renderPosLogbook(state.orders);
       renderMessages(state.messages);
-      updateForceStopUI();
+      updateAdminTogglesUI();
 
       showToast("Synced", `Loaded ${state.missionaries.length} missionaries & ${state.orders.length} orders.`, "success");
     } else {
@@ -375,6 +448,112 @@ async function deleteMissionary(email, name) {
   } catch (e) {
     showToast("Error", e.message, "error");
   }
+}
+
+async function toggleForceStop(isChecked) {
+  try {
+    const res = await fetch('/api/dashboard-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_stop', state: isChecked })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      state.forceStop = data.forceStop;
+      updateAdminTogglesUI();
+      showToast(state.forceStop ? "Sending Paused" : "Sending Active", state.forceStop ? "Emergency stop enabled." : "Sending resumed.", state.forceStop ? "error" : "success");
+      addLog("CONTROL", state.forceStop ? "🚨 Emergency Force Stop Enabled" : "✅ Sending Re-enabled");
+    }
+  } catch (e) {
+    showToast("Error", e.message, "error");
+  }
+}
+
+async function toggleMaintenance(isChecked) {
+  try {
+    const res = await fetch('/api/dashboard-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_maintenance', state: isChecked })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      state.maintenanceMode = data.maintenance_mode;
+      updateAdminTogglesUI();
+      showToast("Maintenance Mode", state.maintenanceMode ? "Bot in maintenance mode." : "Bot active.", state.maintenanceMode ? "error" : "success");
+      addLog("MAINTENANCE", state.maintenanceMode ? "⚠️ Maintenance Mode Activated" : "✅ Maintenance Mode Deactivated");
+    }
+  } catch (e) {
+    showToast("Error", e.message, "error");
+  }
+}
+
+async function sendTestEmail() {
+  const email = document.getElementById('test-email-input').value.trim();
+  if (!email || !email.includes('@')) {
+    showToast("Invalid Email", "Please enter a valid recipient email address.", "error");
+    return;
+  }
+
+  showToast("Sending...", `Dispatching test email to ${email}...`, "success");
+  try {
+    const res = await fetch('/api/dashboard-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'test_send', email })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Success", data.message, "success");
+      addLog("TEST_EMAIL", `Sent test dispatch to ${email}`);
+    } else {
+      showToast("Error", data.error || "Test dispatch failed.", "error");
+    }
+  } catch (e) {
+    showToast("Error", e.message, "error");
+  }
+}
+
+async function saveMessage(month) {
+  const theme = document.getElementById(`msg-theme-${month}`).value;
+  const quote = document.getElementById(`msg-quote-${month}`).value;
+  const message = document.getElementById(`msg-body-${month}`).value;
+
+  try {
+    const res = await fetch('/api/dashboard-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_message', month, theme, scripture: quote, message })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Saved", `Month ${month} message updated successfully.`, "success");
+      addLog("MESSAGE", `Updated Month ${month} drip content.`);
+    } else {
+      showToast("Error", "Failed to update message.", "error");
+    }
+  } catch (e) {
+    showToast("Error", e.message, "error");
+  }
+}
+
+function updateAdminTogglesUI() {
+  document.getElementById('toggle-stop-input').checked = state.forceStop;
+  document.getElementById('toggle-maint-input').checked = state.maintenanceMode;
+
+  const btn = document.getElementById('force-stop-btn');
+  const txt = document.getElementById('force-stop-text');
+  if (state.forceStop) {
+    btn.classList.add('active');
+    txt.textContent = "🚨 Sending: PAUSED";
+  } else {
+    btn.classList.remove('active');
+    txt.textContent = "System Sending: Active";
+  }
+}
+
+function toggleForceStopUI() {
+  toggleForceStop(!state.forceStop);
 }
 
 function renderDashboard() {
@@ -457,49 +636,20 @@ function renderPosLogbook(orders) {
 function renderMessages(msgs) {
   const tb = document.getElementById('messages-tbody');
   if (!msgs || !msgs.length) {
-    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px">No messages found.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px">No messages found.</td></tr>';
     return;
   }
   tb.innerHTML = msgs.map(m => `
     <tr>
       <td style="font-weight:bold;color:var(--gold)">Month ${m.month}</td>
-      <td>${m.theme}</td>
-      <td style="font-style:italic;color:var(--muted)">${m.quote}</td>
-      <td>${m.msg}</td>
+      <td><input type="text" id="msg-theme-${m.month}" class="form-input" value="${m.theme || ''}" style="width:160px"/></td>
+      <td><input type="text" id="msg-quote-${m.month}" class="form-input" value="${m.quote || ''}" style="width:200px"/></td>
+      <td><textarea id="msg-body-${m.month}" class="form-textarea" style="width:100%;min-height:50px">${m.msg || ''}</textarea></td>
+      <td style="text-align:center">
+        <button class="btn-edit" onclick="saveMessage(${m.month})">💾 Save</button>
+      </td>
     </tr>
   `).join('');
-}
-
-async function toggleForceStop() {
-  const nextState = !state.forceStop;
-  try {
-    const res = await fetch('/api/dashboard-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'toggle_stop', state: nextState })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      state.forceStop = data.forceStop;
-      updateForceStopUI();
-      showToast(state.forceStop ? "Sending Paused" : "Sending Active", state.forceStop ? "Emergency stop enabled." : "Sending resumed.", state.forceStop ? "error" : "success");
-      addLog("CONTROL", state.forceStop ? "🚨 Emergency Force Stop Enabled" : "✅ Sending Re-enabled");
-    }
-  } catch (e) {
-    showToast("Error", e.message, "error");
-  }
-}
-
-function updateForceStopUI() {
-  const btn = document.getElementById('force-stop-btn');
-  const txt = document.getElementById('force-stop-text');
-  if (state.forceStop) {
-    btn.classList.add('active');
-    txt.textContent = "🚨 Sending: PAUSED (Stop Active)";
-  } else {
-    btn.classList.remove('active');
-    txt.textContent = "System Sending: Active";
-  }
 }
 
 function filterRoster(query) {
@@ -522,7 +672,6 @@ function switchTab(tab, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
   if (el) el.classList.add('active');
-  // Close mobile sidebar on selection
   if (window.innerWidth <= 768) {
     document.getElementById('sidebar').classList.remove('open');
   }

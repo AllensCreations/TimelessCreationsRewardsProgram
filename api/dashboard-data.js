@@ -22,25 +22,15 @@ export default async function handler(req, res) {
 
   const tursoHttp = `https://${rawUrl}/v2/pipeline`;
 
-  // Handle Delete Missionary Request
+  // 1. Handle Delete Missionary
   if (req.method === 'POST' && req.body?.action === 'delete_missionary') {
     const emailToDelete = String(req.body.email || '').trim().toLowerCase();
-    if (!emailToDelete) {
-      return res.status(400).json({ ok: false, error: "Email required for deletion" });
-    }
-
     await fetch(tursoHttp, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [
-          {
-            type: "execute",
-            stmt: {
-              sql: "DELETE FROM missionaries WHERE email = ?;",
-              args: [{ type: "text", value: emailToDelete }]
-            }
-          },
+          { type: "execute", stmt: { sql: "DELETE FROM missionaries WHERE email = ?;", args: [{ type: "text", value: emailToDelete }] } },
           { type: "close" }
         ]
       })
@@ -48,8 +38,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, deletedEmail: emailToDelete });
   }
 
-  // Handle Toggle Force Stop
-  if (req.method === 'POST' && req.body?.action === 'toggle_stop') {
+  // 2. Handle Toggle System Flags (Force Stop / Maintenance)
+  if (req.method === 'POST' && (req.body?.action === 'toggle_stop' || req.body?.action === 'toggle_maintenance')) {
+    const key = req.body.action === 'toggle_stop' ? 'FORCE_STOP' : 'MAINTENANCE_MODE';
     const desiredState = req.body.state ? 1 : 0;
     await fetch(tursoHttp, {
       method: 'POST',
@@ -57,12 +48,76 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         requests: [
           { type: "execute", stmt: { sql: "CREATE TABLE IF NOT EXISTS stats (key TEXT PRIMARY KEY, value INTEGER);" } },
-          { type: "execute", stmt: { sql: "INSERT INTO stats (key, value) VALUES ('FORCE_STOP', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", args: [{ type: "integer", value: String(desiredState) }] } },
+          { type: "execute", stmt: { sql: "INSERT INTO stats (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", args: [{ type: "text", value: key }, { type: "integer", value: String(desiredState) }] } },
           { type: "close" }
         ]
       })
     });
-    return res.status(200).json({ ok: true, forceStop: Boolean(desiredState) });
+    return res.status(200).json({ ok: true, [key.toLowerCase()]: Boolean(desiredState) });
+  }
+
+  // 3. Handle Test Send Email
+  if (req.method === 'POST' && req.body?.action === 'test_send') {
+    const targetEmail = String(req.body.email || '').trim();
+    const brevoKey = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
+    
+    if (!targetEmail || !targetEmail.includes('@')) {
+      return res.status(400).json({ ok: false, error: "Valid test email required" });
+    }
+
+    try {
+      const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'accept': 'application/json', 'api-key': brevoKey, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          sender: { name: "Timeless Creations Rewards", email: "noreply.timelesscreations.ph@gmail.com" },
+          to: [{ email: targetEmail, name: "Admin Test" }],
+          subject: "🧪 TCRP System Test Dispatch",
+          htmlContent: `<div style="font-family:Georgia,serif;padding:20px;background:#faf7f0;color:#1a1610;"><h2>TCRP Test Dispatch Successful!</h2><p>This is a live test transmission from your Command Center Admin Panel.</p></div>`
+        })
+      });
+
+      if (emailRes.ok) {
+        return res.status(200).json({ ok: true, message: `Test email successfully sent to ${targetEmail}` });
+      } else {
+        const errJson = await emailRes.json();
+        return res.status(500).json({ ok: false, error: errJson.message || "Brevo dispatch failed" });
+      }
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // 4. Handle Edit Monthly Message
+  if (req.method === 'POST' && req.body?.action === 'update_message') {
+    const month = Number(req.body.month);
+    const theme = String(req.body.theme || '');
+    const scripture = String(req.body.scripture || '');
+    const message = String(req.body.message || '');
+
+    await fetch(tursoHttp, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          { type: "execute", stmt: { sql: "CREATE TABLE IF NOT EXISTS drip_messages (month INTEGER PRIMARY KEY, theme TEXT, scripture TEXT, message TEXT);" } },
+          {
+            type: "execute",
+            stmt: {
+              sql: "INSERT INTO drip_messages (month, theme, scripture, message) VALUES (?, ?, ?, ?) ON CONFLICT(month) DO UPDATE SET theme = excluded.theme, scripture = excluded.scripture, message = excluded.message;",
+              args: [
+                { type: "integer", value: String(month) },
+                { type: "text", value: theme },
+                { type: "text", value: scripture },
+                { type: "text", value: message }
+              ]
+            }
+          },
+          { type: "close" }
+        ]
+      })
+    });
+    return res.status(200).json({ ok: true, message: `Month ${month} updated successfully` });
   }
 
   try {
@@ -71,15 +126,10 @@ export default async function handler(req, res) {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [
-          { 
-            type: "execute", 
-            stmt: { 
-              sql: `SELECT email, COALESCE(name, 'Missionary'), COALESCE(last_name, ''), COALESCE(cohort, 'elder'), COALESCE(batch_month, 'August 2026'), COALESCE(months_sent, 0), COALESCE(max_months, 24), COALESCE(points, 0), COALESCE(referral_code, 'TCRP'), COALESCE(status, 'active') FROM missionaries ORDER BY rowid ASC;` 
-            } 
-          },
+          { type: "execute", stmt: { sql: "SELECT email, COALESCE(name, 'Missionary'), COALESCE(last_name, ''), COALESCE(cohort, 'elder'), COALESCE(batch_month, 'August 2026'), COALESCE(months_sent, 0), COALESCE(max_months, 24), COALESCE(points, 0), COALESCE(referral_code, 'TCRP'), COALESCE(status, 'active') FROM missionaries ORDER BY rowid ASC;" } },
           { type: "execute", stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages ORDER BY month ASC;" } },
           { type: "execute", stmt: { sql: "SELECT order_id, psid, email, name, item, points_cost, status, created_at FROM orders ORDER BY rowid DESC;" } },
-          { type: "execute", stmt: { sql: "SELECT value FROM stats WHERE key = 'FORCE_STOP';" } },
+          { type: "execute", stmt: { sql: "SELECT key, value FROM stats;" } },
           { type: "close" }
         ]
       })
@@ -89,7 +139,12 @@ export default async function handler(req, res) {
     const misRows = data.results?.[0]?.response?.result?.rows || [];
     const msgRows = data.results?.[1]?.response?.result?.rows || [];
     const ordRows = data.results?.[2]?.response?.result?.rows || [];
-    const stopVal = unwrap(data.results?.[3]?.response?.result?.rows?.[0]?.[0]);
+    const statsRows = data.results?.[3]?.response?.result?.rows || [];
+
+    const statsMap = {};
+    statsRows.forEach(r => {
+      statsMap[String(unwrap(r[0]))] = Number(unwrap(r[1])) || 0;
+    });
 
     const missionaries = misRows.map(row => {
       const email = String(unwrap(row[0])).trim();
@@ -140,7 +195,8 @@ export default async function handler(req, res) {
       missionaries,
       messages,
       orders,
-      forceStop: Number(stopVal) === 1,
+      forceStop: statsMap['FORCE_STOP'] === 1,
+      maintenanceMode: statsMap['MAINTENANCE_MODE'] === 1,
       totalCount: missionaries.length
     });
   } catch (err) {

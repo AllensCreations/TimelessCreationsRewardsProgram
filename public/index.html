@@ -321,28 +321,32 @@ const defaultMessages = [
 ];
 
 async function doSync() {
-  const overlay = document.getElementById('sync-overlay');
-  overlay.classList.remove('hidden');
-  const bar = document.getElementById('sync-bar');
-  bar.style.width = '30%';
+  const overlay = document.getElementById("sync-overlay");
+  overlay.classList.remove("hidden");
+  const bar = document.getElementById("sync-bar");
+  bar.style.width = "40%";
 
-  setTimeout(() => { bar.style.width = '70%'; }, 300);
+  try {
+    const res = await fetch("/api/dashboard-data");
+    const data = await res.json();
+    bar.style.width = "85%";
 
-  state.missionaries = [
-    { name: "Elder Allen Salviejo", email: "2ndsalviejomark2019@gmail.com", points: 2, ref: "TCRP-7721", cohort: "elder", start: "August 2026", monthsDiff: 1, limit: 24 },
-    { name: "Elder Carlos Santos", email: "carlos.santos@missionary.org", points: 4, ref: "TCRP-8812", cohort: "elder", start: "January 2026", monthsDiff: 8, limit: 24 },
-    { name: "Sister Anna Lim", email: "anna.lim@missionary.org", points: 3, ref: "TCRP-4122", cohort: "sister", start: "March 2026", monthsDiff: 6, limit: 18 }
-  ];
-  state.messages = defaultMessages;
-
-  setTimeout(() => {
-    bar.style.width = '100%';
-    renderDashboard();
-    renderRoster(state.missionaries);
-    renderMessages(state.messages);
-    overlay.classList.add('hidden');
-    showToast("Synced", "Live TCRP Database loaded.", "success");
-  }, 600);
+    if (data.ok) {
+      state.missionaries = data.missionaries || [];
+      state.messages = data.messages || [];
+      renderDashboard();
+      renderRoster(state.missionaries);
+      renderMessages(state.messages);
+      showToast("Live Sync Complete", `Loaded ${state.missionaries.length} missionaries from Turso.`, "success");
+    } else {
+      showToast("Sync Error", data.error || "Failed to load DB", "error");
+    }
+  } catch (err) {
+    showToast("Network Error", err.message, "error");
+  } finally {
+    bar.style.width = "100%";
+    setTimeout(() => overlay.classList.add("hidden"), 300);
+  }
 }
 
 function renderDashboard() {

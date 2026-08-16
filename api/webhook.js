@@ -98,7 +98,7 @@ const menuButtons = [
 ];
 
 export default async function handler(req, res) {
-  // Safe Query String Extraction for Meta Verification
+  // Verification Endpoint
   const urlObj = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
   const mode = req.query?.['hub.mode'] || urlObj.searchParams.get('hub.mode');
   const token = req.query?.['hub.verify_token'] || urlObj.searchParams.get('hub.verify_token');
@@ -121,7 +121,6 @@ export default async function handler(req, res) {
           const psid = event.sender?.id;
           if (!psid) continue;
 
-          // Ignore echo and read receipts
           if (event.delivery || event.read || event.message?.is_echo) continue;
 
           const rawText = event.message?.text?.trim() || "";
@@ -129,33 +128,58 @@ export default async function handler(req, res) {
           const msg = payload || rawText;
           if (!msg) continue;
 
+          // Fetch current user from Turso
           const existing = await queryTurso("SELECT * FROM missionaries WHERE psid = ?", [psid]);
           let user = existing[0] || null;
 
-          // 1. Initial Welcome / Reset
-          if (!user || msg.toLowerCase() === "get started" || msg.toLowerCase() === "restart") {
-            if (!user) {
-              const dummyEmail = `temp_${psid}@missionary.org`;
-              await queryTurso(`
-                INSERT INTO missionaries (email, psid, state, is_prelisted, status)
-                VALUES (?, ?, 'AWAITING_TERMS', 0, 'active')
-                ON CONFLICT(psid) DO UPDATE SET state = 'AWAITING_TERMS'
-              `, [dummyEmail, psid]);
+          // 🛡️ 5-CLICKS PER MINUTE RATE LIMITER
+          const now = Date.now();
+          if (user) {
+            const windowStart = Number(user.window_start) || now;
+            let clickCount = Number(user.click_count) || 0;
+
+            if (now - windowStart < 60000) {
+              if (clickCount >= 5) {
+                await callSendAPI(psid, "⚠️ You are sending messages too fast! Please wait a minute.");
+                continue;
+              }
+              await queryTurso("UPDATE missionaries SET click_count = ? WHERE psid = ?", [clickCount + 1, psid]);
             } else {
-              await queryTurso("UPDATE missionaries SET state = 'AWAITING_TERMS' WHERE psid = ?", [psid]);
+              await queryTurso("UPDATE missionaries SET window_start = ?, click_count = 1 WHERE psid = ?", [now, psid]);
             }
+          }
+
+          // 1. Initial Start or Reset
+          const isStart = msg.toLowerCase() === "get started" || msg.toLowerCase() === "restart";
+          if (!user || isStart) {
+            const dummyEmail = `temp_${psid}@missionary.org`;
+            await queryTurso(`
+              INSERT INTO missionaries (email, psid, state, is_prelisted, status, window_start, click_count)
+              VALUES (?, ?, 'AWAITING_TERMS', 0, 'active', ?, 1)
+              ON CONFLICT(psid) DO UPDATE SET state = 'AWAITING_TERMS', window_start = excluded.window_start, click_count = 1
+            `, [dummyEmail, psid, now]);
+
             const welcome = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 (𝐓𝐂𝐑𝐏)\n━━━━━━━━━━━━━━━━━━━━━━\nWelcome! Claim exclusive custom missionary rewards.\n\n📜 Please accept the Terms of Service to continue:`;
             await callSendAPI(psid, welcome, termsButtons);
             continue;
           }
 
-          // 2. Terms Agreement
+          // 2. Terms Agreement (Loop Fixed: strict payload & phrase match)
           if (user.state === "AWAITING_TERMS") {
-            if (msg === "AGREE_TERMS" || msg.toLowerCase().includes("agree")) {
+            const isAgree = msg === "AGREE_TERMS" || msg.toLowerCase().includes("agree");
+            const isDecline = msg === "DECLINE_TERMS" || msg.toLowerCase().includes("decline");
+
+            if (isAgree) {
               await queryTurso("UPDATE missionaries SET state = 'AWAITING_INVITE' WHERE psid = ?", [psid]);
-              await callSendAPI(psid, `🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\nEnter an invite code from a fellow missionary, or tap below to use the global code:`, globalCodeButton);
+              await callSendAPI(
+                psid,
+                `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\nEnter an invite code from a fellow missionary, or tap below to use the global code:`,
+                globalCodeButton
+              );
+            } else if (isDecline) {
+              await callSendAPI(psid, "You must accept the Terms of Service to join TCRP. Type 'Restart' anytime to try again.", termsButtons);
             } else {
-              await callSendAPI(psid, `Please tap "✓ Agree & Continue" to join:`, termsButtons);
+              await callSendAPI(psid, `Please tap "✓ Agree & Continue" below to proceed:`, termsButtons);
             }
             continue;
           }
@@ -164,22 +188,32 @@ export default async function handler(req, res) {
           if (user.state === "AWAITING_INVITE") {
             const code = msg.toUpperCase().trim();
             let referrer = null;
+            let valid = false;
+
             if (code === "TCRP") {
-              const stat = await queryTurso("SELECT value FROM stats WHERE key = 'globalClaims'");
-              const claims = stat[0] ? Number(stat[0].value) : 0;
+              valid = true;
               await queryTurso("INSERT INTO stats (key, value) VALUES ('globalClaims', 1) ON CONFLICT(key) DO UPDATE SET value = value + 1");
             } else if (code.startsWith("TCRP-")) {
               const refMatch = await queryTurso("SELECT psid, points FROM missionaries WHERE referral_code = ?", [code]);
-              if (refMatch[0]) referrer = refMatch[0];
+              if (refMatch[0]) {
+                referrer = refMatch[0];
+                valid = true;
+              }
             }
 
-            await queryTurso("UPDATE missionaries SET state = 'AWAITING_REGISTRATION' WHERE psid = ?", [psid]);
-            if (referrer && referrer.psid !== psid) {
-              await queryTurso("UPDATE missionaries SET points = points + 1 WHERE psid = ?", [referrer.psid]);
-              await callSendAPI(referrer.psid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nYou earned +1 Bonus Point!`);
+            if (valid) {
+              await queryTurso("UPDATE missionaries SET state = 'AWAITING_REGISTRATION' WHERE psid = ?", [psid]);
+              if (referrer && referrer.psid !== psid) {
+                await queryTurso("UPDATE missionaries SET points = points + 1 WHERE psid = ?", [referrer.psid]);
+                await callSendAPI(referrer.psid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nYou earned +1 Bonus Point!`);
+              }
+              await callSendAPI(
+                psid,
+                `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${code})\n━━━━━━━━━━━━━━━━━━━━━━\nPlease send your Missionary Title & Email together:\n\nElder Smith\njohn.smith@missionary.org`
+              );
+            } else {
+              await callSendAPI(psid, `✕ Invalid invitation code. Enter a valid code or tap below:`, globalCodeButton);
             }
-
-            await callSendAPI(psid, `✓ Code Accepted!\n━━━━━━━━━━━━━━━━━━━━━━\nPlease send your Missionary Title & Email together:\n\nElder Smith\njohn.smith@missionary.org`);
             continue;
           }
 
@@ -189,7 +223,7 @@ export default async function handler(req, res) {
 
             if (user.state === "AWAITING_OTP" && isSixDigit) {
               if (user.otp_code && msg.trim() === user.otp_code) {
-                const bonusPoints = user.is_prelisted === 1 ? 2 : 1;
+                const bonusPoints = Number(user.is_prelisted) === 1 ? 2 : 1;
                 const newPoints = (Number(user.points) || 0) + bonusPoints;
                 const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
                 const todayStr = new Date().toISOString().split('T')[0];
@@ -202,7 +236,7 @@ export default async function handler(req, res) {
 
                 const successMsg = `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
                   `👤 ${user.name || 'Missionary'}\n` +
-                  `🎁 Welcome Reward: +${bonusPoints} Point(s) ${user.is_prelisted === 1 ? '(Pre-Listed Bonus!)' : ''}\n` +
+                  `🎁 Welcome Reward: +${bonusPoints} Point(s) ${Number(user.is_prelisted) === 1 ? '(Pre-Listed Bonus!)' : ''}\n` +
                   `💰 Balance: ${newPoints} Point(s)\n` +
                   `🔑 Your Code: ${refCode}\n\n` +
                   `🔗 Share Link:\nhttps://m.me/timeless.creations.06?ref=${refCode}`;
@@ -228,6 +262,9 @@ export default async function handler(req, res) {
               const target = await queryTurso("SELECT * FROM missionaries WHERE email = ?", [foundEmail]);
 
               if (target.length > 0) {
+                // If temporary record exists under this PSID, clean it up
+                await queryTurso("DELETE FROM missionaries WHERE psid = ? AND email LIKE 'temp_%'", [psid]);
+                
                 await queryTurso(`
                   UPDATE missionaries 
                   SET psid = ?, name = ?, otp_code = ?, state = 'AWAITING_OTP'

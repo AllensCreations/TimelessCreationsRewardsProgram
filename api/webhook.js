@@ -128,7 +128,9 @@ function getCatalogCarouselPayload() {
 }
 
 export default async function handler(req, res) {
-  const urlObj = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
+  const reqUrl = req.url || "/";
+  const host = req.headers?.host || "localhost";
+  const urlObj = new URL(reqUrl, `https://${host}`);
   const mode = req.query?.['hub.mode'] || urlObj.searchParams.get('hub.mode');
   const token = req.query?.['hub.verify_token'] || urlObj.searchParams.get('hub.verify_token');
   const challenge = req.query?.['hub.challenge'] || urlObj.searchParams.get('hub.challenge');

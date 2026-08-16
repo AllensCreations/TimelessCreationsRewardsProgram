@@ -23,17 +23,23 @@ async function queryTurso(sql, args = []) {
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    if (!res.ok || data.batched_results?.[0]?.type === 'error') {
+    if (!res.ok) {
       console.error("❌ Turso Query Error:", JSON.stringify(data));
       return [];
     }
-    const resultObj = data.batched_results?.[0]?.result;
+
+    const firstBatch = data.batched_results?.[0] || data.results?.[0];
+    if (!firstBatch) return [];
+
+    const resultObj = firstBatch.response?.result || firstBatch.result;
     if (!resultObj || !resultObj.cols) return [];
-    
+
     const cols = resultObj.cols.map(c => c.name);
     return resultObj.rows.map(row => {
       const obj = {};
-      row.forEach((cell, idx) => { obj[cols[idx]] = cell.value; });
+      row.forEach((cell, idx) => {
+        obj[cols[idx]] = cell !== null && typeof cell === 'object' ? cell.value : cell;
+      });
       return obj;
     });
   } catch (err) {
@@ -98,7 +104,6 @@ const menuButtons = [
 ];
 
 export default async function handler(req, res) {
-  // Verification Endpoint
   const urlObj = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
   const mode = req.query?.['hub.mode'] || urlObj.searchParams.get('hub.mode');
   const token = req.query?.['hub.verify_token'] || urlObj.searchParams.get('hub.verify_token');
@@ -132,7 +137,6 @@ export default async function handler(req, res) {
           const existing = await queryTurso("SELECT * FROM missionaries WHERE psid = ?", [psid]);
           let user = existing[0] || null;
 
-          // 🛡️ 5-CLICKS PER MINUTE RATE LIMITER
           const now = Date.now();
           if (user) {
             const windowStart = Number(user.window_start) || now;
@@ -164,7 +168,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 2. Terms Agreement (Loop Fixed: strict payload & phrase match)
+          // 2. Terms Agreement
           if (user.state === "AWAITING_TERMS") {
             const isAgree = msg === "AGREE_TERMS" || msg.toLowerCase().includes("agree");
             const isDecline = msg === "DECLINE_TERMS" || msg.toLowerCase().includes("decline");
@@ -262,9 +266,7 @@ export default async function handler(req, res) {
               const target = await queryTurso("SELECT * FROM missionaries WHERE email = ?", [foundEmail]);
 
               if (target.length > 0) {
-                // If temporary record exists under this PSID, clean it up
                 await queryTurso("DELETE FROM missionaries WHERE psid = ? AND email LIKE 'temp_%'", [psid]);
-                
                 await queryTurso(`
                   UPDATE missionaries 
                   SET psid = ?, name = ?, otp_code = ?, state = 'AWAITING_OTP'

@@ -29,15 +29,18 @@
   .sync-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;width:0%;transition:width 0.3s ease;}
 
   .app{display:flex;height:100vh;overflow:hidden;}
-  .sidebar{width:250px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;}
-  .sidebar-logo{padding:24px 20px;border-bottom:1px solid var(--border);}
+  
+  /* Sidebar */
+  .sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;transition:transform 0.3s ease;z-index:100;}
+  .sidebar-logo{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .sidebar-logo h1{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--gold);line-height:1.1;}
   .sidebar-logo h1 em{font-style:italic;color:var(--text);font-size:1rem;}
-  .sidebar-logo p{font-size:0.58rem;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-top:5px;}
-  
+  .sidebar-logo p{font-size:0.58rem;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-top:4px;}
+  .mobile-close-btn{display:none;background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;}
+
   .nav{padding:14px 10px;flex:1;overflow-y:auto;}
   .nav-label{font-size:0.58rem;color:var(--muted);letter-spacing:0.16em;text-transform:uppercase;padding:0 8px;margin:16px 0 6px;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:0.74rem;color:var(--muted);transition:all 0.2s;border:1px solid transparent;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.74rem;color:var(--muted);transition:all 0.2s;border:1px solid transparent;margin-bottom:3px;}
   .nav-item:hover{background:var(--surface2);color:var(--text);}
   .nav-item.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.25);}
   .nav-item .icon{font-size:1rem;width:20px;text-align:center;}
@@ -48,8 +51,10 @@
   .sidebar-footer .sender-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
   .sidebar-footer .sender-email{color:var(--green);font-size:0.62rem;word-break:break-all;}
 
-  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
-  .topbar{display:flex;align-items:center;padding:14px 28px;border-bottom:1px solid var(--border);gap:16px;background:var(--surface);position:sticky;top:0;z-index:10;}
+  /* Main View */
+  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);}
+  .topbar{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface);position:sticky;top:0;z-index:90;flex-wrap:wrap;}
+  .menu-toggle{display:none;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:1rem;}
   .topbar-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.02em;flex:1;}
   .topbar-title span{color:var(--muted);font-weight:400;font-size:0.75rem;margin-left:8px;}
 
@@ -58,15 +63,15 @@
   .force-stop-dot{width:8px;height:8px;border-radius:50%;background:var(--green);}
   .force-stop-pill.active .force-stop-dot{background:var(--red);box-shadow:0 0 8px var(--red);}
 
-  .panel{display:none;padding:24px 28px;animation:fadeIn 0.25s ease;}
+  .panel{display:none;padding:22px;animation:fadeIn 0.25s ease;}
   .panel.active{display:block;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 
-  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
   .section-head h2{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;}
   .section-head p{font-size:0.66rem;color:var(--muted);margin-top:2px;}
 
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;}
   .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
   .stat-card.gold::before{background:linear-gradient(90deg,var(--gold),transparent);}
@@ -75,7 +80,7 @@
   .stat-card.purple::before{background:linear-gradient(90deg,var(--purple),transparent);}
   .stat-card.red::before{background:linear-gradient(90deg,var(--red),transparent);}
   .stat-label{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;}
-  .stat-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;margin:4px 0 2px;line-height:1;}
+  .stat-val{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;margin:4px 0 2px;line-height:1;}
   .stat-card.gold .stat-val{color:var(--gold);}
   .stat-card.green .stat-val{color:var(--green);}
   .stat-card.blue .stat-val{color:var(--blue);}
@@ -83,20 +88,20 @@
   .stat-card.red .stat-val{color:var(--red);}
   .stat-sub{font-size:0.6rem;color:var(--muted);}
 
-  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;}
   .table-controls{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;}
-  .search-input{flex:1;min-width:180px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.7rem;outline:none;}
+  .search-input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.7rem;outline:none;}
   .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:0.66rem;cursor:pointer;}
   .filter-btn.active{color:var(--gold);border-color:rgba(201,168,76,0.4);background:var(--gold-dim);}
   
-  table{width:100%;border-collapse:collapse;}
+  table{width:100%;border-collapse:collapse;white-space:nowrap;}
   thead th{padding:10px 14px;text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface2);}
-  tbody tr{border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background 0.15s;}
+  tbody tr{border-bottom:1px solid rgba(255,255,255,0.03);transition:background 0.15s;}
   tbody tr:hover{background:var(--surface2);}
   tbody td{padding:10px 14px;font-size:0.68rem;}
 
-  /* Enhanced Email Received Progress UI */
-  .prog-container{display:flex;flex-direction:column;gap:4px;min-width:170px;}
+  /* Progress UI */
+  .prog-container{display:flex;flex-direction:column;gap:4px;min-width:160px;}
   .prog-track{width:100%;height:7px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;position:relative;}
   .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;transition:width 0.4s ease;}
   .prog-fill.completed{background:var(--green);}
@@ -110,11 +115,25 @@
   .badge-cohort-sister{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--purple-dim);color:var(--purple);font-weight:600;}
   .badge-status{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.05);color:var(--muted);}
 
+  .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.6rem;transition:all 0.2s;}
+  .btn-delete:hover{background:var(--red);color:#fff;}
+
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999;}
   .toast{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);padding:10px 14px;border-radius:6px;font-size:0.68rem;min-width:220px;box-shadow:0 6px 20px rgba(0,0,0,0.5);}
   .toast.success{border-left-color:var(--green);}
   .toast.error{border-left-color:var(--red);}
+
+  /* Mobile Media Queries for Auto-Adjusting View */
+  @media(max-width: 768px) {
+    .app{flex-direction:column;height:auto;overflow:auto;}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:1000;box-shadow:10px 0 30px rgba(0,0,0,0.8);}
+    .sidebar.open{transform:translateX(0);}
+    .mobile-close-btn{display:block;}
+    .menu-toggle{display:block;}
+    .main{height:auto;overflow:visible;}
+    .panel{padding:16px;}
+  }
 </style>
 </head>
 <body>
@@ -126,10 +145,14 @@
 </div>
 
 <div class="app">
-  <aside class="sidebar">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <h1>Timeless<br><em>Creations</em></h1>
-      <p>Command Center</p>
+      <div>
+        <h1>Timeless<br><em>Creations</em></h1>
+        <p>Command Center</p>
+      </div>
+      <button class="mobile-close-btn" onclick="toggleSidebar()">✕</button>
     </div>
     <nav class="nav">
       <div class="nav-label">Main</div>
@@ -149,8 +172,10 @@
     </div>
   </aside>
 
+  <!-- MAIN CONTENT AREA -->
   <main class="main">
     <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
       <div class="topbar-title" id="topbar-title">Missionary Tracking <span>Overview</span></div>
       <div class="force-stop-pill" id="force-stop-btn" onclick="toggleForceStop()">
         <div class="force-stop-dot"></div>
@@ -179,16 +204,16 @@
       </div>
     </div>
 
-    <!-- 2. MISSIONARIES & DETAILED EMAILS RECEIVED -->
+    <!-- 2. MISSIONARIES & DETAILED PROGRESS -->
     <div class="panel" id="panel-roster">
       <div class="section-head">
-        <div><h2>Missionaries Roster &amp; Emails Received</h2><p>Monthly email delivery progression</p></div>
+        <div><h2>Missionaries Roster &amp; Progress</h2><p>Manage records, inspect progress, or delete entries</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh</button>
       </div>
       <div class="table-wrap">
         <div class="table-controls">
-          <input class="search-input" placeholder="Search missionary name, email, or referral code..." oninput="filterRoster(this.value)"/>
-          <button class="filter-btn active" onclick="filterType('all',this)">All (1,191)</button>
+          <input class="search-input" placeholder="Search missionary name, email, or code..." oninput="filterRoster(this.value)"/>
+          <button class="filter-btn active" onclick="filterType('all',this)">All</button>
           <button class="filter-btn" onclick="filterType('elder',this)">Elders (24M)</button>
           <button class="filter-btn" onclick="filterType('sister',this)">Sisters (18M)</button>
         </div>
@@ -203,10 +228,11 @@
                 <th style="min-width:200px">Emails Received / Progress</th>
                 <th>Points</th>
                 <th>Code</th>
+                <th style="text-align:center">Action</th>
               </tr>
             </thead>
             <tbody id="roster-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Loading records from Turso...</td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Loading records from Turso...</td></tr>
             </tbody>
           </table>
         </div>
@@ -288,6 +314,10 @@ let state = {
   forceStop: false
 };
 
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
 async function doSync() {
   const overlay = document.getElementById('sync-overlay');
   overlay.classList.remove('hidden');
@@ -323,6 +353,30 @@ async function doSync() {
   }
 }
 
+async function deleteMissionary(email, name) {
+  if (!confirm(`Are you sure you want to delete ${name} (${email}) from the database?`)) return;
+
+  try {
+    const res = await fetch('/api/dashboard-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_missionary', email })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      state.missionaries = state.missionaries.filter(m => m.email !== email);
+      renderDashboard();
+      renderRoster(state.missionaries);
+      showToast("Deleted", `Removed ${name} successfully.`, "success");
+      addLog("DELETE", `Removed missionary: ${email}`);
+    } else {
+      showToast("Error", data.error || "Failed to delete missionary.", "error");
+    }
+  } catch (e) {
+    showToast("Error", e.message, "error");
+  }
+}
+
 function renderDashboard() {
   const total = state.missionaries.length;
   const elders = state.missionaries.filter(m => m.cohort === 'elder').length;
@@ -344,7 +398,7 @@ function renderDashboard() {
 function renderRoster(list) {
   const tb = document.getElementById('roster-tbody');
   if (!list.length) {
-    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px">No missionaries found in database.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">No missionaries found in database.</td></tr>';
     return;
   }
 
@@ -353,10 +407,6 @@ function renderRoster(list) {
     const sentCount = Math.min(Number(m.monthsDiff) || 0, totalMonths);
     const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
     const isCompleted = sentCount >= totalMonths;
-
-    const cohortBadge = m.cohort === 'sister' 
-      ? '<span class="badge-cohort-sister">SISTER (18M)</span>' 
-      : '<span class="badge-cohort-elder">ELDER (24M)</span>';
 
     return `
       <tr>
@@ -377,6 +427,9 @@ function renderRoster(list) {
         </td>
         <td><span class="badge-pts">${m.points} Pts</span></td>
         <td><span class="badge-ref">${m.ref}</span></td>
+        <td style="text-align:center">
+          <button class="btn-delete" onclick="deleteMissionary('${m.email}', '${m.name.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -469,6 +522,10 @@ function switchTab(tab, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
   if (el) el.classList.add('active');
+  // Close mobile sidebar on selection
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+  }
 }
 
 function showToast(title, msg, type = 'success') {

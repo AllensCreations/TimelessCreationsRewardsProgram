@@ -1,6 +1,5 @@
 import 'dotenv/config';
 
-// Helper to extract primitive values from any Turso / libSQL cell response
 function unwrap(cell) {
   if (cell === null || cell === undefined) return '';
   if (typeof cell === 'object') {
@@ -18,12 +17,38 @@ export default async function handler(req, res) {
   token = token.replace(/^['"]|['"]$/g, '').trim();
 
   if (!rawUrl || !token) {
-    return res.status(500).json({ ok: false, error: "Missing database credentials in environment" });
+    return res.status(500).json({ ok: false, error: "Missing database credentials" });
   }
 
   const tursoHttp = `https://${rawUrl}/v2/pipeline`;
 
-  // Toggle Force Stop flag
+  // Handle Delete Missionary Request
+  if (req.method === 'POST' && req.body?.action === 'delete_missionary') {
+    const emailToDelete = String(req.body.email || '').trim().toLowerCase();
+    if (!emailToDelete) {
+      return res.status(400).json({ ok: false, error: "Email required for deletion" });
+    }
+
+    await fetch(tursoHttp, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          {
+            type: "execute",
+            stmt: {
+              sql: "DELETE FROM missionaries WHERE email = ?;",
+              args: [{ type: "text", value: emailToDelete }]
+            }
+          },
+          { type: "close" }
+        ]
+      })
+    });
+    return res.status(200).json({ ok: true, deletedEmail: emailToDelete });
+  }
+
+  // Handle Toggle Force Stop
   if (req.method === 'POST' && req.body?.action === 'toggle_stop') {
     const desiredState = req.body.state ? 1 : 0;
     await fetch(tursoHttp, {
@@ -46,53 +71,26 @@ export default async function handler(req, res) {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [
-          // 1. Missionaries roster (Matching exact schema columns)
           { 
             type: "execute", 
             stmt: { 
-              sql: `SELECT 
-                      email, 
-                      COALESCE(name, 'Missionary') as name, 
-                      COALESCE(last_name, '') as last_name, 
-                      COALESCE(cohort, 'elder') as cohort, 
-                      COALESCE(batch_month, 'August 2026') as batch_month, 
-                      COALESCE(months_sent, 0) as months_sent, 
-                      COALESCE(max_months, 24) as max_months, 
-                      COALESCE(points, 0) as points, 
-                      COALESCE(referral_code, 'TCRP') as referral_code, 
-                      COALESCE(status, 'active') as status 
-                    FROM missionaries 
-                    ORDER BY rowid ASC;` 
+              sql: `SELECT email, COALESCE(name, 'Missionary'), COALESCE(last_name, ''), COALESCE(cohort, 'elder'), COALESCE(batch_month, 'August 2026'), COALESCE(months_sent, 0), COALESCE(max_months, 24), COALESCE(points, 0), COALESCE(referral_code, 'TCRP'), COALESCE(status, 'active') FROM missionaries ORDER BY rowid ASC;` 
             } 
           },
-          // 2. 24-Month Messages
-          { 
-            type: "execute", 
-            stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages ORDER BY month ASC;" } 
-          },
-          // 3. Purchase POS Logbook / Orders
-          { 
-            type: "execute", 
-            stmt: { sql: "SELECT order_id, psid, email, name, item, points_cost, status, created_at FROM orders ORDER BY rowid DESC;" } 
-          },
-          // 4. Force Stop Status
-          { 
-            type: "execute", 
-            stmt: { sql: "SELECT value FROM stats WHERE key = 'FORCE_STOP';" } 
-          },
+          { type: "execute", stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages ORDER BY month ASC;" } },
+          { type: "execute", stmt: { sql: "SELECT order_id, psid, email, name, item, points_cost, status, created_at FROM orders ORDER BY rowid DESC;" } },
+          { type: "execute", stmt: { sql: "SELECT value FROM stats WHERE key = 'FORCE_STOP';" } },
           { type: "close" }
         ]
       })
     });
 
     const data = await dbRes.json();
-    if (!dbRes.ok) {
-      return res.status(500).json({ ok: false, error: data.message || "Database query failed" });
-    }
+    const misRows = data.results?.[0]?.response?.result?.rows || [];
+    const msgRows = data.results?.[1]?.response?.result?.rows || [];
+    const ordRows = data.results?.[2]?.response?.result?.rows || [];
+    const stopVal = unwrap(data.results?.[3]?.response?.result?.rows?.[0]?.[0]);
 
-    // Process Missionaries
-    const misBatch = data.results?.[0]?.response?.result;
-    const misRows = misBatch?.rows || [];
     const missionaries = misRows.map(row => {
       const email = String(unwrap(row[0])).trim();
       const name = String(unwrap(row[1])).trim();
@@ -100,7 +98,7 @@ export default async function handler(req, res) {
       const cohort = String(unwrap(row[3])).toLowerCase().trim();
       const batch = String(unwrap(row[4])).trim();
       const monthsSent = Number(unwrap(row[5])) || 0;
-      const maxMonths = Number(unwrap(row[6])) || (cohort === 'sister' ? 18 : 24);
+      const maxMonths = Number(unwrap(row[6])) || (cohort.includes('sister') ? 18 : 24);
       const points = Number(unwrap(row[7])) || 0;
       const ref = String(unwrap(row[8])).trim();
       const status = String(unwrap(row[9])).trim();
@@ -119,9 +117,6 @@ export default async function handler(req, res) {
       };
     });
 
-    // Process Messages
-    const msgBatch = data.results?.[1]?.response?.result;
-    const msgRows = msgBatch?.rows || [];
     const messages = msgRows.map(row => ({
       month: Number(unwrap(row[0])) || 1,
       theme: String(unwrap(row[1])),
@@ -129,9 +124,6 @@ export default async function handler(req, res) {
       msg: String(unwrap(row[3]))
     }));
 
-    // Process Orders
-    const ordBatch = data.results?.[2]?.response?.result;
-    const ordRows = ordBatch?.rows || [];
     const orders = ordRows.map(row => ({
       order_id: String(unwrap(row[0])),
       psid: String(unwrap(row[1])),
@@ -142,10 +134,6 @@ export default async function handler(req, res) {
       status: String(unwrap(row[6])) || 'PENDING',
       date: String(unwrap(row[7])) || ''
     }));
-
-    // Process Force Stop Flag
-    const stopBatch = data.results?.[3]?.response?.result;
-    const stopVal = unwrap(stopBatch?.rows?.[0]?.[0]);
 
     return res.status(200).json({
       ok: true,

@@ -14,7 +14,7 @@
     --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
     --blue:#5c8de0; --blue-dim:rgba(92,141,224,0.15);
     --purple:#9b7de0; --purple-dim:rgba(155,125,224,0.15);
-    --orange:#e07f3c; --text:#e8e6f0; --muted:#716e88;
+    --text:#e8e6f0; --muted:#716e88;
     --radius:10px; --radius-lg:16px;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -24,7 +24,7 @@
   #sync-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
   .sync-logo{font-family:'Instrument Serif',serif;font-size:2.4rem;color:var(--gold);letter-spacing:0.04em;}
   .sync-logo span{color:var(--text);font-style:italic;}
-  .sync-status{font-size:0.72rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;height:18px;}
+  .sync-status{font-size:0.72rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;}
   .sync-bar-wrap{width:320px;height:3px;background:var(--surface2);border-radius:99px;overflow:hidden;}
   .sync-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;width:0%;transition:width 0.3s ease;}
 
@@ -52,8 +52,8 @@
   .topbar{display:flex;align-items:center;padding:14px 28px;border-bottom:1px solid var(--border);gap:16px;background:var(--surface);position:sticky;top:0;z-index:10;}
   .topbar-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.02em;flex:1;}
   .topbar-title span{color:var(--muted);font-weight:400;font-size:0.75rem;margin-left:8px;}
-  
-  .force-stop-pill{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-size:0.68rem;cursor:pointer;user-select:none;transition:all 0.2s;}
+
+  .force-stop-pill{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-size:0.68rem;cursor:pointer;user-select:none;}
   .force-stop-pill.active{background:var(--red-dim);border-color:rgba(224,92,92,0.4);color:var(--red);}
   .force-stop-dot{width:8px;height:8px;border-radius:50%;background:var(--green);}
   .force-stop-pill.active .force-stop-dot{background:var(--red);box-shadow:0 0 8px var(--red);}
@@ -83,14 +83,6 @@
   .stat-card.red .stat-val{color:var(--red);}
   .stat-sub{font-size:0.6rem;color:var(--muted);}
 
-  .action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:20px;}
-  .action-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;text-align:left;color:var(--text);transition:all 0.2s;}
-  .action-btn:hover{border-color:var(--gold);background:var(--gold-dim);}
-  .action-btn.danger:hover{border-color:var(--red);background:var(--red-dim);}
-  .action-btn .btn-icon{font-size:1.3rem;margin-bottom:6px;}
-  .action-btn .btn-label{font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;display:block;}
-  .action-btn .btn-desc{font-size:0.6rem;color:var(--muted);margin-top:2px;}
-
   .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
   .table-controls{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;}
   .search-input{flex:1;min-width:180px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.7rem;outline:none;}
@@ -103,10 +95,15 @@
   tbody tr:hover{background:var(--surface2);}
   tbody td{padding:10px 14px;font-size:0.68rem;}
 
-  .badge-month{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--green-dim);color:var(--green);}
+  /* Progress Bar Styles */
+  .prog-track{width:120px;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;position:relative;margin-bottom:3px;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;}
+  .prog-label{font-size:0.58rem;color:var(--muted);}
+
   .badge-pts{font-size:0.62rem;font-weight:bold;color:var(--gold);padding:2px 6px;border-radius:4px;background:var(--gold-dim);}
   .badge-ref{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--blue);border:1px solid rgba(92,141,224,0.3);padding:2px 6px;border-radius:4px;}
-  .badge-status{font-size:0.58rem;padding:2px 7px;border-radius:4px;background:var(--purple-dim);color:var(--purple);}
+  .badge-cohort-elder{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);}
+  .badge-cohort-sister{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--purple-dim);color:var(--purple);}
 
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999;}
@@ -127,14 +124,14 @@
   <aside class="sidebar">
     <div class="sidebar-logo">
       <h1>Timeless<br><em>Creations</em></h1>
-      <p>Rewards Program (TCRP)</p>
+      <p>Command Center</p>
     </div>
     <nav class="nav">
-      <div class="nav-label">Core Engine</div>
-      <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">🏆</span> Dashboard</div>
-      <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries <span class="badge" id="badge-missionaries">—</span></div>
-      <div class="nav-item" onclick="switchTab('pos-logbook',this)"><span class="icon">📖</span> Logbook: POS Orders <span class="badge" id="badge-pos">0</span></div>
-      <div class="nav-label">Campaigns & Logs</div>
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
+      <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Progress <span class="badge" id="badge-missionaries">—</span></div>
+      <div class="nav-item" onclick="switchTab('pos-logbook',this)"><span class="icon">📖</span> POS Logbook <span class="badge" id="badge-pos">0</span></div>
+      <div class="nav-label">Campaigns</div>
       <div class="nav-item" onclick="switchTab('messages',this)"><span class="icon">📜</span> 24-Mo Messages</div>
       <div class="nav-item" onclick="switchTab('logs',this)"><span class="icon">🖥️</span> Live Logs</div>
     </nav>
@@ -143,98 +140,78 @@
         <div class="sender-dot"></div>
         <div class="sender-email">noreply.timelesscreations.ph@gmail.com</div>
       </div>
-      <div>Engine: <span style="color:var(--gold)">Vercel + Turso + Brevo</span></div>
+      <div>Status: <span style="color:var(--gold)">Online</span></div>
     </div>
   </aside>
 
   <main class="main">
     <div class="topbar">
-      <div class="topbar-title" id="topbar-title">TCRP Command Center <span>Overview</span></div>
-      
-      <!-- System Emergency Force Stop Toggle Button -->
+      <div class="topbar-title" id="topbar-title">Missionary Tracking <span>Overview</span></div>
       <div class="force-stop-pill" id="force-stop-btn" onclick="toggleForceStop()">
         <div class="force-stop-dot"></div>
         <span id="force-stop-text">System Sending: Active</span>
       </div>
     </div>
 
-    <!-- 1. DASHBOARD -->
+    <!-- 1. DASHBOARD OVERVIEW -->
     <div class="panel active" id="panel-dashboard">
       <div class="section-head">
-        <div><h2>TCRP Command Hub</h2><p id="dash-date">Live Synchronized System</p></div>
+        <div><h2>Missionary Progress Overview</h2><p id="dash-date">Real-time database sync</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Re-Sync Database</button>
       </div>
 
       <div class="stats-grid">
-        <div class="stat-card gold"><div class="stat-label">Active Missionaries</div><div class="stat-val" id="stat-total">0</div><div class="stat-sub">tracked in Turso</div></div>
-        <div class="stat-card green"><div class="stat-label">Points In Circulation</div><div class="stat-val" id="stat-points">0</div><div class="stat-sub">claimed & referral points</div></div>
+        <div class="stat-card gold"><div class="stat-label">Total Missionaries</div><div class="stat-val" id="stat-total">0</div><div class="stat-sub">active records</div></div>
         <div class="stat-card blue"><div class="stat-label">Elders Cohort</div><div class="stat-val" id="stat-elders">0</div><div class="stat-sub">24-month missions</div></div>
         <div class="stat-card purple"><div class="stat-label">Sisters Cohort</div><div class="stat-val" id="stat-sisters">0</div><div class="stat-sub">18-month missions</div></div>
-        <div class="stat-card red"><div class="stat-label">Total POS Orders</div><div class="stat-val" id="stat-pos-count">0</div><div class="stat-sub">in Purchase Logbook</div></div>
+        <div class="stat-card green"><div class="stat-label">Total Points Claimed</div><div class="stat-val" id="stat-points">0</div><div class="stat-sub">TCRP points balance</div></div>
+        <div class="stat-card red"><div class="stat-label">POS Orders</div><div class="stat-val" id="stat-pos-count">0</div><div class="stat-sub">in Purchase Logbook</div></div>
       </div>
 
-      <div class="section-head"><h2 style="font-size:0.9rem">⚡ Quick Control Buttons</h2></div>
-      <div class="action-grid">
-        <button class="action-btn" onclick="switchTab('pos-logbook', document.querySelector('[onclick*=\'pos-logbook\']'))">
-          <div class="btn-icon">📖</div>
-          <span class="btn-label">Open POS Logbook</span>
-          <div class="btn-desc">Review purchase orders & redemptions</div>
-        </button>
-        <button class="action-btn" onclick="sendTestEmail()">
-          <div class="btn-icon">📩</div>
-          <span class="btn-label">Send Test Email</span>
-          <div class="btn-desc">Send Master HTML preview to admin</div>
-        </button>
-        <button class="action-btn danger" onclick="toggleForceStop()">
-          <div class="btn-icon">🚨</div>
-          <span class="btn-label">Emergency Stop Sending</span>
-          <div class="btn-desc">Halt or resume all outgoing emails</div>
-        </button>
-      </div>
-
-      <div class="section-head"><h2 style="font-size:0.9rem">Recent Activity Feed</h2></div>
+      <div class="section-head"><h2 style="font-size:0.9rem">Recent System Logs</h2></div>
       <div class="table-wrap">
-        <div id="log-body" style="max-height:220px;overflow-y:auto;padding:10px 14px;font-size:0.66rem;color:var(--muted)"></div>
+        <div id="log-body" style="max-height:260px;overflow-y:auto;padding:12px 16px;font-size:0.66rem;color:var(--muted)"></div>
       </div>
     </div>
 
-    <!-- 2. MISSIONARIES ROSTER -->
+    <!-- 2. MISSIONARIES & DETAILED PROGRESS -->
     <div class="panel" id="panel-roster">
       <div class="section-head">
-        <div><h2>Missionaries Registry</h2><p>Live missionaries roster with referral codes</p></div>
+        <div><h2>Missionaries Roster &amp; Emails Received</h2><p>Monthly email progression</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh</button>
       </div>
       <div class="table-wrap">
         <div class="table-controls">
-          <input class="search-input" placeholder="Search missionary by name, email, or code..." oninput="filterRoster(this.value)"/>
+          <input class="search-input" placeholder="Search name, email, or code..." oninput="filterRoster(this.value)"/>
           <button class="filter-btn active" onclick="filterType('all',this)">All</button>
           <button class="filter-btn" onclick="filterType('elder',this)">Elders</button>
           <button class="filter-btn" onclick="filterType('sister',this)">Sisters</button>
         </div>
-        <div style="max-height:500px;overflow-y:auto">
+        <div style="max-height:540px;overflow-y:auto">
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Missionary Title</th>
+                <th style="width:40px">#</th>
+                <th>Missionary</th>
                 <th>Email Address</th>
-                <th>Points Balance</th>
-                <th>Referral Code</th>
                 <th>Cohort</th>
+                <th style="width:160px">Emails Received / Progress</th>
+                <th>Points</th>
+                <th>Code</th>
               </tr>
             </thead>
             <tbody id="roster-tbody">
-              <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Loading missionaries...</td></tr>
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Loading records from Turso...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- 3. LOGBOOK FOR PURCHASE POS -->
+    <!-- 3. POS LOGBOOK -->
     <div class="panel" id="panel-pos-logbook">
       <div class="section-head">
-        <div><h2>Logbook for Purchase POS</h2><p>Record of redemptions, kits, and missionary items</p></div>
+        <div><h2>Logbook for Purchase POS</h2><p>Redemptions and missionary orders</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh Logbook</button>
       </div>
       <div class="table-wrap">
@@ -243,16 +220,16 @@
             <thead>
               <tr>
                 <th>Order Ref</th>
-                <th>Recipient / Customer</th>
+                <th>Recipient</th>
                 <th>Email</th>
                 <th>Item Purchased</th>
                 <th>Points / Cost</th>
                 <th>Date Placed</th>
-                <th>Fulfillment Status</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody id="pos-tbody">
-              <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No POS purchase logs recorded.</td></tr>
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No POS purchase logs recorded.</td></tr>
             </tbody>
           </table>
         </div>
@@ -262,7 +239,7 @@
     <!-- 4. 24-MONTH MESSAGES -->
     <div class="panel" id="panel-messages">
       <div class="section-head">
-        <div><h2>24-Month Messages Directory</h2><p>Synced directly from TC Ver2 - Messages.csv</p></div>
+        <div><h2>24-Month Messages Directory</h2><p>Quotes and body copy</p></div>
       </div>
       <div class="table-wrap">
         <div style="max-height:500px;overflow-y:auto">
@@ -270,13 +247,13 @@
             <thead>
               <tr>
                 <th style="width:70px">Month</th>
-                <th style="width:160px">Speaker / Theme</th>
-                <th style="width:240px">Scripture / Quote</th>
+                <th style="width:160px">Theme / Speaker</th>
+                <th style="width:240px">Quote</th>
                 <th>Message Content</th>
               </tr>
             </thead>
             <tbody id="messages-tbody">
-              <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Loading messages...</td></tr>
+              <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Loading messages...</td></tr>
             </tbody>
           </table>
         </div>
@@ -286,8 +263,8 @@
     <!-- 5. LIVE LOGS -->
     <div class="panel" id="panel-logs">
       <div class="section-head">
-        <div><h2>System & Webhook Activity Logs</h2><p>Real-time execution traces</p></div>
-        <button class="filter-btn" onclick="document.getElementById('full-logs').innerHTML=''">Clear Logs</button>
+        <div><h2>Live Activity Logs</h2><p>Server &amp; webhook traces</p></div>
+        <button class="filter-btn" onclick="document.getElementById('full-logs').innerHTML=''">Clear</button>
       </div>
       <div class="table-wrap">
         <div id="full-logs" style="max-height:500px;overflow-y:auto;padding:14px;font-size:0.68rem;color:var(--muted)"></div>
@@ -329,7 +306,7 @@ async function doSync() {
       renderMessages(state.messages);
       updateForceStopUI();
 
-      showToast("Synced", `Loaded ${state.missionaries.length} missionaries & ${state.orders.length} POS logs.`, "success");
+      showToast("Synced", `Loaded ${state.missionaries.length} missionaries & ${state.orders.length} orders.`, "success");
     } else {
       showToast("Error", data.error || "Failed to load database.", "error");
     }
@@ -356,31 +333,47 @@ function renderDashboard() {
   document.getElementById('badge-pos').textContent = state.orders.length;
   document.getElementById('dash-date').textContent = "Last synchronized: " + new Date().toLocaleTimeString();
 
-  addLog("SYNC", `Database loaded: ${total} missionaries, ${totalPoints} points, ${state.orders.length} POS logs.`);
+  addLog("SYNC", `Database loaded: ${total} missionaries (${elders} Elders, ${sisters} Sisters).`);
 }
 
 function renderRoster(list) {
   const tb = document.getElementById('roster-tbody');
   if (!list.length) {
-    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px">No missionaries found in database.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px">No missionaries found in database.</td></tr>';
     return;
   }
-  tb.innerHTML = list.map((m, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td style="font-weight:600">${m.name}</td>
-      <td style="color:var(--muted)">${m.email}</td>
-      <td><span class="badge-pts">${m.points} Pt(s)</span></td>
-      <td><span class="badge-ref">${m.ref}</span></td>
-      <td><span class="badge-month">${m.cohort.toUpperCase()}</span></td>
-    </tr>
-  `).join('');
+
+  tb.innerHTML = list.map((m, i) => {
+    const totalMonths = m.limit || (m.cohort === 'sister' ? 18 : 24);
+    const sentCount = Math.min(m.monthsDiff || 1, totalMonths);
+    const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
+    const cohortBadge = m.cohort === 'sister' 
+      ? '<span class="badge-cohort-sister">SISTER (18M)</span>' 
+      : '<span class="badge-cohort-elder">ELDER (24M)</span>';
+
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td style="font-weight:600">${m.name}</td>
+        <td style="color:var(--muted)">${m.email}</td>
+        <td>${cohortBadge}</td>
+        <td>
+          <div class="prog-track">
+            <div class="prog-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="prog-label">Month ${sentCount} of ${totalMonths} (${pct}%)</div>
+        </td>
+        <td><span class="badge-pts">${m.points} Pt(s)</span></td>
+        <td><span class="badge-ref">${m.ref}</span></td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function renderPosLogbook(orders) {
   const tb = document.getElementById('pos-tbody');
   if (!orders || !orders.length) {
-    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px">No POS purchase logs recorded yet.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px">No POS purchase logs recorded yet.</td></tr>';
     return;
   }
   tb.innerHTML = orders.map(o => `
@@ -391,7 +384,7 @@ function renderPosLogbook(orders) {
       <td>${o.item}</td>
       <td><span class="badge-pts">${o.cost} Pts</span></td>
       <td style="color:var(--muted)">${o.date || 'Just now'}</td>
-      <td><span class="badge-status">${o.status || 'PENDING'}</span></td>
+      <td><span style="font-size:0.58rem;padding:2px 7px;border-radius:4px;background:var(--purple-dim);color:var(--purple)">${o.status || 'PENDING'}</span></td>
     </tr>
   `).join('');
 }
@@ -399,7 +392,7 @@ function renderPosLogbook(orders) {
 function renderMessages(msgs) {
   const tb = document.getElementById('messages-tbody');
   if (!msgs || !msgs.length) {
-    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px">No messages found.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px">No messages found.</td></tr>';
     return;
   }
   tb.innerHTML = msgs.map(m => `
@@ -480,11 +473,6 @@ function addLog(tag, text) {
   const html = `<div><span style="color:var(--gold)">[${ts}]</span> <strong style="color:var(--blue)">${tag}</strong>: ${text}</div>`;
   document.getElementById('log-body').innerHTML = html + document.getElementById('log-body').innerHTML;
   document.getElementById('full-logs').innerHTML = html + document.getElementById('full-logs').innerHTML;
-}
-
-function sendTestEmail() {
-  addLog("MAIL", "Test Master HTML dispatched to 2ndsalviejomark2019@gmail.com.");
-  showToast("Test Email", "Dispatched to admin via Brevo.", "success");
 }
 
 window.addEventListener('load', doSync);

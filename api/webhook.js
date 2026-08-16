@@ -4,45 +4,47 @@ const tursoUrl = (process.env.TURSO_DATABASE_URL || '').replace('libsql://', 'ht
 const tursoToken = process.env.TURSO_AUTH_TOKEN;
 
 async function queryTurso(sql, args = []) {
-  const payload = {
-    requests: [
-      {
-        type: "execute",
-        stmt: {
-          sql: sql,
-          args: args.map(val => (val === null ? { type: "null" } : { type: "text", value: String(val) }))
-        }
-      },
-      { type: "close" }
-    ]
-  };
-  const res = await fetch(tursoUrl, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${tursoToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
-  if (!res.ok || data.batched_results?.[0]?.type === 'error') {
-    console.error("❌ Turso Query Error:", JSON.stringify(data));
+  try {
+    const payload = {
+      requests: [
+        {
+          type: "execute",
+          stmt: {
+            sql: sql,
+            args: args.map(val => (val === null ? { type: "null" } : { type: "text", value: String(val) }))
+          }
+        },
+        { type: "close" }
+      ]
+    };
+    const res = await fetch(tursoUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${tursoToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok || data.batched_results?.[0]?.type === 'error') {
+      console.error("❌ Turso Query Error:", JSON.stringify(data));
+      return [];
+    }
+    const resultObj = data.batched_results?.[0]?.result;
+    if (!resultObj || !resultObj.cols) return [];
+    
+    const cols = resultObj.cols.map(c => c.name);
+    return resultObj.rows.map(row => {
+      const obj = {};
+      row.forEach((cell, idx) => { obj[cols[idx]] = cell.value; });
+      return obj;
+    });
+  } catch (err) {
+    console.error("❌ DB Network Error:", err.message);
     return [];
   }
-  const resultObj = data.batched_results[0].result;
-  if (!resultObj || !resultObj.cols) return [];
-  
-  const cols = resultObj.cols.map(c => c.name);
-  return resultObj.rows.map(row => {
-    const obj = {};
-    row.forEach((cell, idx) => { obj[cols[idx]] = cell.value; });
-    return obj;
-  });
 }
 
 async function sendBrevoEmail(email, otpCode, name) {
   const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    console.error("⚠️ BREVO_API_KEY missing from environment");
-    return false;
-  }
+  if (!apiKey) return false;
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
@@ -56,17 +58,13 @@ async function sendBrevoEmail(email, otpCode, name) {
     });
     return res.ok;
   } catch (e) {
-    console.error("❌ Brevo Error:", e.message);
     return false;
   }
 }
 
 async function callSendAPI(psid, text, quickReplies = null) {
   const token = process.env.PAGE_ACCESS_TOKEN;
-  if (!token) {
-    console.error("❌ PAGE_ACCESS_TOKEN is missing! Bot cannot reply.");
-    return;
-  }
+  if (!token) return;
   
   const body = {
     messaging_type: "RESPONSE",
@@ -78,18 +76,12 @@ async function callSendAPI(psid, text, quickReplies = null) {
   }
 
   try {
-    const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
+    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    const resData = await res.json();
-    if (!res.ok) {
-      console.error("❌ Messenger API Error:", JSON.stringify(resData));
-    }
-  } catch (err) {
-    console.error("❌ Network error sending message:", err.message);
-  }
+  } catch (err) {}
 }
 
 const termsButtons = [
@@ -106,29 +98,30 @@ const menuButtons = [
 ];
 
 export default async function handler(req, res) {
-  // Webhook Verification from Meta App Dashboard
-  if (req.method === 'GET') {
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
+  // Safe Query String Extraction for Meta Verification
+  const urlObj = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
+  const mode = req.query?.['hub.mode'] || urlObj.searchParams.get('hub.mode');
+  const token = req.query?.['hub.verify_token'] || urlObj.searchParams.get('hub.verify_token');
+  const challenge = req.query?.['hub.challenge'] || urlObj.searchParams.get('hub.challenge');
 
-    if (mode && token === process.env.VERIFY_TOKEN) {
+  if (req.method === 'GET') {
+    const verifyToken = process.env.VERIFY_TOKEN;
+    if (mode === 'subscribe' && token === verifyToken) {
       return res.status(200).send(challenge);
     }
     return res.status(403).send('Verification failed');
   }
 
-  // Handle Incoming Events (Reactive replies only)
   if (req.method === 'POST') {
-    const body = req.body;
-    if (body.object === 'page' && body.entry) {
+    const body = req.body || {};
+    if (body.object === 'page' && Array.isArray(body.entry)) {
       for (const entry of body.entry) {
         if (!entry.messaging) continue;
         for (const event of entry.messaging) {
           const psid = event.sender?.id;
           if (!psid) continue;
 
-          // Skip echo/delivery/read notifications to prevent loops
+          // Ignore echo and read receipts
           if (event.delivery || event.read || event.message?.is_echo) continue;
 
           const rawText = event.message?.text?.trim() || "";
@@ -136,11 +129,10 @@ export default async function handler(req, res) {
           const msg = payload || rawText;
           if (!msg) continue;
 
-          // Fetch current user from Turso
           const existing = await queryTurso("SELECT * FROM missionaries WHERE psid = ?", [psid]);
           let user = existing[0] || null;
 
-          // 1. Initial Start or Reset
+          // 1. Initial Welcome / Reset
           if (!user || msg.toLowerCase() === "get started" || msg.toLowerCase() === "restart") {
             if (!user) {
               const dummyEmail = `temp_${psid}@missionary.org`;
@@ -197,7 +189,6 @@ export default async function handler(req, res) {
 
             if (user.state === "AWAITING_OTP" && isSixDigit) {
               if (user.otp_code && msg.trim() === user.otp_code) {
-                // Award 2 Points if prelisted in CSV, else 1 Point
                 const bonusPoints = user.is_prelisted === 1 ? 2 : 1;
                 const newPoints = (Number(user.points) || 0) + bonusPoints;
                 const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
@@ -223,7 +214,6 @@ export default async function handler(req, res) {
               continue;
             }
 
-            // Parse Title + Email
             const lines = msg.split('\n').map(l => l.trim()).filter(Boolean);
             let foundTitle = null;
             let foundEmail = null;
@@ -259,21 +249,19 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 5. Verified User Actions & Daily 1-Check Limit
+          // 5. Daily 1-Check Limit
           const today = new Date().toISOString().split('T')[0];
 
           if (msg === "PAYLOAD_DASHBOARD" || msg.toLowerCase().includes("dashboard") || msg.toLowerCase().includes("points")) {
-            // Check if user already viewed their dashboard today
             if (user.last_checked_date === today) {
               await callSendAPI(
                 psid,
-                `⏱️ 𝐃𝐀𝐈𝐋𝐘 𝐋𝐈𝐌𝐈𝐓 𝐑𝐄𝐀𝐂𝐇𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\nYou already checked your dashboard today.\n\nYour balance will update automatically when friends join. You can check again tomorrow!`,
+                `⏱️ 𝐃𝐀𝐈𝐋𝐘 𝐋𝐈𝐌𝐈𝐓 𝐑𝐄𝐀𝐂𝐇𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\nYou already checked your dashboard today.\n\nYour balance updates automatically when friends join. You can check again tomorrow!`,
                 menuButtons
               );
               continue;
             }
 
-            // Update last checked date to today
             await queryTurso("UPDATE missionaries SET last_checked_date = ? WHERE psid = ?", [today, psid]);
 
             const shareLink = `https://m.me/timeless.creations.06?ref=${user.referral_code || 'TCRP'}`;

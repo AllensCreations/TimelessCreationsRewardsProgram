@@ -83,9 +83,7 @@ async function callSendAPI(psid, messagePayload) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!res.ok) {
-      console.error("❌ Graph API Error:", await res.text());
-    }
+    if (!res.ok) console.error("❌ Graph API Error:", await res.text());
   } catch (err) {
     console.error("❌ Send API Exception:", err.message);
   }
@@ -104,63 +102,31 @@ const menuButtons = [
   { content_type: "text", title: "❓ FAQs", payload: "PAYLOAD_FAQS" }
 ];
 
-const faqButtons = [
-  { content_type: "text", title: "💰 How to Earn Pts", payload: "FAQ_POINTS" },
-  { content_type: "text", title: "📦 Delivery & Gawa", payload: "FAQ_DELIVERY" },
-  { content_type: "text", title: "🎟️ How to Redeem", payload: "FAQ_REDEEM" },
-  { content_type: "text", title: "🏆 Back to Dashboard", payload: "PAYLOAD_DASHBOARD" }
-];
-
-// 1:1 Carousel Catalog Generator
 function getCatalogCarouselPayload() {
   const elements = [
     {
       title: "Temple Keychain",
       subtitle: "Requires 6 TCRP Points\nCustom handcrafted wooden keepsake.",
       image_url: IMG_KEYCHAIN,
-      buttons: [
-        {
-          type: "postback",
-          title: "Redeem (6 Pts)",
-          payload: "REDEEM_KEYCHAIN"
-        }
-      ]
+      buttons: [{ type: "postback", title: "Redeem (6 Pts)", payload: "REDEEM_KEYCHAIN" }]
     },
     {
       title: "Nametag Keychain",
       subtitle: "Requires 24 TCRP Points\nPersonalized engraved missionary badge.",
       image_url: IMG_NAMETAG,
-      buttons: [
-        {
-          type: "postback",
-          title: "Redeem (24 Pts)",
-          payload: "REDEEM_NAMETAG"
-        }
-      ]
+      buttons: [{ type: "postback", title: "Redeem (24 Pts)", payload: "REDEEM_NAMETAG" }]
     },
     {
       title: "Salvation Kit (POS)",
       subtitle: "Requires 42 TCRP Points\nComplete Plan of Salvation teaching kit.",
       image_url: IMG_SALVATION,
-      buttons: [
-        {
-          type: "postback",
-          title: "Redeem (42 Pts)",
-          payload: "REDEEM_SALVATION"
-        }
-      ]
+      buttons: [{ type: "postback", title: "Redeem (42 Pts)", payload: "REDEEM_SALVATION" }]
     },
     {
       title: "Scripture Case",
       subtitle: "Requires 60 TCRP Points\nPremium protective genuine leather cover.",
       image_url: IMG_SCRIPTURE,
-      buttons: [
-        {
-          type: "postback",
-          title: "Redeem (60 Pts)",
-          payload: "REDEEM_SCRIPTURE"
-        }
-      ]
+      buttons: [{ type: "postback", title: "Redeem (60 Pts)", payload: "REDEEM_SCRIPTURE" }]
     }
   ];
 
@@ -169,7 +135,7 @@ function getCatalogCarouselPayload() {
       type: "template",
       payload: {
         template_type: "generic",
-        image_aspect_ratio: "square", // Strict 1:1 ratio
+        image_aspect_ratio: "square",
         elements: elements.map(item => ({
           title: item.title,
           subtitle: item.subtitle,
@@ -190,9 +156,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const verifyToken = (process.env.VERIFY_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
-    if (mode === 'subscribe' && token === verifyToken) {
-      return res.status(200).send(challenge);
-    }
+    if (mode === 'subscribe' && token === verifyToken) return res.status(200).send(challenge);
     return res.status(403).send('Verification failed');
   }
 
@@ -271,87 +235,125 @@ export default async function handler(req, res) {
               valid = true;
               await queryTurso("INSERT INTO stats (key, value) VALUES ('globalClaims', 1) ON CONFLICT(key) DO UPDATE SET value = value + 1");
             } else if (code.startsWith("TCRP-")) {
-              const refMatch = await queryTurso("SELECT psid FROM missionaries WHERE referral_code = ?", [code]);
+              const refMatch = await queryTurso("SELECT psid, email FROM missionaries WHERE referral_code = ? UNION SELECT psid, email FROM recipients WHERE referral_code = ?", [code, code]);
               if (refMatch[0]) valid = true;
             }
 
             if (valid) {
               await queryTurso("UPDATE sessions SET state = 'AWAITING_REGISTRATION', invite_code = ? WHERE psid = ?", [code, psid]);
-              await callSendAPI(psid, `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${code})\n━━━━━━━━━━━━━━━━━━━━━━\nPlease send your Missionary Title & Email together:\n\nElder Smith\njohn.smith@missionary.org`);
+              const prompt = `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${code})\n━━━━━━━━━━━━━━━━━━━━━━\nPlease send your details in 3 lines:\n\n1. Cohort / Title (e.g. Elder Smith)\n2. Missionary Email (e.g. John.Smith@missionary.org)\n3. Batch Month & Year (e.g. July 2026)\n\nExample:\nElder Smith\nJohn.Smith@missionary.org\nJuly 2026`;
+              await callSendAPI(psid, prompt);
             } else {
               await callSendAPI(psid, { text: `✕ Invalid invitation code. Enter a valid code or tap below:`, quick_replies: globalCodeButton });
             }
             continue;
           }
 
-          // 4. Registration Submission
+          // 4. Registration Submission (Parses 3 Lines: Cohort, Email, Batch Month & Year)
           if (session.state === "AWAITING_REGISTRATION" || session.state === "AWAITING_OTP") {
             const lines = msg.split('\n').map(l => l.trim()).filter(Boolean);
             let foundTitle = null;
             let foundEmail = null;
+            let foundBatch = null;
 
             for (const line of lines) {
-              if (line.toLowerCase().startsWith("elder ") || line.toLowerCase().startsWith("sister ")) foundTitle = line;
-              else if (line.toLowerCase().endsWith("@missionary.org") || line.toLowerCase().includes("@")) foundEmail = line.toLowerCase();
+              if (line.toLowerCase().startsWith("elder ") || line.toLowerCase().startsWith("sister ")) {
+                foundTitle = line;
+              } else if (line.includes("@")) {
+                foundEmail = line.toLowerCase();
+              } else if (/\b(202[0-9]|january|february|march|april|may|june|july|august|september|october|november|december)\b/i.test(line)) {
+                foundBatch = line;
+              }
             }
 
             if (foundTitle && foundEmail) {
+              const batchYearMonth = foundBatch || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
               const todayStr = new Date().toISOString().split('T')[0];
-              const existingM = await queryTurso("SELECT * FROM missionaries WHERE email = ?", [foundEmail]);
+
+              // Check existing in missionaries or recipients
+              const existingM = await queryTurso("SELECT * FROM missionaries WHERE email = ? UNION SELECT * FROM recipients WHERE email = ?", [foundEmail, foundEmail]);
               const isPrelisted = existingM.length > 0;
-              const bonusPoints = isPrelisted ? 2 : 1;
+              
+              // 1 Point for new joiner (+1 extra if prelisted = 2)
+              const joinerBonus = isPrelisted ? 2 : 1;
               const currentPoints = existingM.length > 0 ? Number(existingM[0].points) || 0 : 0;
-              const newPoints = currentPoints + bonusPoints;
+              const newPoints = currentPoints + joinerBonus;
               const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
+              const cohortType = foundTitle.toLowerCase().startsWith("sister") ? "sister" : "elder";
 
-              if (existingM.length > 0) {
-                await queryTurso(`
-                  UPDATE missionaries 
-                  SET psid = ?, name = ?, points = ?, referral_code = ?
-                  WHERE email = ?
-                `, [psid, foundTitle, newPoints, refCode, foundEmail]);
-              } else {
-                await queryTurso(`
-                  INSERT INTO missionaries (email, name, psid, points, referral_code, is_prelisted, status)
-                  VALUES (?, ?, ?, ?, ?, 0, 'active')
-                `, [foundEmail, foundTitle, psid, newPoints, refCode]);
-              }
+              // Upsert into missionaries table
+              await queryTurso(`
+                INSERT INTO missionaries (full_name, email, cohort, start_date, points, referral_code, psid, unsubscribed)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                ON CONFLICT(email) DO UPDATE SET
+                  full_name = excluded.full_name,
+                  psid = excluded.psid,
+                  points = points + excluded.points,
+                  referral_code = excluded.referral_code
+              `, [foundTitle, foundEmail, cohortType, batchYearMonth, newPoints, refCode, psid]);
 
+              // Mutual Referral: +1 Point to the Inviter
               if (session.invite_code && session.invite_code.startsWith("TCRP-")) {
-                const refOwner = await queryTurso("SELECT psid FROM missionaries WHERE referral_code = ?", [session.invite_code]);
-                if (refOwner[0] && refOwner[0].psid !== psid) {
+                const refOwner = await queryTurso("SELECT psid, points FROM missionaries WHERE referral_code = ?", [session.invite_code]);
+                if (refOwner[0] && refOwner[0].psid && refOwner[0].psid !== psid) {
                   await queryTurso("UPDATE missionaries SET points = points + 1 WHERE psid = ?", [refOwner[0].psid]);
-                  await callSendAPI(refOwner[0].psid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nYou earned +1 Bonus Point!`);
+                  await callSendAPI(refOwner[0].psid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nA missionary joined using your code! You earned +1 Bonus Point! 💰`);
                 }
               }
 
               await queryTurso("UPDATE sessions SET state = 'VERIFIED', last_checked_date = ? WHERE psid = ?", [todayStr, psid]);
 
               const successMsg = `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `👤 ${foundTitle}\n` +
-                `🎁 Welcome Reward: +${bonusPoints} Point(s)\n` +
+                `👤 Title: ${foundTitle}\n` +
+                `✉️ Email: ${foundEmail}\n` +
+                `📅 Batch: ${batchYearMonth}\n` +
+                `🎁 Welcome Reward: +${joinerBonus} Point(s) ${isPrelisted ? '(Pre-Listed Bonus!)' : ''}\n` +
                 `💰 Balance: ${newPoints} Point(s)\n` +
                 `🔑 Your Code: ${refCode}\n\n` +
-                `🔗 Share Link:\nhttps://m.me/TimelessCreationsRP?ref=${refCode}`;
+                `📢 Share with companions to earn +1 Point each:\nhttps://m.me/TimelessCreationsRP?ref=${refCode}`;
 
               await callSendAPI(psid, { text: successMsg, quick_replies: menuButtons });
+              continue;
+            } else {
+              await callSendAPI(psid, `⚠️ Please submit all 3 details:\n\nElder Smith\nJohn.Smith@missionary.org\nJuly 2026`);
               continue;
             }
           }
 
-          // 5. Verified User Actions & Catalog
-          const userRows = await queryTurso("SELECT * FROM missionaries WHERE psid = ?", [psid]);
+          // 5. Verified User Actions
+          const userRows = await queryTurso("SELECT * FROM missionaries WHERE psid = ? UNION SELECT * FROM recipients WHERE psid = ?", [psid, psid]);
           const user = userRows[0] || null;
           const today = new Date().toISOString().split('T')[0];
 
-          // CATALOG & REDEEM AS ONE (Carousel with 1:1 Images)
+          // SINGLE COMPREHENSIVE FAQS MESSAGE
+          if (msg === "PAYLOAD_FAQS" || msg.toLowerCase().includes("faq") || msg.toLowerCase().includes("help")) {
+            const fullFaq = `❓ 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 (𝐓𝐂𝐑𝐏) 𝐅𝐀𝐐𝐬\n━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `💰 𝟏. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐞𝐚𝐫𝐧 𝐩𝐨𝐢𝐧𝐭𝐬?\n` +
+              `• Welcome Bonus: 1 Pt upon joining (2 Pts if pre-listed).\n` +
+              `• Mutual Referrals: +1 Point for YOU and +1 Point for your friend whenever they join with your code!\n\n` +
+              `📦 𝟐. 𝐂𝐫𝐚𝐟𝐭𝐬𝐦𝐚𝐧𝐬𝐡𝐢𝐩 & 𝐃𝐞𝐥𝐢𝐯𝐞𝐫𝐲\n` +
+              `• We craft by "Gawa muna bago bayad".\n` +
+              `• Handcrafted in Nueva Vizcaya and dispatched to mission homes/apartments nationwide.\n\n` +
+              `🎟️ 𝟑. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐫𝐞𝐝𝐞𝐞𝐦?\n` +
+              `• Tap "🎁 Catalog & Redeem" below, swipe to your reward, and tap Redeem to generate your instant order ticket.\n\n` +
+              `👑 𝟒. 𝐂𝐚𝐭𝐚𝐥𝐨𝐠 𝐑𝐞𝐰𝐚𝐫𝐝𝐬\n` +
+              `• Temple Keychain: 6 Pts\n` +
+              `• Nametag Keychain: 24 Pts\n` +
+              `• Salvation Kit (POS): 42 Pts\n` +
+              `• Scripture Case: 60 Pts`;
+
+            await callSendAPI(psid, { text: fullFaq, quick_replies: menuButtons });
+            continue;
+          }
+
+          // CATALOG & REDEEM AS ONE
           if (msg === "PAYLOAD_CATALOG" || msg.toLowerCase().includes("catalog") || msg.toLowerCase().includes("store")) {
-            await callSendAPI(psid, `🎁 𝐓𝐂𝐑𝐏 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 𝐂𝐀𝐓𝐀𝐋𝐎𝐆\nYour Balance: 💰 ${user?.points || 0} Point(s)\n\nBrowse items below and tap Redeem to claim directly:`);
+            await callSendAPI(psid, `🎁 𝐓𝐂𝐑𝐏 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 𝐂𝐀𝐓𝐀𝐋𝐎𝐆\nYour Balance: 💰 ${user?.points || 0} Point(s)\n\nSwipe items below and tap Redeem to claim directly:`);
             await callSendAPI(psid, getCatalogCarouselPayload());
             continue;
           }
 
-          // DIRECT REDEMPTIONS
+          // REDEMPTIONS
           if (msg.startsWith("REDEEM_") || msg.toUpperCase().startsWith("REDEEM")) {
             let cost = 6;
             let item = "Temple Keychain";
@@ -374,7 +376,7 @@ export default async function handler(req, res) {
               await queryTurso(`
                 INSERT INTO orders (order_id, psid, email, name, item, points_cost, status, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, 'PENDING', datetime('now'))
-              `, [orderId, psid, user?.email || 'N/A', user?.name || 'Missionary', item, cost]);
+              `, [orderId, psid, user?.email || 'N/A', user?.full_name || user?.name || 'Missionary', item, cost]);
 
               const receipt = `🎟️ 𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎🇳 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `Order Ref: ${orderId}\n` +
@@ -393,44 +395,19 @@ export default async function handler(req, res) {
           if (msg === "PAYLOAD_DASHBOARD" || msg.toLowerCase().includes("dashboard") || msg.toLowerCase().includes("points")) {
             const shareLink = `https://m.me/TimelessCreationsRP?ref=${user?.referral_code || 'TCRP'}`;
             const dashboard = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n` +
-              `👤 Registered: ${user?.name || 'Missionary'}\n` +
+              `👤 Registered: ${user?.full_name || user?.name || 'Missionary'}\n` +
               `✉️ Email: ${user?.email || 'N/A'}\n` +
               `💰 Balance: ${user?.points || 0} Point(s)\n` +
               `🔑 Code: ${user?.referral_code || 'TCRP'}\n\n` +
-              `📢 𝐒𝐡𝐚𝐫𝐞 & 𝐄𝐚𝐫𝐧 (+1 Pt per Referral):\n${shareLink}`;
+              `📢 𝐒𝐡𝐚𝐫𝐞 & 𝐄𝐚𝐫𝐧 (+1 Pt Each for You & Invitee):\n${shareLink}`;
 
             await callSendAPI(psid, { text: dashboard, quick_replies: menuButtons });
             continue;
           }
 
-          // FAQS SYSTEM
-          if (msg === "PAYLOAD_FAQS" || msg.toLowerCase().includes("faq") || msg.toLowerCase().includes("help")) {
-            const faqMenu = `❓ 𝐅𝐑𝐄𝐐𝐔𝐄𝐍𝐓𝐋𝐘 𝐀𝐒𝐊𝐄𝐃 𝐐𝐔𝐄𝐒𝐓𝐈𝐎𝐍𝐒\n━━━━━━━━━━━━━━━━━━━━━━\nSelect a topic below to learn more:`;
-            await callSendAPI(psid, { text: faqMenu, quick_replies: faqButtons });
-            continue;
-          }
-
-          if (msg === "FAQ_POINTS") {
-            const pointsInfo = `💰 𝐄𝐀𝐑𝐍𝐈𝐍𝐆 𝐏𝐎𝐈𝐍𝐓𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n• Welcome Bonus: 1 Pt (2 Pts for pre-listed missionaries)\n• Referrals: +1 Pt for every missionary who registers with your TCRP code!\n\nThere is no limit to how many referral points you can earn.`;
-            await callSendAPI(psid, { text: pointsInfo, quick_replies: faqButtons });
-            continue;
-          }
-
-          if (msg === "FAQ_DELIVERY") {
-            const deliveryInfo = `📦 𝐂𝐑𝐀𝐅𝐓𝐒𝐌𝐀𝐍𝐒𝐇𝐈𝐏 & 𝐃𝐄𝐋𝐈𝐕𝐄𝐑𝐘\n━━━━━━━━━━━━━━━━━━━━━━\nWe craft by "Gawa muna bago bayad". All products are handcrafted in Nueva Vizcaya, Philippines and shipped to mission homes and apartments nationwide.`;
-            await callSendAPI(psid, { text: deliveryInfo, quick_replies: faqButtons });
-            continue;
-          }
-
-          if (msg === "FAQ_REDEEM") {
-            const redeemInfo = `🎟️ 𝐇𝐎𝐖 𝐓𝐎 𝐑𝐄𝐃𝐄𝐄𝐌\n━━━━━━━━━━━━━━━━━━━━━━\nOpen the Catalog from the menu, swipe to your item, and tap "Redeem (X Pts)". Your order reference will be generated immediately.`;
-            await callSendAPI(psid, { text: redeemInfo, quick_replies: faqButtons });
-            continue;
-          }
-
-          // DEFAULT FALLBACK
+          // DEFAULT
           await callSendAPI(psid, {
-            text: `Hello ${user?.name || 'Missionary'}! How can we assist you today?`,
+            text: `Hello ${user?.full_name || user?.name || 'Missionary'}! How can we assist you today?`,
             quick_replies: menuButtons
           });
         }

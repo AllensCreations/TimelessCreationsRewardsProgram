@@ -95,14 +95,20 @@
   tbody tr:hover{background:var(--surface2);}
   tbody td{padding:10px 14px;font-size:0.68rem;}
 
-  .prog-track{width:120px;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;position:relative;margin-bottom:3px;}
-  .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;}
-  .prog-label{font-size:0.58rem;color:var(--muted);}
+  /* Enhanced Email Received Progress UI */
+  .prog-container{display:flex;flex-direction:column;gap:4px;min-width:170px;}
+  .prog-track{width:100%;height:7px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;position:relative;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;transition:width 0.4s ease;}
+  .prog-fill.completed{background:var(--green);}
+  .prog-meta{display:flex;justify-content:space-between;align-items:center;font-size:0.62rem;}
+  .prog-count{color:var(--gold2);font-weight:600;}
+  .prog-pct{color:var(--muted);font-size:0.58rem;}
 
   .badge-pts{font-size:0.62rem;font-weight:bold;color:var(--gold);padding:2px 6px;border-radius:4px;background:var(--gold-dim);}
   .badge-ref{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--blue);border:1px solid rgba(92,141,224,0.3);padding:2px 6px;border-radius:4px;}
-  .badge-cohort-elder{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);}
-  .badge-cohort-sister{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--purple-dim);color:var(--purple);}
+  .badge-cohort-elder{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);font-weight:600;}
+  .badge-cohort-sister{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:var(--purple-dim);color:var(--purple);font-weight:600;}
+  .badge-status{font-size:0.56rem;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.05);color:var(--muted);}
 
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999;}
@@ -155,46 +161,46 @@
     <!-- 1. DASHBOARD OVERVIEW -->
     <div class="panel active" id="panel-dashboard">
       <div class="section-head">
-        <div><h2>Missionary Progress Overview</h2><p id="dash-date">Real-time database sync</p></div>
+        <div><h2>Missionary Progress &amp; Delivery Tracking</h2><p id="dash-date">Real-time database sync</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Re-Sync Database</button>
       </div>
 
       <div class="stats-grid">
-        <div class="stat-card gold"><div class="stat-label">Total Missionaries</div><div class="stat-val" id="stat-total">0</div><div class="stat-sub">active records</div></div>
+        <div class="stat-card gold"><div class="stat-label">Total Missionaries</div><div class="stat-val" id="stat-total">0</div><div class="stat-sub">active roster</div></div>
+        <div class="stat-card green"><div class="stat-label">Total Emails Sent</div><div class="stat-val" id="stat-emails-sent">0</div><div class="stat-sub">cumulative deliveries</div></div>
         <div class="stat-card blue"><div class="stat-label">Elders Cohort</div><div class="stat-val" id="stat-elders">0</div><div class="stat-sub">24-month missions</div></div>
         <div class="stat-card purple"><div class="stat-label">Sisters Cohort</div><div class="stat-val" id="stat-sisters">0</div><div class="stat-sub">18-month missions</div></div>
-        <div class="stat-card green"><div class="stat-label">Total Points Claimed</div><div class="stat-val" id="stat-points">0</div><div class="stat-sub">TCRP points balance</div></div>
         <div class="stat-card red"><div class="stat-label">POS Orders</div><div class="stat-val" id="stat-pos-count">0</div><div class="stat-sub">in Purchase Logbook</div></div>
       </div>
 
-      <div class="section-head"><h2 style="font-size:0.9rem">Recent System Logs</h2></div>
+      <div class="section-head"><h2 style="font-size:0.9rem">Recent System Activity</h2></div>
       <div class="table-wrap">
         <div id="log-body" style="max-height:260px;overflow-y:auto;padding:12px 16px;font-size:0.66rem;color:var(--muted)"></div>
       </div>
     </div>
 
-    <!-- 2. MISSIONARIES & DETAILED PROGRESS -->
+    <!-- 2. MISSIONARIES & DETAILED EMAILS RECEIVED -->
     <div class="panel" id="panel-roster">
       <div class="section-head">
-        <div><h2>Missionaries Roster &amp; Emails Received</h2><p>Monthly email progression</p></div>
+        <div><h2>Missionaries Roster &amp; Emails Received</h2><p>Monthly email delivery progression</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh</button>
       </div>
       <div class="table-wrap">
         <div class="table-controls">
-          <input class="search-input" placeholder="Search name, email, or code..." oninput="filterRoster(this.value)"/>
-          <button class="filter-btn active" onclick="filterType('all',this)">All</button>
-          <button class="filter-btn" onclick="filterType('elder',this)">Elders</button>
-          <button class="filter-btn" onclick="filterType('sister',this)">Sisters</button>
+          <input class="search-input" placeholder="Search missionary name, email, or referral code..." oninput="filterRoster(this.value)"/>
+          <button class="filter-btn active" onclick="filterType('all',this)">All (1,191)</button>
+          <button class="filter-btn" onclick="filterType('elder',this)">Elders (24M)</button>
+          <button class="filter-btn" onclick="filterType('sister',this)">Sisters (18M)</button>
         </div>
-        <div style="max-height:540px;overflow-y:auto">
+        <div style="max-height:560px;overflow-y:auto">
           <table>
             <thead>
               <tr>
                 <th style="width:40px">#</th>
-                <th>Missionary</th>
+                <th>Missionary Name</th>
                 <th>Email Address</th>
-                <th>Cohort</th>
-                <th style="width:160px">Emails Received / Progress</th>
+                <th>Batch Month</th>
+                <th style="min-width:200px">Emails Received / Progress</th>
                 <th>Points</th>
                 <th>Code</th>
               </tr>
@@ -210,7 +216,7 @@
     <!-- 3. POS LOGBOOK -->
     <div class="panel" id="panel-pos-logbook">
       <div class="section-head">
-        <div><h2>Logbook for Purchase POS</h2><p>Redemptions and missionary orders</p></div>
+        <div><h2>Logbook for Purchase POS</h2><p>Points redemptions and merchandise receipts</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh Logbook</button>
       </div>
       <div class="table-wrap">
@@ -238,7 +244,7 @@
     <!-- 4. 24-MONTH MESSAGES -->
     <div class="panel" id="panel-messages">
       <div class="section-head">
-        <div><h2>24-Month Messages Directory</h2><p>Quotes and body copy</p></div>
+        <div><h2>24-Month Messages Directory</h2><p>Scheduled scriptural themes and body text</p></div>
       </div>
       <div class="table-wrap">
         <div style="max-height:500px;overflow-y:auto">
@@ -246,7 +252,7 @@
             <thead>
               <tr>
                 <th style="width:70px">Month</th>
-                <th style="width:160px">Theme / Speaker</th>
+                <th style="width:180px">Theme / Speaker</th>
                 <th style="width:240px">Quote</th>
                 <th>Message Content</th>
               </tr>
@@ -262,7 +268,7 @@
     <!-- 5. LIVE LOGS -->
     <div class="panel" id="panel-logs">
       <div class="section-head">
-        <div><h2>Live Activity Logs</h2><p>Server &amp; webhook traces</p></div>
+        <div><h2>Live Activity Logs</h2><p>Real-time pipeline traces</p></div>
         <button class="filter-btn" onclick="document.getElementById('full-logs').innerHTML=''">Clear</button>
       </div>
       <div class="table-wrap">
@@ -321,18 +327,18 @@ function renderDashboard() {
   const total = state.missionaries.length;
   const elders = state.missionaries.filter(m => m.cohort === 'elder').length;
   const sisters = state.missionaries.filter(m => m.cohort === 'sister').length;
-  const totalPoints = state.missionaries.reduce((acc, m) => acc + (m.points || 0), 0);
+  const totalEmailsSent = state.missionaries.reduce((acc, m) => acc + (m.monthsDiff || 0), 0);
 
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-elders').textContent = elders;
   document.getElementById('stat-sisters').textContent = sisters;
-  document.getElementById('stat-points').textContent = totalPoints;
+  document.getElementById('stat-emails-sent').textContent = totalEmailsSent.toLocaleString();
   document.getElementById('stat-pos-count').textContent = state.orders.length;
   document.getElementById('badge-missionaries').textContent = total;
   document.getElementById('badge-pos').textContent = state.orders.length;
   document.getElementById('dash-date').textContent = "Last synchronized: " + new Date().toLocaleTimeString();
 
-  addLog("SYNC", `Database loaded: ${total} missionaries (${elders} Elders, ${sisters} Sisters).`);
+  addLog("SYNC", `Loaded ${total} missionaries (${elders} Elders, ${sisters} Sisters). Total Emails Received: ${totalEmailsSent}.`);
 }
 
 function renderRoster(list) {
@@ -344,8 +350,10 @@ function renderRoster(list) {
 
   tb.innerHTML = list.map((m, i) => {
     const totalMonths = m.limit || (m.cohort === 'sister' ? 18 : 24);
-    const sentCount = Math.min(m.monthsDiff || 1, totalMonths);
+    const sentCount = Math.min(Number(m.monthsDiff) || 0, totalMonths);
     const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
+    const isCompleted = sentCount >= totalMonths;
+
     const cohortBadge = m.cohort === 'sister' 
       ? '<span class="badge-cohort-sister">SISTER (18M)</span>' 
       : '<span class="badge-cohort-elder">ELDER (24M)</span>';
@@ -353,16 +361,21 @@ function renderRoster(list) {
     return `
       <tr>
         <td>${i + 1}</td>
-        <td style="font-weight:600">${m.name}</td>
+        <td style="font-weight:600;white-space:nowrap">${m.name}</td>
         <td style="color:var(--muted)">${m.email}</td>
-        <td>${cohortBadge}</td>
+        <td><span class="badge-status">${m.start || 'August 2026'}</span></td>
         <td>
-          <div class="prog-track">
-            <div class="prog-fill" style="width:${pct}%"></div>
+          <div class="prog-container">
+            <div class="prog-meta">
+              <span class="prog-count">📩 <strong>${sentCount}</strong> / ${totalMonths} Emails</span>
+              <span class="prog-pct">${pct}%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill ${isCompleted ? 'completed' : ''}" style="width:${pct}%"></div>
+            </div>
           </div>
-          <div class="prog-label">Month ${sentCount} of ${totalMonths} (${pct}%)</div>
         </td>
-        <td><span class="badge-pts">${m.points} Pt(s)</span></td>
+        <td><span class="badge-pts">${m.points} Pts</span></td>
         <td><span class="badge-ref">${m.ref}</span></td>
       </tr>
     `;

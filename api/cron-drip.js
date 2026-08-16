@@ -1,157 +1,101 @@
-import { generateMasterEmailHtml } from '../lib/email-template.js';
+import 'dotenv/config';
 
-const tursoUrl = (process.env.TURSO_DATABASE_URL || '').replace(/^[\x27\x22]|[\x27\x22]$/g, '').replace('libsql://', 'https://') + '/v2/pipeline';
-const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').replace(/^[\x27\x22]|[\x27\x22]$/g, '');
-const brevoKey = (process.env.BREVO_API_KEY || '').replace(/^[\x27\x22]|[\x27\x22]$/g, '');
+let rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+let token = (process.env.TURSO_AUTH_TOKEN || '').trim();
+rawUrl = rawUrl.replace(/^['"]|['"]$/g, '').replace(/^libsql:\/\//, '').replace(/^https?:\/\//, '').trim();
+token = token.replace(/^['"]|['"]$/g, '').trim();
+const tursoHttp = `https://${rawUrl}/v2/pipeline`;
+
+const BREVO_KEY = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
+const SENDER_EMAIL = "noreply.timelesscreations.ph@gmail.com";
+
+async function queryTurso(requests) {
+  const res = await fetch(tursoHttp, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: [...requests, { type: "close" }] })
+  });
+  return res.json();
+}
 
 export default async function handler(req, res) {
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  // 1. Fetch eligible missionaries with full name metadata + all 24 messages
-  const selectPayload = {
-    requests: [
-      {
-        type: "execute",
-        stmt: {
-          sql: `
-            SELECT email, name, last_name, cohort, months_sent, max_months, points, referral_code 
-            FROM missionaries 
-            WHERE status = 'active' 
-              AND months_sent < max_months 
-              AND (next_send_date IS NULL OR next_send_date <= date('now'))
-            ORDER BY next_send_date ASC, months_sent ASC
-            LIMIT 280
-          `
-        }
-      },
-      {
-        type: "execute",
-        stmt: {
-          sql: `SELECT month, theme, scripture, message FROM drip_messages`
-        }
-      },
-      { type: "close" }
-    ]
-  };
-
-  const dbRes = await fetch(tursoUrl, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${tursoToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(selectPayload)
-  });
-  const dbData = await dbRes.json();
-
-  const missionaryRows = dbData.results?.[0]?.response?.result?.rows || dbData.batched_results?.[0]?.result?.rows || [];
-  const messageRows = dbData.results?.[1]?.response?.result?.rows || dbData.batched_results?.[1]?.result?.rows || [];
-
-  if (missionaryRows.length === 0) {
-    return res.status(200).json({ message: "No drip emails due today." });
-  }
-
-  // Build message lookup map: month -> { theme, scripture, message }
-  const messageMap = {};
-  for (const m of messageRows) {
-    const mNum = Number(m[0]?.value ?? m[0]);
-    messageMap[mNum] = {
-      theme: m[1]?.value ?? m[1],
-      scripture: m[2]?.value ?? m[2],
-      message: m[3]?.value ?? m[3]
-    };
-  }
-
-  let sentCount = 0;
-  const updates = [];
-
-  // 2. Dispatch emails via Brevo
-  for (const r of missionaryRows) {
-    const email = r[0]?.value ?? r[0];
-    const rawName = r[1]?.value ?? r[1] ?? "Missionary";
-    const rawLastName = r[2]?.value ?? r[2];
-    const cohort = (r[3]?.value ?? r[3] ?? "").toLowerCase();
-    const monthsSent = Number(r[4]?.value ?? r[4] ?? 0);
-    const maxMonths = Number(r[5]?.value ?? r[5] ?? 24);
-    const points = Number(r[6]?.value ?? r[6] ?? 0);
-    const referralCode = r[7]?.value ?? r[7] ?? 'TCRP';
-
-    // Compute Clean Suffix & Last Name
-    const isSister = cohort.includes('sister') || rawName.toLowerCase().startsWith('sister');
-    const cleanSuffix = isSister ? 'Sister' : 'Elder';
-    
-    let cleanLastName = rawLastName;
-    if (!cleanLastName) {
-      cleanLastName = rawName.replace(/^(elder|sister)\s+/i, '').trim();
+  try {
+    // 1. Check Force Stop flag
+    const stopCheck = await queryTurso([
+      { type: "execute", stmt: { sql: "SELECT value FROM stats WHERE key = 'FORCE_STOP';" } }
+    ]);
+    const isStopped = Number(stopCheck.results?.[0]?.response?.result?.rows?.[0]?.[0]?.value || 0) === 1;
+    if (isStopped) {
+      return res.status(200).json({ ok: true, message: "Distribution paused by Emergency Force Stop." });
     }
 
-    const nextMonth = monthsSent + 1;
-    const newStatus = nextMonth >= maxMonths ? 'completed' : 'active';
-    const msgData = messageMap[nextMonth] || {
-      theme: `Month ${nextMonth} Milestone`,
-      scripture: "Trust in the Lord with all thine heart. — Proverbs 3:5",
-      message: `Congratulations on reaching Month ${nextMonth} of your mission service!`
-    };
+    // 2. Fetch active missionaries due for sending
+    const dbRes = await queryTurso([
+      { type: "execute", stmt: { sql: "SELECT email, name, last_name, cohort, months_sent, max_months FROM missionaries WHERE status = 'active' AND months_sent < max_months;" } },
+      { type: "execute", stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages;" } }
+    ]);
 
-    const htmlContent = generateMasterEmailHtml({
-      name: rawName,
-      lastName: cleanLastName,
-      suffix: cleanSuffix,
-      month: nextMonth,
-      theme: msgData.theme,
-      scripture: msgData.scripture,
-      quoteAuthor: msgData.theme,
-      message: msgData.message,
-      points,
-      referralCode
+    const misRows = dbRes.results?.[0]?.response?.result?.rows || [];
+    const msgRows = dbRes.results?.[1]?.response?.result?.rows || [];
+
+    const messagesMap = new Map();
+    msgRows.forEach(r => {
+      messagesMap.set(Number(r[0]?.value || r[0]), {
+        theme: r[1]?.value || r[1],
+        quote: r[2]?.value || r[2],
+        message: r[3]?.value || r[3]
+      });
     });
 
-    try {
-      const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+    let sentCount = 0;
+    const nowIso = new Date().toISOString();
+
+    for (const row of misRows) {
+      const email = row[0]?.value || row[0];
+      const name = row[1]?.value || row[1];
+      const currentMonthsSent = Number(row[4]?.value || row[4] || 0);
+      const maxMonths = Number(row[5]?.value || row[5] || 24);
+
+      const targetMonth = currentMonthsSent + 1;
+      if (targetMonth > maxMonths) continue;
+
+      const dripMsg = messagesMap.get(targetMonth) || {
+        theme: "Monthly Encouragement",
+        quote: "Trust in the Lord with all thine heart.",
+        message: "Keep pressing forward in your missionary labors!"
+      };
+
+      // 3. Dispatch Email via Brevo
+      const emailPayload = {
+        sender: { name: "Timeless Creations", email: SENDER_EMAIL },
+        to: [{ email, name }],
+        subject: `Monthly Inspiration: ${dripMsg.theme}`,
+        htmlContent: `<p>Dear ${name},</p><blockquote><i>"${dripMsg.quote}"</i></blockquote><p>${dripMsg.message}</p>`
+      };
+
+      const mailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
-        headers: { 'accept': 'application/json', 'api-key': brevoKey, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          sender: { name: "Timeless Creations", email: "rewards@timelesscreations.com" },
-          to: [{ email, name: `${cleanSuffix} ${cleanLastName}` }],
-          subject: `Month ${nextMonth}: ${msgData.theme}`,
-          htmlContent: htmlContent
-        })
+        headers: { 'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify(emailPayload)
       });
 
-      if (emailRes.ok) {
+      if (mailRes.ok) {
         sentCount++;
-        updates.push({
-          type: "execute",
-          stmt: {
-            sql: `
-              UPDATE missionaries 
-              SET months_sent = ?, 
-                  next_send_date = date('now', '+30 days'), 
-                  last_sent_at = datetime('now'), 
-                  status = ? 
-              WHERE email = ?
-            `,
-            args: [
-              { type: "integer", value: String(nextMonth) },
-              { type: "text", value: newStatus },
-              { type: "text", value: email }
-            ]
+        // 4. Increment months_sent by 1 ONLY after successful delivery
+        await queryTurso([
+          {
+            type: "execute",
+            stmt: {
+              sql: "UPDATE missionaries SET months_sent = months_sent + 1, last_sent_at = ? WHERE email = ?;",
+              args: [{ type: "text", value: nowIso }, { type: "text", value: email }]
+            }
           }
-        });
+        ]);
       }
-    } catch (e) {
-      console.error(`Failed to send email to ${email}:`, e.message);
     }
-  }
 
-  // 3. Batch commit updates back to Turso
-  if (updates.length > 0) {
-    updates.push({ type: "close" });
-    await fetch(tursoUrl, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${tursoToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requests: updates })
-    });
+    return res.status(200).json({ ok: true, sentCount, timestamp: nowIso });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
   }
-
-  return res.status(200).json({ success: true, processed: missionaryRows.length, sent: sentCount });
 }

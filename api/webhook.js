@@ -1,8 +1,14 @@
 import crypto from 'crypto';
 
 const rawDbUrl = (process.env.TURSO_DATABASE_URL || '').replace(/^['"]|['"]$/g, '').trim();
-const tursoUrl = rawDbUrl.replace('libsql://', 'https://') + '/v2/pipeline';
+const tursoUrl = rawDbUrl.replace('libsql://', 'https://').replace(/\/+$/, '') + '/v2/pipeline';
 const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
+
+// Environment Image Assets
+const IMG_KEYCHAIN = process.env.IMG_KEYCHAIN || '';
+const IMG_NAMETAG = process.env.IMG_NAMETAG || process.env.IMG_NAMETAGE || '';
+const IMG_SALVATION = process.env.IMG_SALVATION || '';
+const IMG_SCRIPTURE = process.env.IMG_SCRIPTURE || '';
 
 async function queryTurso(sql, args = []) {
   try {
@@ -14,13 +20,7 @@ async function queryTurso(sql, args = []) {
 
     const payload = {
       requests: [
-        {
-          type: "execute",
-          stmt: {
-            sql: sql,
-            args: formattedArgs
-          }
-        },
+        { type: "execute", stmt: { sql, args: formattedArgs } },
         { type: "close" }
       ]
     };
@@ -67,46 +67,28 @@ async function queryTurso(sql, args = []) {
   }
 }
 
-async function sendBrevoEmail(email, otpCode, name) {
-  const apiKey = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
-  if (!apiKey) return false;
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: { 'accept': 'application/json', 'api-key': apiKey, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        sender: { name: "Timeless Creations Rewards", email: "noreply@timelesscreations.com" },
-        to: [{ email, name: name || "Missionary" }],
-        subject: "Your TCRP Verification Passcode",
-        htmlContent: `<p>Greetings ${name || 'Missionary'},</p><p>Your TCRP verification code is: <b>${otpCode}</b></p>`
-      })
-    });
-    return res.ok;
-  } catch (e) {
-    return false;
-  }
-}
-
-async function callSendAPI(psid, text, quickReplies = null) {
+async function callSendAPI(psid, messagePayload) {
   const token = (process.env.PAGE_ACCESS_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
   if (!token) return;
-  
+
   const body = {
     messaging_type: "RESPONSE",
     recipient: { id: psid },
-    message: { text }
+    message: typeof messagePayload === 'string' ? { text: messagePayload } : messagePayload
   };
-  if (quickReplies && Array.isArray(quickReplies)) {
-    body.message.quick_replies = quickReplies;
-  }
 
   try {
-    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
+    const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-  } catch (err) {}
+    if (!res.ok) {
+      console.error("❌ Graph API Error:", await res.text());
+    }
+  } catch (err) {
+    console.error("❌ Send API Exception:", err.message);
+  }
 }
 
 const termsButtons = [
@@ -117,10 +99,88 @@ const globalCodeButton = [
   { content_type: "text", title: "Use Code: TCRP", payload: "TCRP" }
 ];
 const menuButtons = [
-  { content_type: "text", title: "🏆 Daily Dashboard", payload: "PAYLOAD_DASHBOARD" },
-  { content_type: "text", title: "🎁 Catalog", payload: "PAYLOAD_CATALOG" },
+  { content_type: "text", title: "🏆 Dashboard", payload: "PAYLOAD_DASHBOARD" },
+  { content_type: "text", title: "🎁 Catalog & Redeem", payload: "PAYLOAD_CATALOG" },
   { content_type: "text", title: "❓ FAQs", payload: "PAYLOAD_FAQS" }
 ];
+
+const faqButtons = [
+  { content_type: "text", title: "💰 How to Earn Pts", payload: "FAQ_POINTS" },
+  { content_type: "text", title: "📦 Delivery & Gawa", payload: "FAQ_DELIVERY" },
+  { content_type: "text", title: "🎟️ How to Redeem", payload: "FAQ_REDEEM" },
+  { content_type: "text", title: "🏆 Back to Dashboard", payload: "PAYLOAD_DASHBOARD" }
+];
+
+// 1:1 Carousel Catalog Generator
+function getCatalogCarouselPayload() {
+  const elements = [
+    {
+      title: "Temple Keychain",
+      subtitle: "Requires 6 TCRP Points\nCustom handcrafted wooden keepsake.",
+      image_url: IMG_KEYCHAIN,
+      buttons: [
+        {
+          type: "postback",
+          title: "Redeem (6 Pts)",
+          payload: "REDEEM_KEYCHAIN"
+        }
+      ]
+    },
+    {
+      title: "Nametag Keychain",
+      subtitle: "Requires 24 TCRP Points\nPersonalized engraved missionary badge.",
+      image_url: IMG_NAMETAG,
+      buttons: [
+        {
+          type: "postback",
+          title: "Redeem (24 Pts)",
+          payload: "REDEEM_NAMETAG"
+        }
+      ]
+    },
+    {
+      title: "Salvation Kit (POS)",
+      subtitle: "Requires 42 TCRP Points\nComplete Plan of Salvation teaching kit.",
+      image_url: IMG_SALVATION,
+      buttons: [
+        {
+          type: "postback",
+          title: "Redeem (42 Pts)",
+          payload: "REDEEM_SALVATION"
+        }
+      ]
+    },
+    {
+      title: "Scripture Case",
+      subtitle: "Requires 60 TCRP Points\nPremium protective genuine leather cover.",
+      image_url: IMG_SCRIPTURE,
+      buttons: [
+        {
+          type: "postback",
+          title: "Redeem (60 Pts)",
+          payload: "REDEEM_SCRIPTURE"
+        }
+      ]
+    }
+  ];
+
+  return {
+    attachment: {
+      type: "template",
+      payload: {
+        template_type: "generic",
+        image_aspect_ratio: "square", // Strict 1:1 ratio
+        elements: elements.map(item => ({
+          title: item.title,
+          subtitle: item.subtitle,
+          image_url: item.image_url || undefined,
+          buttons: item.buttons
+        }))
+      }
+    },
+    quick_replies: menuButtons
+  };
+}
 
 export default async function handler(req, res) {
   const urlObj = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
@@ -143,9 +203,7 @@ export default async function handler(req, res) {
         if (!entry.messaging) continue;
         for (const event of entry.messaging) {
           const psid = event.sender?.id;
-          if (!psid) continue;
-
-          if (event.delivery || event.read || event.message?.is_echo) continue;
+          if (!psid || event.delivery || event.read || event.message?.is_echo) continue;
 
           const rawText = event.message?.text?.trim() || "";
           const payload = event.message?.quick_reply?.payload || event.postback?.payload || "";
@@ -161,8 +219,8 @@ export default async function handler(req, res) {
             let clickCount = Number(session.click_count) || 0;
 
             if (now - windowStart < 60000) {
-              if (clickCount >= 5) {
-                await callSendAPI(psid, "⚠️ You are sending messages too fast! Please wait a minute.");
+              if (clickCount >= 8) {
+                await callSendAPI(psid, "⚠️ You are sending actions too quickly! Please wait a moment.");
                 continue;
               }
               await queryTurso("UPDATE sessions SET click_count = ? WHERE psid = ?", [clickCount + 1, psid]);
@@ -181,7 +239,7 @@ export default async function handler(req, res) {
             `, [psid, now]);
 
             const welcome = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 (𝐓𝐂𝐑𝐏)\n━━━━━━━━━━━━━━━━━━━━━━\nWelcome! Claim exclusive custom missionary rewards.\n\n📜 Please accept the Terms of Service to continue:`;
-            await callSendAPI(psid, welcome, termsButtons);
+            await callSendAPI(psid, { text: welcome, quick_replies: termsButtons });
             continue;
           }
 
@@ -192,15 +250,14 @@ export default async function handler(req, res) {
 
             if (isAgree) {
               await queryTurso("UPDATE sessions SET state = 'AWAITING_INVITE' WHERE psid = ?", [psid]);
-              await callSendAPI(
-                psid,
-                `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\nEnter an invite code from a fellow missionary, or tap below to use the global code:`,
-                globalCodeButton
-              );
+              await callSendAPI(psid, {
+                text: `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\nEnter an invite code from a fellow missionary, or tap below to use the global code:`,
+                quick_replies: globalCodeButton
+              });
             } else if (isDecline) {
-              await callSendAPI(psid, "You must accept the Terms of Service to join TCRP. Type 'Restart' anytime to try again.", termsButtons);
+              await callSendAPI(psid, { text: "You must accept the Terms of Service to join TCRP. Type 'Restart' anytime to try again.", quick_replies: termsButtons });
             } else {
-              await callSendAPI(psid, `Please tap "✓ Agree & Continue" below to proceed:`, termsButtons);
+              await callSendAPI(psid, { text: `Please tap "✓ Agree & Continue" below to proceed:`, quick_replies: termsButtons });
             }
             continue;
           }
@@ -220,134 +277,95 @@ export default async function handler(req, res) {
 
             if (valid) {
               await queryTurso("UPDATE sessions SET state = 'AWAITING_REGISTRATION', invite_code = ? WHERE psid = ?", [code, psid]);
-              await callSendAPI(
-                psid,
-                `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${code})\n━━━━━━━━━━━━━━━━━━━━━━\nPlease send your Missionary Title & Email together:\n\nElder Smith\njohn.smith@missionary.org`
-              );
+              await callSendAPI(psid, `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${code})\n━━━━━━━━━━━━━━━━━━━━━━\nPlease send your Missionary Title & Email together:\n\nElder Smith\njohn.smith@missionary.org`);
             } else {
-              await callSendAPI(psid, `✕ Invalid invitation code. Enter a valid code or tap below:`, globalCodeButton);
+              await callSendAPI(psid, { text: `✕ Invalid invitation code. Enter a valid code or tap below:`, quick_replies: globalCodeButton });
             }
             continue;
           }
 
-          // 4. Registration & OTP Validation
+          // 4. Registration Submission
           if (session.state === "AWAITING_REGISTRATION" || session.state === "AWAITING_OTP") {
-            const isSixDigit = /^\d{6}$/.test(msg.trim());
-
-            if (session.state === "AWAITING_OTP" && isSixDigit) {
-              if (session.otp_code && msg.trim() === session.otp_code) {
-                const email = session.temp_email;
-                const title = session.temp_title || "Missionary";
-                const todayStr = new Date().toISOString().split('T')[0];
-
-                const existingM = await queryTurso("SELECT * FROM missionaries WHERE email = ?", [email]);
-                let isPrelisted = existingM.length > 0 && Number(existingM[0].is_prelisted) === 1;
-                const bonusPoints = isPrelisted ? 2 : 1;
-                const currentPoints = existingM.length > 0 ? Number(existingM[0].points) || 0 : 0;
-                const newPoints = currentPoints + bonusPoints;
-                const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
-
-                if (existingM.length > 0) {
-                  await queryTurso(`
-                    UPDATE missionaries 
-                    SET psid = ?, name = ?, points = ?, referral_code = ?
-                    WHERE email = ?
-                  `, [psid, title, newPoints, refCode, email]);
-                } else {
-                  await queryTurso(`
-                    INSERT INTO missionaries (email, name, psid, points, referral_code, is_prelisted, status)
-                    VALUES (?, ?, ?, ?, ?, 0, 'active')
-                  `, [email, title, psid, newPoints, refCode]);
-                }
-
-                if (session.invite_code && session.invite_code.startsWith("TCRP-")) {
-                  const refOwner = await queryTurso("SELECT psid, points FROM missionaries WHERE referral_code = ?", [session.invite_code]);
-                  if (refOwner[0] && refOwner[0].psid !== psid) {
-                    await queryTurso("UPDATE missionaries SET points = points + 1 WHERE psid = ?", [refOwner[0].psid]);
-                    await callSendAPI(refOwner[0].psid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nYou earned +1 Bonus Point!`);
-                  }
-                }
-
-                await queryTurso("UPDATE sessions SET state = 'VERIFIED', otp_code = NULL, last_checked_date = ? WHERE psid = ?", [todayStr, psid]);
-
-                const successMsg = `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
-                  `👤 ${title}\n` +
-                  `🎁 Welcome Reward: +${bonusPoints} Point(s) ${isPrelisted ? '(Pre-Listed Bonus!)' : ''}\n` +
-                  `💰 Balance: ${newPoints} Point(s)\n` +
-                  `🔑 Your Code: ${refCode}\n\n` +
-                  `🔗 Share Link:\nhttps://m.me/timeless.creations.06?ref=${refCode}`;
-
-                await callSendAPI(psid, successMsg, menuButtons);
-              } else {
-                await callSendAPI(psid, "✕ Incorrect 6-digit passcode. Please check your inbox and reply with the code.");
-              }
-              continue;
-            }
-
             const lines = msg.split('\n').map(l => l.trim()).filter(Boolean);
             let foundTitle = null;
             let foundEmail = null;
 
             for (const line of lines) {
               if (line.toLowerCase().startsWith("elder ") || line.toLowerCase().startsWith("sister ")) foundTitle = line;
-              else if (line.toLowerCase().endsWith("@missionary.org")) foundEmail = line.toLowerCase();
+              else if (line.toLowerCase().endsWith("@missionary.org") || line.toLowerCase().includes("@")) foundEmail = line.toLowerCase();
             }
 
             if (foundTitle && foundEmail) {
-              const otp = Math.floor(100000 + Math.random() * 900000).toString();
-              await queryTurso(`
-                UPDATE sessions 
-                SET temp_title = ?, temp_email = ?, otp_code = ?, state = 'AWAITING_OTP'
-                WHERE psid = ?
-              `, [foundTitle, foundEmail, otp, psid]);
+              const todayStr = new Date().toISOString().split('T')[0];
+              const existingM = await queryTurso("SELECT * FROM missionaries WHERE email = ?", [foundEmail]);
+              const isPrelisted = existingM.length > 0;
+              const bonusPoints = isPrelisted ? 2 : 1;
+              const currentPoints = existingM.length > 0 ? Number(existingM[0].points) || 0 : 0;
+              const newPoints = currentPoints + bonusPoints;
+              const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
 
-              await sendBrevoEmail(foundEmail, otp, foundTitle);
-              await callSendAPI(psid, `📧 Passcode sent to ${foundEmail}!\n\nPlease reply with the 6-digit code:`);
-            } else {
-              await callSendAPI(psid, `⚠️ Please send both your Title & Email together:\n\nElder Smith\njohn.smith@missionary.org`);
+              if (existingM.length > 0) {
+                await queryTurso(`
+                  UPDATE missionaries 
+                  SET psid = ?, name = ?, points = ?, referral_code = ?
+                  WHERE email = ?
+                `, [psid, foundTitle, newPoints, refCode, foundEmail]);
+              } else {
+                await queryTurso(`
+                  INSERT INTO missionaries (email, name, psid, points, referral_code, is_prelisted, status)
+                  VALUES (?, ?, ?, ?, ?, 0, 'active')
+                `, [foundEmail, foundTitle, psid, newPoints, refCode]);
+              }
+
+              if (session.invite_code && session.invite_code.startsWith("TCRP-")) {
+                const refOwner = await queryTurso("SELECT psid FROM missionaries WHERE referral_code = ?", [session.invite_code]);
+                if (refOwner[0] && refOwner[0].psid !== psid) {
+                  await queryTurso("UPDATE missionaries SET points = points + 1 WHERE psid = ?", [refOwner[0].psid]);
+                  await callSendAPI(refOwner[0].psid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nYou earned +1 Bonus Point!`);
+                }
+              }
+
+              await queryTurso("UPDATE sessions SET state = 'VERIFIED', last_checked_date = ? WHERE psid = ?", [todayStr, psid]);
+
+              const successMsg = `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `👤 ${foundTitle}\n` +
+                `🎁 Welcome Reward: +${bonusPoints} Point(s)\n` +
+                `💰 Balance: ${newPoints} Point(s)\n` +
+                `🔑 Your Code: ${refCode}\n\n` +
+                `🔗 Share Link:\nhttps://m.me/TimelessCreationsRP?ref=${refCode}`;
+
+              await callSendAPI(psid, { text: successMsg, quick_replies: menuButtons });
+              continue;
             }
-            continue;
           }
 
-          // 5. Verified User Actions
+          // 5. Verified User Actions & Catalog
           const userRows = await queryTurso("SELECT * FROM missionaries WHERE psid = ?", [psid]);
           const user = userRows[0] || null;
           const today = new Date().toISOString().split('T')[0];
 
-          if (msg === "PAYLOAD_DASHBOARD" || msg.toLowerCase().includes("dashboard") || msg.toLowerCase().includes("points")) {
-            if (session.last_checked_date === today) {
-              await callSendAPI(
-                psid,
-                `⏱️ 𝐃𝐀𝐈𝐋𝐘 𝐋𝐈𝐌𝐈𝐓 𝐑𝐄𝐀𝐂𝐇𝐄𝐃\n━━━━━━━━━━━━━━━━━━━━━━\nYou already checked your dashboard today.\n\nYour balance updates automatically when friends join. You can check again tomorrow!`,
-                menuButtons
-              );
-              continue;
-            }
+          // CATALOG & REDEEM AS ONE (Carousel with 1:1 Images)
+          if (msg === "PAYLOAD_CATALOG" || msg.toLowerCase().includes("catalog") || msg.toLowerCase().includes("store")) {
+            await callSendAPI(psid, `🎁 𝐓𝐂𝐑𝐏 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 𝐂𝐀𝐓𝐀𝐋𝐎𝐆\nYour Balance: 💰 ${user?.points || 0} Point(s)\n\nBrowse items below and tap Redeem to claim directly:`);
+            await callSendAPI(psid, getCatalogCarouselPayload());
+            continue;
+          }
 
-            await queryTurso("UPDATE sessions SET last_checked_date = ? WHERE psid = ?", [today, psid]);
-
-            const shareLink = `https://m.me/timeless.creations.06?ref=${user?.referral_code || 'TCRP'}`;
-            const dashboard = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n` +
-              `👤 Registered: ${user?.name || 'Missionary'}\n` +
-              `✉️ Email: ${user?.email || 'N/A'}\n` +
-              `💰 Balance: ${user?.points || 0} Point(s)\n` +
-              `🔑 Code: ${user?.referral_code || 'TCRP'}\n\n` +
-              `📢 𝐒𝐡𝐚𝐫𝐞 & 𝐄𝐚𝐫𝐧 (+1 Pt per Referral):\n${shareLink}\n\n` +
-              `ℹ️ (Daily check completed for today)`;
-
-            await callSendAPI(psid, dashboard, menuButtons);
-          } else if (msg === "PAYLOAD_CATALOG" || msg.toLowerCase().includes("catalog")) {
-            await callSendAPI(psid, `🎁 𝐓𝐂𝐑𝐏 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 𝐂𝐀𝐓𝐀𝐋𝐎𝐆\n\n• Temple Keychain (6 Pts)\n• Nametag Keychain (24 Pts)\n• Salvation Kit (42 Pts)\n• Scripture Case (60 Pts)\n\nReply with "REDEEM KEYCHAIN" or choose an action below:`, menuButtons);
-          } else if (msg.toUpperCase().startsWith("REDEEM")) {
+          // DIRECT REDEMPTIONS
+          if (msg.startsWith("REDEEM_") || msg.toUpperCase().startsWith("REDEEM")) {
             let cost = 6;
             let item = "Temple Keychain";
-            if (msg.toUpperCase().includes("NAMETAG")) { cost = 24; item = "Nametag Keychain"; }
-            if (msg.toUpperCase().includes("SALVATION")) { cost = 42; item = "Salvation Kit"; }
-            if (msg.toUpperCase().includes("SCRIPTURE")) { cost = 60; item = "Scripture Case"; }
+
+            if (msg.includes("NAMETAG")) { cost = 24; item = "Nametag Keychain"; }
+            else if (msg.includes("SALVATION") || msg.includes("POS")) { cost = 42; item = "Salvation Kit (POS)"; }
+            else if (msg.includes("SCRIPTURE")) { cost = 60; item = "Scripture Case"; }
 
             const userPts = Number(user?.points) || 0;
             if (userPts < cost) {
-              await callSendAPI(psid, `✕ Insufficient points. You have ${userPts} point(s), but ${item} requires ${cost} points.`, menuButtons);
+              await callSendAPI(psid, {
+                text: `✕ Insufficient Points!\n\nYou currently have ${userPts} point(s), but ${item} requires ${cost} points.\n\nShare your link to earn +1 point for every missionary who joins!`,
+                quick_replies: menuButtons
+              });
             } else {
               const orderId = `TX-` + crypto.randomBytes(4).toString('hex').toUpperCase();
               const newBalance = userPts - cost;
@@ -356,13 +374,65 @@ export default async function handler(req, res) {
               await queryTurso(`
                 INSERT INTO orders (order_id, psid, email, name, item, points_cost, status, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, 'PENDING', datetime('now'))
-              `, [orderId, psid, user.email, user.name, item, cost]);
+              `, [orderId, psid, user?.email || 'N/A', user?.name || 'Missionary', item, cost]);
 
-              await callSendAPI(psid, `🎟️ 𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎🇳 𝐑𝐄𝐂𝐄𝐈𝐏𝐓\n━━━━━━━━━━━━━━━━━━━━━━\nOrder Ref: ${orderId}\nItem: ${item}\nRemaining Balance: ${newBalance} Pt(s)\nStatus: ⏳ PENDING DISPATCH`, menuButtons);
+              const receipt = `🎟️ 𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎🇳 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `Order Ref: ${orderId}\n` +
+                `Item: ${item}\n` +
+                `Cost: ${cost} Points\n` +
+                `Remaining Balance: ${newBalance} Pt(s)\n` +
+                `Status: ⏳ PENDING DISPATCH\n\n` +
+                `We will craft your reward and notify you once ready!`;
+
+              await callSendAPI(psid, { text: receipt, quick_replies: menuButtons });
             }
-          } else {
-            await callSendAPI(psid, `Hello ${user?.name || 'Missionary'}! How can we help? Choose an option below:`, menuButtons);
+            continue;
           }
+
+          // DASHBOARD
+          if (msg === "PAYLOAD_DASHBOARD" || msg.toLowerCase().includes("dashboard") || msg.toLowerCase().includes("points")) {
+            const shareLink = `https://m.me/TimelessCreationsRP?ref=${user?.referral_code || 'TCRP'}`;
+            const dashboard = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃\n━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `👤 Registered: ${user?.name || 'Missionary'}\n` +
+              `✉️ Email: ${user?.email || 'N/A'}\n` +
+              `💰 Balance: ${user?.points || 0} Point(s)\n` +
+              `🔑 Code: ${user?.referral_code || 'TCRP'}\n\n` +
+              `📢 𝐒𝐡𝐚𝐫𝐞 & 𝐄𝐚𝐫𝐧 (+1 Pt per Referral):\n${shareLink}`;
+
+            await callSendAPI(psid, { text: dashboard, quick_replies: menuButtons });
+            continue;
+          }
+
+          // FAQS SYSTEM
+          if (msg === "PAYLOAD_FAQS" || msg.toLowerCase().includes("faq") || msg.toLowerCase().includes("help")) {
+            const faqMenu = `❓ 𝐅𝐑𝐄𝐐𝐔𝐄𝐍𝐓𝐋𝐘 𝐀𝐒𝐊𝐄𝐃 𝐐𝐔𝐄𝐒𝐓𝐈𝐎𝐍𝐒\n━━━━━━━━━━━━━━━━━━━━━━\nSelect a topic below to learn more:`;
+            await callSendAPI(psid, { text: faqMenu, quick_replies: faqButtons });
+            continue;
+          }
+
+          if (msg === "FAQ_POINTS") {
+            const pointsInfo = `💰 𝐄𝐀𝐑𝐍𝐈𝐍𝐆 𝐏𝐎𝐈𝐍𝐓𝐒\n━━━━━━━━━━━━━━━━━━━━━━\n• Welcome Bonus: 1 Pt (2 Pts for pre-listed missionaries)\n• Referrals: +1 Pt for every missionary who registers with your TCRP code!\n\nThere is no limit to how many referral points you can earn.`;
+            await callSendAPI(psid, { text: pointsInfo, quick_replies: faqButtons });
+            continue;
+          }
+
+          if (msg === "FAQ_DELIVERY") {
+            const deliveryInfo = `📦 𝐂𝐑𝐀𝐅𝐓𝐒𝐌𝐀𝐍𝐒𝐇𝐈𝐏 & 𝐃𝐄𝐋𝐈𝐕𝐄𝐑𝐘\n━━━━━━━━━━━━━━━━━━━━━━\nWe craft by "Gawa muna bago bayad". All products are handcrafted in Nueva Vizcaya, Philippines and shipped to mission homes and apartments nationwide.`;
+            await callSendAPI(psid, { text: deliveryInfo, quick_replies: faqButtons });
+            continue;
+          }
+
+          if (msg === "FAQ_REDEEM") {
+            const redeemInfo = `🎟️ 𝐇𝐎𝐖 𝐓𝐎 𝐑𝐄𝐃𝐄𝐄𝐌\n━━━━━━━━━━━━━━━━━━━━━━\nOpen the Catalog from the menu, swipe to your item, and tap "Redeem (X Pts)". Your order reference will be generated immediately.`;
+            await callSendAPI(psid, { text: redeemInfo, quick_replies: faqButtons });
+            continue;
+          }
+
+          // DEFAULT FALLBACK
+          await callSendAPI(psid, {
+            text: `Hello ${user?.name || 'Missionary'}! How can we assist you today?`,
+            quick_replies: menuButtons
+          });
         }
       }
     }

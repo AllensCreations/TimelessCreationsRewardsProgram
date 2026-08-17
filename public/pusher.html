@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timeless Creations — Missionary Pusher &amp; Importer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+    --border:rgba(255,255,255,0.07);
+    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+    --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
+    --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
+    --text:#e8e6f0; --muted:#716e88;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
+  .container{max-width:900px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;}
+  h1{font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--gold);}
+  a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
+  a:hover{text-decoration:underline;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;}
+  .card h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:8px;color:var(--text);}
+  .card p{font-size:0.68rem;color:var(--muted);margin-bottom:16px;}
+
+  .form-row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
+  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;}
+  .form-input:focus{border-color:var(--gold);}
+  
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+  .btn:hover{opacity:0.9;}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);margin-right:8px;}
+  .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:4px;cursor:pointer;}
+
+  .dropzone{border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;background:var(--surface2);cursor:pointer;margin-bottom:16px;}
+  .dropzone:hover{border-color:var(--gold);}
+
+  #result-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:0.75rem;margin-top:16px;white-space:pre-wrap;display:none;}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Missionary Pusher &amp; Importer</h1>
+    <a href="/">← Back to Command Center Dashboard</a>
+  </header>
+
+  <!-- 1. MANUAL 3-COLUMN FILLOUT PUSHER -->
+  <div class="card">
+    <h3>Manual 3-Column Fillout Form</h3>
+    <p>Fill out missionary details below. Add as many rows as needed. Duplicate emails are automatically skipped by the server.</p>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">
+      <div>Name / Title (e.g. Sister Calzado)</div>
+      <div>Email Address</div>
+      <div>Batch Month (e.g. 2025 July)</div>
+      <div></div>
+    </div>
+
+    <div id="manual-rows">
+      <div class="form-row">
+        <input type="text" class="form-input m-name" placeholder="Sister Smith"/>
+        <input type="email" class="form-input m-email" placeholder="smith@missionary.org"/>
+        <input type="text" class="form-input m-batch" placeholder="August 2026"/>
+        <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn btn-secondary" onclick="addManualRow()">+ Add Row</button>
+      <button class="btn" onclick="pushManualEntries()">🚀 Push to Turso Database</button>
+    </div>
+  </div>
+
+  <!-- 2. CSV FILE UPLOADER PUSHER -->
+  <div class="card">
+    <h3>Upload CSV File</h3>
+    <p>Upload a CSV file containing columns like <code>Year and Month</code>, <code>Prefix</code>, and <code>Email</code>.</p>
+    
+    <div class="dropzone" onclick="document.getElementById('csv-file').click()">
+      <span id="file-label">📁 Click here to select CSV file or drag and drop</span>
+      <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileSelect(event)"/>
+    </div>
+    
+    <button class="btn" id="push-csv-btn" style="display:none;" onclick="pushCsvEntries()">🚀 Push CSV to Turso Database</button>
+  </div>
+
+  <div id="result-box"></div>
+</div>
+
+<script>
+let parsedCsvData = [];
+
+function addManualRow() {
+  const container = document.getElementById('manual-rows');
+  const div = document.createElement('div');
+  div.className = 'form-row';
+  div.innerHTML = `
+    <input type="text" class="form-input m-name" placeholder="Sister Smith"/>
+    <input type="email" class="form-input m-email" placeholder="smith@missionary.org"/>
+    <input type="text" class="form-input m-batch" placeholder="August 2026"/>
+    <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(div);
+}
+
+async function pushManualEntries() {
+  const rows = document.querySelectorAll('.form-row');
+  const entries = [];
+
+  rows.forEach(r => {
+    const name = r.querySelector('.m-name').value.trim();
+    const email = r.querySelector('.m-email').value.trim();
+    const batch = r.querySelector('.m-batch').value.trim();
+    if (email && email.includes('@')) {
+      entries.push({ name, email, batch });
+    }
+  });
+
+  if (entries.length === 0) {
+    alert("Please fill out at least one valid missionary entry with an email.");
+    return;
+  }
+
+  await sendToServer(entries);
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  document.getElementById('file-label').textContent = `📄 Selected: ${file.name}`;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    parsedCsvData = parseCSV(text);
+    if (parsedCsvData.length > 0) {
+      document.getElementById('push-csv-btn').style.display = 'inline-block';
+      showResult(`Parsed ${parsedCsvData.length} records from CSV. Ready to push.`);
+    } else {
+      alert("Could not parse records from CSV file.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.replace(/^["']|['"]$/g, '').trim().toLowerCase());
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+
+    const values = [];
+    let inQuotes = false;
+    let field = '';
+    for (let j = 0; j < line.length; j++) {
+      const c = line[j];
+      if (c === '"') inQuotes = !inQuotes;
+      else if (c === ',' && !inQuotes) {
+        values.push(field.trim().replace(/^["']|['"]$/g, ''));
+        field = '';
+      } else {
+        field += c;
+      }
+    }
+    values.push(field.trim().replace(/^["']|['"]$/g, ''));
+
+    const rowObj = {};
+    headers.forEach((h, idx) => { rowObj[h] = values[idx] || ''; });
+    
+    const name = rowObj['prefix'] || rowObj['name'] || rowObj['full name'] || '';
+    const email = rowObj['email'] || rowObj['email address'] || '';
+    const batch = rowObj['year and month'] || rowObj['batch'] || rowObj['start date'] || 'August 2026';
+
+    if (email && email.includes('@')) {
+      rows.push({ name, email, batch });
+    }
+  }
+  return rows;
+}
+
+async function pushCsvEntries() {
+  if (parsedCsvData.length === 0) return;
+  await sendToServer(parsedCsvData);
+}
+
+async function sendToServer(entries) {
+  const box = document.getElementById('result-box');
+  box.style.display = 'block';
+  box.textContent = `⏳ Pushing ${entries.length} entries to Turso (auto-skipping duplicates)...`;
+
+  try {
+    const res = await fetch('/api/push-missionaries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      box.textContent = `✅ Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message}`;
+    } else {
+      box.textContent = `❌ Error: ${data.error || 'Failed to push records.'}`;
+    }
+  } catch (err) {
+    box.textContent = `❌ Network Error: ${err.message}`;
+  }
+}
+
+function showResult(txt) {
+  const box = document.getElementById('result-box');
+  box.style.display = 'block';
+  box.textContent = txt;
+}
+</script>
+</body>
+</html>

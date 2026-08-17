@@ -58,15 +58,31 @@ export default async function handler(req, res) {
           const psid = event.sender?.id;
           if (!psid) continue;
 
-          const msg = event.message?.quick_reply?.payload || event.postback?.payload || event.message?.text?.trim() || "";
+          const rawInput = event.message?.quick_reply?.payload || event.postback?.payload || event.message?.text?.trim() || "";
+          const msg = rawInput.toLowerCase();
           const user = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
 
-          if (msg.startsWith("REDEEM_")) {
+          // METHOD 2: Auto-trigger Welcome / Terms Agreement on "Get Started" or Postback
+          if (msg === 'get_started' || msg.includes('get started') || msg === 'get started') {
+            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_TERMS');", [psid]);
+            
+            const welcomeMsg = {
+              text: "🌟 Welcome to Timeless Creations Rewards Program (TCRP)!\n\nEarn rewards and encouragement as you serve. Please review and agree to continue:",
+              quick_replies: [
+                { content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" }
+              ]
+            };
+            await callSendAPI(psid, welcomeMsg);
+            continue;
+          }
+
+          // Handle Redemption Flows
+          if (msg.startsWith("redeem_")) {
             let cost = 0; let item = "";
-            if (msg.includes("KEYCHAIN")) { cost = 6; item = "Temple Keychain"; }
-            else if (msg.includes("NAMETAG")) { cost = 24; item = "Nametag Keychain"; }
-            else if (msg.includes("SALVATION")) { cost = 42; item = "Salvation Kit (POS)"; }
-            else if (msg.includes("SCRIPTURE")) { cost = 60; item = "Scripture Case"; }
+            if (msg.includes("keychain")) { cost = 6; item = "Temple Keychain"; }
+            else if (msg.includes("nametag")) { cost = 24; item = "Nametag Keychain"; }
+            else if (msg.includes("salvation")) { cost = 42; item = "Salvation Kit (POS)"; }
+            else if (msg.includes("scripture")) { cost = 60; item = "Scripture Case"; }
 
             if ((user?.points || 0) < cost) {
               await callSendAPI(psid, `✕ Insufficient Points! You have ${user.points} pt(s), but ${item} requires ${cost}.`);

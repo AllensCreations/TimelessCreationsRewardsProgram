@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { MONTHLY_DRIP_HTML } from '../lib/email-templates.js';
 
 let rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
 let token = (process.env.TURSO_AUTH_TOKEN || '').trim();
@@ -26,12 +27,11 @@ export default async function handler(req, res) {
   const now = new Date();
   const currentDay = now.getDate();
 
-  // STRICT 1st-5th DAYS BLOCK
   if (currentDay > 5) {
     return res.status(200).json({
       ok: true,
       skipped: true,
-      message: `Drip dispatch blocked: Today is Day ${currentDay} of the month. Automated encouragement emails only send on Days 1 through 5.`
+      message: `Drip dispatch blocked: Today is Day ${currentDay}. Automated emails only send on Days 1 through 5.`
     });
   }
 
@@ -48,14 +48,14 @@ export default async function handler(req, res) {
       {
         type: "execute",
         stmt: {
-          sql: `SELECT email, name, cohort, months_sent, max_months FROM missionaries WHERE status = 'active' AND cohort = 'sister' AND months_sent < max_months ORDER BY months_sent ASC LIMIT ?;`,
+          sql: `SELECT email, name, cohort, months_sent, max_months, points, last_name FROM missionaries WHERE status = 'active' AND cohort = 'sister' AND months_sent < max_months ORDER BY months_sent ASC LIMIT ?;`,
           args: [{ type: "integer", value: String(CAP_SISTERS) }]
         }
       },
       {
         type: "execute",
         stmt: {
-          sql: `SELECT email, name, cohort, months_sent, max_months FROM missionaries WHERE status = 'active' AND cohort = 'elder' AND months_sent < max_months ORDER BY months_sent ASC LIMIT ?;`,
+          sql: `SELECT email, name, cohort, months_sent, max_months, points, last_name FROM missionaries WHERE status = 'active' AND cohort = 'elder' AND months_sent < max_months ORDER BY months_sent ASC LIMIT ?;`,
           args: [{ type: "integer", value: String(CAP_ELDERS) }]
         }
       },
@@ -93,6 +93,8 @@ export default async function handler(req, res) {
         const cohort = String(row[2]?.value ?? row[2] ?? 'elder').toLowerCase();
         const currentMonthsSent = Number(row[3]?.value ?? row[3] ?? 0);
         const maxMonths = Number(row[4]?.value ?? row[4] ?? 24);
+        const points = Number(row[5]?.value ?? row[5] ?? 0);
+        const lastName = String(row[6]?.value ?? row[6] ?? name.split(' ').pop() ?? '').trim();
 
         const targetMonth = currentMonthsSent + 1;
         if (targetMonth > maxMonths || !email.includes('@')) return;
@@ -103,29 +105,25 @@ export default async function handler(req, res) {
           message: "Keep pressing forward in your sacred labors!"
         };
 
-        const emailPayload = {
-          sender: { name: "Timeless Creations", email: SENDER_EMAIL },
-          to: [{ email, name }],
-          subject: `Monthly Inspiration: ${dripMsg.theme}`,
-          htmlContent: `
-            <div style="font-family:Georgia,serif;padding:24px;color:#1a1610;background:#faf7f0;border-radius:8px;max-width:560px;margin:auto;">
-              <h2 style="color:#8b1a1a;margin-top:0;">${dripMsg.theme}</h2>
-              <p style="font-size:15px;line-height:1.6;">Dear ${name},</p>
-              <blockquote style="border-left:3px solid #b8955a;padding-left:14px;color:#5a4a28;font-style:italic;margin:16px 0;">
-                "${dripMsg.quote}"
-              </blockquote>
-              <p style="font-size:14px;line-height:1.7;">${dripMsg.message}</p>
-              <hr style="border:none;border-top:1px solid rgba(0,0,0,0.1);margin:24px 0 16px;"/>
-              <p style="color:#8a7050;font-size:12px;margin:0;">Timeless Creations Rewards Program (TCRP)</p>
-            </div>
-          `
-        };
+        const htmlContent = MONTHLY_DRIP_HTML
+          .replace('{DATE}', now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
+          .replace('{Suffix}', cohort === 'sister' ? 'Sister' : 'Elder')
+          .replace('{LastName}', lastName)
+          .replace('{Msg}', dripMsg.message)
+          .replace('{Quote}', dripMsg.quote)
+          .replace('{Author}', dripMsg.theme)
+          .replace('{Points}', points);
 
         try {
           const mailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: { 'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json' },
-            body: JSON.stringify(emailPayload)
+            body: JSON.stringify({
+              sender: { name: "Timeless Creations", email: SENDER_EMAIL },
+              to: [{ email, name }],
+              subject: `Monthly Inspiration: ${dripMsg.theme}`,
+              htmlContent
+            })
           });
 
           if (mailRes.ok) {

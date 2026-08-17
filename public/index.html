@@ -143,31 +143,41 @@
   .toast.success{border-left-color:var(--green);}
   .toast.error{border-left-color:var(--red);}
 
-  /* Modal Receipt Preview with Red Stamp */
+  /* Cute Receipt Modal Styling */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
   .modal-overlay.active{opacity:1;visibility:visible;}
   
   .receipt-card-node{
-    background:#faf7f0; color:#1a1610; padding:28px; border-radius:12px; width:400px;
-    box-shadow:0 20px 50px rgba(0,0,0,0.8); border:2px solid var(--gold); text-align:center;
+    background:linear-gradient(135deg, #fffcf5 0%, #f7f1e3 100%); color:#2c221e; padding:32px; border-radius:18px; width:420px;
+    box-shadow:0 25px 60px rgba(0,0,0,0.8); border:3px solid var(--gold); text-align:center;
     font-family:Georgia,serif; position:relative; overflow:hidden;
   }
-  .receipt-card-node h2{color:#8b1a1a; margin-bottom:4px; font-size:1.25rem;}
+  .receipt-card-node h2{color:#8b1a1a; margin-bottom:4px; font-size:1.4rem; font-family:'Syne',sans-serif;}
+  .receipt-card-node .shop-brand{font-size:0.8rem; color:#b8955a; font-style:italic; letter-spacing:0.05em; margin-bottom:14px;}
+  
   .receipt-card-node .receipt-inner{
-    background:#fff; padding:16px; border-radius:8px; border:1px dashed #b8955a;
-    text-align:left; font-family:'DM Mono',monospace; font-size:0.72rem; margin:14px 0; line-height:1.6;
+    background:#ffffff; padding:18px; border-radius:12px; border:2px dashed #e2c286;
+    text-align:left; font-family:'DM Mono',monospace; font-size:0.75rem; margin:16px 0; line-height:1.7; color:#3a322c;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,0.02);
   }
   
-  /* Retro Red Stamp */
-  .red-stamp{
-    position:absolute; top:52%; right:30px; transform:translateY(-50%) rotate(-14deg);
-    border:4px solid rgba(210, 40, 40, 0.85); color:rgba(210, 40, 40, 0.85);
-    font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; padding:6px 14px;
-    letter-spacing:0.12em; text-transform:uppercase; border-radius:6px; pointer-events:none;
-    box-shadow:0 0 0 2px rgba(210, 40, 40, 0.2) inset; background:rgba(255,240,240,0.15);
+  .receipt-footer-msg{
+    font-size:0.78rem; color:#8b1a1a; font-weight:700; margin-top:12px; font-family:'Syne',sans-serif;
+  }
+  .receipt-footer-sub{
+    font-size:0.66rem; color:#7a6852; margin-top:4px;
   }
 
-  .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+  /* Retro Red Stamp */
+  .red-stamp{
+    position:absolute; top:48%; right:24px; transform:translateY(-50%) rotate(-12deg);
+    border:4px solid rgba(210, 40, 40, 0.85); color:rgba(210, 40, 40, 0.85);
+    font-family:'Syne',sans-serif; font-weight:800; font-size:1.35rem; padding:6px 14px;
+    letter-spacing:0.12em; text-transform:uppercase; border-radius:8px; pointer-events:none;
+    box-shadow:0 0 0 2px rgba(210, 40, 40, 0.2) inset; background:rgba(255,230,230,0.18);
+  }
+
+  .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:18px;}
 
   @media(max-width: 768px) {
     .app{flex-direction:column;height:auto;overflow:auto;}
@@ -188,23 +198,26 @@
   <div class="sync-bar-wrap"><div class="sync-bar" id="sync-bar"></div></div>
 </div>
 
-<!-- RECEIPT MODAL POPUP -->
+<!-- CUTE RECEIPT MODAL POPUP -->
 <div class="modal-overlay" id="receipt-modal">
   <div>
     <!-- The printable card node captured by html2canvas -->
     <div class="receipt-card-node" id="receipt-card-node">
-      <h2>🎉 Thank You for Redeeming!</h2>
-      <p style="font-size:0.75rem;color:#5a4a28;font-style:italic;">Timeless Creations Rewards Program</p>
+      <h2>✨ Timeless Creations ✨</h2>
+      <div class="shop-brand">Rewards Program (TCRP)</div>
       
       <div class="receipt-inner" id="receipt-preview-text">
         <!-- Receipt text generated dynamically -->
       </div>
 
+      <div class="receipt-footer-msg">💖 Thank you! Please shop again! 🌸</div>
+      <div class="receipt-footer-sub">Visit us at m.me/timeless.creations.06</div>
+
       <div class="red-stamp">COMPLETED</div>
     </div>
 
     <div class="modal-actions">
-      <button class="btn" onclick="downloadReceiptImage()">📥 Download as Image</button>
+      <button class="btn" onclick="downloadReceiptImage()">📥 Download Image</button>
       <button class="btn" onclick="copyReceiptText()" style="background:var(--blue);color:#fff;">📋 Copy Text</button>
       <button class="btn btn-secondary" onclick="closeReceiptModal()" style="background:#ddd;color:#333;">Close</button>
     </div>
@@ -521,14 +534,13 @@ async function updateOrderStatus(orderId, selectEl) {
 }
 
 function showReceiptModal(order) {
-  const cardText = `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\n` +
-                   `Title: ${order.name}\n` +
-                   `Email: ${order.email}\n` +
-                   `Reference code: ${order.order_id}\n` +
-                   `Item Purchased: ${order.item}\n\n` +
-                   `Note : Send this Receipt to https://m.me/timeless.creations.06`;
+  const cardHtml = `Title: ${order.name}<br>` +
+                   `Email: ${order.email}<br>` +
+                   `Reference code: <strong>${order.order_id}</strong><br>` +
+                   `Item Purchased: <strong>${order.item}</strong><br>` +
+                   `Cost: ${order.cost} Pts`;
 
-  document.getElementById('receipt-preview-text').innerText = cardText;
+  document.getElementById('receipt-preview-text').innerHTML = cardHtml;
   document.getElementById('receipt-modal').classList.add('active');
 }
 
@@ -537,7 +549,9 @@ function closeReceiptModal() {
 }
 
 function copyReceiptText() {
-  const text = document.getElementById('receipt-preview-text').innerText;
+  const node = document.getElementById('receipt-preview-text');
+  const text = `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\n` + node.innerText + `\n\n💖 Thank you! Please shop again! 🌸\nVisit us at https://m.me/timeless.creations.06`;
+  
   navigator.clipboard.writeText(text).then(() => {
     showToast("Copied", "Receipt text copied to clipboard!", "success");
     closeReceiptModal();
@@ -572,7 +586,7 @@ async function deleteMissionary(email, name) {
       showToast("Deleted", `Removed ${name} successfully.`, "success");
     }
   } catch (e) {
-    showToast("Error", e.message, "error");
+    showToast("Error", "Failed to delete missionary", "error");
   }
 }
 

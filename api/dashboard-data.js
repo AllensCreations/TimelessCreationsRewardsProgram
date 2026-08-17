@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   const tursoHttp = `https://${rawUrl}/v2/pipeline`;
 
-  // Delete Missionary
+  // 1. Delete Missionary
   if (req.method === 'POST' && req.body?.action === 'delete_missionary') {
     const email = String(req.body.email || '').trim().toLowerCase();
     await fetch(tursoHttp, {
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, deletedEmail: email });
   }
 
-  // Admin Update Points
+  // 2. Admin Update Points
   if (req.method === 'POST' && req.body?.action === 'update_points') {
     const email = String(req.body.email || '').trim().toLowerCase();
     const newPoints = Number(req.body.points) || 0;
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, email, newPoints });
   }
 
-  // Admin Update Order Status
+  // 3. Admin Update Order Status
   if (req.method === 'POST' && req.body?.action === 'update_order_status') {
     const orderId = String(req.body.order_id || '').trim();
     const status = String(req.body.status || 'PENDING').trim().toUpperCase();
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, orderId, status });
   }
 
-  // Toggle System Flags (Force Stop / Maintenance)
+  // 4. Toggle System Flags (Force Stop / Maintenance)
   if (req.method === 'POST' && (req.body?.action === 'toggle_stop' || req.body?.action === 'toggle_maintenance')) {
     const key = req.body.action === 'toggle_stop' ? 'FORCE_STOP' : 'MAINTENANCE_MODE';
     const desiredState = req.body.state ? 1 : 0;
@@ -90,39 +90,60 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, [key.toLowerCase()]: Boolean(desiredState) });
   }
 
-  // Test Send Email
+  // 5. Test Send Email (Dispatches selected or all 3 main drip templates)
   if (req.method === 'POST' && req.body?.action === 'test_send') {
     const targetEmail = String(req.body.email || '').trim();
+    const mode = String(req.body.mode || 'all').trim(); // 'otp', 'monthly', 'receipt', 'all'
     const brevoKey = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
     
     if (!targetEmail || !targetEmail.includes('@')) {
       return res.status(400).json({ ok: false, error: "Valid test email required" });
     }
 
-    try {
-      const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: { 'accept': 'application/json', 'api-key': brevoKey, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          sender: { name: "Timeless Creations Rewards", email: "noreply.timelesscreations.ph@gmail.com" },
-          to: [{ email: targetEmail, name: "Admin Test" }],
-          subject: "🧪 TCRP System Test Dispatch",
-          htmlContent: `<div style="font-family:Georgia,serif;padding:20px;background:#faf7f0;color:#1a1610;"><h2>TCRP Test Dispatch Successful!</h2><p>This is a live test transmission from your Command Center Admin Panel.</p></div>`
-        })
-      });
+    const templates = [];
 
-      if (emailRes.ok) {
-        return res.status(200).json({ ok: true, message: `Test email successfully sent to ${targetEmail}` });
-      } else {
-        const errJson = await emailRes.json();
-        return res.status(500).json({ ok: false, error: errJson.message || "Brevo dispatch failed" });
+    if (mode === 'otp' || mode === 'all') {
+      templates.push({
+        subject: "🔐 TCRP Verification Code (OTP)",
+        htmlContent: `<div style="font-family:Georgia,serif;padding:24px;background:#faf7f0;color:#1a1610;border-radius:8px;max-width:560px;margin:auto;"><h2 style="color:#8b1a1a;">Welcome to Timeless Creations!</h2><p>Your 6-digit verification code is:</p><h1 style="color:#b8955a;letter-spacing:4px;">494924</h1><p>Please enter this code in Messenger to complete your registration.</p></div>`
+      });
+    }
+
+    if (mode === 'monthly' || mode === 'all') {
+      templates.push({
+        subject: "📜 Monthly Inspiration: Trust in the Lord",
+        htmlContent: `<div style="font-family:Georgia,serif;padding:24px;color:#1a1610;background:#faf7f0;border-radius:8px;max-width:560px;margin:auto;"><h2 style="color:#8b1a1a;">Month 1: Spiritual Foundations</h2><p>Dear Elder/Sister Test,</p><blockquote style="border-left:3px solid #b8955a;padding-left:14px;color:#5a4a28;font-style:italic;">"Trust in the Lord with all thine heart; and lean not unto thine own understanding."</blockquote><p>Keep pressing forward in your sacred labors!</p></div>`
+      });
+    }
+
+    if (mode === 'receipt' || mode === 'all') {
+      templates.push({
+        subject: "🎟️ POS Redemption Confirmed (TX-TEST99)",
+        htmlContent: `<div style="font-family:Georgia,serif;padding:24px;background:#faf7f0;color:#1a1610;border-radius:8px;max-width:560px;margin:auto;"><h2 style="color:#8b1a1a;">Redemption Confirmed!</h2><p><strong>Title:</strong> Elder Test<br><strong>Item Purchased:</strong> Temple Keychain<br><strong>Reference Code:</strong> TX-TEST99</p><p>💖 Thank you! Please shop again!<br>Visit us at <a href="https://m.me/timeless.creations.06">m.me/timeless.creations.06</a></p></div>`
+      });
+    }
+
+    try {
+      for (const t of templates) {
+        await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: { 'accept': 'application/json', 'api-key': brevoKey, 'content-type': 'application/json' },
+          body: JSON.stringify({
+            sender: { name: "Timeless Creations Rewards", email: "noreply.timelesscreations.ph@gmail.com" },
+            to: [{ email: targetEmail, name: "Admin Test" }],
+            subject: t.subject,
+            htmlContent: t.htmlContent
+          })
+        });
       }
+
+      return res.status(200).json({ ok: true, message: `Successfully dispatched ${templates.length} main drip template(s) to ${targetEmail}!` });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
     }
   }
 
-  // Edit Monthly Message
+  // 6. Edit Monthly Message
   if (req.method === 'POST' && req.body?.action === 'update_message') {
     const month = Number(req.body.month);
     const theme = String(req.body.theme || '');

@@ -1,4 +1,3 @@
-cat << 'EOF' > git-push.sh
 #!/bin/bash
 echo "🚀 Staging all changes..."
 git add .
@@ -14,6 +13,3 @@ git commit -m "$commit_msg"
 git push origin main
 
 echo "🎉 Successfully pushed to GitHub!"
-EOF
-
-chmod +x git-push.sh

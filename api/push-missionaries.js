@@ -1,67 +1,43 @@
 import 'dotenv/config';
 
-function unwrap(cell) {
-  if (cell === null || cell === undefined) return '';
-  if (typeof cell === 'object') {
-    if ('value' in cell) return cell.value ?? '';
-    return '';
-  }
-  return cell;
+function toTitleCase(str) {
+  if (!str) return '';
+  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, char => char.toUpperCase()).trim();
 }
 
-function calculateInitialMonths(batchStr) {
-  const now = new Date();
-  const curYear = now.getFullYear();
-  const curMonth = now.getMonth() + 1;
-
-  const months = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-  const s = String(batchStr || '').toLowerCase().trim();
-
-  let startYear = curYear;
-  let startMonth = curMonth;
-
-  const yMatch = s.match(/\b(202[0-9])\b/);
-  if (yMatch) startYear = parseInt(yMatch[1], 10);
-
-  for (let i = 0; i < months.length; i++) {
-    if (s.includes(months[i])) {
-      startMonth = i + 1;
-      break;
-    }
-  }
-
-  const diff = (curYear - startYear) * 12 + (curMonth - startMonth);
-  return Math.max(0, diff);
-}
-
-function parseLastName(fullName) {
-  const parts = fullName.replace(/^(Elder|Sister)\s+/i, '').trim().split(/\s+/);
-  return parts.length > 0 ? parts[parts.length - 1] : fullName;
+function sanitizeEmail(email) {
+  if (!email) return '';
+  let clean = email.trim().toLowerCase();
+  clean = clean.replace(/\+[^@]*@/, '@'); // Remove '+' aliases
+  clean = clean.replace(/[^a-z0-9._@-]/g, ''); // Strip dangerous characters
+  if (clean && !clean.includes('@')) clean += '@missionary.org';
+  return clean;
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
+    return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
   }
 
   let rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
   let token = (process.env.TURSO_AUTH_TOKEN || '').trim();
+
   rawUrl = rawUrl.replace(/^['"]|['"]$/g, '').replace(/^libsql:\/\//, '').replace(/^https?:\/\//, '').trim();
   token = token.replace(/^['"]|['"]$/g, '').trim();
 
   if (!rawUrl || !token) {
-    return res.status(500).json({ ok: false, error: "Missing database credentials" });
+    return res.status(500).json({ ok: false, error: 'Missing database configuration.' });
   }
 
   const tursoHttp = `https://${rawUrl}/v2/pipeline`;
   const entries = req.body?.entries || [];
 
   if (!Array.isArray(entries) || entries.length === 0) {
-    return res.status(400).json({ ok: false, error: "No missionary entries provided" });
+    return res.status(400).json({ ok: false, error: 'No missionary records provided.' });
   }
 
   try {
-    // 1. Fetch existing emails to prevent duplicates
+    // 1. Fetch all existing emails to avoid duplicates
     const checkRes = await fetch(tursoHttp, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -74,60 +50,57 @@ export default async function handler(req, res) {
     });
     const checkData = await checkRes.json();
     const existingRows = checkData.results?.[0]?.response?.result?.rows || [];
-    const existingEmails = new Set(existingRows.map(r => String(unwrap(r[0])).toLowerCase().trim()));
+    const existingEmails = new Set(existingRows.map(r => String(r[0]?.value ?? r[0] ?? '').toLowerCase().trim()));
 
+    const stmts = [];
     let addedCount = 0;
     let skippedCount = 0;
-    const tursoRequests = [];
 
     for (const item of entries) {
-      const email = String(item.email || '').toLowerCase().trim();
-      if (!email || !email.includes('@')) continue;
+      let email = sanitizeEmail(item.email);
+      let rawName = toTitleCase(item.name || 'Missionary');
+      let batch = toTitleCase(item.batch || 'August 2026');
 
-      // SKIP DUPLICATES
+      if (!email || !email.includes('@')) {
+        skippedCount++;
+        continue;
+      }
+
       if (existingEmails.has(email)) {
         skippedCount++;
         continue;
       }
 
-      const rawName = String(item.name || item.prefix || 'Missionary').trim();
-      const isSister = rawName.toLowerCase().startsWith('sister');
-      const name = rawName.toLowerCase().startsWith('elder') || isSister ? rawName : (isSister ? `Sister ${rawName}` : `Elder ${rawName}`);
-      const lastName = parseLastName(name);
-      const cohort = isSister ? 'sister' : 'elder';
-      const maxMonths = isSister ? 18 : 24;
-      const batch = String(item.batch || item.year_and_month || 'August 2026').trim();
-      const monthsSent = Math.min(calculateInitialMonths(batch), maxMonths);
-      const ref = `TCRP-${Math.floor(1000 + Math.random() * 9000)}`;
+      const cohort = rawName.toLowerCase().includes('sister') ? 'sister' : 'elder';
+      const maxMonths = cohort === 'sister' ? 18 : 24;
+      const refCode = 'TCRP-' + Math.random().toString(36).substring(2, 7).toUpperCase();
 
-      existingEmails.add(email); // Prevent duplicates within the same batch upload
-      addedCount++;
-
-      tursoRequests.push({
+      stmts.push({
         type: "execute",
         stmt: {
-          sql: `INSERT INTO missionaries (email, name, last_name, cohort, batch_month, months_sent, max_months, points, referral_code, is_prelisted, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 2, ?, 1, 'active');`,
+          sql: `INSERT INTO missionaries (email, name, last_name, cohort, batch_month, months_sent, max_months, points, referral_code, status)
+                VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, 'active');`,
           args: [
             { type: "text", value: email },
-            { type: "text", value: name },
-            { type: "text", value: lastName },
+            { type: "text", value: rawName },
+            { type: "text", value: rawName.split(' ').pop() || '' },
             { type: "text", value: cohort },
             { type: "text", value: batch },
-            { type: "integer", value: String(monthsSent) },
             { type: "integer", value: String(maxMonths) },
-            { type: "text", value: ref }
+            { type: "text", value: refCode }
           ]
         }
       });
+
+      existingEmails.add(email);
+      addedCount++;
     }
 
-    if (tursoRequests.length > 0) {
-      tursoRequests.push({ type: "close" });
+    if (stmts.length > 0) {
       await fetch(tursoHttp, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requests: tursoRequests })
+        body: JSON.stringify({ requests: [...stmts, { type: "close" }] })
       });
     }
 
@@ -135,7 +108,7 @@ export default async function handler(req, res) {
       ok: true,
       added: addedCount,
       skipped: skippedCount,
-      message: `Successfully added ${addedCount} missionaries. Skipped ${skippedCount} duplicate emails.`
+      message: `Processed ${entries.length} records. Added ${addedCount} new missionaries (${skippedCount} duplicates skipped).`
     });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });

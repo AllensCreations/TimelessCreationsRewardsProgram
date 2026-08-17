@@ -16,7 +16,7 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:900px;margin:0 auto;}
+  .container{max-width:920px;margin:0 auto;}
   header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;}
   h1{font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--gold);}
   a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
@@ -28,19 +28,26 @@
 
   .global-batch-box{background:var(--surface2);border:1px solid var(--border);padding:14px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   
-  .form-row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
+  .form-row{display:grid;grid-template-columns:1.2fr 1.5fr 1fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
   .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;}
   .form-input:focus{border-color:var(--gold);}
   
-  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
   .btn:hover{opacity:0.9;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);margin-right:8px;}
   .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:4px;cursor:pointer;}
+
+  .spinner{width:14px;height:14px;border:2px solid #0a0a0f;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;display:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
   .dropzone{border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;background:var(--surface2);cursor:pointer;margin-bottom:16px;}
   .dropzone:hover{border-color:var(--gold);}
 
   #result-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:0.75rem;margin-top:16px;white-space:pre-wrap;display:none;}
+  #result-box.loading{border-color:var(--gold);color:var(--gold2);}
+  #result-box.success{border-color:var(--green);color:var(--green);}
+  #result-box.error{border-color:var(--red);color:var(--red);}
 </style>
 </head>
 <body>
@@ -50,39 +57,39 @@
     <a href="/">← Back to Command Center Dashboard</a>
   </header>
 
-  <!-- MANUAL 3-COLUMN FILLOUT PUSHER WITH GLOBAL BATCH & ENTER TO NEW ROW -->
+  <!-- MANUAL 3-COLUMN FILLOUT PUSHER WITH AUTO-CAPITALIZATION, SANITIZATION & LOADING -->
   <div class="card">
     <h3>Manual Batch Fillout Form</h3>
-    <p>Set a global batch month/year to apply to all rows, or type individually. Pressing <strong>Enter</strong> on the last field instantly creates a new row!</p>
+    <p>Names automatically Capitalize <em>(e.g., Elder Salviejo)</em>. Emails auto-lowercase and strip special character exploits. Press <strong>Enter</strong> on the last field to add a new row instantly.</p>
     
     <!-- GLOBAL BATCH SELECTOR -->
     <div class="global-batch-box">
       <div style="flex:1;">
-        <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Global Batch Month &amp; Year (Applies to All)</label>
+        <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Global Batch Month &amp; Year (Applies to All Rows)</label>
         <input type="text" id="global-batch-input" class="form-input" value="August 2026" oninput="applyGlobalBatch(this.value)" style="width:100%"/>
       </div>
       <div>
-        <button class="btn" onclick="applyGlobalBatch(document.getElementById('global-batch-input').value)" style="margin-top:16px;">Apply to All Rows</button>
+        <button class="btn" onclick="applyGlobalBatch(document.getElementById('global-batch-input').value)" style="margin-top:16px;">Apply to All</button>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">
-      <div>Name / Title (e.g. Sister Calzado)</div>
-      <div>Email Address (@missionary.org auto-added)</div>
+    <div style="display:grid;grid-template-columns:1.2fr 1.5fr 1fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">
+      <div>Name / Title (e.g. Elder Salviejo)</div>
+      <div>Email Address (Auto @missionary.org)</div>
       <div>Batch Month</div>
       <div></div>
     </div>
 
     <div id="manual-rows">
       <div class="form-row">
-        <input type="text" class="form-input m-name" placeholder="Sister Smith"/>
-        <input type="text" class="form-input m-email" placeholder="smith" onblur="autoCompleteEmail(this)" onkeydown="handleRowKeydown(event, this)"/>
+        <input type="text" class="form-input m-name" placeholder="Elder Salviejo" onblur="formatNameInput(this)"/>
+        <input type="text" class="form-input m-email" placeholder="salviejo.mark" onblur="formatEmailInput(this)" onkeydown="handleRowKeydown(event, this)"/>
         <input type="text" class="form-input m-batch" value="August 2026" onkeydown="handleRowKeydown(event, this)"/>
         <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
       </div>
       <div class="form-row">
-        <input type="text" class="form-input m-name" placeholder="Elder Johnson"/>
-        <input type="text" class="form-input m-email" placeholder="johnson" onblur="autoCompleteEmail(this)" onkeydown="handleRowKeydown(event, this)"/>
+        <input type="text" class="form-input m-name" placeholder="Sister Calzado" onblur="formatNameInput(this)"/>
+        <input type="text" class="form-input m-email" placeholder="calzado" onblur="formatEmailInput(this)" onkeydown="handleRowKeydown(event, this)"/>
         <input type="text" class="form-input m-batch" value="August 2026" onkeydown="handleRowKeydown(event, this)"/>
         <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
       </div>
@@ -90,7 +97,10 @@
 
     <div style="display:flex;gap:10px;margin-top:14px;">
       <button class="btn btn-secondary" onclick="addManualRow()">+ Add Row</button>
-      <button class="btn" onclick="pushManualEntries()">🚀 Push All to Turso Database</button>
+      <button class="btn" id="push-manual-btn" onclick="pushManualEntries()">
+        <div class="spinner" id="manual-spinner"></div>
+        <span id="manual-btn-text">🚀 Push All to Database</span>
+      </button>
     </div>
   </div>
 
@@ -104,7 +114,10 @@
       <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileSelect(event)"/>
     </div>
     
-    <button class="btn" id="push-csv-btn" style="display:none;" onclick="pushCsvEntries()">🚀 Push CSV to Turso Database</button>
+    <button class="btn" id="push-csv-btn" style="display:none;" onclick="pushCsvEntries()">
+      <div class="spinner" id="csv-spinner"></div>
+      <span id="csv-btn-text">🚀 Push CSV to Database</span>
+    </button>
   </div>
 
   <div id="result-box"></div>
@@ -113,16 +126,39 @@
 <script>
 let parsedCsvData = [];
 
-function autoCompleteEmail(input) {
-  let val = input.value.trim();
-  if (val && !val.includes('@')) {
-    input.value = val + '@missionary.org';
+// Capitalizes First Letter of every word (Title Case)
+function toTitleCase(str) {
+  if (!str) return '';
+  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, char => char.toUpperCase()).trim();
+}
+
+// Sanitizes email: lowercases, strips '+' exploit aliases, removes illegal chars
+function sanitizeEmail(email) {
+  if (!email) return '';
+  let clean = email.trim().toLowerCase();
+  
+  // Strip out '+' alias and special characters (e.g. user+alias@domain.com -> user@domain.com)
+  clean = clean.replace(/\+[^@]*@/, '@');
+  clean = clean.replace(/[^a-z0-9._@-]/g, '');
+
+  if (clean && !clean.includes('@')) {
+    clean += '@missionary.org';
   }
+  return clean;
+}
+
+function formatNameInput(input) {
+  input.value = toTitleCase(input.value);
+}
+
+function formatEmailInput(input) {
+  input.value = sanitizeEmail(input.value);
 }
 
 function applyGlobalBatch(val) {
+  const formattedBatch = toTitleCase(val);
   document.querySelectorAll('.m-batch').forEach(input => {
-    input.value = val;
+    input.value = formattedBatch;
   });
 }
 
@@ -151,12 +187,12 @@ function handleRowKeydown(event, input) {
 
 function addManualRow() {
   const container = document.getElementById('manual-rows');
-  const globalBatch = document.getElementById('global-batch-input').value.trim() || 'August 2026';
+  const globalBatch = toTitleCase(document.getElementById('global-batch-input').value.trim()) || 'August 2026';
   const div = document.createElement('div');
   div.className = 'form-row';
   div.innerHTML = `
-    <input type="text" class="form-input m-name" placeholder="Sister Smith"/>
-    <input type="text" class="form-input m-email" placeholder="smith" onblur="autoCompleteEmail(this)" onkeydown="handleRowKeydown(event, this)"/>
+    <input type="text" class="form-input m-name" placeholder="Elder Salviejo" onblur="formatNameInput(this)"/>
+    <input type="text" class="form-input m-email" placeholder="salviejo.mark" onblur="formatEmailInput(this)" onkeydown="handleRowKeydown(event, this)"/>
     <input type="text" class="form-input m-batch" value="${globalBatch}" onkeydown="handleRowKeydown(event, this)"/>
     <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
   `;
@@ -169,21 +205,21 @@ async function pushManualEntries() {
   const entries = [];
 
   rows.forEach(r => {
-    let name = r.querySelector('.m-name').value.trim();
-    let email = r.querySelector('.m-email').value.trim();
-    let batch = r.querySelector('.m-batch').value.trim() || 'August 2026';
+    let name = toTitleCase(r.querySelector('.m-name').value.trim());
+    let email = sanitizeEmail(r.querySelector('.m-email').value.trim());
+    let batch = toTitleCase(r.querySelector('.m-batch').value.trim()) || 'August 2026';
+    
     if (email) {
-      if (!email.includes('@')) email += '@missionary.org';
       entries.push({ name, email, batch });
     }
   });
 
   if (entries.length === 0) {
-    alert("Please fill out at least one valid missionary entry with an email.");
+    alert("Please fill out at least one missionary entry with a valid email.");
     return;
   }
 
-  await sendToServer(entries);
+  await sendToServer(entries, 'manual');
 }
 
 function handleFileSelect(event) {
@@ -196,8 +232,8 @@ function handleFileSelect(event) {
     const text = e.target.result;
     parsedCsvData = parseCSV(text);
     if (parsedCsvData.length > 0) {
-      document.getElementById('push-csv-btn').style.display = 'inline-block';
-      showResult(`Parsed ${parsedCsvData.length} records from CSV. Ready to push.`);
+      document.getElementById('push-csv-btn').style.display = 'inline-flex';
+      showResult(`Parsed ${parsedCsvData.length} records from CSV. Ready to push.`, 'loading');
     } else {
       alert("Could not parse records from CSV file.");
     }
@@ -233,12 +269,11 @@ function parseCSV(text) {
     const rowObj = {};
     headers.forEach((h, idx) => { rowObj[h] = values[idx] || ''; });
     
-    let name = rowObj['prefix'] || rowObj['name'] || rowObj['full name'] || '';
-    let email = rowObj['email'] || rowObj['email address'] || '';
-    let batch = rowObj['year and month'] || rowObj['batch'] || rowObj['start date'] || 'August 2026';
+    let name = toTitleCase(rowObj['prefix'] || rowObj['name'] || rowObj['full name'] || '');
+    let email = sanitizeEmail(rowObj['email'] || rowObj['email address'] || '');
+    let batch = toTitleCase(rowObj['year and month'] || rowObj['batch'] || rowObj['start date'] || 'August 2026');
 
     if (email) {
-      if (!email.includes('@')) email += '@missionary.org';
       rows.push({ name, email, batch });
     }
   }
@@ -247,13 +282,20 @@ function parseCSV(text) {
 
 async function pushCsvEntries() {
   if (parsedCsvData.length === 0) return;
-  await sendToServer(parsedCsvData);
+  await sendToServer(parsedCsvData, 'csv');
 }
 
-async function sendToServer(entries) {
+async function sendToServer(entries, type) {
   const box = document.getElementById('result-box');
-  box.style.display = 'block';
-  box.textContent = `⏳ Pushing ${entries.length} entries to Turso (auto-skipping duplicates)...`;
+  const btn = type === 'manual' ? document.getElementById('push-manual-btn') : document.getElementById('push-csv-btn');
+  const spinner = type === 'manual' ? document.getElementById('manual-spinner') : document.getElementById('csv-spinner');
+  const btnText = type === 'manual' ? document.getElementById('manual-btn-text') : document.getElementById('csv-btn-text');
+
+  // Activate Loading State
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+  btnText.textContent = 'Pushing to Turso...';
+  showResult(`⏳ Pushing ${entries.length} entries to Turso database (auto-skipping duplicates)...`, 'loading');
 
   try {
     const res = await fetch('/api/push-missionaries', {
@@ -262,19 +304,26 @@ async function sendToServer(entries) {
       body: JSON.stringify({ entries })
     });
     const data = await res.json();
+
     if (data.ok) {
-      box.textContent = `✅ Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message}`;
+      showResult(`🎉 Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message}`, 'success');
     } else {
-      box.textContent = `❌ Error: ${data.error || 'Failed to push records.'}`;
+      showResult(`❌ Error: ${data.error || 'Failed to push records.'}`, 'error');
     }
   } catch (err) {
-    box.textContent = `❌ Network Error: ${err.message}`;
+    showResult(`❌ Network Error: ${err.message}`, 'error');
+  } finally {
+    // Reset Loading State
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = type === 'manual' ? '🚀 Push All to Database' : '🚀 Push CSV to Database';
   }
 }
 
-function showResult(txt) {
+function showResult(txt, status) {
   const box = document.getElementById('result-box');
   box.style.display = 'block';
+  box.className = status;
   box.textContent = txt;
 }
 </script>

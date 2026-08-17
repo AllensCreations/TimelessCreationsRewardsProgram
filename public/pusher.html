@@ -11,7 +11,7 @@
     --border:rgba(255,255,255,0.07);
     --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
     --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
-    --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
+    --red:#e05c5c; --red-dim:rgba(224,92,92,0.3);
     --text:#e8e6f0; --muted:#716e88;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -48,23 +48,23 @@
     <a href="/">← Back to Command Center Dashboard</a>
   </header>
 
-  <!-- 1. MANUAL 3-COLUMN FILLOUT PUSHER -->
+  <!-- 1. MANUAL 3-COLUMN FILLOUT PUSHER WITH AUTO-DOMAIN & ENTER TO NEW ROW -->
   <div class="card">
     <h3>Manual 3-Column Fillout Form</h3>
-    <p>Fill out missionary details below. Add as many rows as needed. Duplicate emails are automatically skipped by the server.</p>
+    <p>Emails automatically append <code>@missionary.org</code> if left without a domain. Pressing <strong>Enter</strong> on the last field instantly creates a new row!</p>
     
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">
       <div>Name / Title (e.g. Sister Calzado)</div>
-      <div>Email Address</div>
-      <div>Batch Month (e.g. 2025 July)</div>
+      <div>Email Address (@missionary.org auto-added)</div>
+      <div>Batch Month (e.g. July 2025)</div>
       <div></div>
     </div>
 
     <div id="manual-rows">
       <div class="form-row">
         <input type="text" class="form-input m-name" placeholder="Sister Smith"/>
-        <input type="email" class="form-input m-email" placeholder="smith@missionary.org"/>
-        <input type="text" class="form-input m-batch" placeholder="August 2026"/>
+        <input type="text" class="form-input m-email" placeholder="smith" onblur="autoCompleteEmail(this)" onkeydown="handleRowKeydown(event, this)"/>
+        <input type="text" class="form-input m-batch" placeholder="August 2026" onkeydown="handleRowKeydown(event, this)"/>
         <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
       </div>
     </div>
@@ -94,17 +94,50 @@
 <script>
 let parsedCsvData = [];
 
+function autoCompleteEmail(input) {
+  let val = input.value.trim();
+  if (val && !val.includes('@')) {
+    input.value = val + '@missionary.org';
+  }
+}
+
+function handleRowKeydown(event, input) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const currentRow = input.closest('.form-row');
+    const allRows = Array.from(document.querySelectorAll('.form-row'));
+    const isLastRow = allRows[allRows.length - 1] === currentRow;
+    const isBatchInput = input.classList.contains('m-batch');
+
+    if (isLastRow && isBatchInput) {
+      addManualRow();
+      const newRows = document.querySelectorAll('.form-row');
+      const nextRowNameInput = newRows[newRows.length - 1].querySelector('.m-name');
+      nextRowNameInput.focus();
+    } else {
+      // Focus next input or row
+      const inputs = Array.from(currentRow.querySelectorAll('input'));
+      const idx = inputs.indexOf(input);
+      if (idx > -1 && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      }
+    }
+  }
+}
+
 function addManualRow() {
   const container = document.getElementById('manual-rows');
   const div = document.createElement('div');
   div.className = 'form-row';
   div.innerHTML = `
     <input type="text" class="form-input m-name" placeholder="Sister Smith"/>
-    <input type="email" class="form-input m-email" placeholder="smith@missionary.org"/>
-    <input type="text" class="form-input m-batch" placeholder="August 2026"/>
+    <input type="text" class="form-input m-email" placeholder="smith" onblur="autoCompleteEmail(this)" onkeydown="handleRowKeydown(event, this)"/>
+    <input type="text" class="form-input m-batch" placeholder="August 2026" onkeydown="handleRowKeydown(event, this)"/>
     <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
   `;
   container.appendChild(div);
+  // Focus the new row name input
+  div.querySelector('.m-name').focus();
 }
 
 async function pushManualEntries() {
@@ -112,10 +145,11 @@ async function pushManualEntries() {
   const entries = [];
 
   rows.forEach(r => {
-    const name = r.querySelector('.m-name').value.trim();
-    const email = r.querySelector('.m-email').value.trim();
-    const batch = r.querySelector('.m-batch').value.trim();
-    if (email && email.includes('@')) {
+    let name = r.querySelector('.m-name').value.trim();
+    let email = r.querySelector('.m-email').value.trim();
+    let batch = r.querySelector('.m-batch').value.trim();
+    if (email) {
+      if (!email.includes('@')) email += '@missionary.org';
       entries.push({ name, email, batch });
     }
   });
@@ -175,11 +209,12 @@ function parseCSV(text) {
     const rowObj = {};
     headers.forEach((h, idx) => { rowObj[h] = values[idx] || ''; });
     
-    const name = rowObj['prefix'] || rowObj['name'] || rowObj['full name'] || '';
-    const email = rowObj['email'] || rowObj['email address'] || '';
-    const batch = rowObj['year and month'] || rowObj['batch'] || rowObj['start date'] || 'August 2026';
+    let name = rowObj['prefix'] || rowObj['name'] || rowObj['full name'] || '';
+    let email = rowObj['email'] || rowObj['email address'] || '';
+    let batch = rowObj['year and month'] || rowObj['batch'] || rowObj['start date'] || 'August 2026';
 
-    if (email && email.includes('@')) {
+    if (email) {
+      if (!email.includes('@')) email += '@missionary.org';
       rows.push({ name, email, batch });
     }
   }

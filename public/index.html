@@ -141,6 +141,14 @@
   .toast.success{border-left-color:var(--green);}
   .toast.error{border-left-color:var(--red);}
 
+  /* Modal Receipt Preview */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
+  .modal-overlay.active{opacity:1;visibility:visible;}
+  .modal-card{background:#faf7f0;color:#1a1610;padding:28px;border-radius:12px;width:380px;box-shadow:0 20px 50px rgba(0,0,0,0.8);border:2px solid var(--gold);text-align:center;font-family:Georgia,serif;}
+  .modal-card h2{color:#8b1a1a;margin-bottom:6px;font-size:1.3rem;}
+  .modal-card .receipt-body{background:#fff;padding:16px;border-radius:8px;border:1px dashed #b8955a;text-align:left;font-family:'DM Mono',monospace;font-size:0.72rem;margin:16px 0;line-height:1.6;}
+  .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+
   @media(max-width: 768px) {
     .app{flex-direction:column;height:auto;overflow:auto;}
     .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:1000;box-shadow:10px 0 30px rgba(0,0,0,0.8);}
@@ -160,6 +168,21 @@
   <div class="sync-bar-wrap"><div class="sync-bar" id="sync-bar"></div></div>
 </div>
 
+<!-- RECEIPT MODAL POPUP -->
+<div class="modal-overlay" id="receipt-modal">
+  <div class="modal-card">
+    <h2>🎉 Thank You for Redeeming!</h2>
+    <p style="font-size:0.8rem;color:#5a4a28;font-style:italic;">Timeless Creations Rewards Program</p>
+    <div class="receipt-body" id="receipt-preview-text">
+      <!-- Generated receipt card text -->
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="copyReceiptText()">📋 Copy Receipt</button>
+      <button class="btn btn-secondary" onclick="closeReceiptModal()" style="background:#ddd;color:#333;">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
@@ -171,8 +194,8 @@
     </div>
     <nav class="nav">
       <div class="nav-label">Main</div>
-      <div class="nav-item" onclick="window.location.href='/pusher.html'"><span class="icon">➕</span> Add Missionaries</div>
       <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
+      <div class="nav-item" onclick="window.location.href='/pusher.html'"><span class="icon">➕</span> Add Missionaries</div>
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Progress <span class="badge" id="badge-missionaries">—</span></div>
       <div class="nav-item" onclick="switchTab('pos-logbook',this)"><span class="icon">📖</span> POS Logbook <span class="badge" id="badge-pos">0</span></div>
       <div class="nav-label">Administration</div>
@@ -306,7 +329,7 @@
     <!-- 4. POS LOGBOOK & STATUS EDITOR -->
     <div class="panel" id="panel-pos-logbook">
       <div class="section-head">
-        <div><h2>Logbook for Purchase POS</h2><p>Pending orders automatically sort to the top for fast fulfillment</p></div>
+        <div><h2>Logbook for Purchase POS</h2><p>Marking an order COMPLETED generates a shareable receipt card</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh Logbook</button>
       </div>
       <div class="table-wrap">
@@ -360,7 +383,7 @@
     <div class="panel" id="panel-logs">
       <div class="section-head">
         <div><h2>Live Activity Logs</h2><p>Real-time pipeline traces</p></div>
-        <button class="filter-btn" onclick="document.getElementById('full-logs').innerHTML=''">Clear</button>
+        <button class="filter-btn" onclick="document.getElementById('full-logs').innerHTML='CW'">Clear</button>
       </div>
       <div class="table-wrap">
         <div id="full-logs" style="max-height:500px;overflow-y:auto;padding:14px;font-size:0.68rem;color:var(--muted)"></div>
@@ -454,7 +477,12 @@ async function updateOrderStatus(orderId, selectEl) {
     const data = await res.json();
     if (data.ok) {
       const o = state.orders.find(x => x.order_id === orderId);
-      if (o) o.status = status;
+      if (o) {
+        o.status = status;
+        if (status === 'COMPLETED') {
+          showReceiptModal(o);
+        }
+      }
       showToast("Order Updated", `Order ${orderId} marked as ${status}`, "success");
       state.orders.sort((a, b) => (a.status === 'PENDING' ? -1 : 1) - (b.status === 'PENDING' ? -1 : 1));
       renderPosLogbook(state.orders);
@@ -462,6 +490,30 @@ async function updateOrderStatus(orderId, selectEl) {
   } catch (e) {
     showToast("Error", "Failed to update order status", "error");
   }
+}
+
+function showReceiptModal(order) {
+  const cardText = `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\n` +
+                   `Title: ${order.name}\n` +
+                   `Email: ${order.email}\n` +
+                   `Reference code: ${order.order_id}\n` +
+                   `Item Purchased: ${order.item}\n\n` +
+                   `✨ Thank you for Redeeming!`;
+
+  document.getElementById('receipt-preview-text').innerText = cardText;
+  document.getElementById('receipt-modal').classList.add('active');
+}
+
+function closeReceiptModal() {
+  document.getElementById('receipt-modal').classList.remove('active');
+}
+
+function copyReceiptText() {
+  const text = document.getElementById('receipt-preview-text').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("Copied", "Receipt text copied to clipboard!", "success");
+    closeReceiptModal();
+  });
 }
 
 async function deleteMissionary(email, name) {

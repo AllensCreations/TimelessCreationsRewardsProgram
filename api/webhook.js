@@ -1,14 +1,9 @@
 import crypto from 'crypto';
 import { generateOtpHtml } from '../lib/otp-template.js';
-import { queryTurso, unwrap, SCHEMA_INIT_STMTS } from '../lib/db.js';
+import { queryTurso, unwrap } from '../lib/db.js';
 
 const BREVO_KEY = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
 const SENDER_EMAIL = "noreply.timelesscreations.ph@gmail.com";
-
-const IMG_KEYCHAIN = process.env.IMG_KEYCHAIN || '';
-const IMG_NAMETAG = process.env.IMG_NAMETAG || process.env.IMG_NAMETAGE || '';
-const IMG_SALVATION = process.env.IMG_SALVATION || '';
-const IMG_SCRIPTURE = process.env.IMG_SCRIPTURE || '';
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -16,57 +11,26 @@ async function runSql(sql, args = []) {
     if (typeof val === "number") return { type: "integer", value: String(val) };
     return { type: "text", value: String(val) };
   });
-
   const data = await queryTurso([{ type: "execute", stmt: { sql, args: formattedArgs } }]);
   const results = data.results || [];
   const targetBatch = results[results.length - 2]?.response?.result || results[0]?.response?.result;
   if (!targetBatch || !targetBatch.cols) return [];
-
   const cols = targetBatch.cols.map(c => (typeof c === 'object' ? c.name : c));
   return (targetBatch.rows || []).map(row => {
     const obj = {};
-    row.forEach((cell, idx) => {
-      obj[cols[idx]] = unwrap(cell);
-    });
+    row.forEach((cell, idx) => { obj[cols[idx]] = unwrap(cell); });
     return obj;
   });
-}
-
-async function sendBrevoOtp(email, otpCode, name) {
-  if (!BREVO_KEY) return false;
-  try {
-    const htmlBody = generateOtpHtml({
-      name: name || "Missionary",
-      otpCode: otpCode,
-      displayDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    });
-
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: { 'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        sender: { name: "Timeless Creations Rewards", email: SENDER_EMAIL },
-        to: [{ email, name: name || "Missionary" }],
-        subject: "Your TCRP Verification Passcode | Timeless Creations",
-        htmlContent: htmlBody
-      })
-    });
-    return res.ok;
-  } catch (e) {
-    return false;
-  }
 }
 
 async function callSendAPI(psid, messagePayload) {
   const token = (process.env.PAGE_ACCESS_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
   if (!token) return;
-
   const body = {
     messaging_type: "RESPONSE",
     recipient: { id: psid },
     message: typeof messagePayload === 'string' ? { text: messagePayload } : messagePayload
   };
-
   try {
     await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
       method: 'POST',
@@ -76,68 +40,13 @@ async function callSendAPI(psid, messagePayload) {
   } catch (err) {}
 }
 
-const termsButtons = [
-  { content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" },
-  { content_type: "text", title: "✕ Decline", payload: "DECLINE_TERMS" }
-];
-const globalCodeButton = [
-  { content_type: "text", title: "Use Code: TCRP", payload: "TCRP" }
-];
-const menuButtons = [
-  { content_type: "text", title: "🏆 Dashboard & Rewards", payload: "PAYLOAD_DASHBOARD" },
-  { content_type: "text", title: "❓ FAQs", payload: "PAYLOAD_FAQS" }
-];
-
-function getCatalogCarouselPayload() {
-  return {
-    attachment: {
-      type: "template",
-      payload: {
-        template_type: "generic",
-        image_aspect_ratio: "square",
-        elements: [
-          {
-            title: "Temple Keychain (6 Pts)",
-            subtitle: "Custom handcrafted wooden keepsake.",
-            image_url: IMG_KEYCHAIN || undefined,
-            buttons: [{ type: "postback", title: "Redeem (6 Pts)", payload: "REDEEM_KEYCHAIN" }]
-          },
-          {
-            title: "Nametag Keychain (24 Pts)",
-            subtitle: "Personalized engraved missionary badge.",
-            image_url: IMG_NAMETAG || undefined,
-            buttons: [{ type: "postback", title: "Redeem (24 Pts)", payload: "REDEEM_NAMETAG" }]
-          },
-          {
-            title: "Salvation Kit (POS) (42 Pts)",
-            subtitle: "Complete Plan of Salvation teaching kit.",
-            image_url: IMG_SALVATION || undefined,
-            buttons: [{ type: "postback", title: "Redeem (42 Pts)", payload: "REDEEM_SALVATION" }]
-          },
-          {
-            title: "Scripture Case (60 Pts)",
-            subtitle: "Premium genuine leather protective cover.",
-            image_url: IMG_SCRIPTURE || undefined,
-            buttons: [{ type: "postback", title: "Redeem (60 Pts)", payload: "REDEEM_SCRIPTURE" }]
-          }
-        ]
-      }
-    },
-    quick_replies: menuButtons
-  };
-}
-
 export default async function handler(req, res) {
-  const reqUrl = req.url || "/";
   const host = req.headers?.host || "localhost";
-  const urlObj = new URL(reqUrl, `https://${host}`);
-  const mode = req.query?.['hub.mode'] || urlObj.searchParams.get('hub.mode');
-  const token = req.query?.['hub.verify_token'] || urlObj.searchParams.get('hub.verify_token');
-  const challenge = req.query?.['hub.challenge'] || urlObj.searchParams.get('hub.challenge');
-
+  const urlObj = new URL(req.url || "/", `https://${host}`);
+  
   if (req.method === 'GET') {
     const verifyToken = (process.env.VERIFY_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
-    if (mode === 'subscribe' && token === verifyToken) return res.status(200).send(challenge);
+    if (req.query?.['hub.mode'] === 'subscribe' && req.query?.['hub.verify_token'] === verifyToken) return res.status(200).send(req.query?.['hub.challenge']);
     return res.status(403).send('Verification failed');
   }
 
@@ -145,235 +54,41 @@ export default async function handler(req, res) {
     const body = req.body || {};
     if (body.object === 'page' && Array.isArray(body.entry)) {
       for (const entry of body.entry) {
-        if (!entry.messaging) continue;
-        for (const event of entry.messaging) {
+        for (const event of entry.messaging || []) {
           const psid = event.sender?.id;
-          if (!psid || event.delivery || event.read || event.message?.is_echo) continue;
+          if (!psid) continue;
 
-          const rawText = event.message?.text?.trim() || "";
-          const payload = event.message?.quick_reply?.payload || event.postback?.payload || "";
-          const msg = payload || rawText;
-          if (!msg) continue;
+          const msg = event.message?.quick_reply?.payload || event.postback?.payload || event.message?.text?.trim() || "";
+          const user = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
 
-          const sessionRows = await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]);
-          let session = sessionRows[0] || null;
-
-          const stopRows = await runSql("SELECT value FROM stats WHERE key = 'FORCE_STOP'");
-          if (Number(stopRows[0]?.value) === 1 && !msg.toLowerCase().includes("restart")) {
-            await callSendAPI(psid, "⏸️ The rewards system is currently paused for maintenance.");
-            continue;
-          }
-
-          const isStart = msg === "GET_STARTED" || msg === "GET_STARTED_PAYLOAD" || msg.toLowerCase() === "get started" || msg.toLowerCase() === "restart";
-          if (!session || isStart) {
-            await runSql(`
-              INSERT INTO sessions (psid, state, window_start, click_count)
-              VALUES (?, 'AWAITING_TERMS', ?, 1)
-              ON CONFLICT(psid) DO UPDATE SET state = 'AWAITING_TERMS', window_start = excluded.window_start, click_count = 1
-            `, [psid, Date.now()]);
-
-            const welcome = `𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 (𝐓𝐂𝐑𝐏)\nWelcome! Claim exclusive custom missionary rewards.\n\n📜 Please accept the Terms of Service to continue:`;
-            await callSendAPI(psid, { text: welcome, quick_replies: termsButtons });
-            continue;
-          }
-
-          if (session.state === "AWAITING_TERMS") {
-            if (msg === "AGREE_TERMS" || msg.toLowerCase().includes("agree")) {
-              await runSql("UPDATE sessions SET state = 'AWAITING_INVITE' WHERE psid = ?", [psid]);
-              await callSendAPI(psid, {
-                text: `✦ 𝐓𝐄𝐑𝐌𝐒 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃\n🔑 𝐈𝐧𝐯𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐂𝐨𝐝𝐞 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝:\nEnter an invite code from a fellow missionary, or tap below to use the global code:`,
-                quick_replies: globalCodeButton
-              });
-            } else {
-              await callSendAPI(psid, { text: `Please tap "✓ Agree & Continue" below to proceed:`, quick_replies: termsButtons });
-            }
-            continue;
-          }
-
-          if (session.state === "AWAITING_INVITE") {
-            const code = msg.toUpperCase().trim();
-            let valid = false;
-
-            if (code === "TCRP") {
-              valid = true;
-              await runSql("INSERT INTO stats (key, value) VALUES ('globalClaims', 1) ON CONFLICT(key) DO UPDATE SET value = value + 1");
-            } else if (code.startsWith("TCRP-")) {
-              const refMatch = await runSql("SELECT psid FROM missionaries WHERE referral_code = ?", [code]);
-              if (refMatch[0]) valid = true;
-            }
-
-            if (valid) {
-              await runSql("UPDATE sessions SET state = 'AWAITING_REGISTRATION', invite_code = ? WHERE psid = ?", [code, psid]);
-              const prompt = `✓ 𝐈𝐍𝐕𝐈𝐓𝐀𝐓𝐈𝐎𝐍 𝐀𝐂𝐂𝐄𝐏𝐓𝐄𝐃 (${code})\nPlease send your details in 3 lines:\n\n1. Cohort / Title (e.g. Elder Smith)\n2. Missionary Email (e.g. John.Smith@missionary.org)\n3. Batch Month & Year (e.g. July 2026)\n\nExample:\nElder Smith\nJohn.Smith@missionary.org\nJuly 2026`;
-              await callSendAPI(psid, prompt);
-            } else {
-              await callSendAPI(psid, { text: `✕ Invalid invitation code. Enter a valid code or tap below:`, quick_replies: globalCodeButton });
-            }
-            continue;
-          }
-
-          if (session.state === "AWAITING_REGISTRATION" || session.state === "AWAITING_OTP") {
-            const isSixDigit = /^\d{6}$/.test(msg.trim());
-
-            if (session.state === "AWAITING_OTP" && isSixDigit) {
-              if (session.otp_code && msg.trim() === String(session.otp_code).trim()) {
-                const email = session.temp_email;
-                const title = session.temp_title || "Missionary";
-                const isSister = title.toLowerCase().startsWith("sister");
-                const cohortType = isSister ? "sister" : "elder";
-                const maxMonths = isSister ? 18 : 24;
-
-                const existingM = await runSql("SELECT * FROM missionaries WHERE email = ?", [email]);
-                const isPrelisted = existingM.length > 0;
-                const joinerBonus = isPrelisted ? 2 : 1;
-                const currentPoints = existingM.length > 0 ? Number(existingM[0].points) || 0 : 0;
-                const newPoints = currentPoints + joinerBonus;
-                const refCode = "TCRP-" + Math.floor(1000 + Math.random() * 9000);
-
-                await runSql(`
-                  INSERT INTO missionaries (email, name, last_name, cohort, batch_month, months_sent, max_months, psid, points, referral_code, is_prelisted, status)
-                  VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, 'active')
-                  ON CONFLICT(email) DO UPDATE SET
-                    psid = excluded.psid,
-                    name = excluded.name,
-                    points = points + excluded.points,
-                    referral_code = excluded.referral_code
-                `, [email, title, title.replace(/^(Elder|Sister)\s+/i, ''), cohortType, session.temp_batch || 'August 2026', maxMonths, psid, newPoints, refCode, isPrelisted ? 1 : 0]);
-
-                if (session.invite_code && session.invite_code.startsWith("TCRP-")) {
-                  const refOwner = await runSql("SELECT psid FROM missionaries WHERE referral_code = ?", [session.invite_code]);
-                  if (refOwner[0] && refOwner[0].psid && refOwner[0].psid !== psid) {
-                    await runSql("UPDATE missionaries SET points = points + 1 WHERE psid = ?", [refOwner[0].psid]);
-                    await callSendAPI(refOwner[0].psid, `✦ 𝐍𝐄𝐖 𝐑𝐄𝐅𝐄𝐑𝐑𝐀𝐋!\nA missionary joined with your code! +1 Point earned! 💰`);
-                  }
-                }
-
-                await runSql("UPDATE sessions SET state = 'VERIFIED', otp_code = NULL WHERE psid = ?", [psid]);
-
-                const successMsg = `✦ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐕𝐄𝐑𝐈𝐅𝐈𝐄𝐃!\n` +
-                  `👤 Title: ${title}\n` +
-                  `✉️ Email: ${email}\n` +
-                  `🎁 Welcome Reward: +${joinerBonus} Point(s)\n` +
-                  `💰 Balance: ${newPoints} Point(s)\n` +
-                  `🔑 Your Code: ${refCode}\n\n` +
-                  `📢 Share with companions to earn +1 Point each:\nhttps://m.me/TimelessCreationsRP?ref=${refCode}`;
-
-                await callSendAPI(psid, { text: successMsg, quick_replies: menuButtons });
-              } else {
-                await callSendAPI(psid, "✕ Incorrect 6-digit passcode. Please reply with the valid code.");
-              }
-              continue;
-            }
-
-            const lines = msg.split('\n').map(l => l.trim()).filter(Boolean);
-            let foundTitle = null;
-            let foundEmail = null;
-            let foundBatch = null;
-
-            for (const line of lines) {
-              if (line.toLowerCase().startsWith("elder ") || line.toLowerCase().startsWith("sister ")) foundTitle = line;
-              else if (line.includes("@")) foundEmail = line.toLowerCase();
-              else if (/\b(202[0-9]|january|february|march|april|may|june|july|august|september|october|november|december)\b/i.test(line)) foundBatch = line;
-            }
-
-            if (foundTitle && foundEmail) {
-              const otp = Math.floor(100000 + Math.random() * 900000).toString();
-              const batchStr = foundBatch || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-              await runSql(`
-                UPDATE sessions 
-                SET temp_title = ?, temp_email = ?, temp_batch = ?, otp_code = ?, state = 'AWAITING_OTP'
-                WHERE psid = ?
-              `, [foundTitle, foundEmail, batchStr, otp, psid]);
-
-              await sendBrevoOtp(foundEmail, otp, foundTitle);
-              await callSendAPI(psid, `📧 Passcode sent to ${foundEmail}!\n\nPlease reply with the 6-digit verification code:`);
-              continue;
-            }
-          }
-
-          const userRows = await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]);
-          const user = userRows[0] || null;
-
-          if (msg === "PAYLOAD_FAQS" || msg.toLowerCase().includes("faq")) {
-            const fullFaq = `❓ 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐑𝐄𝐖𝐀𝐑𝐃𝐒 (𝐓𝐂𝐑𝐏) 𝐅𝐀𝐐𝐬\n\n` +
-              `💰 𝟏. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐞𝐚𝐫𝐧 𝐩𝐨𝐢𝐧𝐭𝐬?\n` +
-              `• Welcome Bonus: 1 Pt (2 Pts for pre-listed)\n` +
-              `• Mutual Referrals: +1 Pt each for you & your companion!\n\n` +
-              `📦 𝟐. 𝐂𝐫𝐚𝐟𝐭𝐬𝐦𝐚𝐧𝐬𝐡𝐢𝐩 & 𝐃𝐞𝐥𝐢𝐯𝐞𝐫𝐲\n` +
-              `• We craft by "Gawa muna bago bayad".\n` +
-              `• Handcrafted in Nueva Vizcaya & shipped nationwide.\n\n` +
-              `🎟️ 𝟑. 𝐇𝐨𝐰 𝐝𝐨 𝐈 𝐫𝐞𝐝𝐞𝐞𝐦?\n` +
-              `• Tap "🏆 Dashboard & Rewards" to redeem directly.\n\n` +
-              `👑 𝟒. 𝐂𝐚𝐭𝐚𝐥𝐨𝐠 𝐑𝐞𝐰𝐚𝐫𝐝𝐬\n` +
-              `• Temple Keychain: 6 Pts\n` +
-              `• Nametag Keychain: 24 Pts\n` +
-              `• Salvation Kit (POS): 42 Pts\n` +
-              `• Scripture Case: 60 Pts`;
-
-            await callSendAPI(psid, { text: fullFaq, quick_replies: menuButtons });
-            continue;
-          }
-
-          if (msg === "PAYLOAD_DASHBOARD" || msg.toLowerCase().includes("dashboard") || msg.toLowerCase().includes("rewards")) {
-            const shareLink = `https://m.me/TimelessCreationsRP?ref=${user?.referral_code || 'TCRP'}`;
-            const dashboard = `🏆 𝐌𝐈𝐒𝐒𝐈𝐎𝐍𝐀𝐑𝐘 𝐃𝐀𝐒𝐇𝐁𝐎𝐀𝐑𝐃 & 𝐑𝐄𝐖𝐀𝐑𝐃𝐒\n` +
-              `👤 Registered: ${user?.name || 'Missionary'}\n` +
-              `✉️ Email: ${user?.email || 'N/A'}\n` +
-              `💰 Balance: ${user?.points || 0} Point(s)\n` +
-              `🔑 Code: ${user?.referral_code || 'TCRP'}\n\n` +
-              `📢 𝐒𝐡𝐚𝐫𝐞 & 𝐄𝐚𝐫𝐧 (+1 Pt Each):\n${shareLink}\n\n` +
-              `🎁 Swipe below to redeem your rewards:`;
-
-            await callSendAPI(psid, dashboard);
-            await callSendAPI(psid, getCatalogCarouselPayload());
-            continue;
-          }
-
-          if (msg.startsWith("REDEEM_") || msg.toUpperCase().startsWith("REDEEM")) {
-            let cost = 6;
-            let item = "Temple Keychain";
-
-            if (msg.includes("NAMETAG")) { cost = 24; item = "Nametag Keychain"; }
-            else if (msg.includes("SALVATION") || msg.includes("POS")) { cost = 42; item = "Salvation Kit (POS)"; }
+          if (msg.startsWith("REDEEM_")) {
+            let cost = 0; let item = "";
+            if (msg.includes("KEYCHAIN")) { cost = 6; item = "Temple Keychain"; }
+            else if (msg.includes("NAMETAG")) { cost = 24; item = "Nametag Keychain"; }
+            else if (msg.includes("SALVATION")) { cost = 42; item = "Salvation Kit (POS)"; }
             else if (msg.includes("SCRIPTURE")) { cost = 60; item = "Scripture Case"; }
 
-            const userPts = Number(user?.points) || 0;
-            if (userPts < cost) {
-              await callSendAPI(psid, {
-                text: `✕ Insufficient Points!\nYou have ${userPts} point(s), but ${item} requires ${cost} points.`,
-                quick_replies: menuButtons
-              });
+            if ((user?.points || 0) < cost) {
+              await callSendAPI(psid, `✕ Insufficient Points! You have ${user.points} pt(s), but ${item} requires ${cost}.`);
             } else {
               const orderId = `TX-` + crypto.randomBytes(4).toString('hex').toUpperCase();
-              const newBalance = userPts - cost;
+              await runSql("UPDATE missionaries SET points = points - ? WHERE psid = ?", [cost, psid]);
+              await runSql("INSERT INTO orders (order_id, psid, email, name, item, points_cost, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDING')", 
+                           [orderId, psid, user.email, user.name, item, cost]);
 
-              await runSql("UPDATE missionaries SET points = ? WHERE psid = ?", [newBalance, psid]);
-              await runSql(`
-                INSERT INTO orders (order_id, psid, email, name, item, points_cost, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, 'PENDING', datetime('now'))
-              `, [orderId, psid, user?.email || 'N/A', user?.name || 'Missionary', item, cost]);
-
-              const receipt = `🎟️ 𝐑𝐄𝐃𝐄𝐌𝐏𝐓𝐈𝐎🇳 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n` +
-                `Order Ref: ${orderId}\n` +
-                `Item: ${item}\n` +
-                `Cost: ${cost} Points\n` +
-                `Remaining Balance: ${newBalance} Pt(s)\n` +
-                `Status: ⏳ PENDING DISPATCH`;
-
-              await callSendAPI(psid, { text: receipt, quick_replies: menuButtons });
+              const receipt = `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\n` +
+                              `Title: ${user.name}\n` +
+                              `Email: ${user.email}\n` +
+                              `Reference code: ${orderId}\n` +
+                              `Item Purchased: ${item}\n\n` +
+                              `📝 𝐍𝐨𝐭𝐞: Send this Receipt to https://m.me/Timelesscreation.06`;
+              
+              await callSendAPI(psid, receipt);
             }
-            continue;
           }
-
-          await callSendAPI(psid, {
-            text: `Hello ${user?.name || 'Missionary'}! How can we help you today?`,
-            quick_replies: menuButtons
-          });
         }
       }
     }
     return res.status(200).send('EVENT_RECEIVED');
   }
-  return res.status(404).send('Not Found');
 }

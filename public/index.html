@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Timeless Creations — TCRP Command Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<!-- html2canvas library for downloading receipt cards as images -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
@@ -141,12 +143,30 @@
   .toast.success{border-left-color:var(--green);}
   .toast.error{border-left-color:var(--red);}
 
-  /* Modal Receipt Preview */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
+  /* Modal Receipt Preview with Red Stamp */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
   .modal-overlay.active{opacity:1;visibility:visible;}
-  .modal-card{background:#faf7f0;color:#1a1610;padding:28px;border-radius:12px;width:380px;box-shadow:0 20px 50px rgba(0,0,0,0.8);border:2px solid var(--gold);text-align:center;font-family:Georgia,serif;}
-  .modal-card h2{color:#8b1a1a;margin-bottom:6px;font-size:1.3rem;}
-  .modal-card .receipt-body{background:#fff;padding:16px;border-radius:8px;border:1px dashed #b8955a;text-align:left;font-family:'DM Mono',monospace;font-size:0.72rem;margin:16px 0;line-height:1.6;}
+  
+  .receipt-card-node{
+    background:#faf7f0; color:#1a1610; padding:28px; border-radius:12px; width:400px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.8); border:2px solid var(--gold); text-align:center;
+    font-family:Georgia,serif; position:relative; overflow:hidden;
+  }
+  .receipt-card-node h2{color:#8b1a1a; margin-bottom:4px; font-size:1.25rem;}
+  .receipt-card-node .receipt-inner{
+    background:#fff; padding:16px; border-radius:8px; border:1px dashed #b8955a;
+    text-align:left; font-family:'DM Mono',monospace; font-size:0.72rem; margin:14px 0; line-height:1.6;
+  }
+  
+  /* Retro Red Stamp */
+  .red-stamp{
+    position:absolute; top:52%; right:30px; transform:translateY(-50%) rotate(-14deg);
+    border:4px solid rgba(210, 40, 40, 0.85); color:rgba(210, 40, 40, 0.85);
+    font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; padding:6px 14px;
+    letter-spacing:0.12em; text-transform:uppercase; border-radius:6px; pointer-events:none;
+    box-shadow:0 0 0 2px rgba(210, 40, 40, 0.2) inset; background:rgba(255,240,240,0.15);
+  }
+
   .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;}
 
   @media(max-width: 768px) {
@@ -170,14 +190,22 @@
 
 <!-- RECEIPT MODAL POPUP -->
 <div class="modal-overlay" id="receipt-modal">
-  <div class="modal-card">
-    <h2>🎉 Thank You for Redeeming!</h2>
-    <p style="font-size:0.8rem;color:#5a4a28;font-style:italic;">Timeless Creations Rewards Program</p>
-    <div class="receipt-body" id="receipt-preview-text">
-      <!-- Generated receipt card text -->
+  <div>
+    <!-- The printable card node captured by html2canvas -->
+    <div class="receipt-card-node" id="receipt-card-node">
+      <h2>🎉 Thank You for Redeeming!</h2>
+      <p style="font-size:0.75rem;color:#5a4a28;font-style:italic;">Timeless Creations Rewards Program</p>
+      
+      <div class="receipt-inner" id="receipt-preview-text">
+        <!-- Receipt text generated dynamically -->
+      </div>
+
+      <div class="red-stamp">COMPLETED</div>
     </div>
+
     <div class="modal-actions">
-      <button class="btn" onclick="copyReceiptText()">📋 Copy Receipt</button>
+      <button class="btn" onclick="downloadReceiptImage()">📥 Download as Image</button>
+      <button class="btn" onclick="copyReceiptText()" style="background:var(--blue);color:#fff;">📋 Copy Text</button>
       <button class="btn btn-secondary" onclick="closeReceiptModal()" style="background:#ddd;color:#333;">Close</button>
     </div>
   </div>
@@ -383,7 +411,7 @@
     <div class="panel" id="panel-logs">
       <div class="section-head">
         <div><h2>Live Activity Logs</h2><p>Real-time pipeline traces</p></div>
-        <button class="filter-btn" onclick="document.getElementById('full-logs').innerHTML='CW'">Clear</button>
+        <button class="filter-btn" onclick="document.getElementById('full-logs').innerHTML=''">Clear</button>
       </div>
       <div class="table-wrap">
         <div id="full-logs" style="max-height:500px;overflow-y:auto;padding:14px;font-size:0.68rem;color:var(--muted)"></div>
@@ -498,7 +526,7 @@ function showReceiptModal(order) {
                    `Email: ${order.email}\n` +
                    `Reference code: ${order.order_id}\n` +
                    `Item Purchased: ${order.item}\n\n` +
-                   `✨ Thank you for Redeeming!`;
+                   `Note : Send this Receipt to https://m.me/timeless.creations.06`;
 
   document.getElementById('receipt-preview-text').innerText = cardText;
   document.getElementById('receipt-modal').classList.add('active');
@@ -513,6 +541,17 @@ function copyReceiptText() {
   navigator.clipboard.writeText(text).then(() => {
     showToast("Copied", "Receipt text copied to clipboard!", "success");
     closeReceiptModal();
+  });
+}
+
+function downloadReceiptImage() {
+  const node = document.getElementById('receipt-card-node');
+  html2canvas(node, { scale: 2, backgroundColor: null }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `TCRP-Receipt-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast("Downloaded", "Receipt saved as image successfully!", "success");
   });
 }
 

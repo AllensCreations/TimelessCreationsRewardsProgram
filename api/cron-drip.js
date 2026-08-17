@@ -9,10 +9,9 @@ const tursoHttp = `https://${rawUrl}/v2/pipeline`;
 const BREVO_KEY = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
 const SENDER_EMAIL = "noreply.timelesscreations.ph@gmail.com";
 
-// Daily Safe Allocations (Leaves 40 emails buffer for live OTP passcodes)
 const CAP_SISTERS = 130;
 const CAP_ELDERS = 130;
-const CONCURRENCY_CHUNK = 12; // 12 parallel requests per batch to finish in ~4s
+const CONCURRENCY_CHUNK = 12;
 
 async function queryTurso(requests) {
   const res = await fetch(tursoHttp, {
@@ -24,10 +23,19 @@ async function queryTurso(requests) {
 }
 
 export default async function handler(req, res) {
-  const startTime = Date.now();
+  const now = new Date();
+  const currentDay = now.getDate();
+
+  // STRICT 1st-5th DAYS BLOCK
+  if (currentDay > 5) {
+    return res.status(200).json({
+      ok: true,
+      skipped: true,
+      message: `Drip dispatch blocked: Today is Day ${currentDay} of the month. Automated encouragement emails only send on Days 1 through 5.`
+    });
+  }
 
   try {
-    // 1. Emergency Force Stop Check
     const stopCheck = await queryTurso([
       { type: "execute", stmt: { sql: "SELECT value FROM stats WHERE key = 'FORCE_STOP';" } }
     ]);
@@ -36,27 +44,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "Dispatch paused: Emergency Force Stop is ACTIVE." });
     }
 
-    // 2. Fetch up to quota limit for Sisters and Elders
     const dbRes = await queryTurso([
       {
         type: "execute",
         stmt: {
-          sql: `SELECT email, name, cohort, months_sent, max_months 
-                FROM missionaries 
-                WHERE status = 'active' AND cohort = 'sister' AND months_sent < max_months 
-                ORDER BY months_sent ASC, rowid ASC 
-                LIMIT ?;`,
+          sql: `SELECT email, name, cohort, months_sent, max_months FROM missionaries WHERE status = 'active' AND cohort = 'sister' AND months_sent < max_months ORDER BY months_sent ASC LIMIT ?;`,
           args: [{ type: "integer", value: String(CAP_SISTERS) }]
         }
       },
       {
         type: "execute",
         stmt: {
-          sql: `SELECT email, name, cohort, months_sent, max_months 
-                FROM missionaries 
-                WHERE status = 'active' AND cohort = 'elder' AND months_sent < max_months 
-                ORDER BY months_sent ASC, rowid ASC 
-                LIMIT ?;`,
+          sql: `SELECT email, name, cohort, months_sent, max_months FROM missionaries WHERE status = 'active' AND cohort = 'elder' AND months_sent < max_months ORDER BY months_sent ASC LIMIT ?;`,
           args: [{ type: "integer", value: String(CAP_ELDERS) }]
         }
       },
@@ -83,16 +82,9 @@ export default async function handler(req, res) {
     const targetQueue = [...sisterRows, ...elderRows];
     let sentSisters = 0;
     let sentElders = 0;
-    const nowIso = new Date().toISOString();
+    const nowIso = now.toISOString();
 
-    // 3. Process in parallel chunks of 12
     for (let i = 0; i < targetQueue.length; i += CONCURRENCY_CHUNK) {
-      // Guard: If approaching 8 seconds, cleanly stop to avoid Vercel 10s crash
-      if (Date.now() - startTime > 8000) {
-        console.warn("⏱️ Approaching Vercel execution window limit. Pausing batch until next run.");
-        break;
-      }
-
       const chunk = targetQueue.slice(i, i + CONCURRENCY_CHUNK);
 
       await Promise.allSettled(chunk.map(async (row) => {
@@ -140,7 +132,6 @@ export default async function handler(req, res) {
             if (cohort === 'sister') sentSisters++;
             else sentElders++;
 
-            // Increment count immediately upon verified send
             await queryTurso([
               {
                 type: "execute",
@@ -151,22 +142,11 @@ export default async function handler(req, res) {
               }
             ]);
           }
-        } catch (e) {
-          console.error(`Failed sending to ${email}:`, e.message);
-        }
+        } catch (e) {}
       }));
     }
 
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-
-    return res.status(200).json({
-      ok: true,
-      sentSisters,
-      sentElders,
-      totalSent: sentSisters + sentElders,
-      duration: `${elapsed}s`,
-      timestamp: nowIso
-    });
+    return res.status(200).json({ ok: true, sentSisters, sentElders, totalSent: sentSisters + sentElders });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
   }

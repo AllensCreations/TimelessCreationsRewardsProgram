@@ -22,23 +22,57 @@ export default async function handler(req, res) {
 
   const tursoHttp = `https://${rawUrl}/v2/pipeline`;
 
-  // 1. Handle Delete Missionary
+  // Delete Missionary
   if (req.method === 'POST' && req.body?.action === 'delete_missionary') {
-    const emailToDelete = String(req.body.email || '').trim().toLowerCase();
+    const email = String(req.body.email || '').trim().toLowerCase();
     await fetch(tursoHttp, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [
-          { type: "execute", stmt: { sql: "DELETE FROM missionaries WHERE email = ?;", args: [{ type: "text", value: emailToDelete }] } },
+          { type: "execute", stmt: { sql: "DELETE FROM missionaries WHERE email = ?;", args: [{ type: "text", value: email }] } },
           { type: "close" }
         ]
       })
     });
-    return res.status(200).json({ ok: true, deletedEmail: emailToDelete });
+    return res.status(200).json({ ok: true, deletedEmail: email });
   }
 
-  // 2. Handle Toggle System Flags (Force Stop / Maintenance)
+  // Admin Update Points
+  if (req.method === 'POST' && req.body?.action === 'update_points') {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const newPoints = Number(req.body.points) || 0;
+    await fetch(tursoHttp, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          { type: "execute", stmt: { sql: "UPDATE missionaries SET points = ? WHERE email = ?;", args: [{ type: "integer", value: String(newPoints) }, { type: "text", value: email }] } },
+          { type: "close" }
+        ]
+      })
+    });
+    return res.status(200).json({ ok: true, email, newPoints });
+  }
+
+  // Admin Update Order Status
+  if (req.method === 'POST' && req.body?.action === 'update_order_status') {
+    const orderId = String(req.body.order_id || '').trim();
+    const status = String(req.body.status || 'PENDING').trim().toUpperCase();
+    await fetch(tursoHttp, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          { type: "execute", stmt: { sql: "UPDATE orders SET status = ? WHERE order_id = ?;", args: [{ type: "text", value: status }, { type: "text", value: orderId }] } },
+          { type: "close" }
+        ]
+      })
+    });
+    return res.status(200).json({ ok: true, orderId, status });
+  }
+
+  // Toggle System Flags (Force Stop / Maintenance)
   if (req.method === 'POST' && (req.body?.action === 'toggle_stop' || req.body?.action === 'toggle_maintenance')) {
     const key = req.body.action === 'toggle_stop' ? 'FORCE_STOP' : 'MAINTENANCE_MODE';
     const desiredState = req.body.state ? 1 : 0;
@@ -56,7 +90,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, [key.toLowerCase()]: Boolean(desiredState) });
   }
 
-  // 3. Handle Test Send Email
+  // Test Send Email
   if (req.method === 'POST' && req.body?.action === 'test_send') {
     const targetEmail = String(req.body.email || '').trim();
     const brevoKey = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
@@ -88,7 +122,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 4. Handle Edit Monthly Message
+  // Edit Monthly Message
   if (req.method === 'POST' && req.body?.action === 'update_message') {
     const month = Number(req.body.month);
     const theme = String(req.body.theme || '');
@@ -128,7 +162,7 @@ export default async function handler(req, res) {
         requests: [
           { type: "execute", stmt: { sql: "SELECT email, COALESCE(name, 'Missionary'), COALESCE(last_name, ''), COALESCE(cohort, 'elder'), COALESCE(batch_month, 'August 2026'), COALESCE(months_sent, 0), COALESCE(max_months, 24), COALESCE(points, 0), COALESCE(referral_code, 'TCRP'), COALESCE(status, 'active') FROM missionaries ORDER BY rowid ASC;" } },
           { type: "execute", stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages ORDER BY month ASC;" } },
-          { type: "execute", stmt: { sql: "SELECT order_id, psid, email, name, item, points_cost, status, created_at FROM orders ORDER BY rowid DESC;" } },
+          { type: "execute", stmt: { sql: "SELECT order_id, psid, email, name, item, points_cost, status, created_at FROM orders ORDER BY CASE WHEN status = 'PENDING' THEN 0 ELSE 1 END ASC, rowid ASC;" } },
           { type: "execute", stmt: { sql: "SELECT key, value FROM stats;" } },
           { type: "close" }
         ]

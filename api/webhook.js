@@ -81,7 +81,7 @@ export default async function handler(req, res) {
                               `Email: ${user.email}\n` +
                               `Reference code: ${orderId}\n` +
                               `Item Purchased: ${item}\n\n` +
-                              `📝 𝐍𝐨𝐭𝐞: Send this Receipt to https://m.me/Timelesscreation.06`;
+                              `Note : Send this Receipt to https://m.me/timeless.creations.06`;
               
               await callSendAPI(psid, receipt);
             }

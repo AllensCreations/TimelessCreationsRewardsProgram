@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Timeless Creations — TCRP Command Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-<!-- Chart.js and html2canvas CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
@@ -71,7 +69,7 @@
   .section-head h2{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;}
   .section-head p{font-size:0.66rem;color:var(--muted);margin-top:2px;}
 
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px;}
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;}
   .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
   .stat-card.gold::before{background:linear-gradient(90deg,var(--gold),transparent);}
@@ -87,12 +85,6 @@
   .stat-card.purple .stat-val{color:var(--purple);}
   .stat-card.red .stat-val{color:var(--red);}
   .stat-sub{font-size:0.6rem;color:var(--muted);}
-
-  /* Charts Container Grid */
-  .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:24px;}
-  .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;align-items:center;position:relative;}
-  .chart-card h3{font-family:'Syne',sans-serif;font-size:0.9rem;margin-bottom:14px;color:var(--text);align-self:flex-start;}
-  .chart-container{position:relative;width:100%;max-width:320px;height:220px;display:flex;align-items:center;justify-content:center;}
 
   .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px;}
   .admin-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:14px;}
@@ -150,7 +142,6 @@
   .toast.success{border-left-color:var(--green);}
   .toast.error{border-left-color:var(--red);}
 
-  /* Cute Receipt Modal Styling */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
   .modal-overlay.active{opacity:1;visibility:visible;}
   
@@ -161,13 +152,10 @@
   }
   .receipt-card-node h2{color:#8b1a1a; margin-bottom:4px; font-size:1.4rem; font-family:'Syne',sans-serif;}
   .receipt-card-node .shop-brand{font-size:0.8rem; color:#b8955a; font-style:italic; letter-spacing:0.05em; margin-bottom:14px;}
-  
   .receipt-card-node .receipt-inner{
     background:#ffffff; padding:18px; border-radius:12px; border:2px dashed #e2c286;
     text-align:left; font-family:'DM Mono',monospace; font-size:0.75rem; margin:16px 0; line-height:1.7; color:#3a322c;
-    box-shadow:inset 0 2px 4px rgba(0,0,0,0.02);
   }
-  
   .receipt-footer-msg{font-size:0.78rem; color:#8b1a1a; font-weight:700; margin-top:12px; font-family:'Syne',sans-serif;}
   .receipt-footer-sub{font-size:0.66rem; color:#7a6852; margin-top:4px;}
 
@@ -178,7 +166,6 @@
     letter-spacing:0.12em; text-transform:uppercase; border-radius:8px; pointer-events:none;
     box-shadow:0 0 0 2px rgba(210, 40, 40, 0.2) inset; background:rgba(255,230,230,0.18);
   }
-
   .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:18px;}
 
   @media(max-width: 768px) {
@@ -200,21 +187,16 @@
   <div class="sync-bar-wrap"><div class="sync-bar" id="sync-bar"></div></div>
 </div>
 
-<!-- CUTE RECEIPT MODAL POPUP -->
 <div class="modal-overlay" id="receipt-modal">
   <div>
     <div class="receipt-card-node" id="receipt-card-node">
       <h2>✨ Timeless Creations ✨</h2>
       <div class="shop-brand">Rewards Program (TCRP)</div>
-      
       <div class="receipt-inner" id="receipt-preview-text"></div>
-
       <div class="receipt-footer-msg">💖 Thank you! Please shop again! 🌸</div>
       <div class="receipt-footer-sub">Visit us at m.me/timeless.creations.06</div>
-
       <div class="red-stamp">COMPLETED</div>
     </div>
-
     <div class="modal-actions">
       <button class="btn" onclick="downloadReceiptImage()">📥 Download Image</button>
       <button class="btn" onclick="copyReceiptText()" style="background:var(--blue);color:#fff;">📋 Copy Text</button>
@@ -236,7 +218,8 @@
       <div class="nav-label">Main</div>
       <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
       <div class="nav-item" onclick="window.location.href='/pusher.html'"><span class="icon">➕</span> Add Missionaries</div>
-      <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Progress <span class="badge" id="badge-missionaries">—</span></div>
+      <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Roster <span class="badge" id="badge-missionaries">—</span></div>
+      <div class="nav-item" onclick="switchTab('archive',this)"><span class="icon">🗂️</span> Archive Tab <span class="badge" id="badge-archive">0</span></div>
       <div class="nav-item" onclick="switchTab('pos-logbook',this)"><span class="icon">📖</span> POS Logbook <span class="badge" id="badge-pos">0</span></div>
       <div class="nav-label">Administration</div>
       <div class="nav-item" onclick="switchTab('admin-panel',this)"><span class="icon">⚙️</span> Admin System Panel</div>
@@ -262,7 +245,7 @@
       </div>
     </div>
 
-    <!-- 1. DASHBOARD OVERVIEW WITH CHARTS -->
+    <!-- 1. DASHBOARD OVERVIEW -->
     <div class="panel active" id="panel-dashboard">
       <div class="section-head">
         <div><h2>Missionary Progress &amp; Delivery Tracking</h2><p id="dash-date">Real-time database sync</p></div>
@@ -271,44 +254,28 @@
 
       <div class="stats-grid">
         <div class="stat-card gold"><div class="stat-label">Total Missionaries</div><div class="stat-val" id="stat-total">0</div><div class="stat-sub">active roster</div></div>
-        <div class="stat-card green"><div class="stat-label">Total Emails Sent</div><div class="stat-val" id="stat-emails-sent">0</div><div class="stat-sub">cumulative deliveries</div></div>
-        <div class="stat-card blue"><div class="stat-label">Elders Cohort</div><div class="stat-val" id="stat-elders">0</div><div class="stat-sub">24-month missions</div></div>
-        <div class="stat-card purple"><div class="stat-label">Sisters Cohort</div><div class="stat-val" id="stat-sisters">0</div><div class="stat-sub">18-month missions</div></div>
+        <div class="stat-card green"><div class="stat-label">Emails Sent Today</div><div class="stat-val" id="stat-emails-today">0</div><div class="stat-sub">sent today</div></div>
+        <div class="stat-card blue"><div class="stat-label">Emails This Month</div><div class="stat-val" id="stat-emails-month">0</div><div class="stat-sub">current month</div></div>
+        <div class="stat-card purple"><div class="stat-label">Archived Graduates</div><div class="stat-val" id="stat-archived">0</div><div class="stat-sub">completed track</div></div>
         <div class="stat-card red"><div class="stat-label">POS Orders</div><div class="stat-val" id="stat-pos-count">0</div><div class="stat-sub">in Purchase Logbook</div></div>
-      </div>
-
-      <!-- VISUAL CHARTS GRID -->
-      <div class="charts-grid">
-        <div class="chart-card">
-          <h3>Cohort Distribution (Elders vs Sisters)</h3>
-          <div class="chart-container">
-            <canvas id="cohortPieChart"></canvas>
-          </div>
-        </div>
-        <div class="chart-card">
-          <h3>Email Drip Status Overview</h3>
-          <div class="chart-container">
-            <canvas id="dripBarChart"></canvas>
-          </div>
-        </div>
       </div>
 
       <div class="section-head"><h2 style="font-size:0.9rem">Recent System Activity</h2></div>
       <div class="table-wrap">
-        <div id="log-body" style="max-height:200px;overflow-y:auto;padding:12px 16px;font-size:0.66rem;color:var(--muted)"></div>
+        <div id="log-body" style="max-height:260px;overflow-y:auto;padding:12px 16px;font-size:0.66rem;color:var(--muted)"></div>
       </div>
     </div>
 
-    <!-- 2. MISSIONARIES & POINTS EDITOR -->
+    <!-- 2. MISSIONARIES & POINTS EDITOR (SORTED OLDEST BATCH FIRST) -->
     <div class="panel" id="panel-roster">
       <div class="section-head">
-        <div><h2>Missionaries Roster &amp; Points Editor</h2><p>Edit points balances, view progress, or delete entries</p></div>
+        <div><h2>Missionaries Roster &amp; Points Editor</h2><p>Sorted by batch month (oldest first)</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh</button>
       </div>
       <div class="table-wrap">
         <div class="table-controls">
           <input class="search-input" placeholder="Search missionary name, email, or code..." oninput="filterRoster(this.value)"/>
-          <button class="filter-btn active" onclick="filterType('all',this)">All</button>
+          <button class="filter-btn active" onclick="filterType('all',this)">All Active</button>
           <button class="filter-btn" onclick="filterType('elder',this)">Elders (24M)</button>
           <button class="filter-btn" onclick="filterType('sister',this)">Sisters (18M)</button>
         </div>
@@ -334,7 +301,36 @@
       </div>
     </div>
 
-    <!-- 3. ADMIN SYSTEM PANEL WITH MULTI-DRIP TEST DISPENSER -->
+    <!-- 3. ARCHIVE TAB (COMPLETED TRACK) -->
+    <div class="panel" id="panel-archive">
+      <div class="section-head">
+        <div><h2>Missionary Archive Tab</h2><p>Completed track members (Automatically deleted after 6 months)</p></div>
+        <button class="btn-submit" onclick="doSync()">↻ Refresh Archive</button>
+      </div>
+      <div class="table-wrap">
+        <div style="max-height:560px;overflow-y:auto">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Missionary Name</th>
+                <th>Email Address</th>
+                <th>Batch Month</th>
+                <th>Final Progress</th>
+                <th>Points Balance</th>
+                <th>Code</th>
+                <th style="text-align:center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="archive-tbody">
+              <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">No archived graduates yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ADMIN SYSTEM PANEL -->
     <div class="panel" id="panel-admin-panel">
       <div class="section-head">
         <div><h2>Admin System Control Panel</h2><p>Global automation overrides, maintenance toggles, and multi-drip test dispatching</p></div>
@@ -345,7 +341,6 @@
         <div class="admin-card">
           <h3>System Automation Toggles</h3>
           <p>Instantly pause or resume automated cron jobs (strictly restricted to Days 1-5 of each month).</p>
-          
           <div class="toggle-row">
             <div>
               <strong style="font-size:0.72rem">Stop Automated Sending</strong>
@@ -356,7 +351,6 @@
               <span class="slider"></span>
             </label>
           </div>
-
           <div class="toggle-row">
             <div>
               <strong style="font-size:0.72rem">Maintenance Mode</strong>
@@ -372,12 +366,10 @@
         <div class="admin-card">
           <h3>Multi-Drip Test Email Dispenser</h3>
           <p>Dispatch core email templates via Brevo to verify template formatting and delivery.</p>
-          
           <div class="form-group">
             <label>Recipient Email Address</label>
             <input type="email" id="test-email-input" class="form-input" placeholder="admin@example.com" value="2ndsalviejomark2019@gmail.com"/>
           </div>
-
           <div class="form-group">
             <label>Select Template to Test</label>
             <select id="test-mode-select" class="form-input">
@@ -387,13 +379,12 @@
               <option value="receipt">🎟️ POS Redemption Receipt Email</option>
             </select>
           </div>
-
           <button class="btn-submit" style="width:100%;" onclick="sendTestEmail()">🚀 Dispatch Test Email(s)</button>
         </div>
       </div>
     </div>
 
-    <!-- 4. POS LOGBOOK & STATUS EDITOR -->
+    <!-- 5. POS LOGBOOK -->
     <div class="panel" id="panel-pos-logbook">
       <div class="section-head">
         <div><h2>Logbook for Purchase POS</h2><p>Marking an order COMPLETED generates a shareable receipt card</p></div>
@@ -421,7 +412,7 @@
       </div>
     </div>
 
-    <!-- 5. 24-MONTH MESSAGES & EDITOR -->
+    <!-- 6. MESSAGES & EDITOR -->
     <div class="panel" id="panel-messages">
       <div class="section-head">
         <div><h2>24-Month Messages Directory &amp; Editor</h2><p>Edit themes, quotes, and body copy for monthly encouragement drips</p></div>
@@ -446,7 +437,7 @@
       </div>
     </div>
 
-    <!-- 6. LIVE LOGS -->
+    <!-- 7. LIVE LOGS -->
     <div class="panel" id="panel-logs">
       <div class="section-head">
         <div><h2>Live Activity Logs</h2><p>Real-time pipeline traces</p></div>
@@ -466,15 +457,21 @@ let state = {
   missionaries: [],
   orders: [],
   messages: [],
+  emailsToday: 0,
+  emailsThisMonth: 0,
   forceStop: false,
   maintenanceMode: false
 };
 
-let cohortPieInstance = null;
-let dripBarInstance = null;
-
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Convert batch string like "August 2026" or "Jan 2025" to a sortable Date timestamp
+function parseBatchDate(batchStr) {
+  if (!batchStr) return 0;
+  const parsed = Date.parse(batchStr);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 async function doSync() {
@@ -492,15 +489,26 @@ async function doSync() {
       state.missionaries = data.missionaries || [];
       state.messages = data.messages || [];
       state.orders = data.orders || [];
+      state.emailsToday = data.emailsToday || 0;
+      state.emailsThisMonth = data.emailsThisMonth || 0;
       state.forceStop = Boolean(data.forceStop);
       state.maintenanceMode = Boolean(data.maintenanceMode);
 
       renderDashboard();
-      renderRoster(state.missionaries);
+      
+      // Sort active missionaries by batch month (oldest first)
+      const activeList = state.missionaries.filter(m => m.status !== 'archived');
+      activeList.sort((a, b) => parseBatchDate(a.start) - parseBatchDate(b.start));
+      renderRoster(activeList);
+
+      // Render Archive list
+      const archivedList = state.missionaries.filter(m => m.status === 'archived');
+      archivedList.sort((a, b) => parseBatchDate(a.start) - parseBatchDate(b.start));
+      renderArchive(archivedList);
+
       renderPosLogbook(state.orders);
       renderMessages(state.messages);
       updateAdminTogglesUI();
-      renderCharts();
 
       showToast("Synced", `Loaded ${state.missionaries.length} missionaries & ${state.orders.length} orders.`, "success");
     } else {
@@ -512,63 +520,6 @@ async function doSync() {
     bar.style.width = '100%';
     setTimeout(() => overlay.classList.add('hidden'), 300);
   }
-}
-
-function renderCharts() {
-  const eldersCount = state.missionaries.filter(m => m.cohort === 'elder').length;
-  const sistersCount = state.missionaries.filter(m => m.cohort === 'sister').length;
-  
-  const totalSent = state.missionaries.reduce((acc, m) => acc + (m.monthsDiff || 0), 0);
-  const totalRemaining = state.missionaries.reduce((acc, m) => acc + ((m.limit || 24) - (m.monthsDiff || 0)), 0);
-
-  // 1. Pie Chart
-  const pieCtx = document.getElementById('cohortPieChart').getContext('2d');
-  if (cohortPieInstance) cohortPieInstance.destroy();
-  cohortPieInstance = new Chart(pieCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Elders (24M)', 'Sisters (18M)'],
-      datasets: [{
-        data: [eldersCount, sistersCount],
-        backgroundColor: ['#5c8de0', '#9b7de0'],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#e8e6f0', font: { family: 'DM Mono', size: 11 } } }
-      }
-    }
-  });
-
-  // 2. Bar Chart
-  const barCtx = document.getElementById('dripBarChart').getContext('2d');
-  if (dripBarInstance) dripBarInstance.destroy();
-  dripBarInstance = new Chart(barCtx, {
-    type: 'bar',
-    data: {
-      labels: ['Emails Delivered', 'Remaining Drips'],
-      datasets: [{
-        label: 'Count',
-        data: [totalSent, totalRemaining],
-        backgroundColor: ['#4caf82', '#c9a84c'],
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        x: { ticks: { color: '#716e88', font: { family: 'DM Mono', size: 10 } }, grid: { display: false } },
-        y: { ticks: { color: '#716e88', font: { family: 'DM Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
-      }
-    }
-  });
 }
 
 async function updateMissionaryPoints(email, inputEl) {
@@ -669,8 +620,11 @@ async function deleteMissionary(email, name) {
     if (data.ok) {
       state.missionaries = state.missionaries.filter(m => m.email !== email);
       renderDashboard();
-      renderRoster(state.missionaries);
-      renderCharts();
+      const activeList = state.missionaries.filter(m => m.status !== 'archived');
+      activeList.sort((a, b) => parseBatchDate(a.start) - parseBatchDate(b.start));
+      renderRoster(activeList);
+      const archivedList = state.missionaries.filter(m => m.status === 'archived');
+      renderArchive(archivedList);
       showToast("Deleted", `Removed ${name} successfully.`, "success");
     }
   } catch (e) {
@@ -782,17 +736,17 @@ function toggleForceStopUI() {
 }
 
 function renderDashboard() {
-  const total = state.missionaries.length;
-  const elders = state.missionaries.filter(m => m.cohort === 'elder').length;
-  const sisters = state.missionaries.filter(m => m.cohort === 'sister').length;
-  const totalEmailsSent = state.missionaries.reduce((acc, m) => acc + (m.monthsDiff || 0), 0);
+  const activeList = state.missionaries.filter(m => m.status !== 'archived');
+  const archivedList = state.missionaries.filter(m => m.status === 'archived');
 
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-elders').textContent = elders;
-  document.getElementById('stat-sisters').textContent = sisters;
-  document.getElementById('stat-emails-sent').textContent = totalEmailsSent.toLocaleString();
+  document.getElementById('stat-total').textContent = activeList.length;
+  document.getElementById('stat-emails-today').textContent = state.emailsToday;
+  document.getElementById('stat-emails-month').textContent = state.emailsThisMonth;
+  document.getElementById('stat-archived').textContent = archivedList.length;
   document.getElementById('stat-pos-count').textContent = state.orders.length;
-  document.getElementById('badge-missionaries').textContent = total;
+  
+  document.getElementById('badge-missionaries').textContent = activeList.length;
+  document.getElementById('badge-archive').textContent = archivedList.length;
   document.getElementById('badge-pos').textContent = state.orders.length;
   document.getElementById('dash-date').textContent = "Last synchronized: " + new Date().toLocaleTimeString();
 }
@@ -800,7 +754,7 @@ function renderDashboard() {
 function renderRoster(list) {
   const tb = document.getElementById('roster-tbody');
   if (!list.length) {
-    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">No missionaries found in database.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">No active missionaries found.</td></tr>';
     return;
   }
 
@@ -808,7 +762,6 @@ function renderRoster(list) {
     const totalMonths = m.limit || (m.cohort === 'sister' ? 18 : 24);
     const sentCount = Math.min(Number(m.monthsDiff) || 0, totalMonths);
     const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
-    const isCompleted = sentCount >= totalMonths;
 
     return `
       <tr>
@@ -823,13 +776,39 @@ function renderRoster(list) {
               <span class="prog-pct">${pct}%</span>
             </div>
             <div class="prog-track">
-              <div class="prog-fill ${isCompleted ? 'completed' : ''}" style="width:${pct}%"></div>
+              <div class="prog-fill" style="width:${pct}%"></div>
             </div>
           </div>
         </td>
         <td>
           <input type="number" class="form-input" style="width:70px;padding:4px 8px;" value="${m.points}" onchange="updateMissionaryPoints('${m.email}', this)"/>
         </td>
+        <td><span class="badge-ref">${m.ref}</span></td>
+        <td style="text-align:center">
+          <button class="btn-delete" onclick="deleteMissionary('${m.email}', '${m.name.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderArchive(list) {
+  const tb = document.getElementById('archive-tbody');
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">No archived graduates. (Graduates automatically purge after 6 months).</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = list.map((m, i) => {
+    const totalMonths = m.limit || 24;
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td style="font-weight:600;white-space:nowrap">${m.name} 🎓</td>
+        <td style="color:var(--muted)">${m.email}</td>
+        <td><span class="badge-status">${m.start || 'August 2026'}</span></td>
+        <td><span style="color:var(--green);font-weight:bold;">Completed (${totalMonths}/${totalMonths})</span></td>
+        <td>${m.points} Pts</td>
         <td><span class="badge-ref">${m.ref}</span></td>
         <td style="text-align:center">
           <button class="btn-delete" onclick="deleteMissionary('${m.email}', '${m.name.replace(/'/g, "\\'")}')">🗑️ Delete</button>
@@ -887,17 +866,21 @@ function renderMessages(msgs) {
 
 function filterRoster(query) {
   const q = query.toLowerCase();
-  const filtered = state.missionaries.filter(m => 
+  const activeList = state.missionaries.filter(m => m.status !== 'archived');
+  const filtered = activeList.filter(m => 
     m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || m.ref.toLowerCase().includes(q)
   );
+  filtered.sort((a, b) => parseBatchDate(a.start) - parseBatchDate(b.start));
   renderRoster(filtered);
 }
 
 function filterType(type, btn) {
   btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (type === 'all') renderRoster(state.missionaries);
-  else renderRoster(state.missionaries.filter(m => m.cohort === type));
+  const activeList = state.missionaries.filter(m => m.status !== 'archived');
+  let list = type === 'all' ? activeList : activeList.filter(m => m.cohort === type);
+  list.sort((a, b) => parseBatchDate(a.start) - parseBatchDate(b.start));
+  renderRoster(list);
 }
 
 function switchTab(tab, el) {

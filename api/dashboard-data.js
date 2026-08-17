@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, orderId, status });
   }
 
-  // 4. Toggle System Flags (Force Stop / Maintenance)
+  // 4. Toggle System Flags
   if (req.method === 'POST' && (req.body?.action === 'toggle_stop' || req.body?.action === 'toggle_maintenance')) {
     const key = req.body.action === 'toggle_stop' ? 'FORCE_STOP' : 'MAINTENANCE_MODE';
     const desiredState = req.body.state ? 1 : 0;
@@ -91,10 +91,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, [key.toLowerCase()]: Boolean(desiredState) });
   }
 
-  // 5. Test Send Email (Uses EXACT Real 1:1 HTML Templates)
+  // 5. Test Send Email
   if (req.method === 'POST' && req.body?.action === 'test_send') {
     const targetEmail = String(req.body.email || '').trim();
-    const mode = String(req.body.mode || 'all').trim(); // 'otp', 'monthly', 'receipt', 'all'
+    const mode = String(req.body.mode || 'all').trim();
     const brevoKey = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
     
     if (!targetEmail || !targetEmail.includes('@')) {
@@ -107,23 +107,7 @@ export default async function handler(req, res) {
     if (mode === 'otp' || mode === 'all') {
       templates.push({
         subject: "🔐 TCRP Verification Code (OTP)",
-        htmlContent: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="UTF-8"/></head>
-          <body style="background:#faf7f0;color:#1a1610;font-family:Georgia,serif;padding:20px;">
-            <div style="max-width:560px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;border:2px solid #c9a84c;">
-              <h2 style="color:#8b1a1a;margin-top:0;">✨ Timeless Creations Rewards ✨</h2>
-              <p>Dear Missionary,</p>
-              <p>Welcome to the Timeless Creations Rewards Program (TCRP)! Please use the verification passcode below to complete your registration in Messenger:</p>
-              <div style="background:#faf7f0;border:2px dashed #b8955a;padding:18px;text-align:center;border-radius:8px;margin:20px 0;">
-                <span style="font-family:monospace;font-size:2rem;font-weight:bold;color:#b8955a;letter-spacing:6px;">494924</span>
-              </div>
-              <p>If you did not request this verification code, please disregard this email.</p>
-            </div>
-          </body>
-          </html>
-        `
+        htmlContent: `<!DOCTYPE html><html><body style="background:#faf7f0;color:#1a1610;font-family:Georgia,serif;padding:20px;"><div style="max-width:560px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;border:2px solid #c9a84c;"><h2 style="color:#8b1a1a;margin-top:0;">✨ Timeless Creations Rewards ✨</h2><p>Verification passcode:</p><div style="background:#faf7f0;border:2px dashed #b8955a;padding:18px;text-align:center;border-radius:8px;margin:20px 0;"><span style="font-family:monospace;font-size:2rem;font-weight:bold;color:#b8955a;letter-spacing:6px;">494924</span></div></div></body></html>`
       });
     }
 
@@ -132,41 +116,18 @@ export default async function handler(req, res) {
         .replace('{DATE}', nowStr)
         .replace('{Suffix}', 'Elder')
         .replace('{LastName}', 'Test')
-        .replace('{Msg}', 'As you labor diligently in the mission field, remember the great worth of souls in the sight of God. Your faithfulness inspires everyone around you.')
+        .replace('{Msg}', 'As you labor diligently in the mission field, remember the great worth of souls in the sight of God.')
         .replace('{Quote}', 'Trust in the Lord with all thine heart; and lean not unto thine own understanding.')
         .replace('{Author}', 'Month 1: Spiritual Foundations')
         .replace('{Points}', '42');
 
-      templates.push({
-        subject: "📜 Monthly Inspiration: Spiritual Foundations",
-        htmlContent: sampleMonthlyHtml
-      });
+      templates.push({ subject: "📜 Monthly Inspiration: Spiritual Foundations", htmlContent: sampleMonthlyHtml });
     }
 
     if (mode === 'receipt' || mode === 'all') {
       templates.push({
         subject: "🎟️ POS Redemption Confirmed (TX-TEST99)",
-        htmlContent: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="UTF-8"/></head>
-          <body style="background:#faf7f0;color:#1a1610;font-family:Georgia,serif;padding:20px;">
-            <div style="max-width:560px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;border:2px solid #c9a84c;">
-              <h2 style="color:#8b1a1a;margin-top:0;">🎟️ Redemption Confirmed!</h2>
-              <p>Your points have been successfully redeemed. Below is your official transaction receipt:</p>
-              <div style="background:#faf7f0;border:1px dashed #b8955a;padding:20px;border-radius:8px;margin:20px 0;font-family:monospace;font-size:13px;line-height:1.8;">
-                <strong>🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!</strong><br><br>
-                Title: Elder Test<br>
-                Email: ${targetEmail}<br>
-                Reference code: <strong>TX-TEST99</strong><br>
-                Item Purchased: <strong>Temple Keychain</strong><br><br>
-                <em>Note: Send this Receipt to https://m.me/timeless.creations.06</em>
-              </div>
-              <p>💖 Thank you! Please shop again!</p>
-            </div>
-          </body>
-          </html>
-        `
+        htmlContent: `<!DOCTYPE html><html><body style="background:#faf7f0;color:#1a1610;font-family:Georgia,serif;padding:20px;"><div style="max-width:560px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;border:2px solid #c9a84c;"><h2 style="color:#8b1a1a;margin-top:0;">🎟️ Redemption Confirmed!</h2><p>Reference code: <strong>TX-TEST99</strong></p><p>💖 Thank you! Please shop again!</p></div></body></html>`
       });
     }
 
@@ -175,16 +136,10 @@ export default async function handler(req, res) {
         await fetch('https://api.brevo.com/v3/smtp/email', {
           method: 'POST',
           headers: { 'accept': 'application/json', 'api-key': brevoKey, 'content-type': 'application/json' },
-          body: JSON.stringify({
-            sender: { name: "Timeless Creations Rewards", email: "noreply.timelesscreations.ph@gmail.com" },
-            to: [{ email: targetEmail, name: "Admin Test" }],
-            subject: t.subject,
-            htmlContent: t.htmlContent
-          })
+          body: JSON.stringify({ sender: { name: "Timeless Creations Rewards", email: "noreply.timelesscreations.ph@gmail.com" }, to: [{ email: targetEmail, name: "Admin Test" }], subject: t.subject, htmlContent: t.htmlContent })
         });
       }
-
-      return res.status(200).json({ ok: true, message: `Successfully dispatched ${templates.length} real HTML template(s) to ${targetEmail}!` });
+      return res.status(200).json({ ok: true, message: `Successfully dispatched test template(s) to ${targetEmail}!` });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
     }
@@ -207,12 +162,7 @@ export default async function handler(req, res) {
             type: "execute",
             stmt: {
               sql: "INSERT INTO drip_messages (month, theme, scripture, message) VALUES (?, ?, ?, ?) ON CONFLICT(month) DO UPDATE SET theme = excluded.theme, scripture = excluded.scripture, message = excluded.message;",
-              args: [
-                { type: "integer", value: String(month) },
-                { type: "text", value: theme },
-                { type: "text", value: scripture },
-                { type: "text", value: message }
-              ]
+              args: [{ type: "integer", value: String(month) }, { type: "text", value: theme }, { type: "text", value: scripture }, { type: "text", value: message }]
             }
           },
           { type: "close" }
@@ -223,12 +173,24 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Check and auto-purge archives older than 6 months
+    await fetch(tursoHttp, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          { type: "execute", stmt: { sql: "DELETE FROM missionaries WHERE status = 'archived' AND datetime(last_sent_at) < datetime('now', '-6 months');" } },
+          { type: "close" }
+        ]
+      })
+    });
+
     const dbRes = await fetch(tursoHttp, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [
-          { type: "execute", stmt: { sql: "SELECT email, COALESCE(name, 'Missionary'), COALESCE(last_name, ''), COALESCE(cohort, 'elder'), COALESCE(batch_month, 'August 2026'), COALESCE(months_sent, 0), COALESCE(max_months, 24), COALESCE(points, 0), COALESCE(referral_code, 'TCRP'), COALESCE(status, 'active') FROM missionaries ORDER BY rowid ASC;" } },
+          { type: "execute", stmt: { sql: "SELECT email, COALESCE(name, 'Missionary'), COALESCE(last_name, ''), COALESCE(cohort, 'elder'), COALESCE(batch_month, 'August 2026'), COALESCE(months_sent, 0), COALESCE(max_months, 24), COALESCE(points, 0), COALESCE(referral_code, 'TCRP'), COALESCE(status, 'active'), COALESCE(last_sent_at, '') FROM missionaries ORDER BY rowid ASC;" } },
           { type: "execute", stmt: { sql: "SELECT month, theme, scripture, message FROM drip_messages ORDER BY month ASC;" } },
           { type: "execute", stmt: { sql: "SELECT order_id, psid, email, name, item, points_cost, status, created_at FROM orders ORDER BY CASE WHEN status = 'PENDING' THEN 0 ELSE 1 END ASC, rowid ASC;" } },
           { type: "execute", stmt: { sql: "SELECT key, value FROM stats;" } },
@@ -244,9 +206,13 @@ export default async function handler(req, res) {
     const statsRows = data.results?.[3]?.response?.result?.rows || [];
 
     const statsMap = {};
-    statsRows.forEach(r => {
-      statsMap[String(unwrap(r[0]))] = Number(unwrap(r[1])) || 0;
-    });
+    statsRows.forEach(r => { statsMap[String(unwrap(r[0]))] = Number(unwrap(r[1])) || 0; });
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const thisMonthStr = todayStr.slice(0, 7);
+
+    let emailsToday = 0;
+    let emailsThisMonth = 0;
 
     const missionaries = misRows.map(row => {
       const email = String(unwrap(row[0])).trim();
@@ -258,7 +224,16 @@ export default async function handler(req, res) {
       const maxMonths = Number(unwrap(row[6])) || (cohort.includes('sister') ? 18 : 24);
       const points = Number(unwrap(row[7])) || 0;
       const ref = String(unwrap(row[8])).trim();
-      const status = String(unwrap(row[9])).trim();
+      let status = String(unwrap(row[9])).trim();
+      const lastSentAt = String(unwrap(row[10])).trim();
+
+      // Auto archive if completed track
+      if (monthsSent >= maxMonths && status === 'active') {
+        status = 'archived';
+      }
+
+      if (lastSentAt.startsWith(todayStr)) emailsToday++;
+      if (lastSentAt.startsWith(thisMonthStr)) emailsThisMonth++;
 
       return {
         email,
@@ -270,7 +245,8 @@ export default async function handler(req, res) {
         limit: maxMonths,
         points,
         ref: ref || 'TCRP',
-        status: status || 'active'
+        status: status || 'active',
+        lastSentAt
       };
     });
 
@@ -297,6 +273,8 @@ export default async function handler(req, res) {
       missionaries,
       messages,
       orders,
+      emailsToday,
+      emailsThisMonth,
       forceStop: statsMap['FORCE_STOP'] === 1,
       maintenanceMode: statsMap['MAINTENANCE_MODE'] === 1,
       totalCount: missionaries.length

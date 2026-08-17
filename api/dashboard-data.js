@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { MONTHLY_DRIP_HTML } from '../lib/email-templates.js';
 
 function unwrap(cell) {
   if (cell === null || cell === undefined) return '';
@@ -90,7 +91,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, [key.toLowerCase()]: Boolean(desiredState) });
   }
 
-  // 5. Test Send Email (Dispatches selected or all 3 main drip templates)
+  // 5. Test Send Email (Uses EXACT Real 1:1 HTML Templates)
   if (req.method === 'POST' && req.body?.action === 'test_send') {
     const targetEmail = String(req.body.email || '').trim();
     const mode = String(req.body.mode || 'all').trim(); // 'otp', 'monthly', 'receipt', 'all'
@@ -101,25 +102,71 @@ export default async function handler(req, res) {
     }
 
     const templates = [];
+    const nowStr = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
     if (mode === 'otp' || mode === 'all') {
       templates.push({
         subject: "🔐 TCRP Verification Code (OTP)",
-        htmlContent: `<div style="font-family:Georgia,serif;padding:24px;background:#faf7f0;color:#1a1610;border-radius:8px;max-width:560px;margin:auto;"><h2 style="color:#8b1a1a;">Welcome to Timeless Creations!</h2><p>Your 6-digit verification code is:</p><h1 style="color:#b8955a;letter-spacing:4px;">494924</h1><p>Please enter this code in Messenger to complete your registration.</p></div>`
+        htmlContent: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="UTF-8"/></head>
+          <body style="background:#faf7f0;color:#1a1610;font-family:Georgia,serif;padding:20px;">
+            <div style="max-width:560px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;border:2px solid #c9a84c;">
+              <h2 style="color:#8b1a1a;margin-top:0;">✨ Timeless Creations Rewards ✨</h2>
+              <p>Dear Missionary,</p>
+              <p>Welcome to the Timeless Creations Rewards Program (TCRP)! Please use the verification passcode below to complete your registration in Messenger:</p>
+              <div style="background:#faf7f0;border:2px dashed #b8955a;padding:18px;text-align:center;border-radius:8px;margin:20px 0;">
+                <span style="font-family:monospace;font-size:2rem;font-weight:bold;color:#b8955a;letter-spacing:6px;">494924</span>
+              </div>
+              <p>If you did not request this verification code, please disregard this email.</p>
+            </div>
+          </body>
+          </html>
+        `
       });
     }
 
     if (mode === 'monthly' || mode === 'all') {
+      const sampleMonthlyHtml = MONTHLY_DRIP_HTML
+        .replace('{DATE}', nowStr)
+        .replace('{Suffix}', 'Elder')
+        .replace('{LastName}', 'Test')
+        .replace('{Msg}', 'As you labor diligently in the mission field, remember the great worth of souls in the sight of God. Your faithfulness inspires everyone around you.')
+        .replace('{Quote}', 'Trust in the Lord with all thine heart; and lean not unto thine own understanding.')
+        .replace('{Author}', 'Month 1: Spiritual Foundations')
+        .replace('{Points}', '42');
+
       templates.push({
-        subject: "📜 Monthly Inspiration: Trust in the Lord",
-        htmlContent: `<div style="font-family:Georgia,serif;padding:24px;color:#1a1610;background:#faf7f0;border-radius:8px;max-width:560px;margin:auto;"><h2 style="color:#8b1a1a;">Month 1: Spiritual Foundations</h2><p>Dear Elder/Sister Test,</p><blockquote style="border-left:3px solid #b8955a;padding-left:14px;color:#5a4a28;font-style:italic;">"Trust in the Lord with all thine heart; and lean not unto thine own understanding."</blockquote><p>Keep pressing forward in your sacred labors!</p></div>`
+        subject: "📜 Monthly Inspiration: Spiritual Foundations",
+        htmlContent: sampleMonthlyHtml
       });
     }
 
     if (mode === 'receipt' || mode === 'all') {
       templates.push({
         subject: "🎟️ POS Redemption Confirmed (TX-TEST99)",
-        htmlContent: `<div style="font-family:Georgia,serif;padding:24px;background:#faf7f0;color:#1a1610;border-radius:8px;max-width:560px;margin:auto;"><h2 style="color:#8b1a1a;">Redemption Confirmed!</h2><p><strong>Title:</strong> Elder Test<br><strong>Item Purchased:</strong> Temple Keychain<br><strong>Reference Code:</strong> TX-TEST99</p><p>💖 Thank you! Please shop again!<br>Visit us at <a href="https://m.me/timeless.creations.06">m.me/timeless.creations.06</a></p></div>`
+        htmlContent: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="UTF-8"/></head>
+          <body style="background:#faf7f0;color:#1a1610;font-family:Georgia,serif;padding:20px;">
+            <div style="max-width:560px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;border:2px solid #c9a84c;">
+              <h2 style="color:#8b1a1a;margin-top:0;">🎟️ Redemption Confirmed!</h2>
+              <p>Your points have been successfully redeemed. Below is your official transaction receipt:</p>
+              <div style="background:#faf7f0;border:1px dashed #b8955a;padding:20px;border-radius:8px;margin:20px 0;font-family:monospace;font-size:13px;line-height:1.8;">
+                <strong>🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!</strong><br><br>
+                Title: Elder Test<br>
+                Email: ${targetEmail}<br>
+                Reference code: <strong>TX-TEST99</strong><br>
+                Item Purchased: <strong>Temple Keychain</strong><br><br>
+                <em>Note: Send this Receipt to https://m.me/timeless.creations.06</em>
+              </div>
+              <p>💖 Thank you! Please shop again!</p>
+            </div>
+          </body>
+          </html>
+        `
       });
     }
 
@@ -137,7 +184,7 @@ export default async function handler(req, res) {
         });
       }
 
-      return res.status(200).json({ ok: true, message: `Successfully dispatched ${templates.length} main drip template(s) to ${targetEmail}!` });
+      return res.status(200).json({ ok: true, message: `Successfully dispatched ${templates.length} real HTML template(s) to ${targetEmail}!` });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
     }

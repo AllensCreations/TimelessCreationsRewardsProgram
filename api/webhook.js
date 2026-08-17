@@ -1,9 +1,11 @@
 import crypto from 'crypto';
-import { generateOtpHtml } from '../lib/otp-template.js';
 import { queryTurso, unwrap } from '../lib/db.js';
 
-const BREVO_KEY = (process.env.BREVO_API_KEY || '').replace(/^['"]|['"]$/g, '').trim();
-const SENDER_EMAIL = "noreply.timelesscreations.ph@gmail.com";
+const TOKEN = (process.env.PAGE_ACCESS_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
+
+// Anti-Spam Memory Cache (Stores last interaction timestamp per PSID)
+const spamCache = new Map();
+const SPAM_COOLDOWN_MS = 1200; // 1.2 seconds anti-spam throttle
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -24,15 +26,14 @@ async function runSql(sql, args = []) {
 }
 
 async function callSendAPI(psid, messagePayload) {
-  const token = (process.env.PAGE_ACCESS_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
-  if (!token) return;
+  if (!TOKEN) return;
   const body = {
     messaging_type: "RESPONSE",
     recipient: { id: psid },
     message: typeof messagePayload === 'string' ? { text: messagePayload } : messagePayload
   };
   try {
-    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
+    await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -58,25 +59,58 @@ export default async function handler(req, res) {
           const psid = event.sender?.id;
           if (!psid) continue;
 
+          // ANTI-SPAM THROTTLE CHECK
+          const now = Date.now();
+          const lastTime = spamCache.get(psid) || 0;
+          if (now - lastTime < SPAM_COOLDOWN_MS) {
+            continue; // Drop spam request to protect Meta rate limits
+          }
+          spamCache.set(psid, now);
+
           const rawInput = event.message?.quick_reply?.payload || event.postback?.payload || event.message?.text?.trim() || "";
           const msg = rawInput.toLowerCase();
           const user = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
 
-          // METHOD 2: Auto-trigger Welcome / Terms Agreement on "Get Started" or Postback
-          if (msg === 'get_started' || msg.includes('get started') || msg === 'get started') {
-            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_TERMS');", [psid]);
+          // 1. GET STARTED / PERSISTENT MENU: FAQS
+          if (msg === 'menu_faqs' || msg.includes('faqs') || msg.includes('help')) {
+            const faqText = 
+              `❓ **Frequently Asked Questions (FAQs)**\n\n` +
+              `1️⃣ *How do I earn points?*\n` +
+              `You earn points automatically through participation and your monthly rewards cycle (+2 Pts/mo)!\n\n` +
+              `2️⃣ *How does 'Gawa muna bago bayad' work?*\n` +
+              `We create and confirm your reward items first before you complete payment. No upfront risk!\n\n` +
+              `3️⃣ *How do I redeem items?*\n` +
+              `Click 'Dashboard & Rewards' in your persistent menu to browse keychains, nametags, and scripture cases.`;
             
-            const welcomeMsg = {
+            await callSendAPI(psid, faqText);
+            continue;
+          }
+
+          // 2. PERSISTENT MENU: DASHBOARD & REWARDS
+          if (msg === 'menu_dashboard' || msg.includes('dashboard')) {
+            if (!user) {
+              await callSendAPI(psid, "Please type 'Get Started' or click our welcome link to register your account first!");
+            } else {
+              await callSendAPI(psid, `📊 **Your TCRP Dashboard**\n\nTitle & Name: ${user.name}\nPoints Balance: ${user.points} Pts\nReferral Code: ${user.referral_code}\n\nTo redeem, select an item below or visit m.me/timeless.creations.06`);
+            }
+            continue;
+          }
+
+          // 3. GET STARTED / WELCOME FLOW
+          if (msg === 'get_started' || msg.includes('get started')) {
+            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_TERMS');", [psid]);
+            await callSendAPI(psid, {
               text: "🌟 Welcome to Timeless Creations Rewards Program (TCRP)!\n\nEarn rewards and encouragement as you serve. Please review and agree to continue:",
               quick_replies: [
                 { content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" }
               ]
-            };
-            await callSendAPI(psid, welcomeMsg);
+            });
             continue;
           }
 
-          // Handle Redemption Flows
+          // 4. REFERRAL NOTIFICATION LOGIC (When a new user registers with an invite code)
+          // If user registers and provided a referral code, notify the inviter!
+          // (Inviter lookup example: INVITER_NOTIF)
           if (msg.startsWith("redeem_")) {
             let cost = 0; let item = "";
             if (msg.includes("keychain")) { cost = 6; item = "Temple Keychain"; }

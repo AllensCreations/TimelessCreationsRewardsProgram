@@ -1,11 +1,10 @@
 import crypto from 'crypto';
 import { queryTurso, unwrap } from '../lib/db.js';
+import { logSystemEvent } from '../lib/logger.js';
 
 const TOKEN = (process.env.PAGE_ACCESS_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
-
-// Anti-Spam Memory Cache (Stores last interaction timestamp per PSID)
 const spamCache = new Map();
-const SPAM_COOLDOWN_MS = 1200; // 1.2 seconds anti-spam throttle
+const SPAM_COOLDOWN_MS = 1200;
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -59,58 +58,40 @@ export default async function handler(req, res) {
           const psid = event.sender?.id;
           if (!psid) continue;
 
-          // ANTI-SPAM THROTTLE CHECK
           const now = Date.now();
           const lastTime = spamCache.get(psid) || 0;
-          if (now - lastTime < SPAM_COOLDOWN_MS) {
-            continue; // Drop spam request to protect Meta rate limits
-          }
+          if (now - lastTime < SPAM_COOLDOWN_MS) continue;
           spamCache.set(psid, now);
 
           const rawInput = event.message?.quick_reply?.payload || event.postback?.payload || event.message?.text?.trim() || "";
           const msg = rawInput.toLowerCase();
           const user = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
 
-          // 1. GET STARTED / PERSISTENT MENU: FAQS
           if (msg === 'menu_faqs' || msg.includes('faqs') || msg.includes('help')) {
-            const faqText = 
-              `❓ **Frequently Asked Questions (FAQs)**\n\n` +
-              `1️⃣ *How do I earn points?*\n` +
-              `You earn points automatically through participation and your monthly rewards cycle (+2 Pts/mo)!\n\n` +
-              `2️⃣ *How does 'Gawa muna bago bayad' work?*\n` +
-              `We create and confirm your reward items first before you complete payment. No upfront risk!\n\n` +
-              `3️⃣ *How do I redeem items?*\n` +
-              `Click 'Dashboard & Rewards' in your persistent menu to browse keychains, nametags, and scripture cases.`;
-            
-            await callSendAPI(psid, faqText);
+            await callSendAPI(psid, "❓ FAQs: You earn monthly points automatically. Redeem rewards risk-free with 'Gawa muna bago bayad'. Access your dashboard anytime below.");
+            await logSystemEvent('INFO', `Sent FAQs to PSID ${psid}`);
             continue;
           }
 
-          // 2. PERSISTENT MENU: DASHBOARD & REWARDS
           if (msg === 'menu_dashboard' || msg.includes('dashboard')) {
             if (!user) {
-              await callSendAPI(psid, "Please type 'Get Started' or click our welcome link to register your account first!");
+              await callSendAPI(psid, "Please type 'Get Started' to register your account first!");
             } else {
-              await callSendAPI(psid, `📊 **Your TCRP Dashboard**\n\nTitle & Name: ${user.name}\nPoints Balance: ${user.points} Pts\nReferral Code: ${user.referral_code}\n\nTo redeem, select an item below or visit m.me/timeless.creations.06`);
+              await callSendAPI(psid, `📊 Dashboard\n\nName: ${user.name}\nPoints: ${user.points} Pts\nReferral: ${user.referral_code}`);
             }
             continue;
           }
 
-          // 3. GET STARTED / WELCOME FLOW
           if (msg === 'get_started' || msg.includes('get started')) {
             await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_TERMS');", [psid]);
             await callSendAPI(psid, {
-              text: "🌟 Welcome to Timeless Creations Rewards Program (TCRP)!\n\nEarn rewards and encouragement as you serve. Please review and agree to continue:",
-              quick_replies: [
-                { content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" }
-              ]
+              text: "🌟 Welcome to Timeless Creations Rewards Program!\nPlease review and agree to continue:",
+              quick_replies: [{ content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" }]
             });
+            await logSystemEvent('INFO', `New onboarding started for PSID ${psid}`);
             continue;
           }
 
-          // 4. REFERRAL NOTIFICATION LOGIC (When a new user registers with an invite code)
-          // If user registers and provided a referral code, notify the inviter!
-          // (Inviter lookup example: INVITER_NOTIF)
           if (msg.startsWith("redeem_")) {
             let cost = 0; let item = "";
             if (msg.includes("keychain")) { cost = 6; item = "Temple Keychain"; }
@@ -126,14 +107,8 @@ export default async function handler(req, res) {
               await runSql("INSERT INTO orders (order_id, psid, email, name, item, points_cost, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDING')", 
                            [orderId, psid, user.email, user.name, item, cost]);
 
-              const receipt = `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\n` +
-                              `Title: ${user.name}\n` +
-                              `Email: ${user.email}\n` +
-                              `Reference code: ${orderId}\n` +
-                              `Item Purchased: ${item}\n\n` +
-                              `Note : Send this Receipt to https://m.me/timeless.creations.06`;
-              
-              await callSendAPI(psid, receipt);
+              await callSendAPI(psid, `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\nTitle: ${user.name}\nRef: ${orderId}\nItem: ${item}\n\nSend Receipt to m.me/timeless.creations.06`);
+              await logSystemEvent('SUCCESS', `Redemption order ${orderId} created for ${user.email}`);
             }
           }
         }

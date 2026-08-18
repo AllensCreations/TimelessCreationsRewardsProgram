@@ -16,7 +16,7 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:920px;margin:0 auto;}
+  .container{max-width:980px;margin:0 auto;}
   header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;}
   h1{font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--gold);}
   a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
@@ -26,17 +26,26 @@
   .card h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:8px;color:var(--text);}
   .card p{font-size:0.68rem;color:var(--muted);margin-bottom:16px;}
 
-  .global-batch-box{background:var(--surface2);border:1px solid var(--border);padding:14px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .global-batch-box{background:var(--surface2);border:1px solid var(--border);padding:14px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
   
-  .form-row{display:grid;grid-template-columns:1.2fr 1.5fr 1fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
-  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;}
+  .form-header{display:grid;grid-template-columns:1.2fr 1fr 1.6fr 1fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
+  .form-row{display:grid;grid-template-columns:1.2fr 1fr 1.6fr 1fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
+  
+  .hide-batch-col .form-header{grid-template-columns:1.3fr 1.1fr 1.8fr 40px;}
+  .hide-batch-col .form-row{grid-template-columns:1.3fr 1.1fr 1.8fr 40px;}
+  .hide-batch-col .m-batch-col{display:none !important;}
+
+  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
   .form-input:focus{border-color:var(--gold);}
   
   .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
   .btn:hover{opacity:0.9;}
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);margin-right:8px;}
-  .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:4px;cursor:pointer;}
+  .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+  .toggle-container{display:flex;align-items:center;gap:8px;font-size:0.72rem;color:var(--text);cursor:pointer;}
+  .toggle-container input{cursor:pointer;}
 
   .spinner{width:14px;height:14px;border:2px solid #0a0a0f;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;display:none;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -49,59 +58,56 @@
   #result-box.success{border-color:var(--green);color:var(--green);}
   #result-box.error{border-color:var(--red);color:var(--red);}
 
-  .recent-pushed-list{margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;max-height:160px;overflow-y:auto;font-size:0.7rem;color:var(--muted);}
-  .recent-item{padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;}
+  .recent-pushed-list{margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;max-height:180px;overflow-y:auto;font-size:0.7rem;color:var(--muted);}
+  .recent-item{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;}
 </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>Missionary Pusher &amp; Importer</h1>
-    <a href="/">← Back to Command Center Dashboard</a>
+    <a href="/">← Back to Dashboard</a>
   </header>
 
-  <div class="card">
-    <h3>Manual Batch Fillout Form</h3>
-    <p>Names automatically Capitalize. Emails auto-lowercase and strip special character exploits. Press <strong>Enter</strong> to add a new row instantly.</p>
+  <div class="card" id="form-card">
+    <h3>Manual Batch Registration</h3>
+    <p>Type <strong>Title &amp; Last Name</strong> and <strong>First Name</strong> to automatically generate <code>firstname.lastname@missionary.org</code> (editable). Press <strong>Enter</strong> to append a new row.</p>
     
     <div class="global-batch-box">
-      <div style="flex:1;">
-        <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Global Batch Month &amp; Year (Applies to All Rows)</label>
-        <input type="text" id="global-batch-input" class="form-input" value="August 2026" oninput="applyGlobalBatch(this.value)" style="width:100%"/>
+      <div style="flex:1;min-width:220px;">
+        <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Global Cohort / Batch (e.g. August 2026)</label>
+        <input type="text" id="global-batch-input" class="form-input" value="August 2026" oninput="handleGlobalBatchChange(this.value)"/>
       </div>
-      <div>
-        <button class="btn" onclick="applyGlobalBatch(document.getElementById('global-batch-input').value)" style="margin-top:16px;">Apply to All</button>
-      </div>
+      <label class="toggle-container">
+        <input type="checkbox" id="hide-batch-toggle" checked onchange="toggleBatchColumn(this.checked)"/>
+        <span>Lock all to Global Batch (Hide Batch Column)</span>
+      </label>
     </div>
 
-    <div style="display:grid;grid-template-columns:1.2fr 1.5fr 1fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">
-      <div>Name / Title (e.g. Elder Salviejo)</div>
-      <div>Email Address (Auto @missionary.org)</div>
-      <div>Batch Month</div>
+    <div class="form-header" id="table-header">
+      <div>Title &amp; Last Name</div>
+      <div>First Name</div>
+      <div>Auto Email (@missionary.org)</div>
+      <div class="m-batch-col">Batch Month</div>
       <div></div>
     </div>
 
     <div id="manual-rows">
-      <div class="form-row">
-        <input type="text" class="form-input m-name" placeholder="Elder Salviejo" onblur="formatNameInput(this)"/>
-        <input type="text" class="form-input m-email" placeholder="salviejo.mark" onblur="formatEmailInput(this)" onkeydown="handleRowKeydown(event, this)"/>
-        <input type="text" class="form-input m-batch" value="August 2026" onkeydown="handleRowKeydown(event, this)"/>
-        <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
-      </div>
+      <!-- Rows dynamically generated here -->
     </div>
 
-    <div style="display:flex;gap:10px;margin-top:14px;">
+    <div style="display:flex;gap:10px;margin-top:14px;align-items:center;">
       <button class="btn btn-secondary" onclick="addManualRow()">+ Add Row</button>
       <button class="btn" id="push-manual-btn" onclick="pushManualEntries()">
         <div class="spinner" id="manual-spinner"></div>
-        <span id="manual-btn-text">🚀 Push All to Database</span>
+        <span id="manual-btn-text">🚀 Push All to Turso</span>
       </button>
     </div>
   </div>
 
   <div class="card">
     <h3>Upload CSV File</h3>
-    <p>Upload a CSV file containing columns like <code>Year and Month</code>, <code>Prefix</code>, and <code>Email</code>.</p>
+    <p>Upload CSV containing <code>Prefix / Name</code>, <code>First Name</code>, <code>Email</code>, and <code>Cohort / Batch</code>.</p>
     
     <div class="dropzone" onclick="document.getElementById('csv-file').click()">
       <span id="file-label">📁 Click here to select CSV file or drag and drop</span>
@@ -110,7 +116,7 @@
     
     <button class="btn" id="push-csv-btn" style="display:none;" onclick="pushCsvEntries()">
       <div class="spinner" id="csv-spinner"></div>
-      <span id="csv-btn-text">🚀 Push CSV to Database</span>
+      <span id="csv-btn-text">🚀 Push CSV to Turso</span>
     </button>
   </div>
 
@@ -133,37 +139,75 @@ function toTitleCase(str) {
 
 function sanitizeEmail(email) {
   if (!email) return '';
-  let clean = email.trim().toLowerCase();
-  clean = clean.replace(/\+[^@]*@/, '@');
-  clean = clean.replace(/[^a-z0-9._@-]/g, '');
+  let clean = email.trim().toLowerCase().replace(/[^a-z0-9._@-]/g, '');
   if (clean && !clean.includes('@')) clean += '@missionary.org';
   return clean;
 }
 
-function formatNameInput(input) { input.value = toTitleCase(input.value); }
-function formatEmailInput(input) { input.value = sanitizeEmail(input.value); }
+function cleanLastName(titleName) {
+  if (!titleName) return '';
+  return titleName.replace(/^(elder|sister)\s+/i, '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
 
-function applyGlobalBatch(val) {
-  const formattedBatch = toTitleCase(val);
-  document.querySelectorAll('.m-batch').forEach(input => { input.value = formattedBatch; });
+function cleanFirstName(firstName) {
+  if (!firstName) return '';
+  return firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function autoGenerateEmail(row) {
+  const emailInput = row.querySelector('.m-email');
+  if (emailInput.dataset.manualEdited === "true") return;
+
+  const titleName = row.querySelector('.m-title-name').value.trim();
+  const firstName = row.querySelector('.m-first-name').value.trim();
+
+  const cFirst = cleanFirstName(firstName);
+  const cLast = cleanLastName(titleName);
+
+  if (cFirst && cLast) {
+    emailInput.value = `${cFirst}.${cLast}@missionary.org`;
+  } else if (cLast) {
+    emailInput.value = `${cLast}@missionary.org`;
+  } else if (cFirst) {
+    emailInput.value = `${cFirst}@missionary.org`;
+  } else {
+    emailInput.value = '';
+  }
+}
+
+function toggleBatchColumn(hide) {
+  const container = document.getElementById('form-card');
+  if (hide) {
+    container.classList.add('hide-batch-col');
+  } else {
+    container.classList.remove('hide-batch-col');
+  }
+}
+
+function handleGlobalBatchChange(val) {
+  const formatted = toTitleCase(val);
+  document.querySelectorAll('.m-batch').forEach(input => { input.value = formatted; });
 }
 
 function handleRowKeydown(event, input) {
   if (event.key === 'Enter') {
     event.preventDefault();
     const currentRow = input.closest('.form-row');
-    const allRows = Array.from(document.querySelectorAll('.form-row'));
-    const isLastRow = allRows[allRows.length - 1] === currentRow;
-    const isBatchInput = input.classList.contains('m-batch');
+    const isLastRow = currentRow === document.querySelector('#manual-rows .form-row:last-child');
+    const isHiddenBatch = document.getElementById('hide-batch-toggle').checked;
+    
+    const isEndField = isHiddenBatch 
+      ? input.classList.contains('m-email')
+      : input.classList.contains('m-batch');
 
-    if (isLastRow && isBatchInput) {
+    if (isLastRow && isEndField) {
       addManualRow();
-      const newRows = document.querySelectorAll('.form-row');
-      newRows[newRows.length - 1].querySelector('.m-name').focus();
     } else {
-      const inputs = Array.from(currentRow.querySelectorAll('input'));
-      const idx = inputs.indexOf(input);
-      if (idx > -1 && idx < inputs.length - 1) inputs[idx + 1].focus();
+      const visibleInputs = Array.from(currentRow.querySelectorAll('input:not([style*="display: none"])'));
+      const idx = visibleInputs.indexOf(input);
+      if (idx > -1 && idx < visibleInputs.length - 1) {
+        visibleInputs[idx + 1].focus();
+      }
     }
   }
 }
@@ -171,30 +215,57 @@ function handleRowKeydown(event, input) {
 function addManualRow() {
   const container = document.getElementById('manual-rows');
   const globalBatch = toTitleCase(document.getElementById('global-batch-input').value.trim()) || 'August 2026';
+  
   const div = document.createElement('div');
   div.className = 'form-row';
   div.innerHTML = `
-    <input type="text" class="form-input m-name" placeholder="Elder Salviejo" onblur="formatNameInput(this)"/>
-    <input type="text" class="form-input m-email" placeholder="salviejo.mark" onblur="formatEmailInput(this)" onkeydown="handleRowKeydown(event, this)"/>
-    <input type="text" class="form-input m-batch" value="${globalBatch}" onkeydown="handleRowKeydown(event, this)"/>
-    <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
+    <input type="text" class="form-input m-title-name" placeholder="Elder Salviejo" oninput="autoGenerateEmail(this.closest('.form-row'))" onblur="this.value=toTitleCase(this.value); autoGenerateEmail(this.closest('.form-row'))" onkeydown="handleRowKeydown(event, this)"/>
+    <input type="text" class="form-input m-first-name" placeholder="Mark" oninput="autoGenerateEmail(this.closest('.form-row'))" onblur="this.value=toTitleCase(this.value); autoGenerateEmail(this.closest('.form-row'))" onkeydown="handleRowKeydown(event, this)"/>
+    <input type="text" class="form-input m-email" placeholder="mark.salviejo@missionary.org" oninput="this.dataset.manualEdited='true'" onblur="this.value=sanitizeEmail(this.value)" onkeydown="handleRowKeydown(event, this)"/>
+    <input type="text" class="form-input m-batch m-batch-col" value="${globalBatch}" onkeydown="handleRowKeydown(event, this)"/>
+    <button class="btn-danger" onclick="removeRow(this)">✕</button>
   `;
   container.appendChild(div);
-  div.querySelector('.m-name').focus();
+  div.querySelector('.m-title-name').focus();
+}
+
+function removeRow(btn) {
+  const row = btn.parentElement;
+  row.remove();
+  if (document.querySelectorAll('#manual-rows .form-row').length === 0) {
+    addManualRow();
+  }
 }
 
 async function pushManualEntries() {
   const rows = document.querySelectorAll('.form-row');
+  const globalBatch = toTitleCase(document.getElementById('global-batch-input').value.trim()) || 'August 2026';
+  const isHiddenBatch = document.getElementById('hide-batch-toggle').checked;
   const entries = [];
+
   rows.forEach(r => {
-    let name = toTitleCase(r.querySelector('.m-name').value.trim());
+    let titleName = toTitleCase(r.querySelector('.m-title-name').value.trim());
+    let firstName = toTitleCase(r.querySelector('.m-first-name').value.trim());
     let email = sanitizeEmail(r.querySelector('.m-email').value.trim());
-    let batch = toTitleCase(r.querySelector('.m-batch').value.trim()) || 'August 2026';
-    if (email) entries.push({ name, email, batch });
+    let batch = isHiddenBatch ? globalBatch : (toTitleCase(r.querySelector('.m-batch').value.trim()) || globalBatch);
+
+    let fullName = titleName;
+    if (firstName && !titleName.includes(firstName)) {
+      fullName = `${titleName} ${firstName}`.trim();
+    }
+
+    if (email && titleName) {
+      entries.push({ 
+        name: fullName, 
+        last_name: titleName.replace(/^(elder|sister)\s+/i, '').trim(), 
+        email, 
+        batch 
+      });
+    }
   });
 
   if (entries.length === 0) {
-    alert("Please fill out at least one missionary entry with a valid email.");
+    alert("Please fill out at least one missionary entry with a Title/Name and valid email.");
     return;
   }
   await sendToServer(entries, 'manual');
@@ -211,7 +282,7 @@ function handleFileSelect(event) {
       document.getElementById('push-csv-btn').style.display = 'inline-flex';
       showResult(`Parsed ${parsedCsvData.length} records from CSV. Ready to push.`, 'loading');
     } else {
-      alert("Could not parse records from CSV file.");
+      alert("Could not parse valid records from CSV file.");
     }
   };
   reader.readAsText(file);
@@ -222,6 +293,8 @@ function parseCSV(text) {
   if (lines.length < 2) return [];
   const headers = lines[0].split(',').map(h => h.replace(/^["']|['"]$/g, '').trim().toLowerCase());
   const rows = [];
+  const globalBatch = toTitleCase(document.getElementById('global-batch-input').value.trim()) || 'August 2026';
+
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     if (!line.trim()) continue;
@@ -235,10 +308,30 @@ function parseCSV(text) {
     values.push(field.trim().replace(/^["']|['"]$/g, ''));
     const rowObj = {};
     headers.forEach((h, idx) => { rowObj[h] = values[idx] || ''; });
-    let name = toTitleCase(rowObj['prefix'] || rowObj['name'] || rowObj['full name'] || '');
+    
+    let titleName = toTitleCase(rowObj['prefix'] || rowObj['title'] || rowObj['name'] || rowObj['last name'] || '');
+    let firstName = toTitleCase(rowObj['first name'] || rowObj['firstname'] || '');
     let email = sanitizeEmail(rowObj['email'] || rowObj['email address'] || '');
-    let batch = toTitleCase(rowObj['year and month'] || rowObj['batch'] || rowObj['start date'] || 'August 2026');
-    if (email) rows.push({ name, email, batch });
+    let batch = toTitleCase(rowObj['year and month'] || rowObj['cohort'] || rowObj['batch'] || globalBatch);
+
+    if (!email && (titleName || firstName)) {
+      const cFirst = cleanFirstName(firstName);
+      const cLast = cleanLastName(titleName);
+      if (cFirst && cLast) email = `${cFirst}.${cLast}@missionary.org`;
+      else if (cLast) email = `${cLast}@missionary.org`;
+    }
+
+    let fullName = titleName;
+    if (firstName && !titleName.includes(firstName)) fullName = `${titleName} ${firstName}`.trim();
+
+    if (email && titleName) {
+      rows.push({ 
+        name: fullName, 
+        last_name: titleName.replace(/^(elder|sister)\s+/i, '').trim(), 
+        email, 
+        batch 
+      });
+    }
   }
   return rows;
 }
@@ -267,11 +360,22 @@ async function sendToServer(entries, type) {
     const data = await res.json();
 
     if (data.ok) {
-      showResult(`🎉 Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message}`, 'success');
+      showResult(`🎉 Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message || 'All records successfully imported.'}`, 'success');
       
-      // Update Recent Pushed List
+      // Add pushed items to session log
       entries.forEach(e => sessionPushedLog.unshift(e));
       renderRecentPushed();
+
+      // AUTO-CLEAR ON SUCCESS
+      if (type === 'manual') {
+        document.getElementById('manual-rows').innerHTML = '';
+        addManualRow();
+      } else {
+        parsedCsvData = [];
+        document.getElementById('csv-file').value = '';
+        document.getElementById('file-label').textContent = '📁 Click here to select CSV file or drag and drop';
+        document.getElementById('push-csv-btn').style.display = 'none';
+      }
     } else {
       showResult(`❌ Error: ${data.error || 'Failed to push records.'}`, 'error');
     }
@@ -280,7 +384,7 @@ async function sendToServer(entries, type) {
   } finally {
     btn.disabled = false;
     spinner.style.display = 'none';
-    btnText.textContent = type === 'manual' ? '🚀 Push All to Database' : '🚀 Push CSV to Database';
+    btnText.textContent = type === 'manual' ? '🚀 Push All to Turso' : '🚀 Push CSV to Turso';
   }
 }
 
@@ -288,7 +392,7 @@ function renderRecentPushed() {
   const card = document.getElementById('recent-pushed-card');
   const list = document.getElementById('recent-pushed-list');
   card.style.display = 'block';
-  list.innerHTML = sessionPushedLog.slice(0, 15).map(item => `
+  list.innerHTML = sessionPushedLog.slice(0, 20).map(item => `
     <div class="recent-item">
       <span><strong>${item.name}</strong> (${item.email})</span>
       <span style="color:var(--gold);">${item.batch}</span>
@@ -302,6 +406,12 @@ function showResult(txt, status) {
   box.className = status;
   box.textContent = txt;
 }
+
+// Initialize default state on load
+window.addEventListener('DOMContentLoaded', () => {
+  toggleBatchColumn(true);
+  addManualRow();
+});
 </script>
 </body>
 </html>

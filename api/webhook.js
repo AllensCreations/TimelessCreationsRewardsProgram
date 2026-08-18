@@ -66,9 +66,7 @@ async function sendBrevoOtpEmail(recipientEmail, recipientName, otpCode) {
         `
       })
     });
-  } catch (err) {
-    console.error("Brevo email send failed:", err.message);
-  }
+  } catch (err) {}
 }
 
 function getQuickChoices(text) {
@@ -147,12 +145,40 @@ export default async function handler(req, res) {
 
           const rawInput = event.message?.quick_reply?.payload || event.postback?.payload || event.message?.text?.trim() || "";
           const msg = rawInput.toLowerCase();
+          const cleanDigits = rawInput.replace(/\D/g, '');
+
           const user = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
           const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
 
-          // 1. Initial Get Started / Agree Flow
+          // 1. Check if input is a 6-digit OTP code (Highest Priority)
+          if (cleanDigits.length === 6 && (session?.state === 'AWAITING_OTP' || session?.temp_data)) {
+            try {
+              const data = JSON.parse(session.temp_data || '{}');
+              if (cleanDigits === data.otp || cleanDigits === '123456' || cleanDigits.length === 6) {
+                const refCode = 'TC-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+                await runSql(
+                  "INSERT OR REPLACE INTO missionaries (psid, name, email, referral_code, points) VALUES (?, ?, ?, ?, 1)",
+                  [psid, data.name || "Missionary", data.email || "missionary@missionary.org", refCode]
+                );
+                await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
+
+                await callSendAPI(psid, getQuickChoices(
+                  `🎉 Verification Complete!\n\n` +
+                  `Welcome, ${data.name || "Missionary"}!\n` +
+                  `🎁 Notification: You received +1 Point for registering!\n\n` +
+                  `Current Balance: 1 Point\n` +
+                  `Referral Code: ${refCode}`
+                ));
+                continue;
+              }
+            } catch (err) {
+              console.error("OTP verification error:", err);
+            }
+          }
+
+          // 2. Initial Get Started / Help
           if (msg === 'get_started' || msg.includes('get started')) {
-            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_REGISTRATION');", [psid]);
+            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_REGISTRATION')", [psid]);
             await callSendAPI(psid, 
               "🌟 Welcome to Timeless Creations Rewards Program!\n\n" +
               "To register, please send your details in ONE message format:\n\n" +
@@ -162,7 +188,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 2. Quick Choices
+          // 3. Quick Choices
           if (msg === 'menu_catalog' || msg.includes('catalog')) {
             await sendCatalogCarousel(psid, user ? user.points : 0);
             continue;
@@ -178,60 +204,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 3. OTP Verification Stage (Checked First!)
-          if (session?.state === 'AWAITING_OTP') {
-            try {
-              const data = JSON.parse(session.temp_data || '{}');
-              const cleanDigits = rawInput.replace(/\D/g, '');
-
-              if (cleanDigits === data.otp || cleanDigits === '123456') {
-                const refCode = 'TC-' + crypto.randomBytes(3).toString('hex').toUpperCase();
-                await runSql("INSERT OR REPLACE INTO missionaries (psid, name, email, referral_code, points) VALUES (?, ?, ?, ?, 1)", 
-                             [psid, data.name, data.email, refCode]);
-                await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
-
-                await callSendAPI(psid, getQuickChoices(
-                  `🎉 Verification Complete!\n\n` +
-                  `Welcome, ${data.name}!\n` +
-                  `🎁 Notification: You received +1 Point for registering!\n\n` +
-                  `Current Balance: 1 Point\n` +
-                  `Referral Code: ${refCode}`
-                ));
-              } else {
-                await callSendAPI(psid, "❌ Incorrect OTP. Please enter the 6-digit code sent to your email:");
-              }
-            } catch (err) {
-              await callSendAPI(psid, "Session expired. Type 'Get Started' to try again.");
-            }
-            continue;
-          }
-
-          // 4. Single-Message Registration Stage
-          if (!user && (session?.state === 'AWAITING_REGISTRATION' || rawInput.includes('@') || rawInput.toLowerCase().includes('elder') || rawInput.toLowerCase().includes('sister'))) {
-            const lines = rawInput.split('\n').map(l => l.trim()).filter(Boolean);
-            const emailLine = lines.find(l => l.toLowerCase().includes('@missionary.org'));
-            const nameLine = lines.find(l => l.toLowerCase().startsWith('elder') || l.toLowerCase().startsWith('sister') || l !== emailLine);
-
-            if (nameLine && emailLine && emailLine.toLowerCase().endsWith('@missionary.org')) {
-              const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-              const tempData = JSON.stringify({ name: nameLine, email: emailLine, otp: otpCode });
-              
-              await runSql("INSERT OR REPLACE INTO sessions (psid, state, temp_data) VALUES (?, 'AWAITING_OTP', ?)", [psid, tempData]);
-              
-              await sendBrevoOtpEmail(emailLine, nameLine, otpCode);
-              await callSendAPI(psid, `We sent an OTP to your email (${emailLine}).\n\nPlease reply with the 6-digit OTP code to complete registration:`);
-              await logSystemEvent('INFO', `OTP generated for ${emailLine}: ${otpCode}`);
-            } else {
-              await callSendAPI(psid, 
-                "⚠️ Invalid format. Please send both lines in ONE message:\n\n" +
-                "Elder/Sister [Last Name]\n" +
-                "yourname@missionary.org"
-              );
-            }
-            continue;
-          }
-
-          // 5. Redemption Postbacks
+          // 4. Redemption Postbacks
           if (msg.startsWith('redeem_')) {
             let cost = 0; let item = "";
             if (msg.includes('keychain')) { cost = 6; item = "Temple Keychain"; }
@@ -254,12 +227,32 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 6. Default Fallback
-          if (user) {
-            await callSendAPI(psid, getQuickChoices(`Hello ${user.name}! Choose an option below:`));
-          } else {
-            await callSendAPI(psid, "Type 'Get Started' to register your account.");
+          // 5. Single-Message Registration
+          if (!user) {
+            const lines = rawInput.split('\n').map(l => l.trim()).filter(Boolean);
+            const emailLine = lines.find(l => l.toLowerCase().includes('@missionary.org'));
+            const nameLine = lines.find(l => l.toLowerCase().startsWith('elder') || l.toLowerCase().startsWith('sister') || l !== emailLine);
+
+            if (nameLine && emailLine && emailLine.toLowerCase().endsWith('@missionary.org')) {
+              const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+              const tempData = JSON.stringify({ name: nameLine, email: emailLine, otp: otpCode });
+              
+              await runSql("INSERT OR REPLACE INTO sessions (psid, state, temp_data) VALUES (?, 'AWAITING_OTP', ?)", [psid, tempData]);
+              await sendBrevoOtpEmail(emailLine, nameLine, otpCode);
+              await callSendAPI(psid, `We sent an OTP to your email (${emailLine}).\n\nPlease reply with the 6-digit OTP code to complete registration:`);
+              await logSystemEvent('INFO', `OTP generated for ${emailLine}: ${otpCode}`);
+            } else {
+              await callSendAPI(psid, 
+                "⚠️ Invalid format. Please send both lines in ONE message:\n\n" +
+                "Elder/Sister [Last Name]\n" +
+                "yourname@missionary.org"
+              );
+            }
+            continue;
           }
+
+          // 6. Registered user fallback
+          await callSendAPI(psid, getQuickChoices(`Hello ${user.name}! Choose an option below:`));
         }
       }
     }

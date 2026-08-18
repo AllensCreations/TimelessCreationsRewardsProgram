@@ -905,5 +905,6 @@ function showToast(title, msg, type = 'success') {
 
 window.addEventListener('load', doSync);
 </script>
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js");}</script>
 </body>
 </html>

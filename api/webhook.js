@@ -67,9 +67,47 @@ export default async function handler(req, res) {
           const msg = rawInput.toLowerCase();
           const user = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
 
+          if (msg === 'get_started' || msg.includes('get started')) {
+            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_TERMS');", [psid]);
+            await callSendAPI(psid, {
+              text: "🌟 Welcome to Timeless Creations Rewards Program!\nPlease review and agree to continue:",
+              quick_replies: [{ content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" }]
+            });
+            continue;
+          }
+
+          if (msg === 'agree_terms' || msg.includes('agree')) {
+            await runSql("UPDATE sessions SET state = 'AWAITING_NAME' WHERE psid = ?", [psid]);
+            await callSendAPI(psid, "Thank you for agreeing! Please reply with your full **Full Name** to register:");
+            continue;
+          }
+
+          const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
+          if (session?.state === 'AWAITING_NAME') {
+            const fullName = event.message?.text?.trim();
+            if (fullName) {
+              await runSql("UPDATE sessions SET state = 'AWAITING_EMAIL', temp_data = ? WHERE psid = ?", [fullName, psid]);
+              await callSendAPI(psid, `Great, ${fullName}! Now please reply with your **Email Address** so we can link your rewards account:`);
+            }
+            continue;
+          }
+
+          if (session?.state === 'AWAITING_EMAIL') {
+            const email = event.message?.text?.trim();
+            const fullName = session.temp_data || "Missionary";
+            if (email && email.includes('@')) {
+              const referralCode = 'TC-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+              await runSql("INSERT OR REPLACE INTO missionaries (psid, name, email, referral_code, points) VALUES (?, ?, ?, ?, 10)", [psid, fullName, email, referralCode]);
+              await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
+              await callSendAPI(psid, `🎉 Registration Complete!\n\nName: ${fullName}\nEmail: ${email}\nReferral Code: ${referralCode}\n\nYou've received 10 Free Points to start! Type 'Dashboard' anytime to check your rewards.`);
+            } else {
+              await callSendAPI(psid, "That doesn't look like a valid email. Please try entering your email address again:");
+            }
+            continue;
+          }
+
           if (msg === 'menu_faqs' || msg.includes('faqs') || msg.includes('help')) {
-            await callSendAPI(psid, "❓ FAQs: You earn monthly points automatically. Redeem rewards risk-free with 'Gawa muna bago bayad'. Access your dashboard anytime below.");
-            await logSystemEvent('INFO', `Sent FAQs to PSID ${psid}`);
+            await callSendAPI(psid, "❓ FAQs: You earn monthly points automatically. Redeem rewards risk-free with 'Gawa muna bago bayad'.");
             continue;
           }
 
@@ -80,36 +118,6 @@ export default async function handler(req, res) {
               await callSendAPI(psid, `📊 Dashboard\n\nName: ${user.name}\nPoints: ${user.points} Pts\nReferral: ${user.referral_code}`);
             }
             continue;
-          }
-
-          if (msg === 'get_started' || msg.includes('get started')) {
-            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_TERMS');", [psid]);
-            await callSendAPI(psid, {
-              text: "🌟 Welcome to Timeless Creations Rewards Program!\nPlease review and agree to continue:",
-              quick_replies: [{ content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" }]
-            });
-            await logSystemEvent('INFO', `New onboarding started for PSID ${psid}`);
-            continue;
-          }
-
-          if (msg.startsWith("redeem_")) {
-            let cost = 0; let item = "";
-            if (msg.includes("keychain")) { cost = 6; item = "Temple Keychain"; }
-            else if (msg.includes("nametag")) { cost = 24; item = "Nametag Keychain"; }
-            else if (msg.includes("salvation")) { cost = 42; item = "Salvation Kit (POS)"; }
-            else if (msg.includes("scripture")) { cost = 60; item = "Scripture Case"; }
-
-            if ((user?.points || 0) < cost) {
-              await callSendAPI(psid, `✕ Insufficient Points! You have ${user.points} pt(s), but ${item} requires ${cost}.`);
-            } else {
-              const orderId = `TX-` + crypto.randomBytes(4).toString('hex').toUpperCase();
-              await runSql("UPDATE missionaries SET points = points - ? WHERE psid = ?", [cost, psid]);
-              await runSql("INSERT INTO orders (order_id, psid, email, name, item, points_cost, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDING')", 
-                           [orderId, psid, user.email, user.name, item, cost]);
-
-              await callSendAPI(psid, `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\nTitle: ${user.name}\nRef: ${orderId}\nItem: ${item}\n\nSend Receipt to m.me/timeless.creations.06`);
-              await logSystemEvent('SUCCESS', `Redemption order ${orderId} created for ${user.email}`);
-            }
           }
         }
       }

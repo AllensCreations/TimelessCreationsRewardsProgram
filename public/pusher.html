@@ -23,17 +23,13 @@
   a:hover{text-decoration:underline;}
 
   .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;}
-  .card h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:8px;color:var(--text);}
+  .card h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:8px;color:var(--text);display:flex;justify-content:space-between;align-items:center;}
   .card p{font-size:0.68rem;color:var(--muted);margin-bottom:16px;}
 
-  .global-batch-box{background:var(--surface2);border:1px solid var(--border);padding:14px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .global-batch-box{background:var(--surface2);border:1px solid var(--border);padding:14px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
   
-  .form-header{display:grid;grid-template-columns:1.2fr 1fr 1.6fr 1fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
-  .form-row{display:grid;grid-template-columns:1.2fr 1fr 1.6fr 1fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
-  
-  .hide-batch-col .form-header{grid-template-columns:1.3fr 1.1fr 1.8fr 40px;}
-  .hide-batch-col .form-row{grid-template-columns:1.3fr 1.1fr 1.8fr 40px;}
-  .hide-batch-col .m-batch-col{display:none !important;}
+  .form-header{display:grid;grid-template-columns:1.3fr 1.1fr 1.8fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
+  .form-row{display:grid;grid-template-columns:1.3fr 1.1fr 1.8fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
 
   .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
   .form-input:focus{border-color:var(--gold);}
@@ -43,9 +39,6 @@
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);margin-right:8px;}
   .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-
-  .toggle-container{display:flex;align-items:center;gap:8px;font-size:0.72rem;color:var(--text);cursor:pointer;}
-  .toggle-container input{cursor:pointer;}
 
   .spinner{width:14px;height:14px;border:2px solid #0a0a0f;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;display:none;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -58,8 +51,9 @@
   #result-box.success{border-color:var(--green);color:var(--green);}
   #result-box.error{border-color:var(--red);color:var(--red);}
 
-  .recent-pushed-list{margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;max-height:180px;overflow-y:auto;font-size:0.7rem;color:var(--muted);}
-  .recent-item{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;}
+  .recent-pushed-list{margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;max-height:260px;overflow-y:auto;font-size:0.72rem;color:var(--muted);}
+  .recent-item{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;}
+  .badge-batch{background:var(--gold-dim);color:var(--gold2);padding:2px 8px;border-radius:4px;font-size:0.65rem;}
 </style>
 </head>
 <body>
@@ -69,32 +63,29 @@
     <a href="/">← Back to Dashboard</a>
   </header>
 
+  <div class="card">
+    <h3>Active Import Batch</h3>
+    <p>Set the cohort / batch month once below. It will automatically apply to all manual rows and CSV records imported in this session.</p>
+    <div class="global-batch-box">
+      <div style="flex:1;">
+        <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Target Cohort / Batch Month (Applies to All Entries)</label>
+        <input type="text" id="global-batch-input" class="form-input" value="August 2026"/>
+      </div>
+    </div>
+  </div>
+
   <div class="card" id="form-card">
     <h3>Manual Batch Registration</h3>
-    <p>Type <strong>Title &amp; Last Name</strong> and <strong>First Name</strong> to automatically generate <code>firstname.lastname@missionary.org</code> (editable). Press <strong>Enter</strong> to append a new row.</p>
-    
-    <div class="global-batch-box">
-      <div style="flex:1;min-width:220px;">
-        <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Global Cohort / Batch (e.g. August 2026)</label>
-        <input type="text" id="global-batch-input" class="form-input" value="August 2026" oninput="handleGlobalBatchChange(this.value)"/>
-      </div>
-      <label class="toggle-container">
-        <input type="checkbox" id="hide-batch-toggle" checked onchange="toggleBatchColumn(this.checked)"/>
-        <span>Lock all to Global Batch (Hide Batch Column)</span>
-      </label>
-    </div>
+    <p>Type <strong>Title &amp; Last Name</strong> and <strong>First Name</strong> to automatically generate <code>firstname.lastname@missionary.org</code> (editable). Press <strong>Enter</strong> on email to add a new row instantly.</p>
 
-    <div class="form-header" id="table-header">
+    <div class="form-header">
       <div>Title &amp; Last Name</div>
       <div>First Name</div>
       <div>Auto Email (@missionary.org)</div>
-      <div class="m-batch-col">Batch Month</div>
       <div></div>
     </div>
 
-    <div id="manual-rows">
-      <!-- Rows dynamically generated here -->
-    </div>
+    <div id="manual-rows"></div>
 
     <div style="display:flex;gap:10px;margin-top:14px;align-items:center;">
       <button class="btn btn-secondary" onclick="addManualRow()">+ Add Row</button>
@@ -107,7 +98,7 @@
 
   <div class="card">
     <h3>Upload CSV File</h3>
-    <p>Upload CSV containing <code>Prefix / Name</code>, <code>First Name</code>, <code>Email</code>, and <code>Cohort / Batch</code>.</p>
+    <p>Upload CSV containing <code>Prefix / Name</code>, <code>First Name</code>, and <code>Email</code>. All rows will automatically inherit the target batch above.</p>
     
     <div class="dropzone" onclick="document.getElementById('csv-file').click()">
       <span id="file-label">📁 Click here to select CSV file or drag and drop</span>
@@ -120,9 +111,15 @@
     </button>
   </div>
 
-  <div class="card" id="recent-pushed-card" style="display:none;">
-    <h3>Recent Pushed Missionaries (Session Log)</h3>
-    <div class="recent-pushed-list" id="recent-pushed-list"></div>
+  <div class="card" id="recent-pushed-card">
+    <h3>
+      <span>Database Import History (Turso Saved Logs)</span>
+      <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadDbHistory()">🔄 Refresh Logs</button>
+    </h3>
+    <p>Track exactly where you left off. Pulled directly from the live database.</p>
+    <div class="recent-pushed-list" id="recent-pushed-list">
+      <div style="text-align:center;padding:12px;color:var(--muted);">Loading database logs...</div>
+    </div>
   </div>
 
   <div id="result-box"></div>
@@ -130,7 +127,6 @@
 
 <script>
 let parsedCsvData = [];
-let sessionPushedLog = [];
 
 function toTitleCase(str) {
   if (!str) return '';
@@ -175,38 +171,19 @@ function autoGenerateEmail(row) {
   }
 }
 
-function toggleBatchColumn(hide) {
-  const container = document.getElementById('form-card');
-  if (hide) {
-    container.classList.add('hide-batch-col');
-  } else {
-    container.classList.remove('hide-batch-col');
-  }
-}
-
-function handleGlobalBatchChange(val) {
-  const formatted = toTitleCase(val);
-  document.querySelectorAll('.m-batch').forEach(input => { input.value = formatted; });
-}
-
 function handleRowKeydown(event, input) {
   if (event.key === 'Enter') {
     event.preventDefault();
     const currentRow = input.closest('.form-row');
     const isLastRow = currentRow === document.querySelector('#manual-rows .form-row:last-child');
-    const isHiddenBatch = document.getElementById('hide-batch-toggle').checked;
-    
-    const isEndField = isHiddenBatch 
-      ? input.classList.contains('m-email')
-      : input.classList.contains('m-batch');
 
-    if (isLastRow && isEndField) {
+    if (isLastRow && input.classList.contains('m-email')) {
       addManualRow();
     } else {
-      const visibleInputs = Array.from(currentRow.querySelectorAll('input:not([style*="display: none"])'));
-      const idx = visibleInputs.indexOf(input);
-      if (idx > -1 && idx < visibleInputs.length - 1) {
-        visibleInputs[idx + 1].focus();
+      const inputs = Array.from(currentRow.querySelectorAll('input'));
+      const idx = inputs.indexOf(input);
+      if (idx > -1 && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
       }
     }
   }
@@ -214,15 +191,12 @@ function handleRowKeydown(event, input) {
 
 function addManualRow() {
   const container = document.getElementById('manual-rows');
-  const globalBatch = toTitleCase(document.getElementById('global-batch-input').value.trim()) || 'August 2026';
-  
   const div = document.createElement('div');
   div.className = 'form-row';
   div.innerHTML = `
     <input type="text" class="form-input m-title-name" placeholder="Elder Salviejo" oninput="autoGenerateEmail(this.closest('.form-row'))" onblur="this.value=toTitleCase(this.value); autoGenerateEmail(this.closest('.form-row'))" onkeydown="handleRowKeydown(event, this)"/>
     <input type="text" class="form-input m-first-name" placeholder="Mark" oninput="autoGenerateEmail(this.closest('.form-row'))" onblur="this.value=toTitleCase(this.value); autoGenerateEmail(this.closest('.form-row'))" onkeydown="handleRowKeydown(event, this)"/>
     <input type="text" class="form-input m-email" placeholder="mark.salviejo@missionary.org" oninput="this.dataset.manualEdited='true'" onblur="this.value=sanitizeEmail(this.value)" onkeydown="handleRowKeydown(event, this)"/>
-    <input type="text" class="form-input m-batch m-batch-col" value="${globalBatch}" onkeydown="handleRowKeydown(event, this)"/>
     <button class="btn-danger" onclick="removeRow(this)">✕</button>
   `;
   container.appendChild(div);
@@ -240,14 +214,12 @@ function removeRow(btn) {
 async function pushManualEntries() {
   const rows = document.querySelectorAll('.form-row');
   const globalBatch = toTitleCase(document.getElementById('global-batch-input').value.trim()) || 'August 2026';
-  const isHiddenBatch = document.getElementById('hide-batch-toggle').checked;
   const entries = [];
 
   rows.forEach(r => {
     let titleName = toTitleCase(r.querySelector('.m-title-name').value.trim());
     let firstName = toTitleCase(r.querySelector('.m-first-name').value.trim());
     let email = sanitizeEmail(r.querySelector('.m-email').value.trim());
-    let batch = isHiddenBatch ? globalBatch : (toTitleCase(r.querySelector('.m-batch').value.trim()) || globalBatch);
 
     let fullName = titleName;
     if (firstName && !titleName.includes(firstName)) {
@@ -259,7 +231,7 @@ async function pushManualEntries() {
         name: fullName, 
         last_name: titleName.replace(/^(elder|sister)\s+/i, '').trim(), 
         email, 
-        batch 
+        batch: globalBatch 
       });
     }
   });
@@ -312,7 +284,6 @@ function parseCSV(text) {
     let titleName = toTitleCase(rowObj['prefix'] || rowObj['title'] || rowObj['name'] || rowObj['last name'] || '');
     let firstName = toTitleCase(rowObj['first name'] || rowObj['firstname'] || '');
     let email = sanitizeEmail(rowObj['email'] || rowObj['email address'] || '');
-    let batch = toTitleCase(rowObj['year and month'] || rowObj['cohort'] || rowObj['batch'] || globalBatch);
 
     if (!email && (titleName || firstName)) {
       const cFirst = cleanFirstName(firstName);
@@ -329,7 +300,7 @@ function parseCSV(text) {
         name: fullName, 
         last_name: titleName.replace(/^(elder|sister)\s+/i, '').trim(), 
         email, 
-        batch 
+        batch: globalBatch 
       });
     }
   }
@@ -362,11 +333,7 @@ async function sendToServer(entries, type) {
     if (data.ok) {
       showResult(`🎉 Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message || 'All records successfully imported.'}`, 'success');
       
-      // Add pushed items to session log
-      entries.forEach(e => sessionPushedLog.unshift(e));
-      renderRecentPushed();
-
-      // AUTO-CLEAR ON SUCCESS
+      // Auto-clear
       if (type === 'manual') {
         document.getElementById('manual-rows').innerHTML = '';
         addManualRow();
@@ -376,6 +343,8 @@ async function sendToServer(entries, type) {
         document.getElementById('file-label').textContent = '📁 Click here to select CSV file or drag and drop';
         document.getElementById('push-csv-btn').style.display = 'none';
       }
+
+      await loadDbHistory();
     } else {
       showResult(`❌ Error: ${data.error || 'Failed to push records.'}`, 'error');
     }
@@ -388,16 +357,27 @@ async function sendToServer(entries, type) {
   }
 }
 
-function renderRecentPushed() {
-  const card = document.getElementById('recent-pushed-card');
+async function loadDbHistory() {
   const list = document.getElementById('recent-pushed-list');
-  card.style.display = 'block';
-  list.innerHTML = sessionPushedLog.slice(0, 20).map(item => `
-    <div class="recent-item">
-      <span><strong>${item.name}</strong> (${item.email})</span>
-      <span style="color:var(--gold);">${item.batch}</span>
-    </div>
-  `).join('');
+  try {
+    const res = await fetch('/api/push-missionaries');
+    const data = await res.json();
+    if (data.ok && data.history && data.history.length > 0) {
+      list.innerHTML = data.history.map(item => `
+        <div class="recent-item">
+          <div>
+            <strong style="color:var(--text);">${item.name}</strong> 
+            <span style="color:var(--muted); font-size:0.68rem;">(${item.email})</span>
+          </div>
+          <span class="badge-batch">${item.batch_month || 'Pre-listed'}</span>
+        </div>
+      `).join('');
+    } else {
+      list.innerHTML = `<div style="text-align:center;padding:12px;color:var(--muted);">No pre-listed missionaries found in Turso.</div>`;
+    }
+  } catch (err) {
+    list.innerHTML = `<div style="text-align:center;padding:12px;color:var(--red);">Failed to load history: ${err.message}</div>`;
+  }
 }
 
 function showResult(txt, status) {
@@ -407,10 +387,9 @@ function showResult(txt, status) {
   box.textContent = txt;
 }
 
-// Initialize default state on load
 window.addEventListener('DOMContentLoaded', () => {
-  toggleBatchColumn(true);
   addManualRow();
+  loadDbHistory();
 });
 </script>
 </body>

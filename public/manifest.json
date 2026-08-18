@@ -1,16 +1,16 @@
 {
-  "name": "Timeless Creations Rewards",
-  "short_name": "Timeless Rewards",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
-  "icons": [
-    {
-      "src": "https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/main/icon.jpg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
-    }
-  ]
+  "name": "Timeless Creations Rewards",
+  "short_name": "Timeless Rewards",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/main/icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
 }

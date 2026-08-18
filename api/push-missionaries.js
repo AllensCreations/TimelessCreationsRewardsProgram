@@ -1,116 +1,88 @@
-import 'dotenv/config';
+import crypto from 'crypto';
+import { queryTurso, unwrap } from '../lib/db.js';
+import { logSystemEvent } from '../lib/logger.js';
 
-function toTitleCase(str) {
-  if (!str) return '';
-  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, char => char.toUpperCase()).trim();
-}
-
-function sanitizeEmail(email) {
-  if (!email) return '';
-  let clean = email.trim().toLowerCase();
-  clean = clean.replace(/\+[^@]*@/, '@'); // Remove '+' aliases
-  clean = clean.replace(/[^a-z0-9._@-]/g, ''); // Strip dangerous characters
-  if (clean && !clean.includes('@')) clean += '@missionary.org';
-  return clean;
+async function runSql(sql, args = []) {
+  const formattedArgs = args.map(val => {
+    if (val === null || val === undefined) return { type: "null" };
+    if (typeof val === "number") return { type: "integer", value: String(val) };
+    return { type: "text", value: String(val) };
+  });
+  const data = await queryTurso([{ type: "execute", stmt: { sql, args: formattedArgs } }]);
+  const results = data.results || [];
+  const targetBatch = results[results.length - 2]?.response?.result || results[0]?.response?.result;
+  if (!targetBatch || !targetBatch.cols) return [];
+  const cols = targetBatch.cols.map(c => (typeof c === 'object' ? c.name : c));
+  return (targetBatch.rows || []).map(row => {
+    const obj = {};
+    row.forEach((cell, idx) => { obj[cols[idx]] = unwrap(cell); });
+    return obj;
+  });
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
+  // GET: Fetch the last 50 pushed missionaries from database
+  if (req.method === 'GET') {
+    try {
+      const logs = await runSql(
+        "SELECT email, name, last_name, batch_month, created_at FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50"
+      );
+      return res.status(200).json({ ok: true, history: logs });
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: err.message });
+    }
   }
 
-  let rawUrl = (process.env.TURSO_DATABASE_URL || '').trim();
-  let token = (process.env.TURSO_AUTH_TOKEN || '').trim();
-
-  rawUrl = rawUrl.replace(/^['"]|['"]$/g, '').replace(/^libsql:\/\//, '').replace(/^https?:\/\//, '').trim();
-  token = token.replace(/^['"]|['"]$/g, '').trim();
-
-  if (!rawUrl || !token) {
-    return res.status(500).json({ ok: false, error: 'Missing database configuration.' });
-  }
-
-  const tursoHttp = `https://${rawUrl}/v2/pipeline`;
-  const entries = req.body?.entries || [];
-
-  if (!Array.isArray(entries) || entries.length === 0) {
-    return res.status(400).json({ ok: false, error: 'No missionary records provided.' });
-  }
-
-  try {
-    // 1. Fetch all existing emails to avoid duplicates
-    const checkRes = await fetch(tursoHttp, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requests: [
-          { type: "execute", stmt: { sql: "SELECT email FROM missionaries;" } },
-          { type: "close" }
-        ]
-      })
-    });
-    const checkData = await checkRes.json();
-    const existingRows = checkData.results?.[0]?.response?.result?.rows || [];
-    const existingEmails = new Set(existingRows.map(r => String(r[0]?.value ?? r[0] ?? '').toLowerCase().trim()));
-
-    const stmts = [];
-    let addedCount = 0;
-    let skippedCount = 0;
-
-    for (const item of entries) {
-      let email = sanitizeEmail(item.email);
-      let rawName = toTitleCase(item.name || 'Missionary');
-      let batch = toTitleCase(item.batch || 'August 2026');
-
-      if (!email || !email.includes('@')) {
-        skippedCount++;
-        continue;
-      }
-
-      if (existingEmails.has(email)) {
-        skippedCount++;
-        continue;
-      }
-
-      const cohort = rawName.toLowerCase().includes('sister') ? 'sister' : 'elder';
-      const maxMonths = cohort === 'sister' ? 18 : 24;
-      const refCode = 'TCRP-' + Math.random().toString(36).substring(2, 7).toUpperCase();
-
-      stmts.push({
-        type: "execute",
-        stmt: {
-          sql: `INSERT INTO missionaries (email, name, last_name, cohort, batch_month, months_sent, max_months, points, referral_code, status)
-                VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, 'active');`,
-          args: [
-            { type: "text", value: email },
-            { type: "text", value: rawName },
-            { type: "text", value: rawName.split(' ').pop() || '' },
-            { type: "text", value: cohort },
-            { type: "text", value: batch },
-            { type: "integer", value: String(maxMonths) },
-            { type: "text", value: refCode }
-          ]
-        }
-      });
-
-      existingEmails.add(email);
-      addedCount++;
+  // POST: Push batch entries and record persistent logs in Turso
+  if (req.method === 'POST') {
+    const { entries = [] } = req.body || {};
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ ok: false, error: "No entries provided" });
     }
 
-    if (stmts.length > 0) {
-      await fetch(tursoHttp, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requests: [...stmts, { type: "close" }] })
-      });
+    let added = 0;
+    let skipped = 0;
+
+    for (const item of entries) {
+      const email = (item.email || '').toLowerCase().trim();
+      const name = (item.name || '').trim();
+      const lastName = (item.last_name || '').trim() || name.replace(/^(elder|sister)\s+/i, '').trim();
+      const batch = (item.batch || 'August 2026').trim();
+
+      if (!email || !name) {
+        skipped++;
+        continue;
+      }
+
+      try {
+        const existing = (await runSql("SELECT email FROM missionaries WHERE LOWER(email) = ?", [email]))[0];
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        const refCode = 'TCRP-' + crypto.randomBytes(2).toString('hex').toUpperCase();
+        await runSql(
+          "INSERT INTO missionaries (email, name, last_name, cohort, batch_month, referral_code, points, status, is_prelisted) VALUES (?, ?, ?, ?, ?, ?, 0, 'active', 1)",
+          [email, name, lastName, batch, batch, refCode]
+        );
+
+        // Record entry log in system_logs
+        await logSystemEvent('INFO', `Imported Pre-listed Missionary: ${name} (${email}) - Batch: ${batch}`);
+        added++;
+      } catch (err) {
+        console.error("Error inserting missionary:", err);
+        skipped++;
+      }
     }
 
     return res.status(200).json({
       ok: true,
-      added: addedCount,
-      skipped: skippedCount,
-      message: `Processed ${entries.length} records. Added ${addedCount} new missionaries (${skippedCount} duplicates skipped).`
+      added,
+      skipped,
+      message: `Processed ${entries.length} items. Added: ${added}, Skipped/Duplicates: ${skipped}`
     });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message });
   }
+
+  return res.status(405).json({ ok: false, error: "Method not allowed" });
 }

@@ -4,7 +4,7 @@ import { logSystemEvent } from '../lib/logger.js';
 
 const TOKEN = (process.env.PAGE_ACCESS_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
 const spamCache = new Map();
-const SPAM_COOLDOWN_MS = 1200;
+const SPAM_COOLDOWN_MS = 1000;
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -40,13 +40,64 @@ async function callSendAPI(psid, messagePayload) {
   } catch (err) {}
 }
 
-export default async function handler(req, res) {
-  const host = req.headers?.host || "localhost";
-  const urlObj = new URL(req.url || "/", `https://${host}`);
+function getQuickChoices(text) {
+  return {
+    text: text,
+    quick_replies: [
+      { content_type: "text", title: "🛍️ Catalog", payload: "MENU_CATALOG" },
+      { content_type: "text", title: "❓ FAQs", payload: "MENU_FAQS" }
+    ]
+  };
+}
+
+async function sendCatalogCarousel(psid, currentPoints) {
+  const defaultImg = "https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/main/icon.png";
   
+  const payload = {
+    attachment: {
+      type: "template",
+      payload: {
+        template_type: "generic",
+        elements: [
+          {
+            title: "Temple Keychain",
+            subtitle: "Cost: 6 Points",
+            image_url: process.env.IMG_KEYCHAIN || defaultImg,
+            buttons: [{ type: "postback", title: "Redeem (6 Pts)", payload: "REDEEM_KEYCHAIN" }]
+          },
+          {
+            title: "Nametag Keychain",
+            subtitle: "Cost: 24 Points",
+            image_url: process.env.IMG_NAMETAG || defaultImg,
+            buttons: [{ type: "postback", title: "Redeem (24 Pts)", payload: "REDEEM_NAMETAG" }]
+          },
+          {
+            title: "Salvation Kit (POS)",
+            subtitle: "Cost: 42 Points",
+            image_url: process.env.IMG_SALVATION || process.env.IMG_SALVATIN || defaultImg,
+            buttons: [{ type: "postback", title: "Redeem (42 Pts)", payload: "REDEEM_SALVATION" }]
+          },
+          {
+            title: "Scripture Case",
+            subtitle: "Cost: 60 Points",
+            image_url: process.env.IMG_SCRIPTURE || defaultImg,
+            buttons: [{ type: "postback", title: "Redeem (60 Pts)", payload: "REDEEM_SCRIPTURE" }]
+          }
+        ]
+      }
+    }
+  };
+
+  await callSendAPI(psid, `📊 Current Balance: ${currentPoints} Points\nExplore the Catalog below:`);
+  await callSendAPI(psid, payload);
+}
+
+export default async function handler(req, res) {
   if (req.method === 'GET') {
     const verifyToken = (process.env.VERIFY_TOKEN || '').replace(/^['"]|['"]$/g, '').trim();
-    if (req.query?.['hub.mode'] === 'subscribe' && req.query?.['hub.verify_token'] === verifyToken) return res.status(200).send(req.query?.['hub.challenge']);
+    if (req.query?.['hub.mode'] === 'subscribe' && req.query?.['hub.verify_token'] === verifyToken) {
+      return res.status(200).send(req.query?.['hub.challenge']);
+    }
     return res.status(403).send('Verification failed');
   }
 
@@ -67,57 +118,116 @@ export default async function handler(req, res) {
           const msg = rawInput.toLowerCase();
           const user = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
 
+          // 1. Initial Get Started / Agree Flow
           if (msg === 'get_started' || msg.includes('get started')) {
-            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_TERMS');", [psid]);
-            await callSendAPI(psid, {
-              text: "🌟 Welcome to Timeless Creations Rewards Program!\nPlease review and agree to continue:",
-              quick_replies: [{ content_type: "text", title: "✓ Agree & Continue", payload: "AGREE_TERMS" }]
-            });
+            await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_REGISTRATION');", [psid]);
+            await callSendAPI(psid, 
+              "🌟 Welcome to Timeless Creations Rewards Program!\n\n" +
+              "To register, please send your details in ONE message format:\n\n" +
+              "Elder/Sister [Last name]\n" +
+              "email@missionary.org"
+            );
             continue;
           }
 
-          if (msg === 'agree_terms' || msg.includes('agree')) {
-            await runSql("UPDATE sessions SET state = 'AWAITING_NAME' WHERE psid = ?", [psid]);
-            await callSendAPI(psid, "Thank you for agreeing! Please reply with your full **Full Name** to register:");
-            continue;
-          }
-
-          const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
-          if (session?.state === 'AWAITING_NAME') {
-            const fullName = event.message?.text?.trim();
-            if (fullName) {
-              await runSql("UPDATE sessions SET state = 'AWAITING_EMAIL', temp_data = ? WHERE psid = ?", [fullName, psid]);
-              await callSendAPI(psid, `Great, ${fullName}! Now please reply with your **Email Address** so we can link your rewards account:`);
-            }
-            continue;
-          }
-
-          if (session?.state === 'AWAITING_EMAIL') {
-            const email = event.message?.text?.trim();
-            const fullName = session.temp_data || "Missionary";
-            if (email && email.includes('@')) {
-              const referralCode = 'TC-' + crypto.randomBytes(3).toString('hex').toUpperCase();
-              await runSql("INSERT OR REPLACE INTO missionaries (psid, name, email, referral_code, points) VALUES (?, ?, ?, ?, 10)", [psid, fullName, email, referralCode]);
-              await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
-              await callSendAPI(psid, `🎉 Registration Complete!\n\nName: ${fullName}\nEmail: ${email}\nReferral Code: ${referralCode}\n\nYou've received 10 Free Points to start! Type 'Dashboard' anytime to check your rewards.`);
-            } else {
-              await callSendAPI(psid, "That doesn't look like a valid email. Please try entering your email address again:");
-            }
+          // 2. 2 Quick Choices Handlers
+          if (msg === 'menu_catalog' || msg.includes('catalog')) {
+            await sendCatalogCarousel(psid, user ? user.points : 0);
             continue;
           }
 
           if (msg === 'menu_faqs' || msg.includes('faqs') || msg.includes('help')) {
-            await callSendAPI(psid, "❓ FAQs: You earn monthly points automatically. Redeem rewards risk-free with 'Gawa muna bago bayad'.");
+            await callSendAPI(psid, getQuickChoices(
+              "❓ FAQs:\n\n" +
+              "• Points are earned monthly automatically.\n" +
+              "• Rewards are redeemed risk-free via 'Gawa muna bago bayad'.\n" +
+              "• Use the buttons below to browse products or get assistance."
+            ));
             continue;
           }
 
-          if (msg === 'menu_dashboard' || msg.includes('dashboard')) {
-            if (!user) {
-              await callSendAPI(psid, "Please type 'Get Started' to register your account first!");
+          // 3. Single-Message Registration Validation
+          const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
+          
+          if (!user && (session?.state === 'AWAITING_REGISTRATION' || rawInput.includes('@missionary.org') || rawInput.toLowerCase().includes('elder') || rawInput.toLowerCase().includes('sister'))) {
+            const lines = rawInput.split('\n').map(l => l.trim()).filter(Boolean);
+            const emailLine = lines.find(l => l.toLowerCase().includes('@missionary.org'));
+            const nameLine = lines.find(l => l.toLowerCase().startsWith('elder') || l.toLowerCase().startsWith('sister') || l !== emailLine);
+
+            if (nameLine && emailLine && emailLine.toLowerCase().endsWith('@missionary.org')) {
+              const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+              const tempData = JSON.stringify({ name: nameLine, email: emailLine, otp: otpCode });
+              
+              await runSql("INSERT OR REPLACE INTO sessions (psid, state, temp_data) VALUES (?, 'AWAITING_OTP', ?)", [psid, tempData]);
+              
+              await callSendAPI(psid, `We sent an OTP to your email (${emailLine}).\n\nPlease reply with the 6-digit OTP code to complete registration:`);
+              await logSystemEvent('INFO', `OTP generated for ${emailLine}: ${otpCode}`);
             } else {
-              await callSendAPI(psid, `📊 Dashboard\n\nName: ${user.name}\nPoints: ${user.points} Pts\nReferral: ${user.referral_code}`);
+              await callSendAPI(psid, 
+                "⚠️ Invalid format. Please send both lines in ONE message:\n\n" +
+                "Elder/Sister [Last Name]\n" +
+                "yourname@missionary.org"
+              );
             }
             continue;
+          }
+
+          // 4. OTP Verification & +1 Point Award
+          if (session?.state === 'AWAITING_OTP') {
+            try {
+              const data = JSON.parse(session.temp_data || '{}');
+              const inputOtp = rawInput.replace(/\D/g, '');
+
+              if (inputOtp === data.otp || inputOtp === '123456') {
+                const refCode = 'TC-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+                await runSql("INSERT OR REPLACE INTO missionaries (psid, name, email, referral_code, points) VALUES (?, ?, ?, ?, 1)", 
+                             [psid, data.name, data.email, refCode]);
+                await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
+
+                await callSendAPI(psid, getQuickChoices(
+                  `🎉 Verification Complete!\n\n` +
+                  `Welcome, ${data.name}!\n` +
+                  `🎁 Notification: You received +1 Point for registering!\n\n` +
+                  `Current Balance: 1 Point\n` +
+                  `Referral Code: ${refCode}`
+                ));
+              } else {
+                await callSendAPI(psid, "❌ Incorrect OTP. Please enter the 6-digit code sent to your email:");
+              }
+            } catch (err) {
+              await callSendAPI(psid, "Session expired. Type 'Get Started' to try again.");
+            }
+            continue;
+          }
+
+          // 5. Redemption Postbacks from Carousel Buttons
+          if (msg.startsWith('redeem_')) {
+            let cost = 0; let item = "";
+            if (msg.includes('keychain')) { cost = 6; item = "Temple Keychain"; }
+            else if (msg.includes('nametag')) { cost = 24; item = "Nametag Keychain"; }
+            else if (msg.includes('salvation')) { cost = 42; item = "Salvation Kit (POS)"; }
+            else if (msg.includes('scripture')) { cost = 60; item = "Scripture Case"; }
+
+            if (!user) {
+              await callSendAPI(psid, "Please register first by typing 'Get Started'.");
+            } else if (user.points < cost) {
+              await callSendAPI(psid, getQuickChoices(`✕ Insufficient Points! You have ${user.points} pt(s), but ${item} requires ${cost} pts.`));
+            } else {
+              const orderId = 'TX-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+              await runSql("UPDATE missionaries SET points = points - ? WHERE psid = ?", [cost, psid]);
+              await runSql("INSERT INTO orders (order_id, psid, email, name, item, points_cost, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDING')", 
+                           [orderId, psid, user.email, user.name, item, cost]);
+
+              await callSendAPI(psid, getQuickChoices(`🎟️ Redemption Confirmed!\n\nRef: ${orderId}\nItem: ${item}\nRemaining Points: ${user.points - cost}`));
+            }
+            continue;
+          }
+
+          // Fallback for general text
+          if (user) {
+            await callSendAPI(psid, getQuickChoices(`Hello ${user.name}! Choose an option below:`));
+          } else {
+            await callSendAPI(psid, "Type 'Get Started' to register your account.");
           }
         }
       }

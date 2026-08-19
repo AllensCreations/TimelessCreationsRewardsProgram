@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timeless Creations — Missionary Cash Invoicing</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+    --border:rgba(255,255,255,0.08);
+    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+    --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
+    --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
+    --blue:#5c8de0; --blue-dim:rgba(92,141,224,0.15);
+    --text:#e8e6f0; --muted:#716e88;
+    --radius:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
+  .container{max-width:1120px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
+  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
+  a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
+  a:hover{text-decoration:underline;}
+
+  /* Nav Tabs */
+  .nav-tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+  .tab-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;}
+  .tab-btn:hover{color:var(--text);border-color:var(--gold);}
+  .tab-btn.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.3);}
+  .badge-pending{background:var(--red-dim);color:var(--red);border-radius:20px;padding:2px 7px;font-size:0.65rem;}
+
+  .tab-pane{display:none;}
+  .tab-pane.active{display:block;}
+
+  .grid-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;}
+  @media(max-width:920px){.grid-layout{grid-template-columns:1fr;}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+  .card h3{font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);margin-bottom:12px;}
+
+  .form-group{margin-bottom:14px;}
+  .form-group label{font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px;}
+  .form-input,.form-select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
+  .form-input:focus,.form-select:focus{border-color:var(--gold);}
+
+  .item-table{width:100%;border-collapse:collapse;margin:12px 0;}
+  .item-table th{font-size:0.6rem;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--border);}
+  .item-table td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.04);}
+
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;}
+  .btn:hover{opacity:0.9;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:6px;cursor:pointer;}
+  .btn-complete{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,0.3);padding:6px 12px;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;}
+
+  /* Live Auto-Solved Calculation Box */
+  .summary-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;}
+  .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;margin-bottom:8px;color:var(--muted);}
+  .summary-row.total{font-size:1.05rem;font-weight:800;color:var(--gold);border-top:1px solid var(--border);padding-top:10px;margin-top:10px;}
+
+  /* Printable & Exportable Invoice Card Preview */
+  .invoice-preview-card{
+    background:#ffffff;color:#1c1917;padding:28px;border-radius:12px;border:2px solid #e7d8b8;
+    box-shadow:0 15px 35px rgba(0,0,0,0.5);font-family:Georgia,serif;position:relative;
+  }
+  .inv-header{display:flex;justify-content:space-between;border-bottom:2px solid #f1e4cb;padding-bottom:12px;margin-bottom:16px;}
+  .inv-title{font-size:1.3rem;font-weight:700;color:#8b1a1a;font-family:'Syne',sans-serif;}
+  .inv-id{font-family:'DM Mono',monospace;font-size:0.75rem;color:#78716c;}
+  .inv-meta{font-size:0.72rem;line-height:1.5;color:#44403c;margin-bottom:16px;font-family:'DM Mono',monospace;}
+  .inv-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:0.75rem;}
+  .inv-table th{background:#fdfaf3;border-bottom:1px solid #e7d8b8;padding:8px;text-align:left;color:#78716c;}
+  .inv-table td{padding:8px;border-bottom:1px solid #f5eedf;}
+  .inv-stamp{
+    position:absolute;top:45%;right:15px;transform:rotate(-12deg);
+    border:3px solid #e05c5c;color:#e05c5c;padding:6px 12px;border-radius:6px;
+    font-weight:800;font-size:1.1rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(254,242,242,0.7);
+  }
+  .inv-stamp.paid{border-color:#16a34a;color:#16a34a;background:rgba(240,253,244,0.7);}
+
+  /* Data Table */
+  .data-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
+  .data-table th{padding:10px 12px;background:var(--surface2);color:var(--muted);text-align:left;font-size:0.62rem;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  .data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Timeless Creations</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Missionary Cash Invoicing &amp; Billing System (PHP ₱)</p>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <a href="/">← Command Center</a>
+      <a href="/pusher.html">Batch Pusher</a>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Invoice</button>
+    <button class="tab-btn" onclick="switchNavTab('pending-tab', this)">⏳ Pending Invoices <span class="badge-pending" id="pending-badge">0</span></button>
+    <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Product Settings</button>
+  </div>
+
+  <!-- TAB 1: CREATE INVOICE -->
+  <div class="tab-pane active" id="create-tab">
+    <div class="grid-layout">
+      <!-- LEFT: Configuration -->
+      <div>
+        <div class="card">
+          <h3>1. Select Missionary</h3>
+          <div class="form-group">
+            <label>Search / Select Registered Missionary</label>
+            <input type="text" class="form-input" id="missionary-search" placeholder="Type name or email to filter..." oninput="filterMissionaryDropdown(this.value)" style="margin-bottom:8px;"/>
+            <select id="missionary-select" class="form-select" onchange="handleMissionarySelect()">
+              <option value="">-- Choose Missionary --</option>
+            </select>
+          </div>
+          <div id="missionary-info" style="display:none;background:var(--surface2);padding:10px 14px;border-radius:6px;font-size:0.72rem;line-height:1.6;border:1px solid var(--border);">
+            <div>👤 <strong>Name:</strong> <span id="info-name">—</span></div>
+            <div>✉️ <strong>Email:</strong> <span id="info-email">—</span></div>
+            <div>📢 <strong>Batch:</strong> <span id="info-batch">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3>2. Items &amp; Auto-Solved Pricing</h3>
+            <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addItemRow()">+ Add Item</button>
+          </div>
+
+          <table class="item-table">
+            <thead>
+              <tr>
+                <th>Item / Product</th>
+                <th style="width:70px;">Qty</th>
+                <th style="width:90px;">Price (₱)</th>
+                <th style="width:80px;text-align:right;">Subtotal</th>
+                <th style="width:40px;"></th>
+              </tr>
+            </thead>
+            <tbody id="items-tbody"></tbody>
+          </table>
+
+          <div class="summary-box">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span id="calc-subtotal" style="font-weight:700;">₱0.00</span>
+            </div>
+            
+            <div class="summary-row" style="gap:10px;align-items:center;">
+              <span>Custom Discount:</span>
+              <div style="display:flex;gap:6px;width:180px;">
+                <select id="discount-type" class="form-select" style="padding:4px 6px;font-size:0.7rem;width:85px;" onchange="recalculateTotal()">
+                  <option value="fixed">Fixed (₱)</option>
+                  <option value="percent">Percent (%)</option>
+                </select>
+                <input type="number" id="discount-val" class="form-input" style="padding:4px 6px;font-size:0.7rem;text-align:right;" value="0" min="0" oninput="recalculateTotal()"/>
+              </div>
+            </div>
+
+            <div class="summary-row">
+              <span>Discount Deducted:</span>
+              <span id="calc-discount-deducted" style="color:var(--green);">-₱0.00</span>
+            </div>
+
+            <div class="summary-row total">
+              <span>Grand Total (PHP):</span>
+              <span id="calc-grand-total">₱0.00</span>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <button class="btn" id="generate-btn" style="width:100%;justify-content:center;" onclick="submitInvoice()">🧾 Generate &amp; Save Invoice (Pending)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Live Printable Card -->
+      <div>
+        <div class="card">
+          <h3>Live Invoice Preview</h3>
+          <p style="font-size:0.68rem;color:var(--muted);margin-bottom:16px;">Preview updates instantly as you adjust items and discounts.</p>
+
+          <div class="invoice-preview-card" id="invoice-node">
+            <div class="inv-header">
+              <div>
+                <div class="inv-title">✨ Timeless Creations ✨</div>
+                <div style="font-size:0.7rem;color:#b8955a;font-style:italic;">Official Missionary Cash Invoice</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="inv-id" id="prev-inv-id">INV-DRAFT</div>
+                <div style="font-size:0.65rem;color:#a8a29e;" id="prev-date">August 2026</div>
+              </div>
+            </div>
+
+            <div class="inv-meta">
+              <div><strong>Bill To:</strong> <span id="prev-name">Elder / Sister [Name]</span></div>
+              <div><strong>Email:</strong> <span id="prev-email">missionary@missionary.org</span></div>
+              <div><strong>Cohort / Batch:</strong> <span id="prev-batch">August 2026</span></div>
+            </div>
+
+            <table class="inv-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th style="width:40px;text-align:center;">Qty</th>
+                  <th style="width:80px;text-align:right;">Price</th>
+                  <th style="width:80px;text-align:right;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="prev-table-body">
+                <tr><td colspan="4" style="text-align:center;color:#a8a29e;">No items selected.</td></tr>
+              </tbody>
+            </table>
+
+            <div style="border-top:1px solid #e7d8b8;padding-top:8px;font-size:0.75rem;font-family:'DM Mono',monospace;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span>Subtotal:</span>
+                <span id="prev-subtotal">₱0.00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;color:#16a34a;margin-bottom:6px;">
+                <span>Discount:</span>
+                <span id="prev-discount">-₱0.00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:700;color:#8b1a1a;border-top:1px solid #f1e4cb;padding-top:6px;">
+                <span>Total Amount:</span>
+                <span id="prev-total">₱0.00</span>
+              </div>
+            </div>
+
+            <div class="inv-stamp" id="prev-stamp">PENDING</div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
+            <button class="btn" onclick="downloadInvoiceImage()">📥 Download Card PNG</button>
+            <button class="btn btn-secondary" onclick="copyInvoiceText()">📋 Copy Messenger Text</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: PENDING INVOICES -->
+  <div class="tab-pane" id="pending-tab">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <h3>Pending Invoices (Awaiting Fulfillment &amp; Receipt Email)</h3>
+          <p style="font-size:0.68rem;color:var(--muted);">Clicking <strong>Complete</strong> will mark the transaction paid and automatically send the official receipt to the missionary's email.</p>
+        </div>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Invoice ID</th>
+              <th>Missionary</th>
+              <th>Email</th>
+              <th>Total (₱)</th>
+              <th>Status</th>
+              <th>Date Created</th>
+              <th style="text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="invoices-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Loading invoices...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: PRODUCT SETTINGS -->
+  <div class="tab-pane" id="products-tab">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <h3>Product Catalog &amp; PHP Price Settings</h3>
+          <p style="font-size:0.68rem;color:var(--muted);">Set unit prices in Philippine Peso (₱). These values automatically populate into the invoice calculator.</p>
+        </div>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addNewProductSetting()">+ Add New Product</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th style="width:160px;">Price (PHP ₱)</th>
+            <th style="width:100px;text-align:center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="products-settings-tbody"></tbody>
+      </table>
+
+      <div style="margin-top:16px;">
+        <button class="btn" onclick="saveProductSettings()">💾 Save Product Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let missionaries = [];
+let cashInvoices = [];
+const DEFAULT_PRODUCTS = [
+  { name: "Temple Keychain", price: 150 },
+  { name: "Nametag Keychain", price: 250 },
+  { name: "Salvation Kit (POS)", price: 650 },
+  { name: "Scripture Case", price: 950 },
+  { name: "Custom Missionary Item", price: 100 }
+];
+
+let productCatalog = JSON.parse(localStorage.getItem('tcrp_products') || JSON.stringify(DEFAULT_PRODUCTS));
+
+async function init() {
+  document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  renderProductSettings();
+  await loadData();
+  addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('/api/invoicing');
+    const data = await res.json();
+    if (data.ok) {
+      missionaries = data.missionaries || [];
+      cashInvoices = data.invoices || [];
+      populateMissionarySelect(missionaries);
+      renderInvoicesTable();
+    }
+  } catch (err) {
+    console.error("Failed to load invoicing data:", err);
+  }
+}
+
+function switchNavTab(tabId, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+function populateMissionarySelect(list) {
+  const sel = document.getElementById('missionary-select');
+  sel.innerHTML = '<option value="">-- Choose Missionary --</option>' + 
+    list.map(m => `<option value="${m.email}">${m.name} (${m.email})</option>`).join('');
+}
+
+function filterMissionaryDropdown(query) {
+  const q = query.toLowerCase();
+  const filtered = missionaries.filter(m => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
+  populateMissionarySelect(filtered);
+}
+
+function handleMissionarySelect() {
+  const email = document.getElementById('missionary-select').value;
+  const m = missionaries.find(x => x.email === email);
+
+  if (m) {
+    document.getElementById('missionary-info').style.display = 'block';
+    document.getElementById('info-name').textContent = m.name;
+    document.getElementById('info-email').textContent = m.email;
+    document.getElementById('info-batch').textContent = m.batch_month || 'Pre-listed';
+
+    document.getElementById('prev-name').textContent = m.name;
+    document.getElementById('prev-email').textContent = m.email;
+    document.getElementById('prev-batch').textContent = m.batch_month || 'August 2026';
+  } else {
+    document.getElementById('missionary-info').style.display = 'none';
+    document.getElementById('prev-name').textContent = "Elder / Sister [Name]";
+    document.getElementById('prev-email').textContent = "missionary@missionary.org";
+  }
+  recalculateTotal();
+}
+
+function addItemRow(defaultName = "", defaultPrice = 0, defaultQty = 1) {
+  if (!defaultName && productCatalog.length > 0) {
+    defaultName = productCatalog[0].name;
+    defaultPrice = productCatalog[0].price;
+  }
+
+  const tbody = document.getElementById('items-tbody');
+  const tr = document.createElement('tr');
+  tr.className = 'item-row';
+  tr.innerHTML = `
+    <td>
+      <select class="form-select item-select" onchange="handleProductChange(this)" style="padding:4px 6px;font-size:0.7rem;">
+        ${productCatalog.map(p => `<option value="${p.name}" data-price="${p.price}" ${p.name === defaultName ? 'selected' : ''}>${p.name} (₱${p.price})</option>`).join('')}
+      </select>
+    </td>
+    <td><input type="number" class="form-input item-qty" value="${defaultQty}" min="1" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateTotal()"/></td>
+    <td><input type="number" class="form-input item-price" value="${defaultPrice}" min="0" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateTotal()"/></td>
+    <td style="text-align:right;font-weight:700;color:var(--gold);font-size:0.75rem;" class="item-subtotal">₱${(defaultPrice * defaultQty).toFixed(2)}</td>
+    <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove(); recalculateTotal();">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  recalculateTotal();
+}
+
+function handleProductChange(selectEl) {
+  const opt = selectEl.options[selectEl.selectedIndex];
+  const price = opt.getAttribute('data-price') || 0;
+  const row = selectEl.closest('tr');
+  row.querySelector('.item-price').value = price;
+  recalculateTotal();
+}
+
+function recalculateTotal() {
+  const rows = document.querySelectorAll('.item-row');
+  let subtotal = 0;
+  const previewItems = [];
+
+  rows.forEach(r => {
+    const name = r.querySelector('.item-select').value;
+    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
+    const price = parseFloat(r.querySelector('.item-price').value) || 0;
+    const rowSubtotal = qty * price;
+    r.querySelector('.item-subtotal').textContent = `₱${rowSubtotal.toFixed(2)}`;
+
+    subtotal += rowSubtotal;
+    previewItems.push({ name, qty, price, subtotal: rowSubtotal });
+  });
+
+  const discountType = document.getElementById('discount-type').value;
+  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
+  let discountDeducted = 0;
+
+  if (discountType === 'percent') {
+    discountDeducted = (subtotal * (discountVal / 100));
+  } else {
+    discountDeducted = discountVal;
+  }
+  if (discountDeducted > subtotal) discountDeducted = subtotal;
+
+  const grandTotal = subtotal - discountDeducted;
+
+  // Update Summary Box
+  document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
+
+  // Update Preview Card
+  document.getElementById('prev-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('prev-discount').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  document.getElementById('prev-total').textContent = `₱${grandTotal.toFixed(2)}`;
+
+  const prevTbody = document.getElementById('prev-table-body');
+  if (previewItems.length === 0) {
+    prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#a8a29e;">No items selected.</td></tr>';
+  } else {
+    prevTbody.innerHTML = previewItems.map(item => `
+      <tr>
+        <td><strong>${item.name}</strong></td>
+        <td style="text-align:center;">${item.qty}</td>
+        <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
+        <td style="text-align:right;font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+async function submitInvoice() {
+  const email = document.getElementById('missionary-select').value;
+  if (!email) {
+    alert("Please search and select a missionary.");
+    return;
+  }
+
+  const rows = document.querySelectorAll('.item-row');
+  const items = [];
+  let subtotal = 0;
+
+  rows.forEach(r => {
+    const name = r.querySelector('.item-select').value;
+    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
+    const price = parseFloat(r.querySelector('.item-price').value) || 0;
+    const rowSubtotal = qty * price;
+    subtotal += rowSubtotal;
+    items.push({ name, qty, price, subtotal: rowSubtotal });
+  });
+
+  if (items.length === 0) {
+    alert("Please add at least one product item.");
+    return;
+  }
+
+  const discountType = document.getElementById('discount-type').value;
+  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
+  let discountAmount = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
+  if (discountAmount > subtotal) discountAmount = subtotal;
+  const totalAmount = subtotal - discountAmount;
+
+  const m = missionaries.find(x => x.email === email);
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving Invoice...';
+
+  try {
+    const res = await fetch('/api/invoicing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create_invoice',
+        email,
+        name: m ? m.name : 'Missionary',
+        items,
+        subtotal,
+        discountType,
+        discountVal,
+        discountAmount,
+        totalAmount
+      })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      document.getElementById('prev-inv-id').textContent = data.invoiceId;
+      alert(`🎉 Invoice created successfully! (Ref: ${data.invoiceId})`);
+      await loadData();
+    } else {
+      alert(`❌ Error: ${data.error}`);
+    }
+  } catch (err) {
+    alert(`❌ Network Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🧾 Generate & Save Invoice (Pending)';
+  }
+}
+
+function renderInvoicesTable() {
+  const tbody = document.getElementById('invoices-tbody');
+  const pendingCount = cashInvoices.filter(i => i.status === 'PENDING').length;
+  document.getElementById('pending-badge').textContent = pendingCount;
+
+  if (cashInvoices.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">No invoices recorded yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = cashInvoices.map(inv => {
+    const isPending = inv.status === 'PENDING';
+    return `
+      <tr>
+        <td style="font-weight:bold;color:var(--gold);">${inv.invoice_id}</td>
+        <td style="font-weight:600;">${inv.name}</td>
+        <td style="color:var(--muted);">${inv.email}</td>
+        <td style="font-weight:bold;">₱${Number(inv.total_amount).toFixed(2)}</td>
+        <td>
+          <span style="padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:700;background:${isPending ? 'var(--red-dim);color:var(--red);' : 'var(--green-dim);color:var(--green);'}">
+            ${inv.status}
+          </span>
+        </td>
+        <td style="color:var(--muted);font-size:0.65rem;">${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
+        <td style="text-align:center;">
+          ${isPending ? `<button class="btn-complete" onclick="completeInvoice('${inv.invoice_id}', '${inv.email}', '${inv.name}')">✓ Complete</button>` : `<span style="color:var(--muted);font-size:0.65rem;">Receipt Sent</span>`}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function completeInvoice(invoiceId, email, name) {
+  const confirmAction = confirm(
+    `⚠️ CONFIRMATION:\n\n` +
+    `Are you sure you want to mark Invoice ${invoiceId} as COMPLETED?\n\n` +
+    `This will immediately dispatch the official cash purchase receipt to ${name} (${email}).`
+  );
+
+  if (!confirmAction) return;
+
+  try {
+    const res = await fetch('/api/invoicing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'complete_invoice', invoice_id: invoiceId })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      alert(`🎉 Success!\n${data.message}`);
+      await loadData();
+    } else {
+      alert(`❌ Error: ${data.error}`);
+    }
+  } catch (err) {
+    alert(`❌ Request Error: ${err.message}`);
+  }
+}
+
+function renderProductSettings() {
+  const tbody = document.getElementById('products-settings-tbody');
+  tbody.innerHTML = productCatalog.map((p, i) => `
+    <tr>
+      <td><input type="text" class="form-input p-name" value="${p.name}" style="padding:4px 8px;font-size:0.72rem;"/></td>
+      <td><input type="number" class="form-input p-price" value="${p.price}" min="0" style="padding:4px 8px;font-size:0.72rem;"/></td>
+      <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove()">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function addNewProductSetting() {
+  const tbody = document.getElementById('products-settings-tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="form-input p-name" placeholder="New Product Name" style="padding:4px 8px;font-size:0.72rem;"/></td>
+    <td><input type="number" class="form-input p-price" value="100" min="0" style="padding:4px 8px;font-size:0.72rem;"/></td>
+    <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove()">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function saveProductSettings() {
+  const rows = document.querySelectorAll('#products-settings-tbody tr');
+  const updated = [];
+  rows.forEach(r => {
+    const name = r.querySelector('.p-name').value.trim();
+    const price = parseFloat(r.querySelector('.p-price').value) || 0;
+    if (name) updated.push({ name, price });
+  });
+
+  productCatalog = updated;
+  localStorage.setItem('tcrp_products', JSON.stringify(productCatalog));
+  alert("✅ Product catalog and pricing saved successfully!");
+  
+  document.getElementById('items-tbody').innerHTML = '';
+  addItemRow(productCatalog[0]?.name, productCatalog[0]?.price, 1);
+}
+
+function downloadInvoiceImage() {
+  const node = document.getElementById('invoice-node');
+  html2canvas(node, { scale: 2 }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `TCRP-Invoice-${document.getElementById('prev-inv-id').textContent}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+
+function copyInvoiceText() {
+  const invId = document.getElementById('prev-inv-id').textContent;
+  const name = document.getElementById('prev-name').textContent;
+  const total = document.getElementById('prev-total').textContent;
+  const rows = Array.from(document.querySelectorAll('.item-row')).map(r => {
+    return `• ${r.querySelector('.item-qty').value}x ${r.querySelector('.item-select').value} (${r.querySelector('.item-subtotal').textContent})`;
+  }).join('\n');
+
+  const text = `🧾 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐈𝐍𝐕𝐎𝐈𝐂𝐄\n\n` +
+               `Invoice Ref: ${invId}\n` +
+               `Recipient: ${name}\n` +
+               `Date: ${document.getElementById('prev-date').textContent}\n\n` +
+               `Items:\n${rows}\n\n` +
+               `Subtotal: ${document.getElementById('prev-subtotal').textContent}\n` +
+               `Discount: ${document.getElementById('prev-discount').textContent}\n` +
+               `Total Amount: ${total}\n\n` +
+               `Thank you for supporting Timeless Creations! 🌸`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    alert("📋 Invoice summary copied to clipboard! You can paste it directly into Messenger.");
+  });
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

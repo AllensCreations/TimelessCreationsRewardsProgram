@@ -4,6 +4,7 @@ import { queryTurso, unwrap } from '../lib/db.js';
 import { logSystemEvent } from '../lib/logger.js';
 
 const BREVO_KEY = (process.env.BREVO_API_KEY || '').trim();
+const SENDER_EMAIL = 'noreply.timelesscreations.ph@gmail.com';
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -50,7 +51,7 @@ async function sendBrevoEmail(toEmail, toName, subject, htmlContent) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        sender: { name: "Timeless Creations", email: "support@timelesscreationsrp.com" },
+        sender: { name: "Timeless Creations", email: SENDER_EMAIL },
         to: [{ email: toEmail, name: toName }],
         subject: subject,
         htmlContent: htmlContent
@@ -58,6 +59,7 @@ async function sendBrevoEmail(toEmail, toName, subject, htmlContent) {
     });
     return res.ok;
   } catch (err) {
+    console.error("Brevo test send exception:", err.message);
     return false;
   }
 }
@@ -115,6 +117,7 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const { action } = body;
 
+    // Multi-Drip Test Email Dispenser Handler
     if (action === 'test_send') {
       const { email, mode } = body;
       if (!email || !email.includes('@')) {
@@ -132,20 +135,39 @@ export default async function handler(req, res) {
           lastName: "Dela Cruz",
           Msg: "Congratulations on serving faithfully! Your dedication brings light and hope to many lives across your mission.",
           MsgAuthor: "“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”",
-          Author: "Proverbs 3:5"
+          Author: "Proverbs 3:5",
+          month: "1",
+          points: "5",
+          referral_code: "TEST99"
         });
         if (await sendBrevoEmail(email, "Test Missionary", "Test: Monthly Drip Template", html)) successCount++;
       }
+
       if (mode === 'all' || mode === 'otp') {
-        const html = loadTemplate('otp-email.html', { name: "Test Missionary", otp_code: "888999" });
+        const html = loadTemplate('otp-email.html', {
+          name: "Elder Dela Cruz",
+          otp_code: "888999"
+        });
         if (await sendBrevoEmail(email, "Test Missionary", "Test: OTP Verification Template", html)) successCount++;
       }
+
       if (mode === 'all' || mode === 'receipt') {
-        const html = loadTemplate('receipt-email.html', { name: "Test Missionary", email, order_id: "TX-TEST", item: "Temple Keychain", cost: "6" });
+        const html = loadTemplate('receipt-email.html', {
+          name: "Elder Dela Cruz",
+          email,
+          order_id: "TX-TEST",
+          item: "Temple Keychain",
+          cost: "6"
+        });
         if (await sendBrevoEmail(email, "Test Missionary", "Test: Receipt Template", html)) successCount++;
       }
 
-      return res.status(200).json({ ok: true, message: `Successfully dispatched ${successCount} test email(s) using your major template from templates/monthly-drip.html!` });
+      await logSystemEvent('INFO', `Test Email Dispenser dispatched ${successCount} test email(s) to ${email}`);
+
+      return res.status(200).json({
+        ok: true,
+        message: `Successfully dispatched ${successCount} test email(s) using templates from templates/ folder!`
+      });
     }
 
     if (action === 'update_points') {

@@ -25,7 +25,6 @@
   a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
   a:hover{text-decoration:underline;}
 
-  /* Nav Tabs */
   .nav-tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap;}
   .tab-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;}
   .tab-btn:hover{color:var(--text);border-color:var(--gold);}
@@ -57,12 +56,10 @@
   .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:6px;cursor:pointer;}
   .btn-complete{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,0.3);padding:6px 12px;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;}
 
-  /* Live Auto-Solved Calculation Box */
   .summary-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;}
   .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;margin-bottom:8px;color:var(--muted);}
   .summary-row.total{font-size:1.05rem;font-weight:800;color:var(--gold);border-top:1px solid var(--border);padding-top:10px;margin-top:10px;}
 
-  /* Printable & Exportable Invoice Card Preview */
   .invoice-preview-card{
     background:#ffffff;color:#1c1917;padding:28px;border-radius:12px;border:2px solid #e7d8b8;
     box-shadow:0 15px 35px rgba(0,0,0,0.5);font-family:Georgia,serif;position:relative;
@@ -80,7 +77,6 @@
     font-weight:800;font-size:1.1rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(254,242,242,0.7);
   }
 
-  /* Data Table */
   .data-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
   .data-table th{padding:10px 12px;background:var(--surface2);color:var(--muted);text-align:left;font-size:0.62rem;text-transform:uppercase;border-bottom:1px solid var(--border);}
   .data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
@@ -89,7 +85,6 @@
   .status-select.pending{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
   .status-select.completed{border-color:var(--green);color:var(--green);background:var(--green-dim);}
 
-  /* Modal for Redemption Receipt Card */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
   .modal-overlay.active{opacity:1;visibility:visible;}
   .receipt-card-node{
@@ -115,7 +110,6 @@
 </head>
 <body>
 
-<!-- Redemption Modal -->
 <div class="modal-overlay" id="receipt-modal">
   <div>
     <div class="receipt-card-node" id="receipt-card-node">
@@ -145,7 +139,6 @@
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Invoice</button>
     <button class="tab-btn" onclick="switchNavTab('pending-tab', this)">⏳ Pending Invoices <span class="badge-pending" id="pending-badge">0</span></button>
@@ -156,7 +149,6 @@
   <!-- TAB 1: CREATE CASH INVOICE -->
   <div class="tab-pane active" id="create-tab">
     <div class="grid-layout">
-      <!-- LEFT: Configuration -->
       <div>
         <div class="card">
           <h3>1. Select Missionary</h3>
@@ -361,8 +353,8 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
-          <h3>Product Catalog &amp; PHP Price Settings</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Set unit prices in Philippine Peso (₱). These values automatically populate into the invoice calculator.</p>
+          <h3>Product Catalog &amp; PHP Price Settings (Turso Cloud Synced)</h3>
+          <p style="font-size:0.68rem;color:var(--muted);">Unit prices saved here are stored directly in your live Turso database and sync across all devices.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addNewProductSetting()">+ Add New Product</button>
       </div>
@@ -379,7 +371,7 @@
       </table>
 
       <div style="margin-top:16px;">
-        <button class="btn" onclick="saveProductSettings()">💾 Save Product Settings</button>
+        <button class="btn" id="save-products-btn" onclick="saveProductSettings()">💾 Save Product Settings to Turso</button>
       </div>
     </div>
   </div>
@@ -389,23 +381,12 @@
 let missionaries = [];
 let cashInvoices = [];
 let posOrders = [];
-
-const DEFAULT_PRODUCTS = [
-  { name: "Temple Keychain", price: 150 },
-  { name: "Nametag Keychain", price: 250 },
-  { name: "Salvation Kit (POS)", price: 650 },
-  { name: "Scripture Case", price: 950 },
-  { name: "Custom Missionary Item", price: 100 }
-];
-
-let productCatalog = JSON.parse(localStorage.getItem('tcrp_products') || JSON.stringify(DEFAULT_PRODUCTS));
+let productCatalog = [];
 
 async function init() {
   document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  renderProductSettings();
   await loadData();
   await loadPosOrders();
-  addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
 }
 
 async function loadData() {
@@ -415,8 +396,15 @@ async function loadData() {
     if (data.ok) {
       missionaries = data.missionaries || [];
       cashInvoices = data.invoices || [];
+      productCatalog = data.products || [];
+      
       populateMissionarySelect(missionaries);
       renderInvoicesTable();
+      renderProductSettings();
+      
+      if (document.querySelectorAll('#items-tbody tr').length === 0 && productCatalog.length > 0) {
+        addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
+      }
     }
   } catch (err) {
     console.error("Failed to load invoicing data:", err);
@@ -798,7 +786,7 @@ function addNewProductSetting() {
   tbody.appendChild(tr);
 }
 
-function saveProductSettings() {
+async function saveProductSettings() {
   const rows = document.querySelectorAll('#products-settings-tbody tr');
   const updated = [];
   rows.forEach(r => {
@@ -807,12 +795,31 @@ function saveProductSettings() {
     if (name) updated.push({ name, price });
   });
 
-  productCatalog = updated;
-  localStorage.setItem('tcrp_products', JSON.stringify(productCatalog));
-  alert("✅ Product catalog and pricing saved successfully!");
-  
-  document.getElementById('items-tbody').innerHTML = '';
-  addItemRow(productCatalog[0]?.name, productCatalog[0]?.price, 1);
+  const btn = document.getElementById('save-products-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving to Turso...';
+
+  try {
+    const res = await fetch('/api/invoicing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_products', products: updated })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ Product catalog and PHP prices saved to Turso Cloud database!");
+      productCatalog = updated;
+      document.getElementById('items-tbody').innerHTML = '';
+      if (productCatalog.length > 0) addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
+    } else {
+      alert("❌ Error saving products: " + data.error);
+    }
+  } catch (err) {
+    alert("❌ Error: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Save Product Settings to Turso';
+  }
 }
 
 function downloadInvoiceImage() {

@@ -22,7 +22,7 @@ async function runSql(sql, args = []) {
   });
 }
 
-// Ensure cash_invoices and product_catalog tables exist
+// Ensure both cash_invoices and product_catalog tables exist
 async function ensureTables() {
   await runSql(`
     CREATE TABLE IF NOT EXISTS cash_invoices (
@@ -40,6 +40,29 @@ async function ensureTables() {
       completed_at TEXT
     );
   `);
+
+  await runSql(`
+    CREATE TABLE IF NOT EXISTS product_catalog (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE,
+      price REAL DEFAULT 0
+    );
+  `);
+
+  // Seed default products if empty
+  const count = (await runSql("SELECT COUNT(*) as c FROM product_catalog"))[0]?.c || 0;
+  if (count === 0) {
+    const defaults = [
+      ["Temple Keychain", 150],
+      ["Nametag Keychain", 250],
+      ["Salvation Kit (POS)", 650],
+      ["Scripture Case", 950],
+      ["Custom Missionary Item", 100]
+    ];
+    for (const [name, price] of defaults) {
+      await runSql("INSERT OR IGNORE INTO product_catalog (name, price) VALUES (?, ?)", [name, price]);
+    }
+  }
 }
 
 async function sendBrevoReceiptEmail(recipientEmail, recipientName, invoiceData) {
@@ -119,22 +142,35 @@ async function sendBrevoReceiptEmail(recipientEmail, recipientName, invoiceData)
 export default async function handler(req, res) {
   await ensureTables();
 
-  // GET: Fetch missionaries and cash invoices
+  // GET: Fetch missionaries, invoices, and product catalog from Turso
   if (req.method === 'GET') {
     try {
       const missionaries = await runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries ORDER BY name ASC");
       const invoices = await runSql("SELECT * FROM cash_invoices ORDER BY ROWID DESC");
-      return res.status(200).json({ ok: true, missionaries, invoices });
+      const products = await runSql("SELECT name, price FROM product_catalog ORDER BY id ASC");
+      return res.status(200).json({ ok: true, missionaries, invoices, products });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
     }
   }
 
-  // POST: Create Invoice or Mark Complete
+  // POST: Create Invoice, Complete Invoice, or Update Products in Turso
   if (req.method === 'POST') {
     const { action } = req.body || {};
 
-    // 1. Create New Cash Invoice
+    // 1. Save Product Catalog to Turso
+    if (action === 'save_products') {
+      const { products = [] } = req.body;
+      await runSql("DELETE FROM product_catalog");
+      for (const p of products) {
+        if (p.name) {
+          await runSql("INSERT INTO product_catalog (name, price) VALUES (?, ?)", [p.name.trim(), Number(p.price) || 0]);
+        }
+      }
+      return res.status(200).json({ ok: true, message: "Product prices saved to Turso database." });
+    }
+
+    // 2. Create Cash Invoice
     if (action === 'create_invoice') {
       const { email, name, items, subtotal, discountType, discountVal, discountAmount, totalAmount } = req.body;
       if (!email || !items || items.length === 0) {
@@ -159,7 +195,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Complete Invoice & Dispatch Brevo Receipt Email
+    // 3. Complete Invoice & Dispatch Brevo Receipt Email
     if (action === 'complete_invoice') {
       const { invoice_id } = req.body;
       const invoice = (await runSql("SELECT * FROM cash_invoices WHERE invoice_id = ?", [invoice_id]))[0];
@@ -171,7 +207,6 @@ export default async function handler(req, res) {
       const nowIso = new Date().toISOString();
       await runSql("UPDATE cash_invoices SET status = 'COMPLETED', completed_at = ? WHERE invoice_id = ?", [nowIso, invoice_id]);
 
-      // Parse items for email template
       let items = [];
       try { items = JSON.parse(invoice.items_json); } catch(e){}
 
@@ -190,13 +225,6 @@ export default async function handler(req, res) {
         emailSent,
         message: `Invoice ${invoice_id} marked as COMPLETED. Official receipt sent to ${invoice.email}.`
       });
-    }
-
-    // 3. Delete / Void Invoice
-    if (action === 'delete_invoice') {
-      const { invoice_id } = req.body;
-      await runSql("DELETE FROM cash_invoices WHERE invoice_id = ?", [invoice_id]);
-      return res.status(200).json({ ok: true, message: `Invoice ${invoice_id} deleted.` });
     }
   }
 

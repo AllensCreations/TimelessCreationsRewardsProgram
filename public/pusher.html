@@ -84,7 +84,7 @@
 
   <div class="card" id="form-card">
     <h3>Manual Batch Registration</h3>
-    <p>Title &amp; Last Name goes to <strong><code>name</code></strong>, Title goes to <strong><code>cohort</code></strong>, and First Name saves to the <strong><code>names</code></strong> table.</p>
+    <p>Special characters like <strong>ñ</strong> are strictly preserved. Title &amp; Last Name maps to <strong><code>name</code></strong>, Title to <strong><code>cohort</code></strong>, and First Name to <strong><code>names</code></strong> table.</p>
 
     <div class="form-header">
       <div>Title &amp; Last Name (name)</div>
@@ -166,29 +166,22 @@ function toTitleCase(str) {
   return str.toLowerCase().replace(/(?:^|\s|-)\S/g, char => char.toUpperCase()).trim();
 }
 
-function normalizeAccents(str) {
-  if (!str) return '';
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
 function sanitizeEmail(email) {
   if (!email) return '';
-  let clean = normalizeAccents(email).trim().toLowerCase().replace(/[^a-z0-9._@-]/g, '');
+  let clean = email.trim().toLowerCase();
   if (clean && !clean.includes('@')) clean += '@missionary.org';
   return clean;
 }
 
 function cleanLastNameForEmail(titleName) {
   if (!titleName) return '';
-  let clean = normalizeAccents(titleName).replace(/^(elder|sister)\s+/i, '').trim().toLowerCase();
-  clean = clean.replace(/[^a-z0-9\s.-]/g, '');
+  let clean = titleName.replace(/^(elder|sister)\s+/i, '').trim().toLowerCase();
   return clean.split(/[\s-]+/).filter(Boolean).join('.');
 }
 
 function cleanFirstNameForEmail(firstName) {
   if (!firstName) return '';
-  let clean = normalizeAccents(firstName).trim().toLowerCase();
-  clean = clean.replace(/[^a-z0-9\s.-]/g, '');
+  let clean = firstName.trim().toLowerCase();
   return clean.split(/[\s-]+/).filter(Boolean).join('.');
 }
 

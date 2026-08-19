@@ -108,7 +108,8 @@ function getQuickChoices(text) {
     quick_replies: [
       { content_type: "text", title: "🛍️ Dashboard & Catalog", payload: "MENU_CATALOG" },
       { content_type: "text", title: "📢 Invite Link", payload: "MENU_INVITE" },
-      { content_type: "text", title: "❓ FAQs", payload: "MENU_FAQS" }
+      { content_type: "text", title: "❓ FAQs", payload: "MENU_FAQS" },
+      { content_type: "text", title: "👋 Nevermind", payload: "MENU_NEVERMIND" }
     ]
   };
 }
@@ -161,7 +162,12 @@ async function sendDashboardCatalog(psid, user) {
           }
         ]
       }
-    }
+    },
+    quick_replies: [
+      { content_type: "text", title: "📢 Invite Link", payload: "MENU_INVITE" },
+      { content_type: "text", title: "❓ FAQs", payload: "MENU_FAQS" },
+      { content_type: "text", title: "👋 Nevermind", payload: "MENU_NEVERMIND" }
+    ]
   };
 
   await callSendAPI(psid, payload);
@@ -255,11 +261,25 @@ export default async function handler(req, res) {
           const msg = rawInput.toLowerCase();
           const cleanDigits = rawInput.replace(/\D/g, '');
 
-          // Check if referral code was passed via m.me link param (e.g., event.referral or event.postback.referral)
+          // Check if referral code was passed via m.me link param
           const refParam = event.referral?.ref || event.postback?.referral?.ref || null;
 
           const userByPsid = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
           const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
+
+          // 0. Nevermind Option (Dismiss Menu)
+          if (msg === 'menu_nevermind' || msg.includes('nevermind')) {
+            await callSendAPI(psid, "Alright! Whenever you're ready, simply tap '🛍️ Dashboard & Catalog' below:");
+            await callSendAPI(psid, {
+              text: "Main Menu:",
+              quick_replies: [
+                { content_type: "text", title: "🛍️ Dashboard & Catalog", payload: "MENU_CATALOG" },
+                { content_type: "text", title: "📢 Invite Link", payload: "MENU_INVITE" },
+                { content_type: "text", title: "❓ FAQs", payload: "MENU_FAQS" }
+              ]
+            });
+            continue;
+          }
 
           // 1. Initial Greeting / Get Started
           if (msg === 'get_started' || msg.includes('get started') || refParam) {
@@ -268,7 +288,6 @@ export default async function handler(req, res) {
               continue;
             }
 
-            // If user arrived directly from m.me referral link with code
             if (refParam) {
               const codeCheck = refParam.trim().toUpperCase();
               const referrer = (await runSql("SELECT * FROM missionaries WHERE UPPER(referral_code) = ?", [codeCheck]))[0];

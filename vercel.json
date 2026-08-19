@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "crons": [
+    {
+      "path": "/api/cron-monthly-drip",
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}

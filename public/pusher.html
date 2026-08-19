@@ -28,6 +28,10 @@
 
   .global-batch-box{background:var(--surface2);border:1px solid var(--border);padding:14px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
   
+  .status-badge{font-size:0.68rem;padding:4px 10px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:6px;}
+  .status-online{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,0.3);}
+  .status-offline{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);}
+
   .form-header{display:grid;grid-template-columns:1.3fr 1.1fr 1.8fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
   .form-row{display:grid;grid-template-columns:1.3fr 1.1fr 1.8fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
 
@@ -53,6 +57,7 @@
 
   .recent-pushed-list{margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;max-height:260px;overflow-y:auto;font-size:0.72rem;color:var(--muted);}
   .recent-item{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;}
+  .badge-cohort{background:rgba(255,255,255,0.08);color:var(--text);padding:2px 6px;border-radius:4px;font-size:0.62rem;margin-right:6px;}
   .badge-batch{background:var(--gold-dim);color:var(--gold2);padding:2px 8px;border-radius:4px;font-size:0.65rem;}
 </style>
 </head>
@@ -60,12 +65,15 @@
 <div class="container">
   <header>
     <h1>Missionary Pusher &amp; Importer</h1>
-    <a href="/">← Back to Dashboard</a>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div id="connection-status" class="status-badge status-online">● Online</div>
+      <a href="/">← Back to Dashboard</a>
+    </div>
   </header>
 
   <div class="card">
-    <h3>Active Import Batch</h3>
-    <p>Set the cohort / batch month once below. It will automatically apply to all manual rows and CSV records imported in this session.</p>
+    <h3>Active Target Batch</h3>
+    <p>Set the batch month once below. It automatically maps to <code>batch_month</code>, and titles automatically map to <code>cohort</code>.</p>
     <div class="global-batch-box">
       <div style="flex:1;">
         <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Target Cohort / Batch Month (Applies to All Entries)</label>
@@ -76,10 +84,10 @@
 
   <div class="card" id="form-card">
     <h3>Manual Batch Registration</h3>
-    <p>Type <strong>Title &amp; Last Name</strong> and <strong>First Name</strong> to automatically generate <code>firstname.lastname@missionary.org</code> (editable). Press <strong>Enter</strong> on email to add a new row instantly.</p>
+    <p>Title &amp; Last Name goes to <strong><code>name</code></strong>, Title goes to <strong><code>cohort</code></strong>, and First Name saves to the <strong><code>names</code></strong> table.</p>
 
     <div class="form-header">
-      <div>Title &amp; Last Name</div>
+      <div>Title &amp; Last Name (name)</div>
       <div>First Name</div>
       <div>Auto Email (@missionary.org)</div>
       <div></div>
@@ -98,7 +106,7 @@
 
   <div class="card">
     <h3>Upload CSV File</h3>
-    <p>Upload CSV containing <code>Prefix / Name</code>, <code>First Name</code>, and <code>Email</code>. All rows will automatically inherit the target batch above.</p>
+    <p>Upload CSV containing <code>Prefix / Name</code>, <code>First Name</code>, and <code>Email</code>.</p>
     
     <div class="dropzone" onclick="document.getElementById('csv-file').click()">
       <span id="file-label">📁 Click here to select CSV file or drag and drop</span>
@@ -127,27 +135,61 @@
 
 <script>
 let parsedCsvData = [];
+const OFFLINE_QUEUE_KEY = 'tcrp_offline_queue';
+
+function getOfflineQueue() {
+  try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch (e) { return []; }
+}
+
+function setOfflineQueue(queue) {
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+}
+
+function updateConnectionStatus() {
+  const badge = document.getElementById('connection-status');
+  const queue = getOfflineQueue();
+  if (navigator.onLine) {
+    badge.className = 'status-badge status-online';
+    badge.textContent = queue.length > 0 ? `● Online (${queue.length} syncing...)` : '● Online';
+    if (queue.length > 0) syncOfflineQueue();
+  } else {
+    badge.className = 'status-badge status-offline';
+    badge.textContent = queue.length > 0 ? `○ Offline (${queue.length} queued)` : '○ Offline Mode';
+  }
+}
+
+window.addEventListener('online', () => { updateConnectionStatus(); loadDbHistory(); });
+window.addEventListener('offline', updateConnectionStatus);
 
 function toTitleCase(str) {
   if (!str) return '';
   return str.toLowerCase().replace(/(?:^|\s|-)\S/g, char => char.toUpperCase()).trim();
 }
 
+function normalizeAccents(str) {
+  if (!str) return '';
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function sanitizeEmail(email) {
   if (!email) return '';
-  let clean = email.trim().toLowerCase().replace(/[^a-z0-9._@-]/g, '');
+  let clean = normalizeAccents(email).trim().toLowerCase().replace(/[^a-z0-9._@-]/g, '');
   if (clean && !clean.includes('@')) clean += '@missionary.org';
   return clean;
 }
 
-function cleanLastName(titleName) {
+function cleanLastNameForEmail(titleName) {
   if (!titleName) return '';
-  return titleName.replace(/^(elder|sister)\s+/i, '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  let clean = normalizeAccents(titleName).replace(/^(elder|sister)\s+/i, '').trim().toLowerCase();
+  clean = clean.replace(/[^a-z0-9\s.-]/g, '');
+  return clean.split(/[\s-]+/).filter(Boolean).join('.');
 }
 
-function cleanFirstName(firstName) {
+function cleanFirstNameForEmail(firstName) {
   if (!firstName) return '';
-  return firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  let clean = normalizeAccents(firstName).trim().toLowerCase();
+  clean = clean.replace(/[^a-z0-9\s.-]/g, '');
+  return clean.split(/[\s-]+/).filter(Boolean).join('.');
 }
 
 function autoGenerateEmail(row) {
@@ -157,8 +199,8 @@ function autoGenerateEmail(row) {
   const titleName = row.querySelector('.m-title-name').value.trim();
   const firstName = row.querySelector('.m-first-name').value.trim();
 
-  const cFirst = cleanFirstName(firstName);
-  const cLast = cleanLastName(titleName);
+  const cFirst = cleanFirstNameForEmail(firstName);
+  const cLast = cleanLastNameForEmail(titleName);
 
   if (cFirst && cLast) {
     emailInput.value = `${cFirst}.${cLast}@missionary.org`;
@@ -194,9 +236,9 @@ function addManualRow() {
   const div = document.createElement('div');
   div.className = 'form-row';
   div.innerHTML = `
-    <input type="text" class="form-input m-title-name" placeholder="Elder Salviejo" oninput="autoGenerateEmail(this.closest('.form-row'))" onblur="this.value=toTitleCase(this.value); autoGenerateEmail(this.closest('.form-row'))" onkeydown="handleRowKeydown(event, this)"/>
+    <input type="text" class="form-input m-title-name" placeholder="Elder Dela Cruz" oninput="autoGenerateEmail(this.closest('.form-row'))" onblur="this.value=toTitleCase(this.value); autoGenerateEmail(this.closest('.form-row'))" onkeydown="handleRowKeydown(event, this)"/>
     <input type="text" class="form-input m-first-name" placeholder="Mark" oninput="autoGenerateEmail(this.closest('.form-row'))" onblur="this.value=toTitleCase(this.value); autoGenerateEmail(this.closest('.form-row'))" onkeydown="handleRowKeydown(event, this)"/>
-    <input type="text" class="form-input m-email" placeholder="mark.salviejo@missionary.org" oninput="this.dataset.manualEdited='true'" onblur="this.value=sanitizeEmail(this.value)" onkeydown="handleRowKeydown(event, this)"/>
+    <input type="text" class="form-input m-email" placeholder="mark.dela.cruz@missionary.org" oninput="this.dataset.manualEdited='true'" onblur="this.value=sanitizeEmail(this.value)" onkeydown="handleRowKeydown(event, this)"/>
     <button class="btn-danger" onclick="removeRow(this)">✕</button>
   `;
   container.appendChild(div);
@@ -221,15 +263,10 @@ async function pushManualEntries() {
     let firstName = toTitleCase(r.querySelector('.m-first-name').value.trim());
     let email = sanitizeEmail(r.querySelector('.m-email').value.trim());
 
-    let fullName = titleName;
-    if (firstName && !titleName.includes(firstName)) {
-      fullName = `${titleName} ${firstName}`.trim();
-    }
-
     if (email && titleName) {
       entries.push({ 
-        name: fullName, 
-        last_name: titleName.replace(/^(elder|sister)\s+/i, '').trim(), 
+        title_name: titleName,
+        first_name: firstName,
         email, 
         batch: globalBatch 
       });
@@ -237,7 +274,7 @@ async function pushManualEntries() {
   });
 
   if (entries.length === 0) {
-    alert("Please fill out at least one missionary entry with a Title/Name and valid email.");
+    alert("Please fill out at least one missionary entry with a Title & Last Name and valid email.");
     return;
   }
   await sendToServer(entries, 'manual');
@@ -286,19 +323,16 @@ function parseCSV(text) {
     let email = sanitizeEmail(rowObj['email'] || rowObj['email address'] || '');
 
     if (!email && (titleName || firstName)) {
-      const cFirst = cleanFirstName(firstName);
-      const cLast = cleanLastName(titleName);
+      const cFirst = cleanFirstNameForEmail(firstName);
+      const cLast = cleanLastNameForEmail(titleName);
       if (cFirst && cLast) email = `${cFirst}.${cLast}@missionary.org`;
       else if (cLast) email = `${cLast}@missionary.org`;
     }
 
-    let fullName = titleName;
-    if (firstName && !titleName.includes(firstName)) fullName = `${titleName} ${firstName}`.trim();
-
     if (email && titleName) {
       rows.push({ 
-        name: fullName, 
-        last_name: titleName.replace(/^(elder|sister)\s+/i, '').trim(), 
+        title_name: titleName,
+        first_name: firstName,
         email, 
         batch: globalBatch 
       });
@@ -313,6 +347,25 @@ async function pushCsvEntries() {
 }
 
 async function sendToServer(entries, type) {
+  if (!navigator.onLine) {
+    const queue = getOfflineQueue();
+    setOfflineQueue([...queue, ...entries]);
+    updateConnectionStatus();
+
+    showResult(`💾 Offline Mode: ${entries.length} entries saved locally. Will auto-push when online.`, 'loading');
+
+    if (type === 'manual') {
+      document.getElementById('manual-rows').innerHTML = '';
+      addManualRow();
+    } else {
+      parsedCsvData = [];
+      document.getElementById('csv-file').value = '';
+      document.getElementById('file-label').textContent = '📁 Click here to select CSV file or drag and drop';
+      document.getElementById('push-csv-btn').style.display = 'none';
+    }
+    return;
+  }
+
   const btn = type === 'manual' ? document.getElementById('push-manual-btn') : document.getElementById('push-csv-btn');
   const spinner = type === 'manual' ? document.getElementById('manual-spinner') : document.getElementById('csv-spinner');
   const btnText = type === 'manual' ? document.getElementById('manual-btn-text') : document.getElementById('csv-btn-text');
@@ -333,7 +386,6 @@ async function sendToServer(entries, type) {
     if (data.ok) {
       showResult(`🎉 Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message || 'All records successfully imported.'}`, 'success');
       
-      // Auto-clear
       if (type === 'manual') {
         document.getElementById('manual-rows').innerHTML = '';
         addManualRow();
@@ -349,11 +401,39 @@ async function sendToServer(entries, type) {
       showResult(`❌ Error: ${data.error || 'Failed to push records.'}`, 'error');
     }
   } catch (err) {
-    showResult(`❌ Network Error: ${err.message}`, 'error');
+    const queue = getOfflineQueue();
+    setOfflineQueue([...queue, ...entries]);
+    updateConnectionStatus();
+    showResult(`⚠️ Saved to offline queue: ${err.message}`, 'error');
   } finally {
     btn.disabled = false;
     spinner.style.display = 'none';
     btnText.textContent = type === 'manual' ? '🚀 Push All to Turso' : '🚀 Push CSV to Turso';
+  }
+}
+
+async function syncOfflineQueue() {
+  const queue = getOfflineQueue();
+  if (queue.length === 0) return;
+
+  showResult(`🔄 Internet restored! Auto-pushing ${queue.length} offline records to Turso...`, 'loading');
+
+  try {
+    const res = await fetch('/api/push-missionaries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries: queue })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      setOfflineQueue([]);
+      updateConnectionStatus();
+      showResult(`🎉 Auto-Sync Completed!\n• Added from Offline: ${data.added}\n• Skipped: ${data.skipped}`, 'success');
+      await loadDbHistory();
+    }
+  } catch (e) {
+    console.warn("Offline retry postponed:", e.message);
   }
 }
 
@@ -366,6 +446,7 @@ async function loadDbHistory() {
       list.innerHTML = data.history.map(item => `
         <div class="recent-item">
           <div>
+            <span class="badge-cohort">${item.cohort || 'Elder'}</span>
             <strong style="color:var(--text);">${item.name}</strong> 
             <span style="color:var(--muted); font-size:0.68rem;">(${item.email})</span>
           </div>
@@ -376,7 +457,7 @@ async function loadDbHistory() {
       list.innerHTML = `<div style="text-align:center;padding:12px;color:var(--muted);">No pre-listed missionaries found in Turso.</div>`;
     }
   } catch (err) {
-    list.innerHTML = `<div style="text-align:center;padding:12px;color:var(--red);">Failed to load history: ${err.message}</div>`;
+    list.innerHTML = `<div style="text-align:center;padding:12px;color:var(--red);">Failed to load history.</div>`;
   }
 }
 
@@ -389,6 +470,7 @@ function showResult(txt, status) {
 
 window.addEventListener('DOMContentLoaded', () => {
   addManualRow();
+  updateConnectionStatus();
   loadDbHistory();
 });
 </script>

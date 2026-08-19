@@ -20,12 +20,29 @@ async function runSql(sql, args = []) {
   });
 }
 
+// Ensure the new 'names' table exists
+async function ensureTables() {
+  await runSql(`
+    CREATE TABLE IF NOT EXISTS names (
+      email TEXT PRIMARY KEY,
+      title TEXT,
+      first_name TEXT,
+      last_name TEXT,
+      full_name TEXT,
+      batch_month TEXT,
+      created_at TEXT
+    );
+  `);
+}
+
 export default async function handler(req, res) {
-  // GET: Fetch the last 50 pushed missionaries from database
+  await ensureTables();
+
+  // GET: Fetch the last 50 pushed missionaries (without invalid created_at column)
   if (req.method === 'GET') {
     try {
       const logs = await runSql(
-        "SELECT email, name, last_name, batch_month, created_at FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50"
+        "SELECT email, name, last_name, cohort, batch_month FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50"
       );
       return res.status(200).json({ ok: true, history: logs });
     } catch (err) {
@@ -33,7 +50,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // POST: Push batch entries and record persistent logs in Turso
+  // POST: Push batch entries
   if (req.method === 'POST') {
     const { entries = [] } = req.body || {};
     if (!Array.isArray(entries) || entries.length === 0) {
@@ -42,17 +59,32 @@ export default async function handler(req, res) {
 
     let added = 0;
     let skipped = 0;
+    const nowIso = new Date().toISOString();
 
     for (const item of entries) {
       const email = (item.email || '').toLowerCase().trim();
-      const name = (item.name || '').trim();
-      const lastName = (item.last_name || '').trim() || name.replace(/^(elder|sister)\s+/i, '').trim();
-      const batch = (item.batch || 'August 2026').trim();
+      const titleName = (item.title_name || item.name || '').trim(); // e.g. "Elder Dela Cruz"
+      const firstName = (item.first_name || '').trim();              // e.g. "Mark"
+      const batchMonth = (item.batch || 'August 2026').trim();
 
-      if (!email || !name) {
+      if (!email || !titleName) {
         skipped++;
         continue;
       }
+
+      // 1. Auto-extract Cohort (Elder or Sister)
+      let titleCohort = "Elder";
+      if (/^sister\b/i.test(titleName)) {
+        titleCohort = "Sister";
+      } else if (/^elder\b/i.test(titleName)) {
+        titleCohort = "Elder";
+      }
+
+      // 2. Extract clean last name without prefix
+      const lastName = titleName.replace(/^(elder|sister)\s+/i, '').trim();
+
+      // 3. Construct Full Name
+      const fullName = firstName ? `${titleCohort} ${firstName} ${lastName}` : titleName;
 
       try {
         const existing = (await runSql("SELECT email FROM missionaries WHERE LOWER(email) = ?", [email]))[0];
@@ -62,16 +94,23 @@ export default async function handler(req, res) {
         }
 
         const refCode = 'TCRP-' + crypto.randomBytes(2).toString('hex').toUpperCase();
+
+        // Insert into 'missionaries' table
         await runSql(
           "INSERT INTO missionaries (email, name, last_name, cohort, batch_month, referral_code, points, status, is_prelisted) VALUES (?, ?, ?, ?, ?, ?, 0, 'active', 1)",
-          [email, name, lastName, batch, batch, refCode]
+          [email, titleName, lastName, titleCohort, batchMonth, refCode]
         );
 
-        // Record entry log in system_logs
-        await logSystemEvent('INFO', `Imported Pre-listed Missionary: ${name} (${email}) - Batch: ${batch}`);
+        // Insert into 'names' table
+        await runSql(
+          "INSERT OR REPLACE INTO names (email, title, first_name, last_name, full_name, batch_month, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [email, titleCohort, firstName, lastName, fullName, batchMonth, nowIso]
+        );
+
+        await logSystemEvent('INFO', `Imported Pre-listed: ${titleName} (${email}) | Cohort: ${titleCohort} | Batch: ${batchMonth}`);
         added++;
       } catch (err) {
-        console.error("Error inserting missionary:", err);
+        console.error("Error inserting record:", err);
         skipped++;
       }
     }

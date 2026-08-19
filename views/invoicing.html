@@ -29,7 +29,6 @@
   .tab-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;}
   .tab-btn:hover{color:var(--text);border-color:var(--gold);}
   .tab-btn.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.3);}
-  .badge-pending{background:var(--red-dim);color:var(--red);border-radius:20px;padding:2px 7px;font-size:0.65rem;}
 
   .tab-pane{display:none;}
   .tab-pane.active{display:block;}
@@ -58,13 +57,12 @@
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
   .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:6px;cursor:pointer;}
-  .btn-complete{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,0.3);padding:6px 10px;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer;}
 
   .summary-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;}
   .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;margin-bottom:8px;color:var(--muted);}
   .summary-row.total{font-size:1.05rem;font-weight:800;color:var(--gold);border-top:1px solid var(--border);padding-top:10px;margin-top:10px;}
 
-  /* FIXED-SIZE INVOICE PREVIEW CARD CONTAINER */
+  /* FIXED-SIZE INVOICE PREVIEW CARD */
   .preview-wrapper{position:sticky;top:20px;}
   .invoice-preview-card{
     width:420px;
@@ -73,19 +71,14 @@
     box-shadow:0 15px 35px rgba(0,0,0,0.5);font-family:Georgia,serif;position:relative;
     display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;margin:0 auto;
   }
-  .inv-header{display:flex;justify-content:space-between;border-bottom:2px solid #f1e4cb;padding-bottom:10px;margin-bottom:12px;}
-  .inv-title{font-size:1.25rem;font-weight:700;color:#8b1a1a;font-family:'Syne',sans-serif;}
+  .inv-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #f1e4cb;padding-bottom:10px;margin-bottom:12px;}
+  .inv-title-large{font-size:1.8rem;font-weight:900;color:#8b1a1a;font-family:'Syne',sans-serif;letter-spacing:0.05em;line-height:1;}
   .inv-id{font-family:'DM Mono',monospace;font-size:0.72rem;color:#78716c;}
-  .inv-meta{font-size:0.7rem;line-height:1.5;color:#44403c;margin-bottom:12px;font-family:'DM Mono',monospace;}
+  .inv-meta{font-size:0.72rem;line-height:1.55;color:#44403c;margin-bottom:12px;font-family:'DM Mono',monospace;}
   .inv-table-wrap{flex:1;max-height:220px;overflow-y:auto;margin-bottom:12px;}
   .inv-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
   .inv-table th{background:#fdfaf3;border-bottom:1px solid #e7d8b8;padding:6px 8px;text-align:left;color:#78716c;position:sticky;top:0;}
   .inv-table td{padding:6px 8px;border-bottom:1px solid #f5eedf;}
-  .inv-stamp{
-    position:absolute;top:45%;right:15px;transform:rotate(-12deg);
-    border:3px solid #e05c5c;color:#e05c5c;padding:6px 12px;border-radius:6px;
-    font-weight:800;font-size:1.1rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(254,242,242,0.7);
-  }
 
   /* Data Table */
   .data-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
@@ -178,22 +171,22 @@
   </header>
 
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Invoice</button>
-    <button class="tab-btn" onclick="switchNavTab('pending-tab', this)">⏳ Pending Invoices <span class="badge-pending" id="pending-badge">0</span></button>
-    <button class="tab-btn" onclick="switchNavTab('pos-tab', this)">📖 POS Redemption Logbook <span class="badge-pending" id="pos-badge" style="background:var(--blue-dim);color:var(--blue);">0</span></button>
+    <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Generate Invoice</button>
+    <button class="tab-btn" onclick="switchNavTab('history-tab', this)">📜 Invoice History <span id="history-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
+    <button class="tab-btn" onclick="switchNavTab('pos-tab', this)">📖 POS Redemption Logbook <span id="pos-badge" style="background:var(--blue-dim);color:var(--blue);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
     <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Product Settings</button>
   </div>
 
-  <!-- TAB 1: CREATE CASH INVOICE -->
+  <!-- TAB 1: GENERATE INVOICE -->
   <div class="tab-pane active" id="create-tab">
     <div class="grid-layout">
       <div>
         <div class="card">
-          <h3>1. Select Recipient</h3>
+          <h3>1. Customer &amp; Recipient Information</h3>
           
           <div class="mode-switch-row">
             <button class="mode-switch-btn active" id="mode-db-btn" onclick="switchRecipientMode('db')">🔍 Search Registered</button>
-            <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom / Walk-in Name</button>
+            <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom / Non-Listed</button>
           </div>
 
           <!-- Mode A: From Database -->
@@ -205,33 +198,32 @@
                 <option value="">-- Choose Missionary --</option>
               </select>
             </div>
-            <div id="missionary-info" style="display:none;background:var(--surface2);padding:10px 14px;border-radius:6px;font-size:0.72rem;line-height:1.6;border:1px solid var(--border);">
-              <div>👤 <strong>Name:</strong> <span id="info-name">—</span></div>
-              <div>✉️ <strong>Email:</strong> <span id="info-email">—</span></div>
-              <div>📢 <strong>Batch:</strong> <span id="info-batch">—</span></div>
+            <div class="form-group">
+              <label>Phone Number (Optional)</label>
+              <input type="text" class="form-input" id="db-phone-input" placeholder="e.g. 09123456789" oninput="handleDbPhoneInput()"/>
             </div>
           </div>
 
-          <!-- Mode B: Custom Name / Walk-in Customer -->
+          <!-- Mode B: Custom Name -->
           <div id="recipient-custom-box" style="display:none;">
             <div class="form-group">
               <label>Customer Full Name / Title</label>
               <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Sister Maria Santos or John Doe" oninput="handleCustomInput()"/>
             </div>
             <div class="form-group">
-              <label>Email Address (Optional / for Receipt)</label>
-              <input type="email" class="form-input" id="custom-email-input" placeholder="customer@example.com (or leave blank)" oninput="handleCustomInput()"/>
+              <label>Email Address (Optional for e-Receipt)</label>
+              <input type="email" class="form-input" id="custom-email-input" placeholder="customer@example.com" oninput="handleCustomInput()"/>
             </div>
             <div class="form-group">
-              <label>Batch / Location / Note</label>
-              <input type="text" class="form-input" id="custom-batch-input" placeholder="e.g. Walk-in or August 2026" oninput="handleCustomInput()"/>
+              <label>Phone Number</label>
+              <input type="text" class="form-input" id="custom-phone-input" placeholder="e.g. 09123456789" oninput="handleCustomInput()"/>
             </div>
           </div>
         </div>
 
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3>2. Items &amp; Auto-Solved Pricing</h3>
+            <h3>2. Items &amp; Pricing</h3>
             <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addItemRow()">+ Add Item</button>
           </div>
 
@@ -277,7 +269,7 @@
           </div>
 
           <div style="margin-top:16px;">
-            <button class="btn" id="generate-btn" style="width:100%;justify-content:center;" onclick="submitInvoice()">🧾 Generate &amp; Save Invoice (Pending)</button>
+            <button class="btn" id="generate-btn" style="width:100%;justify-content:center;" onclick="submitInvoice()">🧾 Finalize &amp; Generate Invoice</button>
           </div>
         </div>
       </div>
@@ -286,14 +278,14 @@
       <div class="preview-wrapper">
         <div class="card" style="padding:16px;">
           <h3 style="margin-bottom:8px;">Live Invoice Card</h3>
-          <p style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;">Standardized fixed proportions.</p>
+          <p style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;">Fixed proportions for clean image export.</p>
 
           <div class="invoice-preview-card" id="invoice-node">
             <div>
               <div class="inv-header">
                 <div>
-                  <div class="inv-title">✨ Timeless Creations ✨</div>
-                  <div style="font-size:0.7rem;color:#b8955a;font-style:italic;">Official Missionary Cash Invoice</div>
+                  <div class="inv-title-large">INVOICE</div>
+                  <div style="font-size:0.72rem;color:#b8955a;font-style:italic;margin-top:2px;">✨ Timeless Creations ✨</div>
                 </div>
                 <div style="text-align:right;">
                   <div class="inv-id" id="prev-inv-id">INV-DRAFT</div>
@@ -303,8 +295,8 @@
 
               <div class="inv-meta">
                 <div><strong>Bill To:</strong> <span id="prev-name">Elder / Sister [Name]</span></div>
-                <div><strong>Email:</strong> <span id="prev-email">missionary@missionary.org</span></div>
-                <div><strong>Cohort / Batch:</strong> <span id="prev-batch">August 2026</span></div>
+                <div><strong>Email:</strong> <span id="prev-email">customer@example.com</span></div>
+                <div><strong>Phone:</strong> <span id="prev-phone">—</span></div>
               </div>
 
               <div class="inv-table-wrap">
@@ -334,12 +326,11 @@
                   <span>Discount:</span>
                   <span id="prev-discount">-₱0.00</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:700;color:#8b1a1a;border-top:1px solid #f1e4cb;padding-top:5px;">
+                <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:800;color:#8b1a1a;border-top:1px solid #f1e4cb;padding-top:6px;">
                   <span>Total Amount:</span>
                   <span id="prev-total">₱0.00</span>
                 </div>
               </div>
-              <div class="inv-stamp" id="prev-stamp">PENDING</div>
             </div>
           </div>
 
@@ -352,13 +343,13 @@
     </div>
   </div>
 
-  <!-- TAB 2: PENDING INVOICES (WITH DELETE ABILITY) -->
-  <div class="tab-pane" id="pending-tab">
+  <!-- TAB 2: INVOICE HISTORY -->
+  <div class="tab-pane" id="history-tab">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
-          <h3>Pending Invoices (Awaiting Fulfillment &amp; Receipt Email)</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Click <strong>Complete</strong> to finalize, or <strong>Delete</strong> to remove/void the invoice.</p>
+          <h3>Invoice History &amp; Records</h3>
+          <p style="font-size:0.68rem;color:var(--muted);">All issued cash invoices.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
       </div>
@@ -368,11 +359,11 @@
           <thead>
             <tr>
               <th>Invoice ID</th>
-              <th>Missionary / Customer</th>
+              <th>Customer / Missionary</th>
               <th>Email</th>
+              <th>Phone</th>
               <th>Total (₱)</th>
-              <th>Status</th>
-              <th>Date Created</th>
+              <th>Date</th>
               <th style="text-align:center;">Action</th>
             </tr>
           </thead>
@@ -450,7 +441,7 @@ let missionaries = [];
 let cashInvoices = [];
 let posOrders = [];
 let productCatalog = [];
-let recipientMode = 'db'; // 'db' or 'custom'
+let recipientMode = 'db';
 
 function showToast(title, msg, type = 'success') {
   const tc = document.getElementById('toast-container');
@@ -532,14 +523,19 @@ function switchRecipientMode(mode) {
   }
 }
 
+function handleDbPhoneInput() {
+  const phone = document.getElementById('db-phone-input').value.trim();
+  document.getElementById('prev-phone').textContent = phone || '—';
+}
+
 function handleCustomInput() {
   const name = document.getElementById('custom-name-input').value.trim() || 'Customer [Name]';
   const email = document.getElementById('custom-email-input').value.trim() || 'Walk-in / Cash';
-  const batch = document.getElementById('custom-batch-input').value.trim() || 'Direct Sale';
+  const phone = document.getElementById('custom-phone-input').value.trim() || '—';
 
   document.getElementById('prev-name').textContent = name;
   document.getElementById('prev-email').textContent = email;
-  document.getElementById('prev-batch').textContent = batch;
+  document.getElementById('prev-phone').textContent = phone;
 }
 
 function renderPosTable() {
@@ -653,21 +649,16 @@ function filterMissionaryDropdown(query) {
 function handleMissionarySelect() {
   const email = document.getElementById('missionary-select').value;
   const m = missionaries.find(x => x.email === email);
+  const phone = document.getElementById('db-phone-input').value.trim();
 
   if (m) {
-    document.getElementById('missionary-info').style.display = 'block';
-    document.getElementById('info-name').textContent = m.name;
-    document.getElementById('info-email').textContent = m.email;
-    document.getElementById('info-batch').textContent = m.batch_month || 'Pre-listed';
-
     document.getElementById('prev-name').textContent = m.name;
     document.getElementById('prev-email').textContent = m.email;
-    document.getElementById('prev-batch').textContent = m.batch_month || 'August 2026';
+    document.getElementById('prev-phone').textContent = phone || '—';
   } else {
-    document.getElementById('missionary-info').style.display = 'none';
     document.getElementById('prev-name').textContent = "Elder / Sister [Name]";
-    document.getElementById('prev-email').textContent = "missionary@missionary.org";
-    document.getElementById('prev-batch').textContent = "August 2026";
+    document.getElementById('prev-email').textContent = "customer@example.com";
+    document.getElementById('prev-phone').textContent = "—";
   }
   recalculateTotal();
 }
@@ -759,6 +750,7 @@ function recalculateTotal() {
 async function submitInvoice() {
   let customerName = "";
   let customerEmail = "";
+  let customerPhone = "";
 
   if (recipientMode === 'db') {
     const email = document.getElementById('missionary-select').value;
@@ -769,9 +761,11 @@ async function submitInvoice() {
     const m = missionaries.find(x => x.email === email);
     customerName = m ? m.name : 'Missionary';
     customerEmail = email;
+    customerPhone = document.getElementById('db-phone-input').value.trim();
   } else {
     customerName = document.getElementById('custom-name-input').value.trim();
     customerEmail = document.getElementById('custom-email-input').value.trim();
+    customerPhone = document.getElementById('custom-phone-input').value.trim();
     if (!customerName) {
       showToast("Missing Name", "Please enter the customer's name.", "error");
       return;
@@ -804,7 +798,7 @@ async function submitInvoice() {
 
   const btn = document.getElementById('generate-btn');
   btn.disabled = true;
-  btn.textContent = 'Saving Invoice...';
+  btn.textContent = 'Generating Invoice...';
 
   try {
     const res = await fetch('/api/invoicing', {
@@ -814,6 +808,7 @@ async function submitInvoice() {
         action: 'create_invoice',
         email: customerEmail,
         name: customerName,
+        phone: customerPhone,
         items,
         subtotal,
         discountType,
@@ -826,7 +821,7 @@ async function submitInvoice() {
 
     if (data.ok) {
       document.getElementById('prev-inv-id').textContent = data.invoiceId;
-      showToast("Invoice Saved", `Created ${data.invoiceId} in PENDING status.`, "success");
+      showToast("Invoice Generated", `${data.invoiceId} created successfully!`, "success");
       await loadData();
     } else {
       showToast("Error", data.error, "error");
@@ -835,80 +830,38 @@ async function submitInvoice() {
     showToast("Error", err.message, "error");
   } finally {
     btn.disabled = false;
-    btn.textContent = '🧾 Generate & Save Invoice (Pending)';
+    btn.textContent = '🧾 Finalize & Generate Invoice';
   }
 }
 
 function renderInvoicesTable() {
   const tbody = document.getElementById('invoices-tbody');
-  const pendingCount = cashInvoices.filter(i => i.status === 'PENDING').length;
-  document.getElementById('pending-badge').textContent = pendingCount;
+  document.getElementById('history-badge').textContent = cashInvoices.length;
 
   if (cashInvoices.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">No invoices recorded yet.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = cashInvoices.map(inv => {
-    const isPending = inv.status === 'PENDING';
-    return `
-      <tr>
-        <td style="font-weight:bold;color:var(--gold);">${inv.invoice_id}</td>
-        <td style="font-weight:600;">${inv.name}</td>
-        <td style="color:var(--muted);">${inv.email || '—'}</td>
-        <td style="font-weight:bold;">₱${Number(inv.total_amount).toFixed(2)}</td>
-        <td>
-          <span style="padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:700;background:${isPending ? 'var(--red-dim);color:var(--red);' : 'var(--green-dim);color:var(--green);'}">
-            ${inv.status}
-          </span>
-        </td>
-        <td style="color:var(--muted);font-size:0.65rem;">${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-        <td style="text-align:center;white-space:nowrap;">
-          ${isPending ? `
-            <button class="btn-complete" onclick="promptCompleteInvoice('${inv.invoice_id}', '${inv.email || ''}', '${inv.name}')">✓ Complete</button>
-            <button class="btn-danger" style="padding:5px 8px;font-size:0.68rem;margin-left:4px;" onclick="promptDeleteInvoice('${inv.invoice_id}', '${inv.name}')">🗑️</button>
-          ` : `
-            <span style="color:var(--muted);font-size:0.65rem;margin-right:6px;">Receipt Sent</span>
-            <button class="btn-danger" style="padding:5px 8px;font-size:0.68rem;" onclick="promptDeleteInvoice('${inv.invoice_id}', '${inv.name}')">🗑️</button>
-          `}
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function promptCompleteInvoice(invoiceId, email, name) {
-  const desc = email && email.includes('@')
-    ? `Marking this invoice as COMPLETED will automatically dispatch the official cash receipt email to ${name} (${email}).`
-    : `Mark Invoice ${invoiceId} for ${name} as COMPLETED?`;
-
-  showConfirmDialog(`Complete Invoice ${invoiceId}?`, desc, () => executeCompleteInvoice(invoiceId));
-}
-
-async function executeCompleteInvoice(invoiceId) {
-  try {
-    const res = await fetch('/api/invoicing', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'complete_invoice', invoice_id: invoiceId })
-    });
-    const data = await res.json();
-
-    if (data.ok) {
-      showToast("Completed", data.message, "success");
-      await loadData();
-    } else {
-      showToast("Error", data.error, "error");
-    }
-  } catch (err) {
-    showToast("Error", err.message, "error");
-  }
+  tbody.innerHTML = cashInvoices.map(inv => `
+    <tr>
+      <td style="font-weight:bold;color:var(--gold);">${inv.invoice_id}</td>
+      <td style="font-weight:600;">${inv.name}</td>
+      <td style="color:var(--muted);">${inv.email || '—'}</td>
+      <td style="color:var(--muted);">${inv.phone || '—'}</td>
+      <td style="font-weight:bold;">₱${Number(inv.total_amount).toFixed(2)}</td>
+      <td style="color:var(--muted);font-size:0.65rem;">${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
+      <td style="text-align:center;">
+        <button class="btn-danger" style="padding:5px 8px;font-size:0.68rem;" onclick="promptDeleteInvoice('${inv.invoice_id}', '${inv.name}')">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function promptDeleteInvoice(invoiceId, name) {
   showConfirmDialog(
     `Delete Invoice ${invoiceId}?`,
-    `Are you sure you want to permanently remove and void the invoice for ${name}?`,
+    `Are you sure you want to permanently remove and delete the invoice record for ${name}?`,
     () => executeDeleteInvoice(invoiceId)
   );
 }
@@ -1004,14 +957,16 @@ function downloadInvoiceImage() {
 function copyInvoiceText() {
   const invId = document.getElementById('prev-inv-id').textContent;
   const name = document.getElementById('prev-name').textContent;
+  const phone = document.getElementById('prev-phone').textContent;
   const total = document.getElementById('prev-total').textContent;
   const rows = Array.from(document.querySelectorAll('.item-row')).map(r => {
     return `• ${r.querySelector('.item-qty').value}x ${r.querySelector('.item-select').value} (${r.querySelector('.item-subtotal').textContent})`;
   }).join('\n');
 
-  const text = `🧾 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐈𝐍𝐕𝐎𝐈𝐂𝐄\n\n` +
+  const text = `🧾 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐈𝐍𝐕𝐎𝐈𝐂𝐄\n\n` +
                `Invoice Ref: ${invId}\n` +
                `Recipient: ${name}\n` +
+               `Phone: ${phone}\n` +
                `Date: ${document.getElementById('prev-date').textContent}\n\n` +
                `Items:\n${rows}\n\n` +
                `Subtotal: ${document.getElementById('prev-subtotal').textContent}\n` +

@@ -59,9 +59,18 @@
   .recent-item{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;}
   .badge-cohort{background:rgba(255,255,255,0.08);color:var(--text);padding:2px 6px;border-radius:4px;font-size:0.62rem;margin-right:6px;}
   .badge-batch{background:var(--gold-dim);color:var(--gold2);padding:2px 8px;border-radius:4px;font-size:0.65rem;}
+
+  /* Toast Popup System */
+  #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:99999;}
+  .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--gold);padding:12px 16px;border-radius:8px;font-size:0.72rem;min-width:240px;box-shadow:0 8px 30px rgba(0,0,0,0.6);animation:slideIn 0.3s ease;}
+  .toast.success{border-left-color:var(--green);}
+  .toast.error{border-left-color:var(--red);}
+  @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
 </style>
 </head>
 <body>
+<div id="toast-container"></div>
+
 <div class="container">
   <header>
     <h1>Missionary Pusher &amp; Importer</h1>
@@ -136,6 +145,15 @@
 <script>
 let parsedCsvData = [];
 const OFFLINE_QUEUE_KEY = 'tcrp_offline_queue';
+
+function showToast(title, msg, type = 'success') {
+  const tc = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<strong>${title}</strong><div style="color:var(--muted);margin-top:2px">${msg}</div>`;
+  tc.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
 
 function getOfflineQueue() {
   try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch (e) { return []; }
@@ -267,7 +285,7 @@ async function pushManualEntries() {
   });
 
   if (entries.length === 0) {
-    alert("Please fill out at least one missionary entry with a Title & Last Name and valid email.");
+    showToast("Incomplete Form", "Please fill out at least one missionary with Title & Last Name and Email.", "error");
     return;
   }
   await sendToServer(entries, 'manual');
@@ -283,8 +301,9 @@ function handleFileSelect(event) {
     if (parsedCsvData.length > 0) {
       document.getElementById('push-csv-btn').style.display = 'inline-flex';
       showResult(`Parsed ${parsedCsvData.length} records from CSV. Ready to push.`, 'loading');
+      showToast("CSV Parsed", `Ready to import ${parsedCsvData.length} records.`, "success");
     } else {
-      alert("Could not parse valid records from CSV file.");
+      showToast("CSV Error", "Could not parse valid records from CSV file.", "error");
     }
   };
   reader.readAsText(file);
@@ -346,6 +365,7 @@ async function sendToServer(entries, type) {
     updateConnectionStatus();
 
     showResult(`💾 Offline Mode: ${entries.length} entries saved locally. Will auto-push when online.`, 'loading');
+    showToast("Offline Mode", `${entries.length} entries queued locally.`, "success");
 
     if (type === 'manual') {
       document.getElementById('manual-rows').innerHTML = '';
@@ -378,7 +398,8 @@ async function sendToServer(entries, type) {
 
     if (data.ok) {
       showResult(`🎉 Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message || 'All records successfully imported.'}`, 'success');
-      
+      showToast("Success", `Added ${data.added} entries to Turso!`, "success");
+
       if (type === 'manual') {
         document.getElementById('manual-rows').innerHTML = '';
         addManualRow();
@@ -392,12 +413,14 @@ async function sendToServer(entries, type) {
       await loadDbHistory();
     } else {
       showResult(`❌ Error: ${data.error || 'Failed to push records.'}`, 'error');
+      showToast("Push Failed", data.error || "Failed to push records.", "error");
     }
   } catch (err) {
     const queue = getOfflineQueue();
     setOfflineQueue([...queue, ...entries]);
     updateConnectionStatus();
     showResult(`⚠️ Saved to offline queue: ${err.message}`, 'error');
+    showToast("Offline Fallback", "Saved to offline queue.", "error");
   } finally {
     btn.disabled = false;
     spinner.style.display = 'none';
@@ -408,8 +431,6 @@ async function sendToServer(entries, type) {
 async function syncOfflineQueue() {
   const queue = getOfflineQueue();
   if (queue.length === 0) return;
-
-  showResult(`🔄 Internet restored! Auto-pushing ${queue.length} offline records to Turso...`, 'loading');
 
   try {
     const res = await fetch('/api/push-missionaries', {
@@ -422,7 +443,7 @@ async function syncOfflineQueue() {
     if (data.ok) {
       setOfflineQueue([]);
       updateConnectionStatus();
-      showResult(`🎉 Auto-Sync Completed!\n• Added from Offline: ${data.added}\n• Skipped: ${data.skipped}`, 'success');
+      showToast("Auto-Sync Complete", `Pushed ${data.added} offline records to Turso!`, "success");
       await loadDbHistory();
     }
   } catch (e) {

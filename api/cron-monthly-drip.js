@@ -4,6 +4,7 @@ import { queryTurso, unwrap } from '../lib/db.js';
 import { logSystemEvent } from '../lib/logger.js';
 
 const BREVO_KEY = (process.env.BREVO_API_KEY || '').trim();
+const BATCH_SIZE = 35; // Process 35 emails per run to stay well clear of timeouts
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -34,28 +35,22 @@ function renderMonthlyTemplate(missionary, monthNum) {
     console.error("Failed to read templates/monthly-drip.html:", err.message);
   }
 
-  // Fallback if file missing
   if (!template) {
     template = `<div style="padding:20px;"><h2>Month {{month}}</h2><p>{{Msg}}</p></div>`;
   }
 
-  // Parse Name (e.g. "Elder Smith" -> Suffix: "Elder", lastName: "Smith")
   const fullName = missionary.name || "Elder Missionary";
   const nameParts = fullName.split(' ');
   const Suffix = nameParts[0] || 'Elder';
   const lastName = nameParts.slice(1).join(' ') || fullName;
 
-  // Format Display Date (e.g., "August 2026")
   const options = { month: 'long', year: 'numeric' };
   const DisplayDate = new Date().toLocaleDateString('en-US', options);
 
-  // Pull dynamic message & quote for the specific month from DB messages table if available
-  // Fallback content if message not explicitly stored in messages table
   const Msg = missionary.custom_msg || `Congratulations on serving faithfully for ${monthNum} month(s)! Your dedication brings light and hope to many lives across the Philippines.`;
   const MsgAuthor = missionary.quote || `"Trust in the Lord with all thine heart; and lean not unto thine own understanding."`;
   const Author = missionary.theme || `Proverbs 3:5`;
 
-  // Replace all placeholders
   return template
     .replace(/{{DisplayDate}}/g, DisplayDate)
     .replace(/{{Suffix}}/g, Suffix)
@@ -79,7 +74,7 @@ async function sendBrevoEmail(recipientEmail, recipientName, subject, html) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        sender: { name: "Timeless Creations", email: "support@timelesscreationsrp.com" },
+        sender: { name: "Timeless Creations", email: "noreply.timelesscreations.ph@gmail.com" },
         to: [{ email: recipientEmail, name: recipientName }],
         subject: subject,
         htmlContent: html
@@ -92,25 +87,52 @@ async function sendBrevoEmail(recipientEmail, recipientName, subject, html) {
   }
 }
 
+export const config = {
+  maxDuration: 60 // Allow up to 60 seconds execution window for safety on Vercel
+};
+
 export default async function handler(req, res) {
   const now = new Date();
+  const todayDateStr = now.toISOString().slice(0, 10); // e.g., '2026-08-19'
   const nowIso = now.toISOString();
 
+  // Check if today's quota batch has already run and completed
+  await runSql(`
+    CREATE TABLE IF NOT EXISTS system_config (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
+
+  const lastRunRecord = (await runSql("SELECT value FROM system_config WHERE key = 'last_drip_date'"))[0];
+  if (lastRunRecord && lastRunRecord.value === todayDateStr) {
+    return res.status(200).json({
+      ok: true,
+      message: "Daily drip quota already completed for today. Execution skipped to protect quota limits."
+    });
+  }
+
+  // Fetch only a safe chunk of eligible missionaries per run (e.g. 35 users)
   const eligibleMissionaries = await runSql(`
     SELECT email, name, points, referral_code, months_sent, max_months, last_sent_at, next_send_date
     FROM missionaries
     WHERE status = 'active'
       AND (months_sent < max_months OR max_months IS NULL)
       AND (next_send_date IS NULL OR next_send_date <= ?)
-  `, [nowIso]);
+    LIMIT ?
+  `, [nowIso, BATCH_SIZE]);
+
+  if (eligibleMissionaries.length === 0) {
+    // Mark today as fully completed since no more users need emails today
+    await runSql("INSERT OR REPLACE INTO system_config (key, value) VALUES ('last_drip_date', ?)", [todayDateStr]);
+    return res.status(200).json({ ok: true, message: "No more eligible missionaries to process today." });
+  }
 
   let sentCount = 0;
   let failedCount = 0;
 
   for (const m of eligibleMissionaries) {
     const currentMonthNum = (m.months_sent || 0) + 1;
-    
-    // Also fetch message content for this specific month from DB messages table
     const msgRecord = (await runSql("SELECT * FROM messages WHERE month = ?", [currentMonthNum]))[0] || {};
     m.custom_msg = msgRecord.message;
     m.quote = msgRecord.scripture;
@@ -140,12 +162,26 @@ export default async function handler(req, res) {
     }
   }
 
-  await logSystemEvent('INFO', `Monthly Drip Executed: ${sentCount} sent, ${failedCount} failed.`);
+  // Check if any remaining eligible missionaries are left for today
+  const remainingCheck = (await runSql(`
+    SELECT COUNT(*) as c FROM missionaries
+    WHERE status = 'active'
+      AND (months_sent < max_months OR max_months IS NULL)
+      AND (next_send_date IS NULL OR next_send_date <= ?)
+  `, [nowIso]))[0]?.c || 0;
+
+  if (remainingCheck === 0) {
+    // Lock execution for today so it doesn't run again until tomorrow
+    await runSql("INSERT OR REPLACE INTO system_config (key, value) VALUES ('last_drip_date', ?)", [todayDateStr]);
+  }
+
+  await logSystemEvent('INFO', `Drip Chunk Executed: Sent ${sentCount}, Failed ${failedCount}. Remaining today: ${remainingCheck}`);
 
   return res.status(200).json({
     ok: true,
-    sent: sentCount,
-    failed: failedCount,
-    total_eligible: eligibleMissionaries.length
+    batch_sent: sentCount,
+    batch_failed: failedCount,
+    remaining_in_queue: remainingCheck,
+    daily_quota_locked: remainingCheck === 0
   });
 }

@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { queryTurso, unwrap } from '../lib/db.js';
 import { logSystemEvent } from '../lib/logger.js';
 
@@ -21,38 +23,49 @@ async function runSql(sql, args = []) {
   });
 }
 
-function getDripHtml(name, monthNumber, points, referralCode) {
-  // Check if custom template variable exists
-  if (process.env.MONTHLY_DRIP_HTML) {
-    return process.env.MONTHLY_DRIP_HTML
-      .replace(/{{name}}/g, name)
-      .replace(/{{month}}/g, String(monthNumber))
-      .replace(/{{points}}/g, String(points))
-      .replace(/{{referral_code}}/g, referralCode);
+function renderMonthlyTemplate(missionary, monthNum) {
+  let template = "";
+  try {
+    const filePath = path.join(process.cwd(), 'templates', 'monthly-drip.html');
+    if (fs.existsSync(filePath)) {
+      template = fs.readFileSync(filePath, 'utf8');
+    }
+  } catch (err) {
+    console.error("Failed to read templates/monthly-drip.html:", err.message);
   }
 
-  // Default clean drip template
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #333; border: 1px solid #e0e0e0; border-radius: 8px;">
-      <h2 style="color: #c9a84c; margin-top: 0;">Timeless Creations — Monthly Missionary Inspiration</h2>
-      <p>Dear <strong>${name}</strong>,</p>
-      <p>Congratulations on serving faithfully! This is your <strong>Month ${monthNumber}</strong> missionary reminder.</p>
-      
-      <div style="background: #fdfaf3; border-left: 4px solid #c9a84c; padding: 14px; margin: 18px 0;">
-        <p style="margin: 0; font-style: italic; color: #555;">"Trust in the Lord with all thine heart; and lean not unto thine own understanding." — Proverbs 3:5</p>
-      </div>
+  // Fallback if file missing
+  if (!template) {
+    template = `<div style="padding:20px;"><h2>Month {{month}}</h2><p>{{Msg}}</p></div>`;
+  }
 
-      <div style="background: #f5f5f7; padding: 14px; border-radius: 6px; margin-bottom: 20px;">
-        <p style="margin: 0 0 6px 0;">⭐ <strong>Your Rewards Status:</strong></p>
-        <p style="margin: 0;">• Current Available Points: <strong>${points} Pts</strong></p>
-        <p style="margin: 4px 0 0 0;">• Your Referral Code: <strong>${referralCode}</strong></p>
-      </div>
+  // Parse Name (e.g. "Elder Smith" -> Suffix: "Elder", lastName: "Smith")
+  const fullName = missionary.name || "Elder Missionary";
+  const nameParts = fullName.split(' ');
+  const Suffix = nameParts[0] || 'Elder';
+  const lastName = nameParts.slice(1).join(' ') || fullName;
 
-      <p style="font-size: 13px; color: #777;">Share your code with fellow missionaries. When they join and verify, you both receive +1 point to redeem missionary gear!</p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;"/>
-      <p style="font-size: 11px; color: #999; text-align: center;">Timeless Creations Rewards Program • Exclusively for Missionaries</p>
-    </div>
-  `;
+  // Format Display Date (e.g., "August 2026")
+  const options = { month: 'long', year: 'numeric' };
+  const DisplayDate = new Date().toLocaleDateString('en-US', options);
+
+  // Pull dynamic message & quote for the specific month from DB messages table if available
+  // Fallback content if message not explicitly stored in messages table
+  const Msg = missionary.custom_msg || `Congratulations on serving faithfully for ${monthNum} month(s)! Your dedication brings light and hope to many lives across the Philippines.`;
+  const MsgAuthor = missionary.quote || `"Trust in the Lord with all thine heart; and lean not unto thine own understanding."`;
+  const Author = missionary.theme || `Proverbs 3:5`;
+
+  // Replace all placeholders
+  return template
+    .replace(/{{DisplayDate}}/g, DisplayDate)
+    .replace(/{{Suffix}}/g, Suffix)
+    .replace(/{{lastName}}/g, lastName)
+    .replace(/{{Msg}}/g, Msg)
+    .replace(/{{MsgAuthor}}/g, MsgAuthor)
+    .replace(/{{Author}}/g, Author)
+    .replace(/{{month}}/g, String(monthNum))
+    .replace(/{{points}}/g, String(missionary.points || 0))
+    .replace(/{{referral_code}}/g, missionary.referral_code || 'TCRP');
 }
 
 async function sendBrevoEmail(recipientEmail, recipientName, subject, html) {
@@ -83,8 +96,6 @@ export default async function handler(req, res) {
   const now = new Date();
   const nowIso = now.toISOString();
 
-  // Find all active missionaries who haven't exceeded their max_months
-  // and whose next_send_date is either NULL or in the past/today
   const eligibleMissionaries = await runSql(`
     SELECT email, name, points, referral_code, months_sent, max_months, last_sent_at, next_send_date
     FROM missionaries
@@ -98,18 +109,23 @@ export default async function handler(req, res) {
 
   for (const m of eligibleMissionaries) {
     const currentMonthNum = (m.months_sent || 0) + 1;
-    const subject = `Timeless Creations: Month ${currentMonthNum} Missionary Inspiration & Rewards`;
-    const htmlContent = getDripHtml(m.name || "Missionary", currentMonthNum, m.points || 0, m.referral_code || "TCRP");
+    
+    // Also fetch message content for this specific month from DB messages table
+    const msgRecord = (await runSql("SELECT * FROM messages WHERE month = ?", [currentMonthNum]))[0] || {};
+    m.custom_msg = msgRecord.message;
+    m.quote = msgRecord.scripture;
+    m.theme = msgRecord.theme;
+
+    const subject = `Timeless Creations: Month ${currentMonthNum} Missionary Inspiration`;
+    const htmlContent = renderMonthlyTemplate(m, currentMonthNum);
 
     const isSuccess = await sendBrevoEmail(m.email, m.name || "Missionary", subject, htmlContent);
 
     if (isSuccess) {
-      // Calculate next send date: +30 days from now
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + 30);
       const nextDateIso = nextDate.toISOString();
 
-      // Update missionary: increment months_sent, set last_sent_at and next_send_date (NO POINT INFLATION)
       await runSql(`
         UPDATE missionaries
         SET months_sent = months_sent + 1,
@@ -124,7 +140,7 @@ export default async function handler(req, res) {
     }
   }
 
-  await logSystemEvent('INFO', `Monthly Drip Executed: ${sentCount} sent, ${failedCount} failed, ${eligibleMissionaries.length} eligible.`);
+  await logSystemEvent('INFO', `Monthly Drip Executed: ${sentCount} sent, ${failedCount} failed.`);
 
   return res.status(200).json({
     ok: true,

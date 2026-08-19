@@ -24,7 +24,6 @@ async function runSql(sql, args = []) {
   });
 }
 
-// Generate referral code matching the A#A#A# format (Letter-Digit-Letter-Digit-Letter-Digit)
 function generatePatternCode() {
   const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   const digits = '23456789';
@@ -170,14 +169,20 @@ async function sendDashboardCatalog(psid, user) {
 
 function sendInviteInstructions(psid, user) {
   const refCode = user?.referral_code || "A1B2C3";
+  const messengerBase = (process.env.MESSENGER_LINK || 'https://m.me/SalviejoMarkAllen').replace(/\/$/, '');
+  const referralLink = `${messengerBase}?ref=${refCode}`;
+
   const inviteText = 
 `📢 HOW TO INVITE MISSIONARIES
 
 1️⃣ Give them your Referral Code:
 👉 ${refCode}
 
-2️⃣ Or share this direct invitation message:
-"Mabuhay Elder/Sister! Join the Timeless Creations Rewards Program to earn points for missionary gear. Start a chat here: https://m.me/SalviejoMarkAllen and use my invitation code: ${refCode}"
+2️⃣ Or share this direct invitation link:
+👉 ${referralLink}
+
+3️⃣ Sample invite message to copy & send:
+"Mabuhay Elder/Sister! Join the Timeless Creations Rewards Program to earn points for missionary gear. Start here: ${referralLink} and use my invitation code: ${refCode}"
 
 🎁 Both of you receive +1 Point as soon as they complete their email verification!`;
 
@@ -250,15 +255,36 @@ export default async function handler(req, res) {
           const msg = rawInput.toLowerCase();
           const cleanDigits = rawInput.replace(/\D/g, '');
 
+          // Check if referral code was passed via m.me link param (e.g., event.referral or event.postback.referral)
+          const refParam = event.referral?.ref || event.postback?.referral?.ref || null;
+
           const userByPsid = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
           const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
 
           // 1. Initial Greeting / Get Started
-          if (msg === 'get_started' || msg.includes('get started')) {
+          if (msg === 'get_started' || msg.includes('get started') || refParam) {
             if (userByPsid) {
               await sendDashboardCatalog(psid, userByPsid);
               continue;
             }
+
+            // If user arrived directly from m.me referral link with code
+            if (refParam) {
+              const codeCheck = refParam.trim().toUpperCase();
+              const referrer = (await runSql("SELECT * FROM missionaries WHERE UPPER(referral_code) = ?", [codeCheck]))[0];
+              if (referrer || codeCheck === 'TCRP') {
+                await runSql("INSERT OR REPLACE INTO sessions (psid, state, invite_code) VALUES (?, 'AWAITING_REGISTRATION', ?)", [psid, codeCheck]);
+                await callSendAPI(psid, 
+                  `🌟 Welcome to Timeless Creations Rewards Program!\n\n` +
+                  `✅ Verified Referral Code: ${codeCheck}\n\n` +
+                  `Please send your registration in ONE message:\n\n` +
+                  `Elder/Sister [Last Name]\n` +
+                  `yourname@missionary.org`
+                );
+                continue;
+              }
+            }
+
             await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_REFERRAL_CODE')", [psid]);
             await callSendAPI(psid, 
               "🌟 Welcome to Timeless Creations Rewards Program!\n\n" +
@@ -272,7 +298,6 @@ export default async function handler(req, res) {
           if (session?.state === 'AWAITING_REFERRAL_CODE') {
             const inputCode = rawInput.trim().toUpperCase();
             
-            // Query database to check if this referral code actually exists
             const referrer = (await runSql("SELECT * FROM missionaries WHERE UPPER(referral_code) = ?", [inputCode]))[0];
             const isValidMaster = (inputCode === 'TCRP');
 
@@ -285,7 +310,6 @@ export default async function handler(req, res) {
               continue;
             }
 
-            // Valid code confirmed -> Advance to registration step
             await runSql("UPDATE sessions SET state = 'AWAITING_REGISTRATION', invite_code = ? WHERE psid = ?", [inputCode, psid]);
             await callSendAPI(psid, 
               `✅ Invitation Code Verified!\n\n` +
@@ -328,7 +352,6 @@ export default async function handler(req, res) {
               const existingUser = (await runSql("SELECT * FROM missionaries WHERE LOWER(email) = ?", [targetEmail]))[0];
 
               if (existingUser) {
-                // Existing user welcome back
                 const updatedPoints = (existingUser.points || 0) + 1;
                 await runSql("UPDATE missionaries SET psid = ?, points = points + 1, status = 'active' WHERE LOWER(email) = ?", [psid, targetEmail]);
                 await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
@@ -337,7 +360,6 @@ export default async function handler(req, res) {
                 await callSendAPI(psid, `🎉 Welcome Back, ${existingUser.name}!\nAccount confirmed (+1 Point awarded).`);
                 await sendDashboardCatalog(psid, refreshedUser);
               } else {
-                // New user registration: Generate A#A#A# referral code
                 const myRefCode = generatePatternCode();
                 const lastNameMatch = targetName.replace(/^(elder|sister)\s+/i, '').trim();
 
@@ -346,7 +368,6 @@ export default async function handler(req, res) {
                   [targetEmail, targetName, lastNameMatch, psid, myRefCode]
                 );
 
-                // Credit Referrer
                 if (inviteCode && inviteCode !== 'TCRP') {
                   const referrer = (await runSql("SELECT * FROM missionaries WHERE UPPER(referral_code) = ?", [inviteCode]))[0];
                   if (referrer && referrer.email.toLowerCase() !== targetEmail) {

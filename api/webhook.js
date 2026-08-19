@@ -24,6 +24,18 @@ async function runSql(sql, args = []) {
   });
 }
 
+// Generate referral code matching the A#A#A# format (Letter-Digit-Letter-Digit-Letter-Digit)
+function generatePatternCode() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const digits = '23456789';
+  let code = '';
+  for (let i = 0; i < 3; i++) {
+    code += letters.charAt(Math.floor(Math.random() * letters.length));
+    code += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  return code;
+}
+
 async function sendSenderAction(psid, action = "typing_on") {
   if (!TOKEN) return;
   try {
@@ -74,12 +86,14 @@ async function sendBrevoOtpEmail(recipientEmail, recipientName, otpCode) {
         to: [{ email: recipientEmail, name: recipientName }],
         subject: `Your Verification OTP Code: ${otpCode}`,
         htmlContent: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2>Timeless Creations Rewards Program</h2>
+          <div style="font-family: Arial, sans-serif; padding: 24px; color: #222; max-width: 500px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
+            <h2 style="color: #c9a84c; margin-top: 0;">Timeless Creations Rewards</h2>
             <p>Hello <strong>${recipientName}</strong>,</p>
-            <p>Your 6-digit confirmation OTP code is:</p>
-            <h1 style="background: #f4f4f4; padding: 10px 20px; display: inline-block; letter-spacing: 4px; color: #1a73e8;">${otpCode}</h1>
-            <p>Please enter this code in Messenger to complete your verification and activate your <strong>+1 Welcome Point</strong>.</p>
+            <p>Your 6-digit confirmation code for the Rewards Program is:</p>
+            <div style="background: #f7f7fa; padding: 14px 24px; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #111; text-align: center; border-radius: 6px; margin: 18px 0;">
+              ${otpCode}
+            </div>
+            <p style="font-size: 13px; color: #666;">Enter this code in Messenger to verify your account and activate your <strong>+1 Welcome Point</strong>.</p>
           </div>
         `
       })
@@ -94,6 +108,7 @@ function getQuickChoices(text) {
     text: text,
     quick_replies: [
       { content_type: "text", title: "🛍️ Dashboard & Catalog", payload: "MENU_CATALOG" },
+      { content_type: "text", title: "📢 Invite Link", payload: "MENU_INVITE" },
       { content_type: "text", title: "❓ FAQs", payload: "MENU_FAQS" }
     ]
   };
@@ -102,7 +117,7 @@ function getQuickChoices(text) {
 async function sendDashboardCatalog(psid, user) {
   const defaultImg = "https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/main/icon.png";
   const points = user ? user.points : 0;
-  const refCode = user ? (user.referral_code || "TCRP") : "None";
+  const refCode = user ? (user.referral_code || "None") : "None";
 
   // Dashboard Overview
   await callSendAPI(psid, 
@@ -110,7 +125,7 @@ async function sendDashboardCatalog(psid, user) {
     `👤 Member: ${user ? user.name : "Guest"}\n` +
     `⭐ Available Points: ${points} Pts\n` +
     `📢 Referral Code: ${refCode}\n\n` +
-    `🎁 Share your code to earn +1 Point whenever a fellow missionary joins and verifies!`
+    `💡 Share your code with fellow missionaries to earn +1 Point whenever they join and verify!`
   );
 
   // 1:1 Aspect Ratio Generic Template Carousel
@@ -153,6 +168,22 @@ async function sendDashboardCatalog(psid, user) {
   await callSendAPI(psid, payload);
 }
 
+function sendInviteInstructions(psid, user) {
+  const refCode = user?.referral_code || "A1B2C3";
+  const inviteText = 
+`📢 HOW TO INVITE MISSIONARIES
+
+1️⃣ Give them your Referral Code:
+👉 ${refCode}
+
+2️⃣ Or share this direct invitation message:
+"Mabuhay Elder/Sister! Join the Timeless Creations Rewards Program to earn points for missionary gear. Start a chat here: https://m.me/SalviejoMarkAllen and use my invitation code: ${refCode}"
+
+🎁 Both of you receive +1 Point as soon as they complete their email verification!`;
+
+  return callSendAPI(psid, getQuickChoices(inviteText));
+}
+
 function sendFaqsMessage(psid) {
   const faqsText = 
 `📖 FREQUENTLY ASKED QUESTIONS (FAQs)
@@ -164,7 +195,7 @@ An exclusive rewards platform by Timeless Creations for missionaries to earn poi
 Currently serving Elders and Sisters with a valid @missionary.org email address.
 
 3. How do I get an Invitation Code?
-Use a personal code from a missionary (e.g., TCRP-XXXX) or the public code TCRP.
+You strictly need a valid invitation code from a fellow missionary to join.
 
 4. How do referrals work?
 1:1 Rule: You get +1 Point upon verification. When someone uses your code and verifies, you BOTH get +1 Point.
@@ -222,7 +253,7 @@ export default async function handler(req, res) {
           const userByPsid = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0];
           const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
 
-          // 1. Initial Get Started
+          // 1. Initial Greeting / Get Started
           if (msg === 'get_started' || msg.includes('get started')) {
             if (userByPsid) {
               await sendDashboardCatalog(psid, userByPsid);
@@ -231,20 +262,36 @@ export default async function handler(req, res) {
             await runSql("INSERT OR REPLACE INTO sessions (psid, state) VALUES (?, 'AWAITING_REFERRAL_CODE')", [psid]);
             await callSendAPI(psid, 
               "🌟 Welcome to Timeless Creations Rewards Program!\n\n" +
-              "Please enter your Invitation / Referral Code (e.g. TCRP-1234 or TCRP).\n\n" +
-              "If you don't have one, reply 'SKIP':"
+              "⚠️ An Invitation Code is strictly required to join.\n\n" +
+              "Please enter the Invitation Code shared by your fellow missionary (e.g. A3B8C2):"
             );
             continue;
           }
 
-          // 2. Referral Code Input Step
+          // 2. Strict Invitation Code Search & Verification
           if (session?.state === 'AWAITING_REFERRAL_CODE') {
-            const enteredRef = (rawInput.toUpperCase() === 'SKIP') ? null : rawInput.trim().toUpperCase();
-            await runSql("UPDATE sessions SET state = 'AWAITING_REGISTRATION', invite_code = ? WHERE psid = ?", [enteredRef, psid]);
+            const inputCode = rawInput.trim().toUpperCase();
+            
+            // Query database to check if this referral code actually exists
+            const referrer = (await runSql("SELECT * FROM missionaries WHERE UPPER(referral_code) = ?", [inputCode]))[0];
+            const isValidMaster = (inputCode === 'TCRP');
+
+            if (!referrer && !isValidMaster) {
+              await callSendAPI(psid, 
+                "❌ Invalid Invitation Code.\n\n" +
+                "That code does not exist in our system. You strictly need a valid code from another missionary to join.\n\n" +
+                "Please check the spelling and try entering the code again:"
+              );
+              continue;
+            }
+
+            // Valid code confirmed -> Advance to registration step
+            await runSql("UPDATE sessions SET state = 'AWAITING_REGISTRATION', invite_code = ? WHERE psid = ?", [inputCode, psid]);
             await callSendAPI(psid, 
-              "Great! Now please send your registration in ONE message:\n\n" +
-              "Elder/Sister [Last Name]\n" +
-              "yourname@missionary.org"
+              `✅ Invitation Code Verified!\n\n` +
+              `Please send your registration in ONE message format:\n\n` +
+              `Elder/Sister [Last Name]\n` +
+              `yourname@missionary.org`
             );
             continue;
           }
@@ -255,13 +302,23 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 4. Quick Choices: FAQs
+          // 4. Quick Choices: Invite Link Instructions
+          if (msg === 'menu_invite' || msg.includes('invite') || msg.includes('refer')) {
+            if (!userByPsid) {
+              await callSendAPI(psid, "Please complete your registration first to get your referral link.");
+            } else {
+              await sendInviteInstructions(psid, userByPsid);
+            }
+            continue;
+          }
+
+          // 5. Quick Choices: FAQs
           if (msg === 'menu_faqs' || msg.includes('faqs') || msg.includes('help')) {
             await sendFaqsMessage(psid);
             continue;
           }
 
-          // 5. OTP Verification Stage
+          // 6. OTP Verification Stage
           if (cleanDigits.length === 6 && (session?.state === 'AWAITING_OTP' || session?.otp_code)) {
             if (cleanDigits === session.otp_code || cleanDigits === '123456') {
               const targetEmail = (session.temp_email || '').toLowerCase().trim();
@@ -280,8 +337,8 @@ export default async function handler(req, res) {
                 await callSendAPI(psid, `🎉 Welcome Back, ${existingUser.name}!\nAccount confirmed (+1 Point awarded).`);
                 await sendDashboardCatalog(psid, refreshedUser);
               } else {
-                // New user registration
-                const myRefCode = 'TCRP-' + crypto.randomBytes(2).toString('hex').toUpperCase();
+                // New user registration: Generate A#A#A# referral code
+                const myRefCode = generatePatternCode();
                 const lastNameMatch = targetName.replace(/^(elder|sister)\s+/i, '').trim();
 
                 await runSql(
@@ -289,21 +346,12 @@ export default async function handler(req, res) {
                   [targetEmail, targetName, lastNameMatch, psid, myRefCode]
                 );
 
-                // Check and reward the Referrer if valid invite_code was provided
-                if (inviteCode && inviteCode !== 'SKIP') {
+                // Credit Referrer
+                if (inviteCode && inviteCode !== 'TCRP') {
                   const referrer = (await runSql("SELECT * FROM missionaries WHERE UPPER(referral_code) = ?", [inviteCode]))[0];
                   if (referrer && referrer.email.toLowerCase() !== targetEmail) {
                     await runSql("UPDATE missionaries SET points = points + 1 WHERE email = ?", [referrer.email]);
-                    
-                    // Outbound instant notification to referrer
-                    if (referrer.psid) {
-                      await callSendAPI(referrer.psid, 
-                        `🔔 Notification: ${targetName} just joined using your referral code!\n` +
-                        `🎉 You earned +1 Point!`
-                      );
-                      const updatedRefUser = (await runSql("SELECT * FROM missionaries WHERE email = ?", [referrer.email]))[0];
-                      await sendDashboardCatalog(referrer.psid, updatedRefUser);
-                    }
+                    await logSystemEvent('INFO', `Referral rewarded: ${referrer.name} earned +1 pt from ${targetName}`);
                   }
                 }
 
@@ -313,7 +361,8 @@ export default async function handler(req, res) {
                 await callSendAPI(psid, 
                   `🎉 Registration Complete!\n\n` +
                   `Welcome, ${targetName}!\n` +
-                  `🎁 You received +1 Welcome Point for joining!`
+                  `🎁 You received +1 Welcome Point for joining!\n` +
+                  `🔑 Your Referral Code: ${myRefCode}`
                 );
                 await sendDashboardCatalog(psid, newUser);
               }
@@ -323,7 +372,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 6. Single-Message Name & Email Input
+          // 7. Single-Message Name & Email Input
           const lines = rawInput.split('\n').map(l => l.trim()).filter(Boolean);
           const emailLine = lines.find(l => l.toLowerCase().includes('@missionary.org'));
           const nameLine = lines.find(l => l.toLowerCase().startsWith('elder') || l.toLowerCase().startsWith('sister'));
@@ -343,7 +392,7 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 7. Redemption Postbacks
+          // 8. Redemption Postbacks
           if (msg.startsWith('redeem_')) {
             let cost = 0; let item = "";
             if (msg.includes('keychain')) { cost = 6; item = "Temple Keychain"; }
@@ -376,20 +425,18 @@ export default async function handler(req, res) {
             continue;
           }
 
-          // 8. If user is in AWAITING_OTP but sent invalid digits
+          // 9. If user is in AWAITING_OTP but sent invalid input
           if (session?.state === 'AWAITING_OTP') {
             await callSendAPI(psid, "Please reply with the 6-digit OTP code sent to your email:");
             continue;
           }
 
-          // 9. Fallback
+          // 10. Fallback / Active Session Interaction
           if (userByPsid) {
-            await callSendAPI(psid, getQuickChoices(`Hello ${userByPsid.name}! Use the options below to view your dashboard or FAQs:`));
+            await callSendAPI(psid, getQuickChoices(`Hello ${userByPsid.name}! Use the options below to view your dashboard, get your invite link, or browse FAQs:`));
           } else {
             await callSendAPI(psid, 
-              "⚠️ Invalid format. Please send both lines in ONE message:\n\n" +
-              "Elder/Sister [Last Name]\n" +
-              "yourname@missionary.org"
+              "⚠️ An Invitation Code is required. Please type 'Get Started' to begin registration."
             );
           }
         }

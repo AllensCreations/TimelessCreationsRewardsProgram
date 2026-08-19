@@ -19,7 +19,7 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:1120px;margin:0 auto;}
+  .container{max-width:1160px;margin:0 auto;}
   header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
   h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
   a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
@@ -34,8 +34,8 @@
   .tab-pane{display:none;}
   .tab-pane.active{display:block;}
 
-  .grid-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;}
-  @media(max-width:920px){.grid-layout{grid-template-columns:1fr;}}
+  .grid-layout{display:grid;grid-template-columns:1.25fr 460px;gap:24px;align-items:start;}
+  @media(max-width:1040px){.grid-layout{grid-template-columns:1fr;}}
 
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
   .card h3{font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);margin-bottom:12px;}
@@ -44,6 +44,10 @@
   .form-group label{font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px;}
   .form-input,.form-select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
   .form-input:focus,.form-select:focus{border-color:var(--gold);}
+
+  .mode-switch-row{display:flex;gap:10px;margin-bottom:12px;}
+  .mode-switch-btn{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:6px;font-size:0.7rem;cursor:pointer;text-align:center;}
+  .mode-switch-btn.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.4);font-weight:700;}
 
   .item-table{width:100%;border-collapse:collapse;margin:12px 0;}
   .item-table th{font-size:0.6rem;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--border);}
@@ -54,29 +58,36 @@
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
   .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:6px;cursor:pointer;}
-  .btn-complete{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,0.3);padding:6px 12px;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;}
+  .btn-complete{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,0.3);padding:6px 10px;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer;}
 
   .summary-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;}
   .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;margin-bottom:8px;color:var(--muted);}
   .summary-row.total{font-size:1.05rem;font-weight:800;color:var(--gold);border-top:1px solid var(--border);padding-top:10px;margin-top:10px;}
 
+  /* FIXED-SIZE INVOICE PREVIEW CARD CONTAINER */
+  .preview-wrapper{position:sticky;top:20px;}
   .invoice-preview-card{
-    background:#ffffff;color:#1c1917;padding:28px;border-radius:12px;border:2px solid #e7d8b8;
+    width:420px;
+    min-height:560px;
+    background:#ffffff;color:#1c1917;padding:28px 24px;border-radius:12px;border:2px solid #e7d8b8;
     box-shadow:0 15px 35px rgba(0,0,0,0.5);font-family:Georgia,serif;position:relative;
+    display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;margin:0 auto;
   }
-  .inv-header{display:flex;justify-content:space-between;border-bottom:2px solid #f1e4cb;padding-bottom:12px;margin-bottom:16px;}
-  .inv-title{font-size:1.3rem;font-weight:700;color:#8b1a1a;font-family:'Syne',sans-serif;}
-  .inv-id{font-family:'DM Mono',monospace;font-size:0.75rem;color:#78716c;}
-  .inv-meta{font-size:0.72rem;line-height:1.5;color:#44403c;margin-bottom:16px;font-family:'DM Mono',monospace;}
-  .inv-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:0.75rem;}
-  .inv-table th{background:#fdfaf3;border-bottom:1px solid #e7d8b8;padding:8px;text-align:left;color:#78716c;}
-  .inv-table td{padding:8px;border-bottom:1px solid #f5eedf;}
+  .inv-header{display:flex;justify-content:space-between;border-bottom:2px solid #f1e4cb;padding-bottom:10px;margin-bottom:12px;}
+  .inv-title{font-size:1.25rem;font-weight:700;color:#8b1a1a;font-family:'Syne',sans-serif;}
+  .inv-id{font-family:'DM Mono',monospace;font-size:0.72rem;color:#78716c;}
+  .inv-meta{font-size:0.7rem;line-height:1.5;color:#44403c;margin-bottom:12px;font-family:'DM Mono',monospace;}
+  .inv-table-wrap{flex:1;max-height:220px;overflow-y:auto;margin-bottom:12px;}
+  .inv-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
+  .inv-table th{background:#fdfaf3;border-bottom:1px solid #e7d8b8;padding:6px 8px;text-align:left;color:#78716c;position:sticky;top:0;}
+  .inv-table td{padding:6px 8px;border-bottom:1px solid #f5eedf;}
   .inv-stamp{
     position:absolute;top:45%;right:15px;transform:rotate(-12deg);
     border:3px solid #e05c5c;color:#e05c5c;padding:6px 12px;border-radius:6px;
     font-weight:800;font-size:1.1rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(254,242,242,0.7);
   }
 
+  /* Data Table */
   .data-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
   .data-table th{padding:10px 12px;background:var(--surface2);color:var(--muted);text-align:left;font-size:0.62rem;text-transform:uppercase;border-bottom:1px solid var(--border);}
   .data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
@@ -178,18 +189,43 @@
     <div class="grid-layout">
       <div>
         <div class="card">
-          <h3>1. Select Missionary</h3>
-          <div class="form-group">
-            <label>Search / Select Registered Missionary</label>
-            <input type="text" class="form-input" id="missionary-search" placeholder="Type name or email to filter..." oninput="filterMissionaryDropdown(this.value)" style="margin-bottom:8px;"/>
-            <select id="missionary-select" class="form-select" onchange="handleMissionarySelect()">
-              <option value="">-- Choose Missionary --</option>
-            </select>
+          <h3>1. Select Recipient</h3>
+          
+          <div class="mode-switch-row">
+            <button class="mode-switch-btn active" id="mode-db-btn" onclick="switchRecipientMode('db')">🔍 Search Registered</button>
+            <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom / Walk-in Name</button>
           </div>
-          <div id="missionary-info" style="display:none;background:var(--surface2);padding:10px 14px;border-radius:6px;font-size:0.72rem;line-height:1.6;border:1px solid var(--border);">
-            <div>👤 <strong>Name:</strong> <span id="info-name">—</span></div>
-            <div>✉️ <strong>Email:</strong> <span id="info-email">—</span></div>
-            <div>📢 <strong>Batch:</strong> <span id="info-batch">—</span></div>
+
+          <!-- Mode A: From Database -->
+          <div id="recipient-db-box">
+            <div class="form-group">
+              <label>Search Registered Missionary</label>
+              <input type="text" class="form-input" id="missionary-search" placeholder="Type name or email to filter..." oninput="filterMissionaryDropdown(this.value)" style="margin-bottom:8px;"/>
+              <select id="missionary-select" class="form-select" onchange="handleMissionarySelect()">
+                <option value="">-- Choose Missionary --</option>
+              </select>
+            </div>
+            <div id="missionary-info" style="display:none;background:var(--surface2);padding:10px 14px;border-radius:6px;font-size:0.72rem;line-height:1.6;border:1px solid var(--border);">
+              <div>👤 <strong>Name:</strong> <span id="info-name">—</span></div>
+              <div>✉️ <strong>Email:</strong> <span id="info-email">—</span></div>
+              <div>📢 <strong>Batch:</strong> <span id="info-batch">—</span></div>
+            </div>
+          </div>
+
+          <!-- Mode B: Custom Name / Walk-in Customer -->
+          <div id="recipient-custom-box" style="display:none;">
+            <div class="form-group">
+              <label>Customer Full Name / Title</label>
+              <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Sister Maria Santos or John Doe" oninput="handleCustomInput()"/>
+            </div>
+            <div class="form-group">
+              <label>Email Address (Optional / for Receipt)</label>
+              <input type="email" class="form-input" id="custom-email-input" placeholder="customer@example.com (or leave blank)" oninput="handleCustomInput()"/>
+            </div>
+            <div class="form-group">
+              <label>Batch / Location / Note</label>
+              <input type="text" class="form-input" id="custom-batch-input" placeholder="e.g. Walk-in or August 2026" oninput="handleCustomInput()"/>
+            </div>
           </div>
         </div>
 
@@ -246,78 +282,83 @@
         </div>
       </div>
 
-      <!-- RIGHT: Live Printable Card -->
-      <div>
-        <div class="card">
-          <h3>Live Invoice Preview</h3>
-          <p style="font-size:0.68rem;color:var(--muted);margin-bottom:16px;">Preview updates instantly as you adjust items and discounts.</p>
+      <!-- RIGHT: FIXED-SIZE LIVE INVOICE CARD -->
+      <div class="preview-wrapper">
+        <div class="card" style="padding:16px;">
+          <h3 style="margin-bottom:8px;">Live Invoice Card</h3>
+          <p style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;">Standardized fixed proportions.</p>
 
           <div class="invoice-preview-card" id="invoice-node">
-            <div class="inv-header">
-              <div>
-                <div class="inv-title">✨ Timeless Creations ✨</div>
-                <div style="font-size:0.7rem;color:#b8955a;font-style:italic;">Official Missionary Cash Invoice</div>
+            <div>
+              <div class="inv-header">
+                <div>
+                  <div class="inv-title">✨ Timeless Creations ✨</div>
+                  <div style="font-size:0.7rem;color:#b8955a;font-style:italic;">Official Missionary Cash Invoice</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="inv-id" id="prev-inv-id">INV-DRAFT</div>
+                  <div style="font-size:0.65rem;color:#a8a29e;" id="prev-date">August 2026</div>
+                </div>
               </div>
-              <div style="text-align:right;">
-                <div class="inv-id" id="prev-inv-id">INV-DRAFT</div>
-                <div style="font-size:0.65rem;color:#a8a29e;" id="prev-date">August 2026</div>
+
+              <div class="inv-meta">
+                <div><strong>Bill To:</strong> <span id="prev-name">Elder / Sister [Name]</span></div>
+                <div><strong>Email:</strong> <span id="prev-email">missionary@missionary.org</span></div>
+                <div><strong>Cohort / Batch:</strong> <span id="prev-batch">August 2026</span></div>
+              </div>
+
+              <div class="inv-table-wrap">
+                <table class="inv-table">
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th style="width:36px;text-align:center;">Qty</th>
+                      <th style="width:75px;text-align:right;">Price</th>
+                      <th style="width:75px;text-align:right;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prev-table-body">
+                    <tr><td colspan="4" style="text-align:center;color:#a8a29e;">No items selected.</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div class="inv-meta">
-              <div><strong>Bill To:</strong> <span id="prev-name">Elder / Sister [Name]</span></div>
-              <div><strong>Email:</strong> <span id="prev-email">missionary@missionary.org</span></div>
-              <div><strong>Cohort / Batch:</strong> <span id="prev-batch">August 2026</span></div>
+            <div>
+              <div style="border-top:1px solid #e7d8b8;padding-top:8px;font-size:0.72rem;font-family:'DM Mono',monospace;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                  <span>Subtotal:</span>
+                  <span id="prev-subtotal">₱0.00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;color:#16a34a;margin-bottom:5px;">
+                  <span>Discount:</span>
+                  <span id="prev-discount">-₱0.00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:700;color:#8b1a1a;border-top:1px solid #f1e4cb;padding-top:5px;">
+                  <span>Total Amount:</span>
+                  <span id="prev-total">₱0.00</span>
+                </div>
+              </div>
+              <div class="inv-stamp" id="prev-stamp">PENDING</div>
             </div>
-
-            <table class="inv-table">
-              <thead>
-                <tr>
-                  <th>Description</th>
-                  <th style="width:40px;text-align:center;">Qty</th>
-                  <th style="width:80px;text-align:right;">Price</th>
-                  <th style="width:80px;text-align:right;">Total</th>
-                </tr>
-              </thead>
-              <tbody id="prev-table-body">
-                <tr><td colspan="4" style="text-align:center;color:#a8a29e;">No items selected.</td></tr>
-              </tbody>
-            </table>
-
-            <div style="border-top:1px solid #e7d8b8;padding-top:8px;font-size:0.75rem;font-family:'DM Mono',monospace;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span>Subtotal:</span>
-                <span id="prev-subtotal">₱0.00</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;color:#16a34a;margin-bottom:6px;">
-                <span>Discount:</span>
-                <span id="prev-discount">-₱0.00</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:700;color:#8b1a1a;border-top:1px solid #f1e4cb;padding-top:6px;">
-                <span>Total Amount:</span>
-                <span id="prev-total">₱0.00</span>
-              </div>
-            </div>
-
-            <div class="inv-stamp" id="prev-stamp">PENDING</div>
           </div>
 
-          <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
-            <button class="btn" onclick="downloadInvoiceImage()">📥 Download Card PNG</button>
-            <button class="btn btn-secondary" onclick="copyInvoiceText()">📋 Copy Messenger Text</button>
+          <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;">
+            <button class="btn" style="padding:8px 14px;font-size:0.7rem;" onclick="downloadInvoiceImage()">📥 Download Card PNG</button>
+            <button class="btn btn-secondary" style="padding:8px 14px;font-size:0.7rem;" onclick="copyInvoiceText()">📋 Copy Text</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- TAB 2: PENDING INVOICES -->
+  <!-- TAB 2: PENDING INVOICES (WITH DELETE ABILITY) -->
   <div class="tab-pane" id="pending-tab">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
           <h3>Pending Invoices (Awaiting Fulfillment &amp; Receipt Email)</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Clicking <strong>Complete</strong> marks the transaction paid and dispatches the official receipt to the missionary's email.</p>
+          <p style="font-size:0.68rem;color:var(--muted);">Click <strong>Complete</strong> to finalize, or <strong>Delete</strong> to remove/void the invoice.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
       </div>
@@ -327,7 +368,7 @@
           <thead>
             <tr>
               <th>Invoice ID</th>
-              <th>Missionary</th>
+              <th>Missionary / Customer</th>
               <th>Email</th>
               <th>Total (₱)</th>
               <th>Status</th>
@@ -381,7 +422,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
           <h3>Product Catalog &amp; PHP Price Settings (Turso Cloud Synced)</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Unit prices saved here are stored directly in your live Turso database and sync across all devices.</p>
+          <p style="font-size:0.68rem;color:var(--muted);">Unit prices saved here are stored directly in your live Turso database.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addNewProductSetting()">+ Add New Product</button>
       </div>
@@ -409,6 +450,7 @@ let missionaries = [];
 let cashInvoices = [];
 let posOrders = [];
 let productCatalog = [];
+let recipientMode = 'db'; // 'db' or 'custom'
 
 function showToast(title, msg, type = 'success') {
   const tc = document.getElementById('toast-container');
@@ -473,6 +515,31 @@ async function loadPosOrders() {
   } catch (e) {
     console.error("Failed to load POS orders:", e);
   }
+}
+
+function switchRecipientMode(mode) {
+  recipientMode = mode;
+  document.getElementById('mode-db-btn').classList.toggle('active', mode === 'db');
+  document.getElementById('mode-custom-btn').classList.toggle('active', mode === 'custom');
+
+  document.getElementById('recipient-db-box').style.display = mode === 'db' ? 'block' : 'none';
+  document.getElementById('recipient-custom-box').style.display = mode === 'custom' ? 'block' : 'none';
+
+  if (mode === 'db') {
+    handleMissionarySelect();
+  } else {
+    handleCustomInput();
+  }
+}
+
+function handleCustomInput() {
+  const name = document.getElementById('custom-name-input').value.trim() || 'Customer [Name]';
+  const email = document.getElementById('custom-email-input').value.trim() || 'Walk-in / Cash';
+  const batch = document.getElementById('custom-batch-input').value.trim() || 'Direct Sale';
+
+  document.getElementById('prev-name').textContent = name;
+  document.getElementById('prev-email').textContent = email;
+  document.getElementById('prev-batch').textContent = batch;
 }
 
 function renderPosTable() {
@@ -600,6 +667,7 @@ function handleMissionarySelect() {
     document.getElementById('missionary-info').style.display = 'none';
     document.getElementById('prev-name').textContent = "Elder / Sister [Name]";
     document.getElementById('prev-email').textContent = "missionary@missionary.org";
+    document.getElementById('prev-batch').textContent = "August 2026";
   }
   recalculateTotal();
 }
@@ -689,10 +757,25 @@ function recalculateTotal() {
 }
 
 async function submitInvoice() {
-  const email = document.getElementById('missionary-select').value;
-  if (!email) {
-    showToast("Missing Selection", "Please search and select a missionary first.", "error");
-    return;
+  let customerName = "";
+  let customerEmail = "";
+
+  if (recipientMode === 'db') {
+    const email = document.getElementById('missionary-select').value;
+    if (!email) {
+      showToast("Missing Selection", "Please search and select a missionary first.", "error");
+      return;
+    }
+    const m = missionaries.find(x => x.email === email);
+    customerName = m ? m.name : 'Missionary';
+    customerEmail = email;
+  } else {
+    customerName = document.getElementById('custom-name-input').value.trim();
+    customerEmail = document.getElementById('custom-email-input').value.trim();
+    if (!customerName) {
+      showToast("Missing Name", "Please enter the customer's name.", "error");
+      return;
+    }
   }
 
   const rows = document.querySelectorAll('.item-row');
@@ -719,7 +802,6 @@ async function submitInvoice() {
   if (discountAmount > subtotal) discountAmount = subtotal;
   const totalAmount = subtotal - discountAmount;
 
-  const m = missionaries.find(x => x.email === email);
   const btn = document.getElementById('generate-btn');
   btn.disabled = true;
   btn.textContent = 'Saving Invoice...';
@@ -730,8 +812,8 @@ async function submitInvoice() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'create_invoice',
-        email,
-        name: m ? m.name : 'Missionary',
+        email: customerEmail,
+        name: customerName,
         items,
         subtotal,
         discountType,
@@ -773,7 +855,7 @@ function renderInvoicesTable() {
       <tr>
         <td style="font-weight:bold;color:var(--gold);">${inv.invoice_id}</td>
         <td style="font-weight:600;">${inv.name}</td>
-        <td style="color:var(--muted);">${inv.email}</td>
+        <td style="color:var(--muted);">${inv.email || '—'}</td>
         <td style="font-weight:bold;">₱${Number(inv.total_amount).toFixed(2)}</td>
         <td>
           <span style="padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:700;background:${isPending ? 'var(--red-dim);color:var(--red);' : 'var(--green-dim);color:var(--green);'}">
@@ -781,8 +863,14 @@ function renderInvoicesTable() {
           </span>
         </td>
         <td style="color:var(--muted);font-size:0.65rem;">${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-        <td style="text-align:center;">
-          ${isPending ? `<button class="btn-complete" onclick="promptCompleteInvoice('${inv.invoice_id}', '${inv.email}', '${inv.name}')">✓ Complete</button>` : `<span style="color:var(--muted);font-size:0.65rem;">Receipt Sent</span>`}
+        <td style="text-align:center;white-space:nowrap;">
+          ${isPending ? `
+            <button class="btn-complete" onclick="promptCompleteInvoice('${inv.invoice_id}', '${inv.email || ''}', '${inv.name}')">✓ Complete</button>
+            <button class="btn-danger" style="padding:5px 8px;font-size:0.68rem;margin-left:4px;" onclick="promptDeleteInvoice('${inv.invoice_id}', '${inv.name}')">🗑️</button>
+          ` : `
+            <span style="color:var(--muted);font-size:0.65rem;margin-right:6px;">Receipt Sent</span>
+            <button class="btn-danger" style="padding:5px 8px;font-size:0.68rem;" onclick="promptDeleteInvoice('${inv.invoice_id}', '${inv.name}')">🗑️</button>
+          `}
         </td>
       </tr>
     `;
@@ -790,11 +878,11 @@ function renderInvoicesTable() {
 }
 
 function promptCompleteInvoice(invoiceId, email, name) {
-  showConfirmDialog(
-    `Complete Invoice ${invoiceId}?`,
-    `Marking this invoice as COMPLETED will automatically email the official cash purchase receipt to ${name} (${email}).`,
-    () => executeCompleteInvoice(invoiceId)
-  );
+  const desc = email && email.includes('@')
+    ? `Marking this invoice as COMPLETED will automatically dispatch the official cash receipt email to ${name} (${email}).`
+    : `Mark Invoice ${invoiceId} for ${name} as COMPLETED?`;
+
+  showConfirmDialog(`Complete Invoice ${invoiceId}?`, desc, () => executeCompleteInvoice(invoiceId));
 }
 
 async function executeCompleteInvoice(invoiceId) {
@@ -808,6 +896,33 @@ async function executeCompleteInvoice(invoiceId) {
 
     if (data.ok) {
       showToast("Completed", data.message, "success");
+      await loadData();
+    } else {
+      showToast("Error", data.error, "error");
+    }
+  } catch (err) {
+    showToast("Error", err.message, "error");
+  }
+}
+
+function promptDeleteInvoice(invoiceId, name) {
+  showConfirmDialog(
+    `Delete Invoice ${invoiceId}?`,
+    `Are you sure you want to permanently remove and void the invoice for ${name}?`,
+    () => executeDeleteInvoice(invoiceId)
+  );
+}
+
+async function executeDeleteInvoice(invoiceId) {
+  try {
+    const res = await fetch('/api/invoicing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_invoice', invoice_id: invoiceId })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Deleted", `Invoice ${invoiceId} has been removed.`, "success");
       await loadData();
     } else {
       showToast("Error", data.error, "error");

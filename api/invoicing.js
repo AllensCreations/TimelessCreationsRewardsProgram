@@ -22,7 +22,6 @@ async function runSql(sql, args = []) {
   });
 }
 
-// Ensure both cash_invoices and product_catalog tables exist
 async function ensureTables() {
   await runSql(`
     CREATE TABLE IF NOT EXISTS cash_invoices (
@@ -49,7 +48,6 @@ async function ensureTables() {
     );
   `);
 
-  // Seed default products if empty
   const count = (await runSql("SELECT COUNT(*) as c FROM product_catalog"))[0]?.c || 0;
   if (count === 0) {
     const defaults = [
@@ -66,7 +64,7 @@ async function ensureTables() {
 }
 
 async function sendBrevoReceiptEmail(recipientEmail, recipientName, invoiceData) {
-  if (!BREVO_KEY) return false;
+  if (!BREVO_KEY || !recipientEmail || !recipientEmail.includes('@')) return false;
   try {
     const itemsListHtml = invoiceData.items.map(item => `
       <tr>
@@ -142,7 +140,7 @@ async function sendBrevoReceiptEmail(recipientEmail, recipientName, invoiceData)
 export default async function handler(req, res) {
   await ensureTables();
 
-  // GET: Fetch missionaries, invoices, and product catalog from Turso
+  // GET: Fetch missionaries, invoices, and product catalog
   if (req.method === 'GET') {
     try {
       const missionaries = await runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries ORDER BY name ASC");
@@ -154,11 +152,11 @@ export default async function handler(req, res) {
     }
   }
 
-  // POST: Create Invoice, Complete Invoice, or Update Products in Turso
+  // POST: Actions
   if (req.method === 'POST') {
     const { action } = req.body || {};
 
-    // 1. Save Product Catalog to Turso
+    // 1. Save Products
     if (action === 'save_products') {
       const { products = [] } = req.body;
       await runSql("DELETE FROM product_catalog");
@@ -170,11 +168,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "Product prices saved to Turso database." });
     }
 
-    // 2. Create Cash Invoice
+    // 2. Create Invoice
     if (action === 'create_invoice') {
       const { email, name, items, subtotal, discountType, discountVal, discountAmount, totalAmount } = req.body;
-      if (!email || !items || items.length === 0) {
-        return res.status(400).json({ ok: false, error: "Missing missionary or invoice items." });
+      if (!name || !items || items.length === 0) {
+        return res.status(400).json({ ok: false, error: "Missing customer name or items." });
       }
 
       const invoiceId = 'INV-' + crypto.randomBytes(3).toString('hex').toUpperCase();
@@ -184,7 +182,7 @@ export default async function handler(req, res) {
       await runSql(`
         INSERT INTO cash_invoices (invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)
-      `, [invoiceId, email, name, itemsJson, subtotal, discountType, discountVal, discountAmount, totalAmount, nowIso]);
+      `, [invoiceId, email || 'Walk-in / Cash', name, itemsJson, subtotal, discountType, discountVal, discountAmount, totalAmount, nowIso]);
 
       await logSystemEvent('INFO', `Cash Invoice Created: ${invoiceId} for ${name} (${email}) - Total: ₱${totalAmount}`);
 
@@ -195,7 +193,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Complete Invoice & Dispatch Brevo Receipt Email
+    // 3. Complete Invoice
     if (action === 'complete_invoice') {
       const { invoice_id } = req.body;
       const invoice = (await runSql("SELECT * FROM cash_invoices WHERE invoice_id = ?", [invoice_id]))[0];
@@ -210,21 +208,32 @@ export default async function handler(req, res) {
       let items = [];
       try { items = JSON.parse(invoice.items_json); } catch(e){}
 
-      const emailSent = await sendBrevoReceiptEmail(invoice.email, invoice.name, {
-        invoice_id: invoice.invoice_id,
-        items,
-        subtotal: invoice.subtotal,
-        discount_amount: invoice.discount_amount,
-        total_amount: invoice.total_amount
-      });
+      let emailSent = false;
+      if (invoice.email && invoice.email.includes('@')) {
+        emailSent = await sendBrevoReceiptEmail(invoice.email, invoice.name, {
+          invoice_id: invoice.invoice_id,
+          items,
+          subtotal: invoice.subtotal,
+          discount_amount: invoice.discount_amount,
+          total_amount: invoice.total_amount
+        });
+      }
 
-      await logSystemEvent('INFO', `Invoice Completed: ${invoice_id}. Brevo Receipt Sent: ${emailSent ? 'YES' : 'FAILED'}`);
+      await logSystemEvent('INFO', `Invoice Completed: ${invoice_id}. Email: ${emailSent ? 'SENT' : 'SKIPPED/NO-EMAIL'}`);
 
       return res.status(200).json({
         ok: true,
         emailSent,
-        message: `Invoice ${invoice_id} marked as COMPLETED. Official receipt sent to ${invoice.email}.`
+        message: `Invoice ${invoice_id} marked as COMPLETED.${emailSent ? ' Receipt emailed.' : ''}`
       });
+    }
+
+    // 4. Delete / Void Invoice
+    if (action === 'delete_invoice') {
+      const { invoice_id } = req.body;
+      await runSql("DELETE FROM cash_invoices WHERE invoice_id = ?", [invoice_id]);
+      await logSystemEvent('INFO', `Invoice Deleted/Voided: ${invoice_id}`);
+      return res.status(200).json({ ok: true, message: `Invoice ${invoice_id} deleted.` });
     }
   }
 

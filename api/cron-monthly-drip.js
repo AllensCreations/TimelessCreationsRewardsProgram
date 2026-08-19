@@ -4,7 +4,8 @@ import { queryTurso, unwrap } from '../lib/db.js';
 import { logSystemEvent } from '../lib/logger.js';
 
 const BREVO_KEY = (process.env.BREVO_API_KEY || '').trim();
-const BATCH_SIZE = 35; // Process 35 emails per run to stay well clear of timeouts
+const BATCH_SIZE = 140; // Maximize Vercel function execution window for full quota utilization
+const DAILY_SEND_CEILING = 280; // Total max daily quota allowance (140 + 140)
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -88,15 +89,14 @@ async function sendBrevoEmail(recipientEmail, recipientName, subject, html) {
 }
 
 export const config = {
-  maxDuration: 60 // Allow up to 60 seconds execution window for safety on Vercel
+  maxDuration: 60 // Allow 60s execution window on Vercel
 };
 
 export default async function handler(req, res) {
   const now = new Date();
-  const todayDateStr = now.toISOString().slice(0, 10); // e.g., '2026-08-19'
+  const todayDateStr = now.toISOString().slice(0, 10); // e.g. '2026-08-19'
   const nowIso = now.toISOString();
 
-  // Check if today's quota batch has already run and completed
   await runSql(`
     CREATE TABLE IF NOT EXISTS system_config (
       key TEXT PRIMARY KEY,
@@ -104,15 +104,22 @@ export default async function handler(req, res) {
     );
   `);
 
-  const lastRunRecord = (await runSql("SELECT value FROM system_config WHERE key = 'last_drip_date'"))[0];
-  if (lastRunRecord && lastRunRecord.value === todayDateStr) {
+  // Track daily count to strictly enforce the 280 ceiling per day
+  const dailyKey = `drip_count_${todayDateStr}`;
+  const record = (await runSql("SELECT value FROM system_config WHERE key = ?", [dailyKey]))[0];
+  let sentToday = record ? parseInt(record.value, 10) || 0 : 0;
+
+  if (sentToday >= DAILY_SEND_CEILING) {
     return res.status(200).json({
       ok: true,
-      message: "Daily drip quota already completed for today. Execution skipped to protect quota limits."
+      message: `Daily send ceiling of ${DAILY_SEND_CEILING} emails reached for today. Execution paused.`
     });
   }
 
-  // Fetch only a safe chunk of eligible missionaries per run (e.g. 35 users)
+  // Calculate remaining slot allocation for today
+  const allowedThisRun = Math.min(BATCH_SIZE, DAILY_SEND_CEILING - sentToday);
+
+  // Fetch missionaries who are due for their monthly drip
   const eligibleMissionaries = await runSql(`
     SELECT email, name, points, referral_code, months_sent, max_months, last_sent_at, next_send_date
     FROM missionaries
@@ -120,12 +127,10 @@ export default async function handler(req, res) {
       AND (months_sent < max_months OR max_months IS NULL)
       AND (next_send_date IS NULL OR next_send_date <= ?)
     LIMIT ?
-  `, [nowIso, BATCH_SIZE]);
+  `, [nowIso, allowedThisRun]);
 
   if (eligibleMissionaries.length === 0) {
-    // Mark today as fully completed since no more users need emails today
-    await runSql("INSERT OR REPLACE INTO system_config (key, value) VALUES ('last_drip_date', ?)", [todayDateStr]);
-    return res.status(200).json({ ok: true, message: "No more eligible missionaries to process today." });
+    return res.status(200).json({ ok: true, message: "No missionaries are currently due for a monthly drip." });
   }
 
   let sentCount = 0;
@@ -157,31 +162,22 @@ export default async function handler(req, res) {
       `, [nowIso, nextDateIso, m.email]);
 
       sentCount++;
+      sentToday++;
     } else {
       failedCount++;
     }
   }
 
-  // Check if any remaining eligible missionaries are left for today
-  const remainingCheck = (await runSql(`
-    SELECT COUNT(*) as c FROM missionaries
-    WHERE status = 'active'
-      AND (months_sent < max_months OR max_months IS NULL)
-      AND (next_send_date IS NULL OR next_send_date <= ?)
-  `, [nowIso]))[0]?.c || 0;
+  // Update daily sent counter in Turso
+  await runSql("INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)", [dailyKey, String(sentToday)]);
 
-  if (remainingCheck === 0) {
-    // Lock execution for today so it doesn't run again until tomorrow
-    await runSql("INSERT OR REPLACE INTO system_config (key, value) VALUES ('last_drip_date', ?)", [todayDateStr]);
-  }
-
-  await logSystemEvent('INFO', `Drip Chunk Executed: Sent ${sentCount}, Failed ${failedCount}. Remaining today: ${remainingCheck}`);
+  await logSystemEvent('INFO', `Daily Drip Run: Sent ${sentCount} (Total today: ${sentToday}/${DAILY_SEND_CEILING})`);
 
   return res.status(200).json({
     ok: true,
     batch_sent: sentCount,
     batch_failed: failedCount,
-    remaining_in_queue: remainingCheck,
-    daily_quota_locked: remainingCheck === 0
+    total_sent_today: sentToday,
+    daily_ceiling: DAILY_SEND_CEILING
   });
 }

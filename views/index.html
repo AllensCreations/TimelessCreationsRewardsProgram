@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Timeless Creations — TCRP Command Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
@@ -69,21 +68,19 @@
   .section-head h2{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;}
   .section-head p{font-size:0.66rem;color:var(--muted);margin-top:2px;}
 
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;}
   .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
   .stat-card.gold::before{background:linear-gradient(90deg,var(--gold),transparent);}
   .stat-card.green::before{background:linear-gradient(90deg,var(--green),transparent);}
   .stat-card.blue::before{background:linear-gradient(90deg,var(--blue),transparent);}
   .stat-card.purple::before{background:linear-gradient(90deg,var(--purple),transparent);}
-  .stat-card.red::before{background:linear-gradient(90deg,var(--red),transparent);}
   .stat-label{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;}
   .stat-val{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;margin:4px 0 2px;line-height:1;}
   .stat-card.gold .stat-val{color:var(--gold);}
   .stat-card.green .stat-val{color:var(--green);}
   .stat-card.blue .stat-val{color:var(--blue);}
   .stat-card.purple .stat-val{color:var(--purple);}
-  .stat-card.red .stat-val{color:var(--red);}
   .stat-sub{font-size:0.6rem;color:var(--muted);}
 
   .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px;}
@@ -119,7 +116,6 @@
   .prog-container{display:flex;flex-direction:column;gap:4px;min-width:160px;}
   .prog-track{width:100%;height:7px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;position:relative;}
   .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;transition:width 0.4s ease;}
-  .prog-fill.completed{background:var(--green);}
   .prog-meta{display:flex;justify-content:space-between;align-items:center;font-size:0.62rem;}
   .prog-count{color:var(--gold2);font-weight:600;}
   .prog-pct{color:var(--muted);font-size:0.58rem;}
@@ -132,41 +128,11 @@
   .btn-edit{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(92,141,224,0.3);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.6rem;transition:all 0.2s;}
   .btn-edit:hover{background:var(--blue);color:#fff;}
 
-  .status-select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.66rem;outline:none;}
-  .status-select.pending{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
-  .status-select.completed{border-color:var(--green);color:var(--green);background:var(--green-dim);}
-
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999;}
   .toast{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);padding:10px 14px;border-radius:6px;font-size:0.68rem;min-width:220px;box-shadow:0 6px 20px rgba(0,0,0,0.5);}
   .toast.success{border-left-color:var(--green);}
   .toast.error{border-left-color:var(--red);}
-
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
-  .modal-overlay.active{opacity:1;visibility:visible;}
-  
-  .receipt-card-node{
-    background:linear-gradient(135deg, #fffcf5 0%, #f7f1e3 100%); color:#2c221e; padding:32px; border-radius:18px; width:420px;
-    box-shadow:0 25px 60px rgba(0,0,0,0.8); border:3px solid var(--gold); text-align:center;
-    font-family:Georgia,serif; position:relative; overflow:hidden;
-  }
-  .receipt-card-node h2{color:#8b1a1a; margin-bottom:4px; font-size:1.4rem; font-family:'Syne',sans-serif;}
-  .receipt-card-node .shop-brand{font-size:0.8rem; color:#b8955a; font-style:italic; letter-spacing:0.05em; margin-bottom:14px;}
-  .receipt-card-node .receipt-inner{
-    background:#ffffff; padding:18px; border-radius:12px; border:2px dashed #e2c286;
-    text-align:left; font-family:'DM Mono',monospace; font-size:0.75rem; margin:16px 0; line-height:1.7; color:#3a322c;
-  }
-  .receipt-footer-msg{font-size:0.78rem; color:#8b1a1a; font-weight:700; margin-top:12px; font-family:'Syne',sans-serif;}
-  .receipt-footer-sub{font-size:0.66rem; color:#7a6852; margin-top:4px;}
-
-  .red-stamp{
-    position:absolute; top:48%; right:24px; transform:translateY(-50%) rotate(-12deg);
-    border:4px solid rgba(210, 40, 40, 0.85); color:rgba(210, 40, 40, 0.85);
-    font-family:'Syne',sans-serif; font-weight:800; font-size:1.35rem; padding:6px 14px;
-    letter-spacing:0.12em; text-transform:uppercase; border-radius:8px; pointer-events:none;
-    box-shadow:0 0 0 2px rgba(210, 40, 40, 0.2) inset; background:rgba(255,230,230,0.18);
-  }
-  .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:18px;}
 
   @media(max-width: 768px) {
     .app{flex-direction:column;height:auto;overflow:auto;}
@@ -188,24 +154,6 @@
   <div class="sync-bar-wrap"><div class="sync-bar" id="sync-bar"></div></div>
 </div>
 
-<div class="modal-overlay" id="receipt-modal">
-  <div>
-    <div class="receipt-card-node" id="receipt-card-node">
-      <h2>✨ Timeless Creations ✨</h2>
-      <div class="shop-brand">Rewards Program (TCRP)</div>
-      <div class="receipt-inner" id="receipt-preview-text"></div>
-      <div class="receipt-footer-msg">💖 Thank you! Please shop again! 🌸</div>
-      <div class="receipt-footer-sub">Visit us at m.me/timeless.creations.06</div>
-      <div class="red-stamp">COMPLETED</div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="downloadReceiptImage()">📥 Download Image</button>
-      <button class="btn" onclick="copyReceiptText()" style="background:var(--blue);color:#fff;">📋 Copy Text</button>
-      <button class="btn btn-secondary" onclick="closeReceiptModal()" style="background:#ddd;color:#333;">Close</button>
-    </div>
-  </div>
-</div>
-
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
@@ -219,9 +167,10 @@
       <div class="nav-label">Main</div>
       <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
       <div class="nav-item" onclick="window.location.href='/pusher.html'"><span class="icon">➕</span> Add Missionaries</div>
+      <div class="nav-item" onclick="window.location.href='/invoicing.html'"><span class="icon">🧾</span> Invoicing &amp; Billing</div>
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Roster <span class="badge" id="badge-missionaries">—</span></div>
       <div class="nav-item" onclick="switchTab('archive',this)"><span class="icon">🗂️</span> Archive Tab <span class="badge" id="badge-archive">0</span></div>
-      <div class="nav-item" onclick="switchTab('pos-logbook',this)"><span class="icon">📖</span> POS Logbook <span class="badge" id="badge-pos">0</span></div>
+      
       <div class="nav-label">Administration</div>
       <div class="nav-item" onclick="switchTab('admin-panel',this)"><span class="icon">⚙️</span> Admin System Panel</div>
       <div class="nav-item" onclick="switchTab('messages',this)"><span class="icon">📜</span> 24-Mo Messages</div>
@@ -258,7 +207,6 @@
         <div class="stat-card green"><div class="stat-label">Emails Sent Today</div><div class="stat-val" id="stat-emails-today">0</div><div class="stat-sub">sent today</div></div>
         <div class="stat-card blue"><div class="stat-label">Emails This Month</div><div class="stat-val" id="stat-emails-month">0</div><div class="stat-sub">current month</div></div>
         <div class="stat-card purple"><div class="stat-label">Archived Graduates</div><div class="stat-val" id="stat-archived">0</div><div class="stat-sub">completed track</div></div>
-        <div class="stat-card red"><div class="stat-label">POS Orders</div><div class="stat-val" id="stat-pos-count">0</div><div class="stat-sub">in Purchase Logbook</div></div>
       </div>
 
       <div class="section-head"><h2 style="font-size:0.9rem">Recent System Activity</h2></div>
@@ -267,7 +215,7 @@
       </div>
     </div>
 
-    <!-- 2. MISSIONARIES & POINTS EDITOR (SORTED OLDEST BATCH FIRST) -->
+    <!-- 2. MISSIONARIES & POINTS EDITOR -->
     <div class="panel" id="panel-roster">
       <div class="section-head">
         <div><h2>Missionaries Roster &amp; Points Editor</h2><p>Sorted by batch month (oldest first)</p></div>
@@ -302,7 +250,7 @@
       </div>
     </div>
 
-    <!-- 3. ARCHIVE TAB (COMPLETED TRACK) -->
+    <!-- 3. ARCHIVE TAB -->
     <div class="panel" id="panel-archive">
       <div class="section-head">
         <div><h2>Missionary Archive Tab</h2><p>Completed track members (Automatically deleted after 6 months)</p></div>
@@ -341,11 +289,11 @@
       <div class="admin-grid">
         <div class="admin-card">
           <h3>System Automation Toggles</h3>
-          <p>Instantly pause or resume automated cron jobs (strictly restricted to Days 1-5 of each month).</p>
+          <p>Instantly pause or resume automated cron jobs.</p>
           <div class="toggle-row">
             <div>
               <strong style="font-size:0.72rem">Stop Automated Sending</strong>
-              <div style="font-size:0.58rem;color:var(--muted)">Halts daily drip emails across all cohorts</div>
+              <div style="font-size:0.58rem;color:var(--muted)">Halts monthly drip emails across all cohorts</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-stop-input" onchange="toggleForceStop(this.checked)">
@@ -385,35 +333,7 @@
       </div>
     </div>
 
-    <!-- 5. POS LOGBOOK -->
-    <div class="panel" id="panel-pos-logbook">
-      <div class="section-head">
-        <div><h2>Logbook for Purchase POS</h2><p>Marking an order COMPLETED generates a shareable receipt card</p></div>
-        <button class="btn-submit" onclick="doSync()">↻ Refresh Logbook</button>
-      </div>
-      <div class="table-wrap">
-        <div style="max-height:500px;overflow-y:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Order Ref</th>
-                <th>Recipient</th>
-                <th>Email</th>
-                <th>Item Purchased</th>
-                <th>Points / Cost</th>
-                <th>Date Placed</th>
-                <th>Status (Editable)</th>
-              </tr>
-            </thead>
-            <tbody id="pos-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No POS purchase logs recorded.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. MESSAGES & EDITOR -->
+    <!-- 5. MESSAGES & EDITOR -->
     <div class="panel" id="panel-messages">
       <div class="section-head">
         <div><h2>24-Month Messages Directory &amp; Editor</h2><p>Edit themes, quotes, and body copy for monthly encouragement drips</p></div>
@@ -438,7 +358,7 @@
       </div>
     </div>
 
-    <!-- 7. LIVE LOGS -->
+    <!-- 6. LIVE LOGS -->
     <div class="panel" id="panel-logs">
       <div class="section-head">
         <div><h2>Live Activity Logs</h2><p>Real-time pipeline traces</p></div>
@@ -456,7 +376,6 @@
 <script>
 let state = {
   missionaries: [],
-  orders: [],
   messages: [],
   emailsToday: 0,
   emailsThisMonth: 0,
@@ -468,7 +387,6 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// Convert batch string like "August 2026" or "Jan 2025" to a sortable Date timestamp
 function parseBatchDate(batchStr) {
   if (!batchStr) return 0;
   const parsed = Date.parse(batchStr);
@@ -489,7 +407,6 @@ async function doSync() {
     if (data.ok) {
       state.missionaries = data.missionaries || [];
       state.messages = data.messages || [];
-      state.orders = data.orders || [];
       state.emailsToday = data.emailsToday || 0;
       state.emailsThisMonth = data.emailsThisMonth || 0;
       state.forceStop = Boolean(data.forceStop);
@@ -497,21 +414,18 @@ async function doSync() {
 
       renderDashboard();
       
-      // Sort active missionaries by batch month (oldest first)
       const activeList = state.missionaries.filter(m => m.status !== 'archived');
       activeList.sort((a, b) => parseBatchDate(a.start) - parseBatchDate(b.start));
       renderRoster(activeList);
 
-      // Render Archive list
       const archivedList = state.missionaries.filter(m => m.status === 'archived');
       archivedList.sort((a, b) => parseBatchDate(a.start) - parseBatchDate(b.start));
       renderArchive(archivedList);
 
-      renderPosLogbook(state.orders);
       renderMessages(state.messages);
       updateAdminTogglesUI();
 
-      showToast("Synced", `Loaded ${state.missionaries.length} missionaries & ${state.orders.length} orders.`, "success");
+      showToast("Synced", `Loaded ${state.missionaries.length} missionaries successfully.`, "success");
     } else {
       showToast("Error", data.error || "Failed to load database.", "error");
     }
@@ -542,70 +456,6 @@ async function updateMissionaryPoints(email, inputEl) {
   } catch (e) {
     showToast("Error", "Failed to update points", "error");
   }
-}
-
-async function updateOrderStatus(orderId, selectEl) {
-  const status = selectEl.value;
-  selectEl.className = `status-select ${status.toLowerCase()}`;
-
-  try {
-    const res = await fetch('/api/dashboard-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_order_status', order_id: orderId, status })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const o = state.orders.find(x => x.order_id === orderId);
-      if (o) {
-        o.status = status;
-        if (status === 'COMPLETED') {
-          showReceiptModal(o);
-        }
-      }
-      showToast("Order Updated", `Order ${orderId} marked as ${status}`, "success");
-      state.orders.sort((a, b) => (a.status === 'PENDING' ? -1 : 1) - (b.status === 'PENDING' ? -1 : 1));
-      renderPosLogbook(state.orders);
-    }
-  } catch (e) {
-    showToast("Error", "Failed to update order status", "error");
-  }
-}
-
-function showReceiptModal(order) {
-  const cardHtml = `Title: ${order.name}<br>` +
-                   `Email: ${order.email}<br>` +
-                   `Reference code: <strong>${order.order_id}</strong><br>` +
-                   `Item Purchased: <strong>${order.item}</strong><br>` +
-                   `Cost: ${order.cost} Pts`;
-
-  document.getElementById('receipt-preview-text').innerHTML = cardHtml;
-  document.getElementById('receipt-modal').classList.add('active');
-}
-
-function closeReceiptModal() {
-  document.getElementById('receipt-modal').classList.remove('active');
-}
-
-function copyReceiptText() {
-  const node = document.getElementById('receipt-preview-text');
-  const text = `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\n` + node.innerText + `\n\n💖 Thank you! Please shop again! 🌸\nVisit us at https://m.me/timeless.creations.06`;
-  
-  navigator.clipboard.writeText(text).then(() => {
-    showToast("Copied", "Receipt text copied to clipboard!", "success");
-    closeReceiptModal();
-  });
-}
-
-function downloadReceiptImage() {
-  const node = document.getElementById('receipt-card-node');
-  html2canvas(node, { scale: 2, backgroundColor: null }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = `TCRP-Receipt-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast("Downloaded", "Receipt saved as image successfully!", "success");
-  });
 }
 
 async function deleteMissionary(email, name) {
@@ -744,11 +594,9 @@ function renderDashboard() {
   document.getElementById('stat-emails-today').textContent = state.emailsToday;
   document.getElementById('stat-emails-month').textContent = state.emailsThisMonth;
   document.getElementById('stat-archived').textContent = archivedList.length;
-  document.getElementById('stat-pos-count').textContent = state.orders.length;
   
   document.getElementById('badge-missionaries').textContent = activeList.length;
   document.getElementById('badge-archive').textContent = archivedList.length;
-  document.getElementById('badge-pos').textContent = state.orders.length;
   document.getElementById('dash-date').textContent = "Last synchronized: " + new Date().toLocaleTimeString();
 }
 
@@ -796,7 +644,7 @@ function renderRoster(list) {
 function renderArchive(list) {
   const tb = document.getElementById('archive-tbody');
   if (!list.length) {
-    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">No archived graduates. (Graduates automatically purge after 6 months).</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">No archived graduates.</td></tr>';
     return;
   }
 
@@ -813,33 +661,6 @@ function renderArchive(list) {
         <td><span class="badge-ref">${m.ref}</span></td>
         <td style="text-align:center">
           <button class="btn-delete" onclick="deleteMissionary('${m.email}', '${m.name.replace(/'/g, "\\'")}')">🗑️ Delete</button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function renderPosLogbook(orders) {
-  const tb = document.getElementById('pos-tbody');
-  if (!orders || !orders.length) {
-    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px">No POS purchase logs recorded yet.</td></tr>';
-    return;
-  }
-  tb.innerHTML = orders.map(o => {
-    const isPending = (o.status || 'PENDING').toUpperCase() === 'PENDING';
-    return `
-      <tr>
-        <td style="font-weight:bold;color:var(--gold)">${o.order_id}</td>
-        <td style="font-weight:600">${o.name}</td>
-        <td style="color:var(--muted)">${o.email || '—'}</td>
-        <td>${o.item}</td>
-        <td><span style="font-weight:bold;color:var(--gold);">${o.cost} Pts</span></td>
-        <td style="color:var(--muted)">${o.date || 'Just now'}</td>
-        <td>
-          <select class="status-select ${isPending ? 'pending' : 'completed'}" onchange="updateOrderStatus('${o.order_id}', this)">
-            <option value="PENDING" ${isPending ? 'selected' : ''}>⏳ PENDING</option>
-            <option value="COMPLETED" ${!isPending ? 'selected' : ''}>✅ COMPLETED</option>
-          </select>
         </td>
       </tr>
     `;
@@ -905,6 +726,5 @@ function showToast(title, msg, type = 'success') {
 
 window.addEventListener('load', doSync);
 </script>
-  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js");}</script>
 </body>
 </html>

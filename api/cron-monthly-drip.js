@@ -4,7 +4,7 @@ import { queryTurso, unwrap } from '../lib/db.js';
 import { logSystemEvent } from '../lib/logger.js';
 
 const BREVO_KEY = (process.env.BREVO_API_KEY || '').trim();
-const BATCH_SIZE = 140; // Maximize Vercel function execution window for full quota utilization
+const BATCH_SIZE = 30; // Safe chunk size: finishes in ~5-10 seconds, zero timeout risk!
 const DAILY_SEND_CEILING = 280; // Total max daily quota allowance (140 + 140)
 
 async function runSql(sql, args = []) {
@@ -88,13 +88,9 @@ async function sendBrevoEmail(recipientEmail, recipientName, subject, html) {
   }
 }
 
-export const config = {
-  maxDuration: 60 // Allow 60s execution window on Vercel
-};
-
 export default async function handler(req, res) {
   const now = new Date();
-  const todayDateStr = now.toISOString().slice(0, 10); // e.g. '2026-08-19'
+  const todayDateStr = now.toISOString().slice(0, 10);
   const nowIso = now.toISOString();
 
   await runSql(`
@@ -104,7 +100,6 @@ export default async function handler(req, res) {
     );
   `);
 
-  // Track daily count to strictly enforce the 280 ceiling per day
   const dailyKey = `drip_count_${todayDateStr}`;
   const record = (await runSql("SELECT value FROM system_config WHERE key = ?", [dailyKey]))[0];
   let sentToday = record ? parseInt(record.value, 10) || 0 : 0;
@@ -116,10 +111,8 @@ export default async function handler(req, res) {
     });
   }
 
-  // Calculate remaining slot allocation for today
   const allowedThisRun = Math.min(BATCH_SIZE, DAILY_SEND_CEILING - sentToday);
 
-  // Fetch missionaries who are due for their monthly drip
   const eligibleMissionaries = await runSql(`
     SELECT email, name, points, referral_code, months_sent, max_months, last_sent_at, next_send_date
     FROM missionaries
@@ -168,10 +161,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // Update daily sent counter in Turso
   await runSql("INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)", [dailyKey, String(sentToday)]);
 
-  await logSystemEvent('INFO', `Daily Drip Run: Sent ${sentCount} (Total today: ${sentToday}/${DAILY_SEND_CEILING})`);
+  await logSystemEvent('INFO', `Safe Chunk Drip: Sent ${sentCount} (Total today: ${sentToday}/${DAILY_SEND_CEILING})`);
 
   return res.status(200).json({
     ok: true,

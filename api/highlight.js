@@ -27,7 +27,9 @@ async function ensureTable() {
       image_url TEXT,
       active INTEGER DEFAULT 1,
       img_temple TEXT,
+      title_prod1 TEXT,
       img_prod1 TEXT,
+      title_prod2 TEXT,
       img_prod2 TEXT,
       gal1 TEXT,
       gal2 TEXT,
@@ -60,18 +62,20 @@ export default async function handler(req, res) {
       await runSql(`
         INSERT INTO product_highlight (
           id, title, description, image_url, active,
-          img_temple, img_prod1, img_prod2,
+          img_temple, title_prod1, img_prod1, title_prod2, img_prod2,
           gal1, gal2, gal3, gal4, gal5, gal6,
           updated_at
         )
-        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           title = excluded.title,
           description = excluded.description,
           image_url = excluded.image_url,
           active = excluded.active,
           img_temple = excluded.img_temple,
+          title_prod1 = excluded.title_prod1,
           img_prod1 = excluded.img_prod1,
+          title_prod2 = excluded.title_prod2,
           img_prod2 = excluded.img_prod2,
           gal1 = excluded.gal1,
           gal2 = excluded.gal2,
@@ -82,7 +86,8 @@ export default async function handler(req, res) {
           updated_at = excluded.updated_at;
       `, [
         b.title || '', b.description || '', b.image_url || '', b.active ? 1 : 0,
-        b.img_temple || '', b.img_prod1 || '', b.img_prod2 || '',
+        b.img_temple || '', b.title_prod1 || '', b.img_prod1 || '',
+        b.title_prod2 || '', b.img_prod2 || '',
         b.gal1 || '', b.gal2 || '', b.gal3 || '', b.gal4 || '', b.gal5 || '', b.gal6 || '',
         nowIso
       ]);

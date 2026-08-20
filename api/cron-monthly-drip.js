@@ -9,7 +9,9 @@ const DAILY_SEND_CEILING = 280;
 
 const DEFAULTS = {
   temple: "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG",
+  titleProd1: "Wooden Nametag",
   prod1: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+  titleProd2: "POS Kit",
   prod2: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
   gal1: "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
   gal2: "https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky",
@@ -87,7 +89,9 @@ function renderMonthlyTemplate(missionary, monthNum, media) {
     .replace(/{{points}}/g, String(missionary.points || 0))
     .replace(/{{referral_code}}/g, missionary.referral_code || 'TCRP')
     .replace(/{{ImgTemple}}/g, m.img_temple || DEFAULTS.temple)
+    .replace(/{{TitleProd1}}/g, m.title_prod1 || DEFAULTS.titleProd1)
     .replace(/{{ImgProd1}}/g, m.img_prod1 || DEFAULTS.prod1)
+    .replace(/{{TitleProd2}}/g, m.title_prod2 || DEFAULTS.titleProd2)
     .replace(/{{ImgProd2}}/g, m.img_prod2 || DEFAULTS.prod2)
     .replace(/{{Gal1}}/g, m.gal1 || DEFAULTS.gal1)
     .replace(/{{Gal2}}/g, m.gal2 || DEFAULTS.gal2)
@@ -156,7 +160,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, message: "No missionaries due for drip." });
   }
 
-  // Fetch Media Hub configurations
   const mediaRecord = (await runSql("SELECT * FROM product_highlight WHERE id = 1"))[0] || null;
 
   let sentCount = 0;

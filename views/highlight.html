@@ -53,7 +53,7 @@
   <header>
     <div>
       <h1>Monthly Media & Product Highlight Hub</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Centralized Visual Asset Management for Monthly Email Drips</p>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Centralized Visual Asset & Product Copy Management</p>
     </div>
     <a href="/">← Return to Dashboard</a>
   </header>
@@ -93,17 +93,31 @@
         </div>
       </div>
 
-      <!-- 3. Missionary Essentials Products -->
+      <!-- 3. Missionary Essentials Products (Editable Titles & 1:1 Images) -->
       <div class="card">
-        <h3>🛍️ Missionary Essentials Products (1:1 Ratio)</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="form-group">
-            <label>Product 1 Image URL</label>
-            <input type="text" id="img-prod1" class="form-input" placeholder="https://i.postimg.cc/.../nametag.jpg" oninput="renderLivePreview()"/>
+        <h3>🛍️ Missionary Essentials Products (1:1 Ratio & Editable Titles)</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <!-- Product 1 -->
+          <div>
+            <div class="form-group">
+              <label>Product 1 Title / Name</label>
+              <input type="text" id="title-prod1" class="form-input" placeholder="Wooden Nametag" oninput="renderLivePreview()"/>
+            </div>
+            <div class="form-group">
+              <label>Product 1 Image URL</label>
+              <input type="text" id="img-prod1" class="form-input" placeholder="https://i.postimg.cc/.../nametag.jpg" oninput="renderLivePreview()"/>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Product 2 Image URL</label>
-            <input type="text" id="img-prod2" class="form-input" placeholder="https://i.postimg.cc/.../poskit.jpg" oninput="renderLivePreview()"/>
+          <!-- Product 2 -->
+          <div>
+            <div class="form-group">
+              <label>Product 2 Title / Name</label>
+              <input type="text" id="title-prod2" class="form-input" placeholder="POS Kit" oninput="renderLivePreview()"/>
+            </div>
+            <div class="form-group">
+              <label>Product 2 Image URL</label>
+              <input type="text" id="img-prod2" class="form-input" placeholder="https://i.postimg.cc/.../poskit.jpg" oninput="renderLivePreview()"/>
+            </div>
           </div>
         </div>
       </div>
@@ -122,7 +136,7 @@
       </div>
 
       <div style="margin-bottom:30px;display:flex;">
-        <button class="btn" onclick="saveMediaHub()">💾 Save All Media to Turso</button>
+        <button class="btn" onclick="saveMediaHub()">💾 Save All Changes to Turso</button>
         <button class="btn btn-danger" onclick="clearHighlightOnly()">🗑️ Remove Highlight Only</button>
       </div>
     </div>
@@ -143,10 +157,11 @@
 <script>
 let rawTemplate = "";
 
-// Default image assets fallback
 const DEFAULTS = {
   temple: "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG",
+  titleProd1: "Wooden Nametag",
   prod1: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+  titleProd2: "POS Kit",
   prod2: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
   gal1: "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
   gal2: "https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky",
@@ -181,7 +196,9 @@ async function loadMedia() {
       document.getElementById('hl-desc').value = m.description || '';
 
       document.getElementById('img-temple').value = m.img_temple || DEFAULTS.temple;
+      document.getElementById('title-prod1').value = m.title_prod1 || DEFAULTS.titleProd1;
       document.getElementById('img-prod1').value = m.img_prod1 || DEFAULTS.prod1;
+      document.getElementById('title-prod2').value = m.title_prod2 || DEFAULTS.titleProd2;
       document.getElementById('img-prod2').value = m.img_prod2 || DEFAULTS.prod2;
 
       document.getElementById('gal-1').value = m.gal1 || DEFAULTS.gal1;
@@ -202,7 +219,9 @@ async function loadMedia() {
 
 function populateDefaults() {
   document.getElementById('img-temple').value = DEFAULTS.temple;
+  document.getElementById('title-prod1').value = DEFAULTS.titleProd1;
   document.getElementById('img-prod1').value = DEFAULTS.prod1;
+  document.getElementById('title-prod2').value = DEFAULTS.titleProd2;
   document.getElementById('img-prod2').value = DEFAULTS.prod2;
   document.getElementById('gal-1').value = DEFAULTS.gal1;
   document.getElementById('gal-2').value = DEFAULTS.gal2;
@@ -245,7 +264,9 @@ function renderLivePreview() {
     .replace(/{{points}}/g, '12')
     .replace(/{{referral_code}}/g, 'TEST2026')
     .replace(/{{ImgTemple}}/g, document.getElementById('img-temple').value.trim() || DEFAULTS.temple)
+    .replace(/{{TitleProd1}}/g, document.getElementById('title-prod1').value.trim() || DEFAULTS.titleProd1)
     .replace(/{{ImgProd1}}/g, document.getElementById('img-prod1').value.trim() || DEFAULTS.prod1)
+    .replace(/{{TitleProd2}}/g, document.getElementById('title-prod2').value.trim() || DEFAULTS.titleProd2)
     .replace(/{{ImgProd2}}/g, document.getElementById('img-prod2').value.trim() || DEFAULTS.prod2)
     .replace(/{{Gal1}}/g, document.getElementById('gal-1').value.trim() || DEFAULTS.gal1)
     .replace(/{{Gal2}}/g, document.getElementById('gal-2').value.trim() || DEFAULTS.gal2)
@@ -265,7 +286,9 @@ async function saveMediaHub() {
     description: document.getElementById('hl-desc').value.trim(),
     active: document.getElementById('hl-image').value.trim() ? 1 : 0,
     img_temple: document.getElementById('img-temple').value.trim(),
+    title_prod1: document.getElementById('title-prod1').value.trim(),
     img_prod1: document.getElementById('img-prod1').value.trim(),
+    title_prod2: document.getElementById('title-prod2').value.trim(),
     img_prod2: document.getElementById('img-prod2').value.trim(),
     gal1: document.getElementById('gal-1').value.trim(),
     gal2: document.getElementById('gal-2').value.trim(),
@@ -283,7 +306,7 @@ async function saveMediaHub() {
     });
     const data = await res.json();
     if (data.ok) {
-      alert("✅ All media links & highlight settings successfully saved in Turso!");
+      alert("✅ All product names, media links, and highlight settings successfully saved to Turso!");
     } else {
       alert("❌ Error: " + data.error);
     }

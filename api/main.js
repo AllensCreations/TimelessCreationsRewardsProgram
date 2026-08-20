@@ -1,4 +1,4 @@
-import { queryTurso, unwrap } from '../../lib/db.js';
+import { queryTurso, unwrap } from '../lib/db.js';
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -19,33 +19,29 @@ async function runSql(sql, args = []) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
+  const action = req.query.action || req.body?.action;
+
+  if (req.method === 'GET' || action === 'dashboard_data') {
     try {
       const missionaries = await runSql("SELECT email, name, last_name, batch_month, points, referral_code, status, months_sent, max_months, next_send_date, verified FROM missionaries ORDER BY name ASC");
       const orders = await runSql("SELECT order_id, psid, email, name, item, points_cost as cost, status, created_at as date FROM orders ORDER BY ROWID DESC");
-      
-      return res.status(200).json({
-        ok: true,
-        missionaries,
-        orders,
-        emailsToday: 0,
-        emailsThisMonth: 0,
-        dailyStats: {}
-      });
+      const logs = await runSql("SELECT * FROM system_logs ORDER BY ROWID DESC LIMIT 100");
+
+      return res.status(200).json({ ok: true, missionaries, orders, logs });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
     }
   }
 
   if (req.method === 'POST') {
-    const { action, email, status, order_id } = req.body || {};
-
     if (action === 'delete_missionary') {
+      const { email } = req.body;
       await runSql("DELETE FROM missionaries WHERE email = ?", [email]);
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'update_order_status') {
+      const { order_id, status } = req.body;
       await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
       return res.status(200).json({ ok: true });
     }

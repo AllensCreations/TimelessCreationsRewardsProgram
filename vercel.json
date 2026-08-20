@@ -11,9 +11,9 @@
     { "source": "/leaderboard.html", "destination": "/views/leaderboard.html" },
     { "source": "/inbox.html", "destination": "/views/inbox.html" },
     
-    { "source": "/api/dashboard-data", "destination": "/api/core/dashboard-data" },
-    { "source": "/api/invoicing", "destination": "/api/operations/invoicing" },
-    { "source": "/api/push-missionaries", "destination": "/api/dispatch/push-missionaries" },
-    { "source": "/api/webhook", "destination": "/api/auth/webhook" }
+    { "source": "/api/dashboard-data", "destination": "/api/main" },
+    { "source": "/api/invoicing", "destination": "/api/invoicing" },
+    { "source": "/api/push-missionaries", "destination": "/api/push-missionaries" },
+    { "source": "/api/webhook", "destination": "/api/webhook" }
   ]
 }

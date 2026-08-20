@@ -23,44 +23,31 @@ async function runSql(sql, args = []) {
 }
 
 async function ensureTables() {
-  await runSql(`
-    CREATE TABLE IF NOT EXISTS cash_invoices (
-      invoice_id TEXT PRIMARY KEY,
-      email TEXT,
-      name TEXT,
-      phone TEXT,
-      items_json TEXT,
-      subtotal REAL DEFAULT 0,
-      discount_type TEXT DEFAULT 'fixed',
-      discount_val REAL DEFAULT 0,
-      discount_amount REAL DEFAULT 0,
-      total_amount REAL DEFAULT 0,
-      status TEXT DEFAULT 'COMPLETED',
-      created_at TEXT
-    );
-  `);
-
-  await runSql(`
-    CREATE TABLE IF NOT EXISTS product_catalog (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE,
-      price REAL DEFAULT 0
-    );
-  `);
-
-  const count = (await runSql("SELECT COUNT(*) as c FROM product_catalog"))[0]?.c || 0;
-  if (count === 0) {
-    const defaults = [
-      ["Temple Keychain", 150],
-      ["Nametag Keychain", 250],
-      ["Salvation Kit (POS)", 650],
-      ["Scripture Case", 950],
-      ["Custom Missionary Item", 100]
-    ];
-    for (const [name, price] of defaults) {
-      await runSql("INSERT OR IGNORE INTO product_catalog (name, price) VALUES (?, ?)", [name, price]);
-    }
-  }
+  try {
+    await runSql(`
+      CREATE TABLE IF NOT EXISTS cash_invoices (
+        invoice_id TEXT PRIMARY KEY,
+        email TEXT,
+        name TEXT,
+        phone TEXT,
+        items_json TEXT,
+        subtotal REAL DEFAULT 0,
+        discount_type TEXT DEFAULT 'fixed',
+        discount_val REAL DEFAULT 0,
+        discount_amount REAL DEFAULT 0,
+        total_amount REAL DEFAULT 0,
+        status TEXT DEFAULT 'COMPLETED',
+        created_at TEXT
+      );
+    `);
+    await runSql(`
+      CREATE TABLE IF NOT EXISTS product_catalog (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE,
+        price REAL DEFAULT 0
+      );
+    `);
+  } catch (e) {}
 }
 
 async function sendBrevoReceiptEmail(recipientEmail, recipientName, phone, invoiceData) {
@@ -81,15 +68,12 @@ async function sendBrevoReceiptEmail(recipientEmail, recipientName, phone, invoi
           <h1 style="color: #8b1a1a; margin: 0; font-size: 26px; letter-spacing: 2px;">INVOICE</h1>
           <p style="font-size: 13px; color: #b8955a; margin: 4px 0 0 0;">✨ Timeless Creations ✨</p>
         </div>
-
         <div style="font-size: 13px; line-height: 1.6; margin-bottom: 16px;">
           <div><strong>Invoice Ref:</strong> ${invoiceData.invoice_id}</div>
           <div><strong>Bill To:</strong> ${recipientName}</div>
           <div><strong>Email:</strong> ${recipientEmail}</div>
           <div><strong>Phone:</strong> ${phone || '—'}</div>
-          <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
         </div>
-
         <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px;">
           <thead>
             <tr style="background: #fdfaf3; color: #78716c;">
@@ -99,30 +83,19 @@ async function sendBrevoReceiptEmail(recipientEmail, recipientName, phone, invoi
               <th style="padding: 8px; text-align: right;">Total</th>
             </tr>
           </thead>
-          <tbody>
-            ${itemsListHtml}
-          </tbody>
+          <tbody>${itemsListHtml}</tbody>
         </table>
-
         <div style="border-top: 1px solid #eee; padding-top: 10px; font-size: 13px; text-align: right;">
           <div>Subtotal: ₱${Number(invoiceData.subtotal).toFixed(2)}</div>
           <div style="color: #16a34a;">Discount: -₱${Number(invoiceData.discount_amount).toFixed(2)}</div>
           <div style="font-size: 16px; font-weight: bold; color: #8b1a1a; margin-top: 6px;">Total Paid: ₱${Number(invoiceData.total_amount).toFixed(2)}</div>
-        </div>
-
-        <div style="margin-top: 24px; text-align: center; font-size: 12px; color: #777;">
-          <p style="font-weight: bold; color: #8b1a1a; margin-bottom: 4px;">💖 Thank you for supporting Timeless Creations! 🌸</p>
         </div>
       </div>
     `;
 
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: {
-        'api-key': BREVO_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         sender: { name: "Timeless Creations", email: "support@timelesscreationsrp.com" },
         to: [{ email: recipientEmail, name: recipientName }],
@@ -132,7 +105,6 @@ async function sendBrevoReceiptEmail(recipientEmail, recipientName, phone, invoi
     });
     return res.ok;
   } catch (err) {
-    console.error("Brevo receipt dispatch failed:", err.message);
     return false;
   }
 }
@@ -140,23 +112,22 @@ async function sendBrevoReceiptEmail(recipientEmail, recipientName, phone, invoi
 export default async function handler(req, res) {
   await ensureTables();
 
-  // GET: Fetch missionaries, invoices, and product catalog
   if (req.method === 'GET') {
     try {
-      const missionaries = await runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries ORDER BY name ASC");
-      const invoices = await runSql("SELECT * FROM cash_invoices ORDER BY ROWID DESC");
-      const products = await runSql("SELECT name, price FROM product_catalog ORDER BY id ASC");
+      const [missionaries, invoices, products] = await Promise.all([
+        runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries ORDER BY name ASC"),
+        runSql("SELECT * FROM cash_invoices ORDER BY ROWID DESC"),
+        runSql("SELECT name, price FROM product_catalog ORDER BY id ASC")
+      ]);
       return res.status(200).json({ ok: true, missionaries, invoices, products });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
     }
   }
 
-  // POST: Actions
   if (req.method === 'POST') {
     const { action } = req.body || {};
 
-    // 1. Save Products
     if (action === 'save_products') {
       const { products = [] } = req.body;
       await runSql("DELETE FROM product_catalog");
@@ -165,16 +136,11 @@ export default async function handler(req, res) {
           await runSql("INSERT INTO product_catalog (name, price) VALUES (?, ?)", [p.name.trim(), Number(p.price) || 0]);
         }
       }
-      return res.status(200).json({ ok: true, message: "Product prices saved to Turso database." });
+      return res.status(200).json({ ok: true });
     }
 
-    // 2. Direct Create & Save Invoice (No pending steps)
     if (action === 'create_invoice') {
       const { email, name, phone, items, subtotal, discountType, discountVal, discountAmount, totalAmount } = req.body;
-      if (!name || !items || items.length === 0) {
-        return res.status(400).json({ ok: false, error: "Missing customer name or items." });
-      }
-
       const invoiceId = 'INV-' + crypto.randomBytes(3).toString('hex').toUpperCase();
       const nowIso = new Date().toISOString();
       const itemsJson = JSON.stringify(items);
@@ -184,33 +150,18 @@ export default async function handler(req, res) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?)
       `, [invoiceId, email || 'Walk-in / Cash', name, phone || '', itemsJson, subtotal, discountType, discountVal, discountAmount, totalAmount, nowIso]);
 
-      let emailSent = false;
       if (email && email.includes('@')) {
-        emailSent = await sendBrevoReceiptEmail(email, name, phone, {
-          invoice_id: invoiceId,
-          items,
-          subtotal,
-          discount_amount: discountAmount,
-          total_amount: totalAmount
-        });
+        await sendBrevoReceiptEmail(email, name, phone, { invoice_id: invoiceId, items, subtotal, discount_amount: discountAmount, total_amount: totalAmount });
       }
 
-      await logSystemEvent('INFO', `Invoice Generated: ${invoiceId} for ${name} - Total: ₱${totalAmount}`);
-
-      return res.status(200).json({
-        ok: true,
-        invoiceId,
-        emailSent,
-        message: `Invoice ${invoiceId} generated successfully!`
-      });
+      await logSystemEvent('INFO', `Invoice Generated: ${invoiceId} for ${name} - ₱${totalAmount}`);
+      return res.status(200).json({ ok: true, invoiceId });
     }
 
-    // 3. Delete / Remove Invoice
     if (action === 'delete_invoice') {
       const { invoice_id } = req.body;
       await runSql("DELETE FROM cash_invoices WHERE invoice_id = ?", [invoice_id]);
-      await logSystemEvent('INFO', `Invoice Deleted: ${invoice_id}`);
-      return res.status(200).json({ ok: true, message: `Invoice ${invoice_id} deleted.` });
+      return res.status(200).json({ ok: true });
     }
   }
 

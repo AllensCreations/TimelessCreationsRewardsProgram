@@ -12,11 +12,8 @@
     { "source": "/inbox.html", "destination": "/views/inbox.html" },
     
     { "source": "/api/dashboard-data", "destination": "/api/core/dashboard-data" },
-    { "source": "/api/admin-utils", "destination": "/api/core/admin-utils" },
-    { "source": "/api/billing-rewards", "destination": "/api/core/billing-rewards" },
+    { "source": "/api/invoicing", "destination": "/api/operations/invoicing" },
     { "source": "/api/push-missionaries", "destination": "/api/dispatch/push-missionaries" },
-    { "source": "/api/drip-hub", "destination": "/api/dispatch/drip-hub" },
-    { "source": "/api/settings", "destination": "/api/operations/settings" },
     { "source": "/api/webhook", "destination": "/api/auth/webhook" }
   ]
 }

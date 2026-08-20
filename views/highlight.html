@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Media & Monthly Message Hub</title>
+<title>Timeless Creations — Media & Monthly Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <style>
   :root {
@@ -37,23 +37,28 @@
   .form-group{margin-bottom:12px;}
   .form-group label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;}
   .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;}
-  .form-textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;resize:vertical;min-height:75px;}
+  .form-textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;resize:vertical;min-height:60px;}
   .form-input:focus, .form-textarea:focus{border-color:var(--gold);}
 
   .gallery-grid-inputs{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;}
   @media(max-width:600px){.gallery-grid-inputs{grid-template-columns:1fr;}}
 
-  .search-selector-bar{
-    display:flex;gap:10px;align-items:center;background:var(--surface2);padding:10px 14px;border-radius:8px;border:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap;
-  }
-  .month-pill-btn{
-    background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:0.68rem;cursor:pointer;
-  }
-  .month-pill-btn.active{color:var(--gold);border-color:var(--gold);background:var(--gold-dim);font-weight:bold;}
-
-  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:12px 22px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;}
-  .btn-secondary{background:var(--surface2);border:1px solid var(--gold);color:var(--gold);padding:8px 14px;border-radius:6px;font-size:0.72rem;cursor:pointer;font-weight:bold;}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:12px 20px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;}
+  .btn-copy{background:var(--surface2);border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:6px;font-size:0.68rem;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;}
+  .btn-copy:hover{background:var(--gold);color:#0a0a0f;}
   .btn-danger{background:rgba(224,92,92,0.2);color:var(--red);border:1px solid rgba(224,92,92,0.4);margin-left:8px;}
+  
+  /* Collapsible 24-Month Directory */
+  .accordion-list{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto;padding-right:4px;}
+  .acc-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .acc-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none;}
+  .acc-header:hover{background:rgba(255,255,255,0.03);}
+  .acc-title{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;color:var(--gold);}
+  .acc-theme-pill{font-size:0.62rem;color:var(--muted);font-weight:400;font-family:'DM Mono',monospace;}
+  .acc-chevron{transition:transform 0.2s;font-size:0.7rem;color:var(--muted);}
+  .acc-content{display:none;padding:14px 16px;border-top:1px solid var(--border);background:rgba(0,0,0,0.2);}
+  .acc-item.open .acc-content{display:block;}
+  .acc-item.open .acc-chevron{transform:rotate(180deg);}
 
   /* 1:1 Live Preview Device */
   .preview-wrapper{
@@ -84,8 +89,8 @@
 <div class="container">
   <header>
     <div>
-      <h1>Media Assets &amp; Message Editor</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Select Any Month to Search &amp; Edit with Instant 1:1 Live Preview</p>
+      <h1>Media Assets &amp; Message Directory Hub</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Custom Template Imagery, 24 Messages, &amp; Smart Routing</p>
     </div>
     <div class="nav-links">
       <a href="/" class="btn-link">← Dashboard</a>
@@ -94,25 +99,25 @@
   </header>
 
   <div class="guide-banner">
-    📌 <strong>Direct Image Uploads:</strong> Upload images on <a href="https://postimages.org/" target="_blank">https://postimages.org/</a> (choose Web/Email size) and paste the <strong>"Direct Link"</strong> URLs into the fields below. The top temple banner is locked.
+    📌 <strong>Link Routing:</strong> "Claim Your Rewards" routes to <strong>https://m.me/TimelessCreationsRP</strong>, while "Inquire via Messenger" routes to <strong>https://m.me/timeless.creations.06</strong>.
   </div>
 
   <div class="hub-grid">
     <div>
-      <!-- 1. Spotlight Product of the Month -->
+      <!-- 1. Highlight of the Month -->
       <div class="card">
         <h3>⭐ Product Highlight of the Month (Strictly 1:1)</h3>
         <div class="form-group">
           <label>Highlight Title</label>
-          <input type="text" id="hl-title" class="form-input" placeholder="e.g. Premium Leather Scripture Case" oninput="schedulePreview()"/>
+          <input type="text" id="hl-title" class="form-input" placeholder="e.g. Premium Leather Scripture Case" oninput="fastPreview()"/>
         </div>
         <div class="form-group">
           <label>1:1 Square Image URL (Leave blank to hide)</label>
-          <input type="text" id="hl-image" class="form-input" placeholder="https://i.postimg.cc/.../product.jpg" oninput="schedulePreview()"/>
+          <input type="text" id="hl-image" class="form-input" placeholder="https://i.postimg.cc/.../product.jpg" oninput="fastPreview()"/>
         </div>
         <div class="form-group">
           <label>Short Promo Description</label>
-          <input type="text" id="hl-desc" class="form-input" placeholder="e.g. Handcrafted with genuine full-grain leather." oninput="schedulePreview()"/>
+          <input type="text" id="hl-desc" class="form-input" placeholder="e.g. Handcrafted with genuine full-grain leather." oninput="fastPreview()"/>
         </div>
       </div>
 
@@ -123,21 +128,21 @@
           <div>
             <div class="form-group">
               <label>Product 1 Title</label>
-              <input type="text" id="title-prod1" class="form-input" placeholder="Wooden Nametag" oninput="schedulePreview()"/>
+              <input type="text" id="title-prod1" class="form-input" placeholder="Wooden Nametag" oninput="fastPreview()"/>
             </div>
             <div class="form-group">
               <label>Product 1 Image URL</label>
-              <input type="text" id="img-prod1" class="form-input" placeholder="https://i.postimg.cc/.../nametag.jpg" oninput="schedulePreview()"/>
+              <input type="text" id="img-prod1" class="form-input" placeholder="https://i.postimg.cc/.../nametag.jpg" oninput="fastPreview()"/>
             </div>
           </div>
           <div>
             <div class="form-group">
               <label>Product 2 Title</label>
-              <input type="text" id="title-prod2" class="form-input" placeholder="POS Kit" oninput="schedulePreview()"/>
+              <input type="text" id="title-prod2" class="form-input" placeholder="POS Kit" oninput="fastPreview()"/>
             </div>
             <div class="form-group">
               <label>Product 2 Image URL</label>
-              <input type="text" id="img-prod2" class="form-input" placeholder="https://i.postimg.cc/.../poskit.jpg" oninput="schedulePreview()"/>
+              <input type="text" id="img-prod2" class="form-input" placeholder="https://i.postimg.cc/.../poskit.jpg" oninput="fastPreview()"/>
             </div>
           </div>
         </div>
@@ -147,59 +152,43 @@
       <div class="card">
         <h3>🖼️ Legacy Community Gallery Images (6 Slots)</h3>
         <div class="gallery-grid-inputs">
-          <input type="text" id="gal-1" class="form-input" placeholder="Photo 1 URL" oninput="schedulePreview()"/>
-          <input type="text" id="gal-2" class="form-input" placeholder="Photo 2 URL" oninput="schedulePreview()"/>
-          <input type="text" id="gal-3" class="form-input" placeholder="Photo 3 URL" oninput="schedulePreview()"/>
-          <input type="text" id="gal-4" class="form-input" placeholder="Photo 4 URL" oninput="schedulePreview()"/>
-          <input type="text" id="gal-5" class="form-input" placeholder="Photo 5 URL" oninput="schedulePreview()"/>
-          <input type="text" id="gal-6" class="form-input" placeholder="Photo 6 URL" oninput="schedulePreview()"/>
+          <input type="text" id="gal-1" class="form-input" placeholder="Photo 1 URL" oninput="fastPreview()"/>
+          <input type="text" id="gal-2" class="form-input" placeholder="Photo 2 URL" oninput="fastPreview()"/>
+          <input type="text" id="gal-3" class="form-input" placeholder="Photo 3 URL" oninput="fastPreview()"/>
+          <input type="text" id="gal-4" class="form-input" placeholder="Photo 4 URL" oninput="fastPreview()"/>
+          <input type="text" id="gal-5" class="form-input" placeholder="Photo 5 URL" oninput="fastPreview()"/>
+          <input type="text" id="gal-6" class="form-input" placeholder="Photo 6 URL" oninput="fastPreview()"/>
         </div>
       </div>
 
-      <!-- 4. Month Search & Single Editor -->
+      <!-- 4. 24-Month Messages Directory (Collapsible) -->
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <h3>📜 Month Search &amp; Message Editor</h3>
-          <span id="active-month-badge" style="font-size:0.7rem;color:var(--gold);font-weight:bold;">Editing Month 1</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <h3>📜 24-Month Messages Directory (Collapsible)</h3>
+          <span style="font-size:0.65rem;color:var(--muted);">Tap any month to edit content</span>
         </div>
-
-        <div class="search-selector-bar">
-          <label style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;">Select Month to Edit:</label>
-          <select id="search-month-dropdown" class="form-input" style="width:auto;padding:6px 10px;font-size:0.75rem;font-weight:bold;color:var(--gold);" onchange="selectMonthToEdit(this.value)">
-            <!-- 1-24 Dynamically Generated -->
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Theme / Focus Speaker</label>
-          <input type="text" id="edit-theme" class="form-input" placeholder="e.g. Month 1 Focus / Theme" oninput="syncActiveMonth()"/>
-        </div>
-        <div class="form-group">
-          <label>Scripture / Inspirational Quote</label>
-          <input type="text" id="edit-scripture" class="form-input" placeholder="e.g. “Trust in the Lord with all thine heart...” — Proverbs 3:5" oninput="syncActiveMonth()"/>
-        </div>
-        <div class="form-group">
-          <label>Monthly Message Body</label>
-          <textarea id="edit-message" class="form-textarea" placeholder="Type the encouraging monthly message here..." oninput="syncActiveMonth()"></textarea>
-        </div>
+        <div class="accordion-list" id="accordion-container"></div>
       </div>
 
       <!-- 5. 1-Click Unified Save Button -->
-      <div style="margin:20px 0 30px;display:flex;gap:10px;">
+      <div style="margin:20px 0 30px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" onclick="saveAllBulk()">💾 Save Media, Products &amp; All 24 Months</button>
         <button class="btn btn-danger" onclick="clearHighlightOnly()">🗑️ Clear Highlight</button>
       </div>
     </div>
 
-    <!-- RIGHT: 1:1 Fixed Width Live Email Preview -->
+    <!-- RIGHT: 1:1 Live Preview with Track Selector & Copy HTML -->
     <div class="preview-wrapper">
       <div class="preview-header">
         <strong style="font-size:0.75rem;color:var(--gold);">1:1 Live Preview (460px)</strong>
         <div style="display:flex;align-items:center;gap:8px;">
-          <select id="preview-cohort-select" class="form-input" style="width:auto;padding:3px 6px;font-size:0.68rem;" onchange="renderLivePreview()">
+          <select id="preview-cohort-select" class="form-input" style="width:auto;padding:3px 6px;font-size:0.68rem;" onchange="updateMonthSelector()">
             <option value="elder">Elder (1 to 24)</option>
             <option value="sister">Sister (1..17 -> 24)</option>
           </select>
+          <select id="preview-month-select" class="form-input" style="width:auto;padding:3px 6px;font-size:0.68rem;" onchange="fastPreview()">
+          </select>
+          <button class="btn-copy" onclick="copyRenderedHtml()">📋 Copy HTML</button>
         </div>
       </div>
       <div class="exact-email-device">
@@ -212,7 +201,7 @@
 <div id="toast-container"></div>
 
 <script>
-const STATIC_TEMPLATE = `<!DOCTYPE html>
+const BASE_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -261,7 +250,7 @@ const STATIC_TEMPLATE = `<!DOCTYPE html>
     <div class="points-card">
       <div class="points-val">{{Points}} PTS</div>
       <div style="font-size:13px;color:#555;margin-top:4px;">You currently have <strong>{{Points}} Points</strong> balance in your name.</div>
-      <a href="https://m.me/TimelesscreationsRP" class="cta-btn-gold">Claim Your Rewards</a>
+      <a href="https://m.me/TimelessCreationsRP" class="cta-btn-gold">Claim Your Rewards</a>
     </div>
     {{HighlightSection}}
     <hr class="divider"/>
@@ -281,6 +270,7 @@ const STATIC_TEMPLATE = `<!DOCTYPE html>
         </tr>
       </table>
       <div class="trust-badge">Work, Confirm, Pay</div>
+      <a href="https://m.me/timeless.creations.06" class="cta-btn-gold" style="background:#fff; color:#1a1a1a !important; border:1px solid #1a1a1a;">Inquire via Messenger</a>
     </div>
     <hr class="divider"/>
     <div style="max-width:420px; margin:20px auto 10px; text-align:center;">
@@ -321,8 +311,7 @@ const DEFAULTS = {
 };
 
 let messagesList = [];
-let currentSelectedMonth = 1;
-let previewDebounceTimer = null;
+let lastRenderedHtml = "";
 
 function showToast(title, msg, type = 'success') {
   const tc = document.getElementById('toast-container');
@@ -333,27 +322,33 @@ function showToast(title, msg, type = 'success') {
   setTimeout(() => el.remove(), 3500);
 }
 
-function schedulePreview() {
-  clearTimeout(previewDebounceTimer);
-  previewDebounceTimer = setTimeout(renderLivePreview, 100);
-}
-
-function populateMonthDropdown() {
-  const sel = document.getElementById('search-month-dropdown');
+function updateMonthSelector() {
+  const cohort = document.getElementById('preview-cohort-select').value;
+  const sel = document.getElementById('preview-month-select');
   sel.innerHTML = '';
-  for (let m = 1; m <= 24; m++) {
+
+  const months = (cohort === 'sister') 
+    ? [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,24] 
+    : Array.from({length: 24}, (_, i) => i + 1);
+
+  months.forEach(m => {
     const opt = document.createElement('option');
     opt.value = m;
-    opt.textContent = (m === 24) ? `Month 24 (Graduation / Return with Honor)` : `Month ${m}`;
+    opt.textContent = (m === 24) ? `Month 24 (Graduation / Return)` : `Month ${m}`;
     sel.appendChild(opt);
-  }
+  });
+
+  fastPreview();
+}
+
+function toggleAcc(el) {
+  el.classList.toggle('open');
 }
 
 async function init() {
   renderDefaultMessagesLocally();
   populateDefaults();
-  populateMonthDropdown();
-  loadMonthFormFields(1);
+  updateMonthSelector();
 
   try {
     const res = await fetch('/api/highlight');
@@ -387,8 +382,8 @@ async function init() {
           }
         });
       }
-      loadMonthFormFields(currentSelectedMonth);
-      renderLivePreview();
+      renderMessagesAccordion();
+      fastPreview();
     }
   } catch (err) {
     console.error(err);
@@ -410,6 +405,7 @@ function renderDefaultMessagesLocally() {
         : `Congratulations on serving faithfully for ${m} month(s)! Your dedication brings light and hope to many lives across the Philippines.`
     });
   }
+  renderMessagesAccordion();
 }
 
 function populateDefaults() {
@@ -425,33 +421,51 @@ function populateDefaults() {
   document.getElementById('gal-6').value = DEFAULTS.gal6;
 }
 
-function selectMonthToEdit(monthStr) {
-  currentSelectedMonth = parseInt(monthStr, 10);
-  loadMonthFormFields(currentSelectedMonth);
-  renderLivePreview();
+function renderMessagesAccordion() {
+  const container = document.getElementById('accordion-container');
+  container.innerHTML = messagesList.map(m => `
+    <div class="acc-item" id="acc-${m.month}">
+      <div class="acc-header" onclick="toggleAcc(this.parentElement)">
+        <div class="acc-title">
+          <span>${m.month === 24 ? 'Month 24 (Graduation / Return)' : 'Month ' + m.month}</span>
+          <span class="acc-theme-pill" id="theme-pill-${m.month}">— ${m.theme || 'Untitled Focus'}</span>
+        </div>
+        <span class="acc-chevron">▼</span>
+      </div>
+      <div class="acc-content">
+        <div class="form-group">
+          <label>Theme / Focus</label>
+          <input type="text" id="msg-theme-${m.month}" class="form-input" value="${m.theme || ''}" oninput="syncLocalMessage(${m.month})"/>
+        </div>
+        <div class="form-group">
+          <label>Scripture / Quote</label>
+          <input type="text" id="msg-quote-${m.month}" class="form-input" value="${m.scripture || ''}" oninput="syncLocalMessage(${m.month})"/>
+        </div>
+        <div class="form-group">
+          <label>Monthly Message Body</label>
+          <textarea id="msg-body-${m.month}" class="form-textarea" oninput="syncLocalMessage(${m.month})">${m.message || ''}</textarea>
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
-function loadMonthFormFields(monthNum) {
-  const m = messagesList.find(x => x.month == monthNum) || {};
-  document.getElementById('active-month-badge').textContent = (monthNum === 24) ? `Editing Month 24 (Graduation / Return)` : `Editing Month ${monthNum}`;
-  document.getElementById('edit-theme').value = m.theme || '';
-  document.getElementById('edit-scripture').value = m.scripture || '';
-  document.getElementById('edit-message').value = m.message || '';
-}
-
-function syncActiveMonth() {
-  const m = messagesList.find(x => x.month == currentSelectedMonth);
-  if (m) {
-    m.theme = document.getElementById('edit-theme').value;
-    m.scripture = document.getElementById('edit-scripture').value;
-    m.message = document.getElementById('edit-message').value;
-    schedulePreview();
+function syncLocalMessage(month) {
+  const target = messagesList.find(x => x.month == month);
+  if (target) {
+    target.theme = document.getElementById(`msg-theme-${month}`).value;
+    target.scripture = document.getElementById(`msg-quote-${month}`).value;
+    target.message = document.getElementById(`msg-body-${month}`).value;
+    const pill = document.getElementById(`theme-pill-${month}`);
+    if (pill) pill.textContent = `— ${target.theme || 'Untitled Focus'}`;
+    fastPreview();
   }
 }
 
-function renderLivePreview() {
+function fastPreview() {
   const cohort = document.getElementById('preview-cohort-select')?.value || 'elder';
-  const curMsg = messagesList.find(x => x.month == currentSelectedMonth) || {};
+  const selectedMonth = parseInt(document.getElementById('preview-month-select')?.value || '1', 10);
+  const curMsg = messagesList.find(x => x.month == selectedMonth) || {};
 
   const hlTitle = document.getElementById('hl-title')?.value.trim() || '';
   const hlImage = document.getElementById('hl-image')?.value.trim() || '';
@@ -467,18 +481,18 @@ function renderLivePreview() {
           <img src="${hlImage}" alt="Product Highlight" style="width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid #d4c197;border-radius:4px;display:block;">
         </div>
         <p style="font-size:13px;color:#555;margin:0 0 14px 0;">${hlDesc || ''}</p>
-        <a href="https://m.me/TimelesscreationsRP" style="display:inline-block;padding:12px 24px;background-color:#1a1a1a;color:#d4c197!important;text-decoration:none;font-family:'Helvetica',Arial,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">Claim / Inquire Now</a>
+        <a href="https://m.me/TimelessCreationsRP" style="display:inline-block;padding:12px 24px;background-color:#1a1a1a;color:#d4c197!important;text-decoration:none;font-family:'Helvetica',Arial,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">Claim / Inquire Now</a>
       </div>
     `;
   }
 
   const suffix = (cohort === 'sister') ? 'Sister' : 'Elder';
 
-  let html = STATIC_TEMPLATE
+  lastRenderedHtml = BASE_TEMPLATE
     .replace(/{{DisplayDate}}/g, new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
     .replace(/{{Suffix}}/g, suffix)
     .replace(/{{lastName}}/g, 'Dela Cruz')
-    .replace(/{{Msg}}/g, curMsg.message || `Congratulations on serving faithfully for Month ${currentSelectedMonth}!`)
+    .replace(/{{Msg}}/g, curMsg.message || `Congratulations on serving faithfully for Month ${selectedMonth}!`)
     .replace(/{{MsgAuthor}}/g, curMsg.scripture || '“Trust in the Lord with all thine heart.”')
     .replace(/{{Author}}/g, curMsg.theme || 'Proverbs 3:5')
     .replace(/{{Points}}/g, '12')
@@ -494,7 +508,19 @@ function renderLivePreview() {
     .replace(/{{Gal6}}/g, document.getElementById('gal-6')?.value.trim() || DEFAULTS.gal6)
     .replace(/{{HighlightSection}}/g, highlightHtml);
 
-  document.getElementById('email-preview-frame').srcdoc = html;
+  document.getElementById('email-preview-frame').srcdoc = lastRenderedHtml;
+}
+
+function copyRenderedHtml() {
+  if (!lastRenderedHtml) {
+    showToast("Notice", "Nothing to copy yet.", "error");
+    return;
+  }
+  navigator.clipboard.writeText(lastRenderedHtml).then(() => {
+    showToast("Copied! 📋", "Rendered email HTML copied to clipboard.", "success");
+  }).catch(() => {
+    showToast("Error", "Could not copy to clipboard.", "error");
+  });
 }
 
 async function saveAllBulk() {
@@ -541,7 +567,7 @@ function clearHighlightOnly() {
   document.getElementById('hl-title').value = '';
   document.getElementById('hl-image').value = '';
   document.getElementById('hl-desc').value = '';
-  renderLivePreview();
+  fastPreview();
   saveAllBulk();
 }
 

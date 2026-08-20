@@ -57,7 +57,6 @@
             text-align: center;
         }
         .points-val { font-size: 26px; font-weight: bold; color: #8b1a1a; font-family: 'Helvetica', Arial, sans-serif; }
-        .points-sub { font-size: 13px; color: #555; margin-top: 4px; }
         
         .cta-btn-gold {
             display: inline-block;
@@ -87,7 +86,6 @@
             .brand-header, .promo-section { background-color: #121212 !important; }
             .logo-text, .greeting, .conference-quote, .monthly-message, .section-title { color: #ffffff !important; }
             .quote-container, .points-card { background-color: #1a1a1a !important; border-color: #444 !important; }
-            .points-sub { color: #ccc !important; }
         }
     </style>
 </head>
@@ -95,7 +93,7 @@
 
 <div class="email-wrapper">
     <div class="email-container">
-        <!-- 1. Brand Header -->
+        <!-- Brand Header -->
         <div class="brand-header">
             <span class="date-badge">{{DisplayDate}}</span>
             <h1 class="logo-text">Timeless Creations</h1>
@@ -104,7 +102,7 @@
 
         <img src="{{ImgTemple}}" alt="Temple" class="temple-img">
 
-        <!-- 2. Spiritual Message -->
+        <!-- Message Body -->
         <div class="main-content">
             <div class="greeting">Hello {{Suffix}} {{lastName}},</div>
             <div class="monthly-message">{{Msg}}</div>
@@ -116,20 +114,19 @@
 
             <hr class="divider"/>
 
-            <!-- 3. Points & Rewards Claim Section -->
+            <!-- Points Card -> TimelessCreationsRP -->
             <div class="points-card">
                 <div class="points-val">{{Points}} PTS</div>
-                <div class="points-sub">You currently have <strong>{{Points}} Points</strong> balance in your name.</div>
-                <div style="font-size: 12px; color: #8c7e5d; margin-top: 6px;">Earn and claim your missionary rewards anytime.</div>
-                <a href="https://m.me/TimelesscreationsRP" class="cta-btn-gold">Claim Your Rewards</a>
+                <div style="font-size: 13px; color: #555; margin-top: 4px;">You currently have <strong>{{Points}} Points</strong> balance in your name.</div>
+                <a href="https://m.me/TimelessCreationsRP" class="cta-btn-gold">Claim Your Rewards</a>
             </div>
 
-            <!-- 4. Product Highlight of the Month (Strictly 1:1) -->
+            <!-- Product Highlight -->
             {{HighlightSection}}
 
             <hr class="divider"/>
 
-            <!-- 5. Missionary Essentials Section (With Dynamic Titles) -->
+            <!-- Essentials Section -> timeless.creations.06 -->
             <div class="promo-section">
                 <h2 class="section-title">Missionary Essentials</h2>
                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -151,17 +148,14 @@
                 </p>
                 <div class="trust-badge">Work, Confirm, Pay</div>
 
-                <a href="https://m.me/TimelesscreationsRP" class="cta-btn-gold" style="background:#fff; color:#1a1a1a !important; border:1px solid #1a1a1a;">Inquire via Messenger</a>
+                <a href="https://m.me/timeless.creations.06" class="cta-btn-gold" style="background:#fff; color:#1a1a1a !important; border:1px solid #1a1a1a;">Inquire via Messenger</a>
             </div>
 
             <hr class="divider"/>
 
-            <!-- 6. Community Gallery (6 Photos) -->
+            <!-- Community Gallery -->
             <div style="max-width: 420px; margin: 30px auto 10px; text-align: center;">
                 <h2 class="section-title" style="margin-bottom: 10px;">Engrave Your Legacy</h2>
-                <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 18px; font-style: italic;">
-                    Archiving the moments that define a mission—one missionary, one memory, and one creation at a time.
-                </p>
                 
                 <table width="100%" border="0" cellspacing="4" cellpadding="0" style="table-layout: fixed; margin-bottom: 18px;">
                     <tr>
@@ -182,7 +176,6 @@
 
         <div class="footer">
             <div style="color: #d4c197; letter-spacing: 4px; font-size: 11px; text-transform: uppercase;">Timeless Creations</div>
-            <div style="font-size: 9px; opacity: 0.5; margin-top: 15px; font-family: Arial, sans-serif;">Supporting Members & Missionaries Across the Philippines • Since 2025</div>
         </div>
     </div>
 </div>

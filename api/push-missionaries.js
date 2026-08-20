@@ -1,33 +1,6 @@
 import crypto from 'crypto';
-import { queryTurso, unwrap } from '../lib/db.js';
+import { runSql } from '../lib/db.js';
 import { logSystemEvent } from '../lib/logger.js';
-
-async function runSql(sql, args = []) {
-  const formattedArgs = args.map(val => {
-    if (val === null || val === undefined) return { type: "null" };
-    if (typeof val === "number") return { type: "integer", value: String(val) };
-    return { type: "text", value: String(val) };
-  });
-
-  const data = await queryTurso([{ type: "execute", stmt: { sql, args: formattedArgs } }]);
-  const results = data.results || [];
-  let targetResult = null;
-  for (const r of results) {
-    if (r && r.response && r.response.result && r.response.result.cols) {
-      targetResult = r.response.result;
-      break;
-    }
-  }
-  if (!targetResult && results.length > 0) targetResult = results[0]?.response?.result;
-  if (!targetResult || !targetResult.cols) return [];
-
-  const cols = targetResult.cols.map(c => (typeof c === 'object' ? c.name : c));
-  return (targetResult.rows || []).map(row => {
-    const obj = {};
-    row.forEach((cell, idx) => { obj[cols[idx]] = unwrap(cell); });
-    return obj;
-  });
-}
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {

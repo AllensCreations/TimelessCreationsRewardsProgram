@@ -12,7 +12,7 @@
     --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
     --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
     --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
-    --blue:#5c8de0; --purple:#9b7de0; --text:#e8e6f0; --muted:#716e88;
+    --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
     --radius:10px;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -21,7 +21,6 @@
   #sync-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.4s ease,visibility 0.4s ease;}
   #sync-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
   .sync-logo{font-family:'Instrument Serif',serif;font-size:2.4rem;color:var(--gold);letter-spacing:0.04em;}
-  .sync-logo span{color:var(--text);font-style:italic;}
   .sync-status{font-size:0.72rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;}
   .sync-bar-wrap{width:320px;height:3px;background:var(--surface2);border-radius:99px;overflow:hidden;}
   .sync-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;width:0%;transition:width 0.3s ease;}
@@ -42,9 +41,8 @@
   .nav-item .badge{margin-left:auto;background:var(--gold-dim);color:var(--gold);font-size:0.58rem;padding:2px 6px;border-radius:99px;}
 
   .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);}
-  .topbar{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface);position:sticky;top:0;z-index:90;flex-wrap:wrap;}
+  .topbar{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface);position:sticky;top:0;z-index:90;}
   .topbar-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.02em;flex:1;}
-  .topbar-title span{color:var(--muted);font-weight:400;font-size:0.75rem;margin-left:8px;}
 
   .panel{display:none;padding:22px;animation:fadeIn 0.25s ease;}
   .panel.active{display:block;}
@@ -58,40 +56,36 @@
   .stat-card.gold{border-left:3px solid var(--gold);}
   .stat-card.green{border-left:3px solid var(--green);}
   .stat-card.blue{border-left:3px solid var(--blue);}
-  .stat-card.purple{border-left:3px solid var(--purple);}
   .stat-label{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;}
   .stat-val{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;margin:4px 0 2px;}
 
+  /* Calendar Heatmap */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:6px;margin-top:12px;}
+  .cal-day-header{font-size:0.6rem;text-align:center;color:var(--muted);text-transform:uppercase;padding:4px 0;}
+  .cal-cell{background:var(--surface2);border:1px solid var(--border);border-radius:6px;min-height:56px;padding:6px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color 0.2s;}
+  .cal-cell.today{border-color:var(--gold);}
+  .cal-cell.has-activity{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.3);}
+  .cal-num{font-size:0.65rem;color:var(--muted);}
+  .cal-count{font-size:0.62rem;font-weight:700;color:var(--gold);align-self:flex-end;}
+
+  /* Collapsible Roster Cards */
   .table-controls{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:var(--radius) var(--radius) 0 0;flex-wrap:wrap;}
   .search-input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;}
   .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:6px;font-size:0.68rem;cursor:pointer;}
   .filter-btn.active{color:var(--gold);border-color:rgba(201,168,76,0.4);background:var(--gold-dim);font-weight:700;}
 
-  /* Collapsible Accordion Cards for Mobile & Clean View */
   .roster-list{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:12px;}
-  
-  .missionary-card{
-    background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:all 0.2s ease;
-  }
-  .card-summary{
-    display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none;gap:12px;
-  }
+  .missionary-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .card-summary{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none;gap:12px;}
   .card-summary:hover{background:rgba(255,255,255,0.03);}
-  
   .m-title-group{display:flex;align-items:center;gap:10px;}
-  .cohort-pill{font-size:0.6rem;padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;}
+  .cohort-pill{font-size:0.6rem;padding:2px 8px;border-radius:4px;font-weight:700;text-transform:uppercase;}
   .cohort-elder{background:rgba(92,141,224,0.15);color:var(--blue);border:1px solid rgba(92,141,224,0.3);}
   .cohort-sister{background:rgba(224,92,92,0.15);color:var(--red);border:1px solid rgba(224,92,92,0.3);}
   .m-name{font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text);}
   
-  .card-meta-right{display:flex;align-items:center;gap:12px;font-size:0.7rem;}
-  .points-badge{color:var(--gold);font-weight:bold;background:var(--gold-dim);padding:3px 8px;border-radius:4px;}
-  .chevron-icon{transition:transform 0.2s ease;color:var(--muted);font-size:0.75rem;}
-  
-  .card-details{
-    display:none;padding:14px 16px;background:rgba(0,0,0,0.2);border-top:1px solid var(--border);
-    font-size:0.72rem;line-height:1.8;
-  }
+  .card-details{display:none;padding:14px 16px;background:rgba(0,0,0,0.2);border-top:1px solid var(--border);font-size:0.72rem;line-height:1.8;}
   .missionary-card.open .card-details{display:block;}
   .missionary-card.open .chevron-icon{transform:rotate(180deg);}
 
@@ -101,19 +95,13 @@
 
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.68rem;margin-top:8px;}
-  
-  @media(max-width:768px){
-    .app{flex-direction:column;height:auto;}
-    .sidebar{width:100%;height:auto;}
-    .card-meta-right .batch-text{display:none;}
-  }
 </style>
 </head>
 <body>
 
 <div id="sync-overlay">
   <div class="sync-logo">Timeless <span>Creations</span></div>
-  <div class="sync-status" id="sync-status-text">Connecting to Live Turso Database...</div>
+  <div class="sync-status">Connecting to Live Turso Database...</div>
   <div class="sync-bar-wrap"><div class="sync-bar" id="sync-bar"></div></div>
 </div>
 
@@ -132,27 +120,33 @@
       <div class="nav-item" onclick="window.location.href='/invoicing.html'"><span class="icon">🧾</span> Invoicing &amp; Billing</div>
       <div class="nav-item" onclick="window.location.href='/highlight.html'"><span class="icon">🌟</span> Product Highlight</div>
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Roster <span class="badge" id="badge-missionaries">—</span></div>
-      <div class="nav-item" onclick="switchTab('archive',this)"><span class="icon">🗂️</span> Archive Tab <span class="badge" id="badge-archive">0</span></div>
     </nav>
   </aside>
 
   <main class="main">
     <div class="topbar">
-      <div class="topbar-title" id="topbar-title">Missionary Tracking <span>Overview</span></div>
+      <div class="topbar-title">Missionary Tracking <span>Overview</span></div>
     </div>
 
-    <!-- 1. DASHBOARD OVERVIEW -->
+    <!-- 1. DASHBOARD OVERVIEW & MONTHLY CALENDAR HEATMAP -->
     <div class="panel active" id="panel-dashboard">
       <div class="section-head">
-        <div><h2>Missionary Progress &amp; Tracking</h2></div>
-        <button class="btn-submit" onclick="doSync()">↻ Re-Sync Database</button>
+        <div><h2>Missionary Dispatch Analytics</h2><p id="dash-date">Real-time Turso Database Status</p></div>
+        <button class="btn-submit" onclick="doSync()">↻ Re-Sync</button>
       </div>
 
       <div class="stats-grid">
-        <div class="stat-card gold"><div class="stat-label">Total Active</div><div class="stat-val" id="stat-total">0</div></div>
-        <div class="stat-card green"><div class="stat-label">Emails Sent Today</div><div class="stat-val" id="stat-emails-today">0</div></div>
-        <div class="stat-card blue"><div class="stat-label">Emails This Month</div><div class="stat-val" id="stat-emails-month">0</div></div>
-        <div class="stat-card purple"><div class="stat-label">Archived Graduates</div><div class="stat-val" id="stat-archived">0</div></div>
+        <div class="stat-card gold"><div class="stat-label">Total Active Missionaries</div><div class="stat-val" id="stat-total">0</div></div>
+        <div class="stat-card green"><div class="stat-label">Emails Dispatched Today</div><div class="stat-val" id="stat-emails-today">0</div></div>
+        <div class="stat-card blue"><div class="stat-label">Total Sent This Month</div><div class="stat-val" id="stat-emails-month">0</div></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h3 style="font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);">Monthly Dispatch Calendar Heatmap</h3>
+          <span id="cal-month-name" style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;"></span>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
       </div>
     </div>
 
@@ -177,22 +171,11 @@
         <div style="text-align:center;padding:24px;color:var(--muted);">Loading missionaries from Turso...</div>
       </div>
     </div>
-
-    <!-- 3. ARCHIVE TAB -->
-    <div class="panel" id="panel-archive">
-      <div class="section-head">
-        <div><h2>Missionary Archive Tab</h2></div>
-        <button class="btn-submit" onclick="doSync()">↻ Refresh Archive</button>
-      </div>
-      <div class="roster-list" id="archive-container">
-        <div style="text-align:center;padding:24px;color:var(--muted);">No archived graduates yet.</div>
-      </div>
-    </div>
   </main>
 </div>
 
 <script>
-let state = { missionaries: [], currentFilter: 'all', searchQuery: '' };
+let state = { missionaries: [], dailyStats: {}, currentFilter: 'all', searchQuery: '' };
 
 async function doSync() {
   const overlay = document.getElementById('sync-overlay');
@@ -207,22 +190,65 @@ async function doSync() {
 
     if (data.ok) {
       state.missionaries = data.missionaries || [];
+      state.dailyStats = data.dailyStats || {};
+
       document.getElementById('stat-total').textContent = state.missionaries.filter(m => m.status !== 'archived').length;
       document.getElementById('stat-emails-today').textContent = data.emailsToday || 0;
       document.getElementById('stat-emails-month').textContent = data.emailsThisMonth || 0;
-      document.getElementById('stat-archived').textContent = state.missionaries.filter(m => m.status === 'archived').length;
-
       document.getElementById('badge-missionaries').textContent = state.missionaries.filter(m => m.status !== 'archived').length;
-      document.getElementById('badge-archive').textContent = state.missionaries.filter(m => m.status === 'archived').length;
 
+      renderCalendar();
       applyFilterAndRender();
-      renderArchive();
     }
   } catch (err) {
     console.error(err);
   } finally {
     bar.style.width = '100%';
     setTimeout(() => overlay.classList.add('hidden'), 300);
+  }
+}
+
+function renderCalendar() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  document.getElementById('cal-month-name').textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const container = document.getElementById('calendar-grid');
+  container.innerHTML = '';
+
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  daysOfWeek.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-header';
+    el.textContent = d;
+    container.appendChild(el);
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const todayDate = now.getDate();
+
+  for (let i = 0; i < firstDay; i++) {
+    const emptyCell = document.createElement('div');
+    emptyCell.style.opacity = '0.1';
+    container.appendChild(emptyCell);
+  }
+
+  for (let day = 1; day <= totalDays; day++) {
+    const cell = document.createElement('div');
+    const dayStr = String(day).padStart(2, '0');
+    const monthStr = String(month + 1).padStart(2, '0');
+    const fullDateKey = `${year}-${monthStr}-${dayStr}`;
+
+    const count = state.dailyStats[fullDateKey] || 0;
+    cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
+    
+    cell.innerHTML = `
+      <div class="cal-num">${day}</div>
+      ${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}
+    `;
+    container.appendChild(cell);
   }
 }
 
@@ -269,7 +295,7 @@ function renderRosterCards(list) {
     return;
   }
 
-  container.innerHTML = list.map((m, i) => {
+  container.innerHTML = list.map(m => {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
     const totalMonths = isSister ? 18 : 24;
     const sentCount = Math.min(Number(m.monthsDiff) || 0, totalMonths);
@@ -282,21 +308,20 @@ function renderRosterCards(list) {
             <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
             <span class="m-name">${m.name}</span>
           </div>
-          <div class="card-meta-right">
-            <span class="batch-text" style="color:var(--muted);">${m.start || 'August 2026'}</span>
-            <span class="points-badge">${m.points} Pts</span>
-            <span class="chevron-icon">▼</span>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="color:var(--gold);font-weight:bold;background:var(--gold-dim);padding:3px 8px;border-radius:4px;font-size:0.7rem;">${m.points} Pts</span>
+            <span class="chevron-icon" style="color:var(--muted);font-size:0.75rem;">▼</span>
           </div>
         </div>
         
         <div class="card-details">
-          <div>✉️ <strong>Email Address:</strong> <span style="color:var(--text);">${m.email}</span></div>
-          <div>🏷️ <strong>Referral Code:</strong> <span style="color:var(--gold);">${m.ref}</span></div>
-          <div>📅 <strong>Start Batch:</strong> ${m.start || 'August 2026'}</div>
+          <div>✉️ <strong>Email:</strong> ${m.email}</div>
+          <div>🏷️ <strong>Referral Code:</strong> ${m.ref}</div>
+          <div>📅 <strong>Next Send Check:</strong> ${m.next_send_date ? new Date(m.next_send_date).toLocaleDateString() : 'Due for Check'}</div>
           
           <div class="prog-container">
-            <div style="display:flex;justify-content:space-between;font-size:0.64rem;margin-bottom:2px;">
-              <span>📩 <strong>${sentCount}</strong> / ${totalMonths} Drip Emails Delivered</span>
+            <div style="display:flex;justify-content:space-between;font-size:0.64rem;">
+              <span>📩 <strong>${sentCount}</strong> / ${totalMonths} Drip Letters Delivered</span>
               <span>${pct}%</span>
             </div>
             <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
@@ -309,29 +334,6 @@ function renderRosterCards(list) {
       </div>
     `;
   }).join('');
-}
-
-function renderArchive() {
-  const list = state.missionaries.filter(m => m.status === 'archived');
-  const container = document.getElementById('archive-container');
-  if (!list.length) {
-    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);">No archived graduates yet.</div>';
-    return;
-  }
-
-  container.innerHTML = list.map(m => `
-    <div class="missionary-card">
-      <div class="card-summary">
-        <div class="m-title-group">
-          <span class="cohort-pill cohort-elder">Graduate 🎓</span>
-          <span class="m-name">${m.name}</span>
-        </div>
-        <div class="card-meta-right">
-          <span class="points-badge">${m.points} Pts</span>
-        </div>
-      </div>
-    </div>
-  `).join('');
 }
 
 async function deleteMissionary(email) {

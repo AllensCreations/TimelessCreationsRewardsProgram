@@ -59,7 +59,6 @@ async function sendBrevoEmail(toEmail, toName, subject, htmlContent) {
     });
     return res.ok;
   } catch (err) {
-    console.error("Brevo test send exception:", err.message);
     return false;
   }
 }
@@ -77,6 +76,19 @@ export default async function handler(req, res) {
       const monthPrefix = todayStr.slice(0, 7);
       const emailsThisMonth = (await runSql("SELECT COUNT(*) as c FROM system_logs WHERE timestamp LIKE ? AND message LIKE '%sent%'", [`${monthPrefix}%`]))[0]?.c || 0;
 
+      // Group dispatch activity by day for the calendar heatmap
+      const dailyStatsRows = await runSql(`
+        SELECT substr(timestamp, 1, 10) as log_date, count(*) as count 
+        FROM system_logs 
+        WHERE (message LIKE '%Drip%' OR message LIKE '%sent%')
+        GROUP BY substr(timestamp, 1, 10)
+      `);
+      
+      const dailyStats = {};
+      dailyStatsRows.forEach(r => {
+        if (r.log_date) dailyStats[r.log_date] = r.count;
+      });
+
       return res.status(200).json({
         ok: true,
         missionaries: missionaries.map(m => ({
@@ -88,7 +100,8 @@ export default async function handler(req, res) {
           ref: m.referral_code || 'TCRP',
           status: m.status || 'active',
           monthsDiff: m.months_sent || 0,
-          limit: m.max_months || 24
+          limit: m.max_months || 24,
+          next_send_date: m.next_send_date
         })),
         orders: orders.map(o => ({
           order_id: o.order_id,
@@ -106,7 +119,8 @@ export default async function handler(req, res) {
           msg: msg.message
         })),
         emailsToday,
-        emailsThisMonth
+        emailsThisMonth,
+        dailyStats
       });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
@@ -117,7 +131,6 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const { action } = body;
 
-    // Multi-Drip Test Email Dispenser Handler
     if (action === 'test_send') {
       const { email, mode } = body;
       if (!email || !email.includes('@')) {
@@ -136,29 +149,21 @@ export default async function handler(req, res) {
           Msg: "Congratulations on serving faithfully! Your dedication brings light and hope to many lives across your mission.",
           MsgAuthor: "“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”",
           Author: "Proverbs 3:5",
-          month: "1",
-          points: "5",
-          referral_code: "TEST99"
+          Points: "12",
+          points: "12",
+          referral_code: "TEST2026",
+          HighlightSection: ""
         });
         if (await sendBrevoEmail(email, "Test Missionary", "Test: Monthly Drip Template", html)) successCount++;
       }
 
       if (mode === 'all' || mode === 'otp') {
-        const html = loadTemplate('otp-email.html', {
-          name: "Elder Dela Cruz",
-          otp_code: "888999"
-        });
+        const html = loadTemplate('otp-email.html', { name: "Elder Dela Cruz", otp_code: "888999" });
         if (await sendBrevoEmail(email, "Test Missionary", "Test: OTP Verification Template", html)) successCount++;
       }
 
       if (mode === 'all' || mode === 'receipt') {
-        const html = loadTemplate('receipt-email.html', {
-          name: "Elder Dela Cruz",
-          email,
-          order_id: "TX-TEST",
-          item: "Temple Keychain",
-          cost: "6"
-        });
+        const html = loadTemplate('receipt-email.html', { name: "Elder Dela Cruz", email, order_id: "TX-TEST", item: "Temple Keychain", cost: "6" });
         if (await sendBrevoEmail(email, "Test Missionary", "Test: Receipt Template", html)) successCount++;
       }
 
@@ -166,20 +171,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         ok: true,
-        message: `Successfully dispatched ${successCount} test email(s) using templates from templates/ folder!`
+        message: `Successfully dispatched ${successCount} test email(s).`
       });
-    }
-
-    if (action === 'update_points') {
-      const { email, points } = body;
-      await runSql("UPDATE missionaries SET points = ? WHERE email = ?", [points, email]);
-      return res.status(200).json({ ok: true });
-    }
-
-    if (action === 'update_order_status') {
-      const { order_id, status } = body;
-      await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
-      return res.status(200).json({ ok: true });
     }
 
     if (action === 'delete_missionary') {

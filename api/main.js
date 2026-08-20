@@ -5,8 +5,38 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET' || action === 'dashboard_data') {
     try {
-      const missionaries = await runSql("SELECT email, name, last_name, cohort, batch_month, points, referral_code, status, months_sent, max_months, next_send_date FROM missionaries ORDER BY name ASC");
-      const orders = await runSql("SELECT order_id, psid, email, name, item, points_cost as cost, status, created_at as date FROM orders ORDER BY ROWID DESC");
+      // Alias snake_case columns to camelCase for the frontend UI
+      const missionaries = await runSql(`
+        SELECT 
+          email, 
+          name, 
+          last_name as lastName, 
+          cohort, 
+          batch_month as batchMonth, 
+          points, 
+          referral_code as referralCode, 
+          status, 
+          months_sent as monthsSent, 
+          max_months as maxMonths, 
+          next_send_date as nextSendDate 
+        FROM missionaries 
+        ORDER BY name ASC
+      `);
+      
+      const orders = await runSql(`
+        SELECT 
+          order_id as orderId, 
+          psid, 
+          email, 
+          name, 
+          item, 
+          points_cost as cost, 
+          status, 
+          created_at as date 
+        FROM orders 
+        ORDER BY ROWID DESC
+      `);
+
       const logs = await runSql("SELECT * FROM system_logs ORDER BY ROWID DESC LIMIT 100");
 
       return res.status(200).json({ ok: true, missionaries, orders, logs });

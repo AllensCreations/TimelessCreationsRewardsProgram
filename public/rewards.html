@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timeless Creations — Rewards & Catalog Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+    --border:rgba(255,255,255,0.08);
+    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+    --green:#4caf82; --red:#e05c5c; --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
+    --radius:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:20px;min-height:100vh;}
+  .container{max-width:1200px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
+  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
+  .nav-links{display:flex;gap:10px;align-items:center;}
+  .btn-link{color:var(--gold);text-decoration:none;font-size:0.75rem;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;padding:10px;border-bottom:1px solid var(--border);text-align:left;}
+  td{padding:12px 10px;font-size:0.72rem;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Rewards Catalog &amp; Redemption Studio</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Manage Point Costs &amp; Missionary Claims</p>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="btn-link">← Dashboard</a>
+      <a href="/settings.html" class="btn-link">⚙️ Control Room</a>
+    </div>
+  </header>
+
+  <div class="card">
+    <h3 style="font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);margin-bottom:14px;">🎁 Pending Redemption Orders Queue</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Missionary</th>
+          <th>Item Claimed</th>
+          <th>Points Cost</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="orders-tbody">
+        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Loading reward orders from Turso...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function loadRewards() {
+  try {
+    const res = await fetch('/api/dashboard-data');
+    const data = await res.json();
+    if (data.ok) {
+      const orders = data.orders || [];
+      const tbody = document.getElementById('orders-tbody');
+      if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;">No reward redemption orders pending.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td><code>${o.order_id}</code></td>
+          <td><strong>${o.name}</strong><br><span style="color:var(--muted);">${o.email}</span></td>
+          <td>${o.item}</td>
+          <td style="color:var(--gold);font-weight:bold;">${o.cost} PTS</td>
+          <td><span style="padding:3px 8px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);font-size:0.65rem;font-weight:bold;">${o.status}</span></td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', loadRewards);
+</script>
+</body>
+</html>

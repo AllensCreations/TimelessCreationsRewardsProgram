@@ -27,7 +27,16 @@
     { "source": "/leaderboard.html", "destination": "/views/leaderboard.html" },
     { "source": "/inbox.html", "destination": "/views/inbox.html" },
     { "source": "/manifest.json", "destination": "/public/manifest.json" },
-    { "source": "/sw.js", "destination": "/public/sw.js" }
+    { "source": "/sw.js", "destination": "/public/sw.js" },
+    
+    { "source": "/api/dashboard-data", "destination": "/api/core/dashboard-data" },
+    { "source": "/api/inbox", "destination": "/api/core/inbox" },
+    { "source": "/api/logs", "destination": "/api/core/logs" },
+    { "source": "/api/rewards", "destination": "/api/core/rewards" },
+    { "source": "/api/cron-monthly-drip", "destination": "/api/dispatch/cron-monthly-drip" },
+    { "source": "/api/highlight", "destination": "/api/dispatch/highlight" },
+    { "source": "/api/settings", "destination": "/api/operations/settings" },
+    { "source": "/api/webhook", "destination": "/api/auth/webhook" }
   ],
   "crons": [
     {

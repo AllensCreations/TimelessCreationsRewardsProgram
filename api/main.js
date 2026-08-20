@@ -3,13 +3,15 @@ import { runSql } from '../lib/db.js';
 export default async function handler(req, res) {
   const action = req.query.action || req.body?.action;
 
-  // 1. GET: Dashboard data or Highlight/Drip messages fetch
   if (req.method === 'GET') {
-    if (action === 'get_highlight' || req.query.month) {
-      const month = req.query.month || 1;
+    if (action === 'get_highlight' || req.query.month || req.url.includes('highlight')) {
+      // Auto-load current month if not specified (e.g., August = 8)
+      const currentMonth = new Date().getMonth() + 1;
+      const month = req.query.month ? parseInt(req.query.month, 10) : currentMonth;
+      
       try {
         const rows = await runSql("SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages WHERE month = ?", [month]);
-        return res.status(200).json({ ok: true, data: rows[0] || null });
+        return res.status(200).json({ ok: true, data: rows[0] || { month, theme: '', scripture: '', message: '', highlight_img: '', highlight_label: '' } });
       } catch (err) {
         return res.status(500).json({ ok: false, error: err.message });
       }
@@ -57,7 +59,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // 2. POST: Actions (Delete, Update Orders, Save Highlight/Drip Message)
   if (req.method === 'POST') {
     if (action === 'delete_missionary') {
       const { email } = req.body;

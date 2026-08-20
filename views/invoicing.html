@@ -936,9 +936,11 @@ async function saveProductSettings() {
 
 function downloadInvoiceImage() {
   const node = document.getElementById('invoice-node');
+  const rawName = document.getElementById('prev-name').textContent.trim().replace(/[^a-zA-Z0-9-_]/g, "_");
+  const invId = document.getElementById('prev-inv-id').textContent;
   html2canvas(node, { scale: 2 }).then(canvas => {
     const link = document.createElement('a');
-    link.download = `TCRP-Invoice-${document.getElementById('prev-inv-id').textContent}.png`;
+    link.download = `TCRP-Invoice-${rawName}-${invId}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     showToast("Downloaded", "Invoice saved as PNG image!", "success");

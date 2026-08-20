@@ -8,12 +8,21 @@ async function runSql(sql, args = []) {
     if (typeof val === "number") return { type: "integer", value: String(val) };
     return { type: "text", value: String(val) };
   });
+
   const data = await queryTurso([{ type: "execute", stmt: { sql, args: formattedArgs } }]);
   const results = data.results || [];
-  const targetBatch = results[results.length - 2]?.response?.result || results[0]?.response?.result;
-  if (!targetBatch || !targetBatch.cols) return [];
-  const cols = targetBatch.cols.map(c => (typeof c === 'object' ? c.name : c));
-  return (targetBatch.rows || []).map(row => {
+  let targetResult = null;
+  for (const r of results) {
+    if (r && r.response && r.response.result && r.response.result.cols) {
+      targetResult = r.response.result;
+      break;
+    }
+  }
+  if (!targetResult && results.length > 0) targetResult = results[0]?.response?.result;
+  if (!targetResult || !targetResult.cols) return [];
+
+  const cols = targetResult.cols.map(c => (typeof c === 'object' ? c.name : c));
+  return (targetResult.rows || []).map(row => {
     const obj = {};
     row.forEach((cell, idx) => { obj[cols[idx]] = unwrap(cell); });
     return obj;
@@ -54,7 +63,6 @@ export default async function handler(req, res) {
 
         const refCode = 'TCRP-' + crypto.randomBytes(2).toString('hex').toUpperCase();
 
-        // Insert directly into consolidated missionaries table
         await runSql(
           "INSERT INTO missionaries (email, name, last_name, batch_month, referral_code, points, status, is_prelisted, verified) VALUES (?, ?, ?, ?, ?, 0, 'active', 1, 0)",
           [email, titleName, lastName, batchMonth, refCode]

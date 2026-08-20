@@ -88,7 +88,7 @@ function renderMonthlyTemplate(missionary, monthNum, media) {
     .replace(/{{Points}}/g, String(missionary.points || 0))
     .replace(/{{points}}/g, String(missionary.points || 0))
     .replace(/{{referral_code}}/g, missionary.referral_code || 'TCRP')
-    .replace(/{{ImgTemple}}/g, m.img_temple || DEFAULTS.temple)
+    .replace(/{{ImgTemple}}/g, DEFAULTS.temple)
     .replace(/{{TitleProd1}}/g, m.title_prod1 || DEFAULTS.titleProd1)
     .replace(/{{ImgProd1}}/g, m.img_prod1 || DEFAULTS.prod1)
     .replace(/{{TitleProd2}}/g, m.title_prod2 || DEFAULTS.titleProd2)
@@ -137,6 +137,12 @@ export default async function handler(req, res) {
     );
   `);
 
+  // Check if Master Pause is active
+  const stopRec = (await runSql("SELECT value FROM system_config WHERE key = 'force_stop'"))[0];
+  if (stopRec?.value === '1') {
+    return res.status(200).json({ ok: true, message: "Automated dispatch paused via Control Room switch." });
+  }
+
   const dailyKey = `drip_count_${todayDateStr}`;
   const record = (await runSql("SELECT value FROM system_config WHERE key = ?", [dailyKey]))[0];
   let sentToday = record ? parseInt(record.value, 10) || 0 : 0;
@@ -167,7 +173,6 @@ export default async function handler(req, res) {
 
   for (const m of eligibleMissionaries) {
     const currentMonthNum = (m.months_sent || 0) + 1;
-    // Read from drip_messages
     const msgRecord = (await runSql("SELECT * FROM drip_messages WHERE month = ?", [currentMonthNum]))[0] || {};
     m.custom_msg = msgRecord.message;
     m.quote = msgRecord.scripture;

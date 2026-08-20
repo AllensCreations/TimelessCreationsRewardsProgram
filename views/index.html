@@ -27,7 +27,6 @@
 
   .app{display:flex;height:100vh;overflow:hidden;position:relative;}
   
-  /* Collapsible & Mobile Friendly Sidebar */
   .sidebar{
     width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
     display:flex;flex-direction:column;height:100vh;transition:transform 0.3s ease;z-index:100;
@@ -46,7 +45,6 @@
   .nav-item .icon{font-size:1rem;width:20px;text-align:center;}
   .nav-item .badge{margin-left:auto;background:var(--gold-dim);color:var(--gold);font-size:0.58rem;padding:2px 6px;border-radius:99px;}
 
-  /* Mobile Backdrop Overlay */
   .sidebar-backdrop{
     display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px);z-index:95;
   }
@@ -145,6 +143,9 @@
       <div class="nav-item" onclick="window.location.href='/invoicing.html'"><span class="icon">🧾</span> Invoicing &amp; Billing</div>
       <div class="nav-item" onclick="window.location.href='/highlight.html'"><span class="icon">🌟</span> Media &amp; Message Hub</div>
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Roster <span class="badge" id="badge-missionaries">—</span></div>
+      
+      <div class="nav-label">Operations</div>
+      <div class="nav-item" onclick="window.location.href='/settings.html'"><span class="icon">⚙️</span> Control Room</div>
     </nav>
   </aside>
 

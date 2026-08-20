@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timeless Creations — Master Control Room & Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+    --border:rgba(255,255,255,0.08);
+    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+    --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
+    --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
+    --blue:#5c8de0; --blue-dim:rgba(92,141,224,0.15);
+    --purple:#9b7de0; --purple-dim:rgba(155,125,224,0.15);
+    --text:#e8e6f0; --muted:#716e88;
+    --radius:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
+  .container{max-width:1200px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
+  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
+  .nav-links{display:flex;gap:10px;}
+  .btn-link{color:var(--gold);text-decoration:none;font-size:0.75rem;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);}
+
+  .section-title{font-family:'Syne',sans-serif;font-size:1.05rem;color:var(--text);margin-bottom:16px;font-weight:700;}
+  
+  /* 10 Control Cards Grid */
+  .control-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:16px;margin-bottom:30px;}
+  .control-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;
+    display:flex;flex-direction:column;justify-content:space-between;gap:12px;position:relative;overflow:hidden;
+  }
+  .control-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+  .control-card.gold::before{background:var(--gold);}
+  .control-card.green::before{background:var(--green);}
+  .control-card.red::before{background:var(--red);}
+  .control-card.blue::before{background:var(--blue);}
+  .control-card.purple::before{background:var(--purple);}
+
+  .card-head{display:flex;justify-content:space-between;align-items:flex-start;}
+  .card-num{font-size:0.6rem;color:var(--muted);font-weight:700;}
+  .control-card h3{font-family:'Syne',sans-serif;font-size:0.92rem;color:var(--text);margin-top:2px;}
+  .control-card p{font-size:0.68rem;color:var(--muted);line-height:1.5;}
+
+  .form-group{margin-bottom:8px;}
+  .form-group label{font-size:0.6rem;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;}
+  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;}
+
+  .btn-action{
+    background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;
+    font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;
+  }
+  .btn-action:hover{background:var(--surface);border-color:var(--gold);color:var(--gold);}
+  .btn-action.active-red{background:var(--red-dim);border-color:rgba(224,92,92,0.4);color:var(--red);}
+  .btn-action.active-green{background:var(--green-dim);border-color:rgba(76,175,130,0.4);color:var(--green);}
+
+  #toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
+  .toast{background:var(--surface2);border:1px solid var(--border);padding:12px 18px;border-radius:8px;font-size:0.72rem;min-width:240px;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
+  .toast.success{border-left:4px solid var(--green);color:var(--text);}
+  .toast.error{border-left:4px solid var(--red);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Control Room &amp; Operations Center</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Master Automation Switches, Overrides, &amp; System Health Controls</p>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="btn-link">← Dashboard</a>
+      <a href="/highlight.html" class="btn-link">🌟 Media Hub</a>
+      <a href="/invoicing.html" class="btn-link">🧾 Invoicing</a>
+    </div>
+  </header>
+
+  <div class="section-title">System Operations Matrix (10 Core Controls)</div>
+
+  <div class="control-grid">
+    <!-- BUTTON 1: Master Pause / Resume Automated Sending -->
+    <div class="control-card red">
+      <div>
+        <div class="card-head">
+          <h3>1. Master Dispatch Switch</h3>
+          <span class="card-num">#01</span>
+        </div>
+        <p>Immediately halt or resume all scheduled daily cron monthly drip emails system-wide.</p>
+      </div>
+      <button class="btn-action" id="btn-pause-send" onclick="toggleSending()">
+        <span id="pause-status-dot">🟢</span> <span id="pause-btn-text">Automated Sending: ACTIVE</span>
+      </button>
+    </div>
+
+    <!-- BUTTON 2: Bot Maintenance Mode -->
+    <div class="control-card gold">
+      <div>
+        <div class="card-head">
+          <h3>2. Messenger Maintenance Mode</h3>
+          <span class="card-num">#02</span>
+        </div>
+        <p>Temporarily set the Messenger Chatbot to display a friendly maintenance notice during updates.</p>
+      </div>
+      <button class="btn-action" id="btn-maint" onclick="toggleMaintenance()">
+        <span id="maint-status-dot">⚪</span> <span id="maint-btn-text">Maintenance: OFF</span>
+      </button>
+    </div>
+
+    <!-- BUTTON 3: Multi-Drip Test Dispenser -->
+    <div class="control-card blue">
+      <div>
+        <div class="card-head">
+          <h3>3. Test Mode Dispenser</h3>
+          <span class="card-num">#03</span>
+        </div>
+        <p>Dispatch core templates to any custom test email address via Brevo.</p>
+        <div class="form-group" style="margin-top:6px;">
+          <input type="email" id="test-email-target" class="form-input" placeholder="test@example.com" value="2ndsalviejomark2019@gmail.com"/>
+        </div>
+      </div>
+      <button class="btn-action" onclick="dispatchTestDrip()">🚀 Fire Test Drip Template</button>
+    </div>
+
+    <!-- BUTTON 4: Instant Force Cron Run -->
+    <div class="control-card green">
+      <div>
+        <div class="card-head">
+          <h3>4. Force Cron Run Now</h3>
+          <span class="card-num">#04</span>
+        </div>
+        <p>Manually execute a 30-email safe batch immediately without waiting for the scheduled daily timer.</p>
+      </div>
+      <button class="btn-action" onclick="forceCronRun()">⚡ Trigger Batch Run</button>
+    </div>
+
+    <!-- BUTTON 5: Reset Daily Send Quota Limit -->
+    <div class="control-card purple">
+      <div>
+        <div class="card-head">
+          <h3>5. Reset Daily Send Limit</h3>
+          <span class="card-num">#05</span>
+        </div>
+        <p>Reset today's sent counter lock in Turso to allow emergency manual batch sends.</p>
+      </div>
+      <button class="btn-action" onclick="resetDailyQuota()">🔄 Clear Daily Quota Lock</button>
+    </div>
+
+    <!-- BUTTON 6: Prune Inactive Activity Logs -->
+    <div class="control-card red">
+      <div>
+        <div class="card-head">
+          <h3>6. Prune Stale System Logs</h3>
+          <span class="card-num">#06</span>
+        </div>
+        <p>Optimize database performance by archiving or removing system logs older than 90 days.</p>
+      </div>
+      <button class="btn-action" onclick="pruneLogs()">🧹 Clean Old Turso Logs</button>
+    </div>
+
+    <!-- BUTTON 7: Referral Code Sync & Audit -->
+    <div class="control-card gold">
+      <div>
+        <div class="card-head">
+          <h3>7. Audit Referral Integrity</h3>
+          <span class="card-num">#07</span>
+        </div>
+        <p>Scan all active missionaries for missing or duplicate referral codes and auto-repair them.</p>
+      </div>
+      <button class="btn-action" onclick="auditReferralCodes()">🏷️ Run Referral Audit</button>
+    </div>
+
+    <!-- BUTTON 8: Brevo SMTPS & API Health Check -->
+    <div class="control-card blue">
+      <div>
+        <div class="card-head">
+          <h3>8. Brevo API Health Diagnostic</h3>
+          <span class="card-num">#08</span>
+        </div>
+        <p>Validate Brevo API authentication credentials and credit quota limits in real time.</p>
+      </div>
+      <button class="btn-action" onclick="checkBrevoHealth()">🔍 Check Brevo Status</button>
+    </div>
+
+    <!-- BUTTON 9: Messenger Webhook Heartbeat -->
+    <div class="control-card green">
+      <div>
+        <div class="card-head">
+          <h3>9. Messenger Webhook Ping</h3>
+          <span class="card-num">#09</span>
+        </div>
+        <p>Test the Meta Graph API verification token handshake and webhook availability.</p>
+      </div>
+      <button class="btn-action" onclick="pingWebhook()">🛡️ Ping Webhook Route</button>
+    </div>
+
+    <!-- BUTTON 10: Export Database JSON Backup -->
+    <div class="control-card purple">
+      <div>
+        <div class="card-head">
+          <h3>10. Full JSON Cloud Backup</h3>
+          <span class="card-num">#10</span>
+        </div>
+        <p>Download a full snapshot of missionaries, drip messages, and invoices for cold storage.</p>
+      </div>
+      <button class="btn-action" onclick="downloadBackup()">📦 Download JSON Backup</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+let state = { forceStop: false, maintenanceMode: false };
+
+function showToast(title, msg, type = 'success') {
+  const tc = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<strong>${title}</strong><div style="color:var(--muted);margin-top:2px;">${msg}</div>`;
+  tc.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+async function init() {
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    if (data.ok) {
+      state.forceStop = Boolean(data.forceStop);
+      state.maintenanceMode = Boolean(data.maintenanceMode);
+      updateUI();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function updateUI() {
+  const pauseBtn = document.getElementById('btn-pause-send');
+  const pauseText = document.getElementById('pause-btn-text');
+  const pauseDot = document.getElementById('pause-status-dot');
+
+  if (state.forceStop) {
+    pauseBtn.className = 'btn-action active-red';
+    pauseText.textContent = "Automated Sending: PAUSED";
+    pauseDot.textContent = "🔴";
+  } else {
+    pauseBtn.className = 'btn-action active-green';
+    pauseText.textContent = "Automated Sending: ACTIVE";
+    pauseDot.textContent = "🟢";
+  }
+
+  const maintBtn = document.getElementById('btn-maint');
+  const maintText = document.getElementById('maint-btn-text');
+  const maintDot = document.getElementById('maint-status-dot');
+
+  if (state.maintenanceMode) {
+    maintBtn.className = 'btn-action active-red';
+    maintText.textContent = "Maintenance Mode: ON";
+    maintDot.textContent = "🛠️";
+  } else {
+    maintBtn.className = 'btn-action';
+    maintText.textContent = "Maintenance Mode: OFF";
+    maintDot.textContent = "⚪";
+  }
+}
+
+// 1. Toggle Sending
+async function toggleSending() {
+  const nextState = !state.forceStop;
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_stop', state: nextState })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      state.forceStop = data.forceStop;
+      updateUI();
+      showToast("Dispatch Status Updated", state.forceStop ? "All outgoing automated emails paused." : "Automated email dispatch resumed.", state.forceStop ? "error" : "success");
+    }
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 2. Toggle Maintenance
+async function toggleMaintenance() {
+  const nextState = !state.maintenanceMode;
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_maintenance', state: nextState })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      state.maintenanceMode = data.maintenanceMode;
+      updateUI();
+      showToast("Maintenance Updated", state.maintenanceMode ? "Bot in maintenance mode." : "Bot active for all users.", "success");
+    }
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 3. Test Dispenser
+async function dispatchTestDrip() {
+  const email = document.getElementById('test-email-target').value.trim();
+  if (!email || !email.includes('@')) {
+    showToast("Invalid Email", "Please enter a valid test recipient email.", "error");
+    return;
+  }
+  showToast("Sending...", `Sending monthly test email to ${email}...`, "success");
+  try {
+    const res = await fetch('/api/dashboard-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'test_send', email, mode: 'monthly' })
+    });
+    const data = await res.json();
+    if (data.ok) showToast("Test Dispatched", data.message, "success");
+    else showToast("Failed", data.error, "error");
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 4. Force Cron Run
+async function forceCronRun() {
+  showToast("Running...", "Triggering automated batch run...", "success");
+  try {
+    const res = await fetch('/api/cron-monthly-drip');
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Cron Finished", `Sent: ${data.batch_sent || 0} | Total Today: ${data.total_sent_today || 0}`, "success");
+    } else {
+      showToast("Cron Notice", data.message || "No eligible users.", "error");
+    }
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 5. Reset Daily Send Limit
+async function resetDailyQuota() {
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset_daily_quota' })
+    });
+    const data = await res.json();
+    if (data.ok) showToast("Quota Reset", "Daily send counter cleared. Next cron will proceed immediately.", "success");
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 6. Prune Stale Logs
+async function pruneLogs() {
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'prune_logs' })
+    });
+    const data = await res.json();
+    if (data.ok) showToast("Logs Pruned", "Cleaned up old activity records from Turso.", "success");
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 7. Audit Referral Codes
+async function auditReferralCodes() {
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'audit_referrals' })
+    });
+    const data = await res.json();
+    if (data.ok) showToast("Audit Complete", data.message || "All referral codes are intact.", "success");
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 8. Check Brevo Health
+async function checkBrevoHealth() {
+  showToast("Checking...", "Contacting Brevo SMTPS API gateway...", "success");
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'check_brevo' })
+    });
+    const data = await res.json();
+    if (data.ok) showToast("Brevo Healthy", `Connected: ${data.email} (${data.companyName || 'Verified'})`, "success");
+    else showToast("Brevo Issue", data.error || "Authentication failed.", "error");
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 9. Ping Webhook
+async function pingWebhook() {
+  try {
+    const res = await fetch('/api/webhook');
+    showToast("Webhook Status", `Status ${res.status} — Endpoint alive and listening.`, "success");
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+// 10. Download JSON Backup
+async function downloadBackup() {
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'export_backup' })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const blob = new Blob([JSON.stringify(data.backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `TCRP-Database-Backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      showToast("Backup Downloaded", "Full Turso database JSON snapshot saved.", "success");
+    }
+  } catch (e) { showToast("Error", e.message, "error"); }
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

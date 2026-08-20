@@ -33,6 +33,8 @@
     { "source": "/api/inbox", "destination": "/api/core/inbox" },
     { "source": "/api/logs", "destination": "/api/core/logs" },
     { "source": "/api/rewards", "destination": "/api/core/rewards" },
+    { "source": "/api/invoicing", "destination": "/api/operations/invoicing" },
+    { "source": "/api/push-missionaries", "destination": "/api/dispatch/push-missionaries" },
     { "source": "/api/cron-monthly-drip", "destination": "/api/dispatch/cron-monthly-drip" },
     { "source": "/api/highlight", "destination": "/api/dispatch/highlight" },
     { "source": "/api/settings", "destination": "/api/operations/settings" },

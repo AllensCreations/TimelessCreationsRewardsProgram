@@ -23,7 +23,7 @@ async function runSql(sql, args = []) {
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const logs = await runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50");
+      const logs = await runSql("SELECT email, name, last_name, batch_month, verified FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50");
       return res.status(200).json({ ok: true, history: logs });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
@@ -46,10 +46,6 @@ export default async function handler(req, res) {
 
       if (!email || !titleName) { skipped++; continue; }
 
-      let titleCohort = "Elder";
-      if (/^sister\b/i.test(titleName)) titleCohort = "Sister";
-      else if (/^elder\b/i.test(titleName)) titleCohort = "Elder";
-
       const lastName = titleName.replace(/^(elder|sister)\s+/i, '').trim();
 
       try {
@@ -58,12 +54,13 @@ export default async function handler(req, res) {
 
         const refCode = 'TCRP-' + crypto.randomBytes(2).toString('hex').toUpperCase();
 
+        // Insert directly into consolidated missionaries table
         await runSql(
-          "INSERT INTO missionaries (email, name, last_name, cohort, batch_month, referral_code, points, status, is_prelisted) VALUES (?, ?, ?, ?, ?, ?, 0, 'active', 1)",
-          [email, titleName, lastName, titleCohort, batchMonth, refCode]
+          "INSERT INTO missionaries (email, name, last_name, batch_month, referral_code, points, status, is_prelisted, verified) VALUES (?, ?, ?, ?, ?, 0, 'active', 1, 0)",
+          [email, titleName, lastName, batchMonth, refCode]
         );
 
-        await logSystemEvent('INFO', `Imported Pre-listed: ${titleName} (${email}) | Cohort: ${titleCohort} | Batch: ${batchMonth}`);
+        await logSystemEvent('INFO', `Imported Pre-listed: ${titleName} (${email}) | Batch: ${batchMonth}`);
         added++;
       } catch (err) {
         skipped++;

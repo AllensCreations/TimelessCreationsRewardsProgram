@@ -45,6 +45,14 @@ export default async function handler(req, res) {
       await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
       return res.status(200).json({ ok: true });
     }
+
+    if (action === 'verify_missionary') {
+      const { email } = req.body;
+      await runSql("UPDATE missionaries SET verified = 1 WHERE email = ?", [email]);
+      // Auto-delete row from sessions table upon successful verification
+      await runSql("DELETE FROM sessions WHERE temp_email = ?", [email]);
+      return res.status(200).json({ ok: true });
+    }
   }
 
   return res.status(405).json({ ok: false, error: "Method not allowed" });

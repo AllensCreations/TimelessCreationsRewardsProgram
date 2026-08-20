@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timeless Creations — Live System & Audit Logs</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+    --border:rgba(255,255,255,0.08);
+    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+    --green:#4caf82; --red:#e05c5c; --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
+    --radius:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
+  .container{max-width:1300px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
+  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
+  .nav-links{display:flex;gap:10px;align-items:center;}
+  .btn-link{color:var(--gold);text-decoration:none;font-size:0.75rem;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);}
+
+  .controls-bar{display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+  .form-input{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
+  .btn-danger{background:rgba(224,92,92,0.2);color:var(--red);border:1px solid rgba(224,92,92,0.4);}
+
+  .log-terminal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;max-height:650px;overflow-y:auto;font-size:0.7rem;display:flex;flex-direction:column;gap:6px;}
+  .log-row{display:flex;gap:12px;padding:6px 10px;border-radius:4px;background:var(--surface2);border-left:3px solid var(--muted);align-items:flex-start;}
+  .log-row.info{border-left-color:var(--green);color:#cfcecc;}
+  .log-row.warn{border-left-color:var(--gold);color:var(--gold2);}
+  .log-row.error{border-left-color:var(--red);color:#ff9999;}
+  .log-time{color:var(--muted);white-space:nowrap;}
+  .log-msg{flex:1;word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>System &amp; Dispatch Audit Logs</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Real-time Turso Database Event Stream</p>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="btn-link">← Dashboard</a>
+      <a href="/settings.html" class="btn-link">⚙️ Control Room</a>
+    </div>
+  </header>
+
+  <div class="controls-bar">
+    <input type="text" id="log-search" class="form-input" placeholder="Search logs (e.g. sent, error, webhook)..." style="flex:1;min-width:220px;" oninput="filterLogs()"/>
+    <button class="btn" onclick="fetchLogs()">↻ Refresh Logs</button>
+    <button class="btn btn-danger" onclick="clearLogs()">🧹 Clear Logs</button>
+  </div>
+
+  <div class="log-terminal" id="log-container">
+    <div style="color:var(--muted);text-align:center;padding:20px;">Loading logs from Turso...</div>
+  </div>
+</div>
+
+<script>
+let allLogs = [];
+
+async function fetchLogs() {
+  try {
+    const res = await fetch('/api/logs');
+    const data = await res.json();
+    if (data.ok) {
+      allLogs = data.logs || [];
+      renderLogs(allLogs);
+    }
+  } catch (err) {
+    document.getElementById('log-container').innerHTML = '<div style="color:var(--red);text-align:center;">Failed to connect to logs API.</div>';
+  }
+}
+
+function renderLogs(logs) {
+  const container = document.getElementById('log-container');
+  if (!logs.length) {
+    container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;">No system logs found.</div>';
+    return;
+  }
+
+  container.innerHTML = logs.map(l => {
+    const lvl = (l.level || 'INFO').toLowerCase();
+    return `
+      <div class="log-row ${lvl}">
+        <span class="log-time">[${l.created_at || 'Just now'}]</span>
+        <span style="font-weight:bold;text-transform:uppercase;font-size:0.62rem;">${l.level || 'INFO'}</span>
+        <span class="log-msg">${l.message}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterLogs() {
+  const q = document.getElementById('log-search').value.toLowerCase();
+  const filtered = allLogs.filter(l => (l.message || '').toLowerCase().includes(q) || (l.level || '').toLowerCase().includes(q));
+  renderLogs(filtered);
+}
+
+async function clearLogs() {
+  if (!confirm("Are you sure you want to clear system logs?")) return;
+  await fetch('/api/logs', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action: 'clear'}) });
+  fetchLogs();
+}
+
+window.addEventListener('DOMContentLoaded', fetchLogs);
+</script>
+</body>
+</html>

@@ -27,14 +27,10 @@ async function sendMessengerMessage(recipientId, messagePayload) {
     const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipient: { id: recipientId },
-        message: messagePayload
-      })
+      body: JSON.stringify({ recipient: { id: recipientId }, message: messagePayload })
     });
     return res.ok;
   } catch (err) {
-    console.error("Messenger send error:", err.message);
     return false;
   }
 }
@@ -44,16 +40,12 @@ export default async function handler(req, res) {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
-
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      return res.status(200).send(challenge);
-    }
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) return res.status(200).send(challenge);
     return res.status(403).send('Forbidden');
   }
 
   if (req.method === 'POST') {
     const body = req.body;
-
     if (body.object === 'page') {
       const maintRec = (await runSql("SELECT value FROM system_config WHERE key = 'maintenance_mode'"))[0];
       const isMaintenance = maintRec?.value === '1';
@@ -65,61 +57,43 @@ export default async function handler(req, res) {
         const senderPsid = webhookEvent.sender?.id;
         if (!senderPsid) continue;
 
-        if (isMaintenance) {
-          // Send maintenance text notice
-          await sendMessengerMessage(senderPsid, {
-            text: "🛠️ Timeless Creations System Maintenance\n\nOur Rewards & Invoicing bot is currently undergoing scheduled system updates and improvements.\n\nPlease check back in a short while! For urgent concerns, feel free to leave a direct message here."
-          });
+        if (webhookEvent.message && webhookEvent.message.text) {
+          const text = webhookEvent.message.text.trim();
+          const nowIso = new Date().toISOString();
+          
+          await runSql(`
+            CREATE TABLE IF NOT EXISTS chat_messages (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              psid TEXT,
+              sender TEXT,
+              text TEXT,
+              created_at TEXT
+            );
+          `);
+          await runSql("INSERT INTO chat_messages (psid, sender, text, created_at) VALUES (?, 'user', ?, ?)", [senderPsid, text, nowIso]);
 
-          // Send Dashboard button
-          await sendMessengerMessage(senderPsid, {
-            attachment: {
-              type: "template",
-              payload: {
-                template_type: "button",
-                text: "You can still access your Rewards Dashboard below:",
-                buttons: [
-                  {
-                    type: "web_url",
-                    url: "https://timelesscreationsrewardsprogram.vercel.app/",
-                    title: "Open Dashboard"
-                  }
-                ]
-              }
-            }
-          });
-          continue;
-        }
-
-        // Normal Bot Mode
-        if (webhookEvent.message) {
-          const text = webhookEvent.message.text?.trim();
-          if (text) {
+          if (isMaintenance) {
+            await sendMessengerMessage(senderPsid, { text: "🛠️ Timeless Creations is currently in maintenance mode. You can still access your dashboard below:" });
             await sendMessengerMessage(senderPsid, {
               attachment: {
                 type: "template",
                 payload: {
                   template_type: "button",
-                  text: `✨ Welcome to Timeless Creations Rewards Program!\n\nYou can access your account, check points, and view rewards anytime:`,
-                  buttons: [
-                    {
-                      type: "web_url",
-                      url: "https://timelesscreationsrewardsprogram.vercel.app/",
-                      title: "Open Dashboard"
-                    }
-                  ]
+                  text: "Open Dashboard:",
+                  buttons: [{ type: "web_url", url: "https://timelesscreationsrewardsprogram.vercel.app/", title: "Open Dashboard" }]
                 }
               }
             });
+            continue;
           }
+
+          // Normal response
+          await sendMessengerMessage(senderPsid, { text: `✨ Thanks for messaging Timeless Creations! We received: "${text}". An admin will review your message shortly.` });
         }
       }
-
       return res.status(200).send('EVENT_RECEIVED');
     }
-
     return res.status(404).send('Not Found');
   }
-
   return res.status(405).send('Method Not Allowed');
 }

@@ -22,7 +22,7 @@ async function runSql(sql, args = []) {
   });
 }
 
-// Non-blocking table initialization (runs in background)
+// Background table migrations & schema optimizations
 async function ensureTablesBackground() {
   try {
     await runSql(`
@@ -48,24 +48,25 @@ async function ensureTablesBackground() {
         price REAL DEFAULT 0
       );
     `);
+    // Ensure 'verified' column exists in missionaries
+    try { await runSql("ALTER TABLE missionaries ADD COLUMN verified INTEGER DEFAULT 0;"); } catch(e){}
   } catch (e) {
-    console.error("Background table check error:", e.message);
+    console.error("Migration background error:", e.message);
   }
 }
 
 export default async function handler(req, res) {
-  // Fire table checks in background without blocking request
   ensureTablesBackground();
 
   if (req.method === 'GET') {
     try {
-      // Execute all 3 queries in parallel for lightning-fast response
-      const [missionaries, invoices, products] = await Promise.all([
-        runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries ORDER BY name ASC"),
+      const [missionaries, invoices, products, logs] = await Promise.all([
+        runSql("SELECT email, name, last_name, batch_month, verified FROM missionaries ORDER BY name ASC"),
         runSql("SELECT * FROM cash_invoices ORDER BY ROWID DESC"),
-        runSql("SELECT name, price FROM product_catalog ORDER BY id ASC")
+        runSql("SELECT name, price FROM product_catalog ORDER BY id ASC"),
+        runSql("SELECT * FROM system_logs ORDER BY ROWID DESC LIMIT 100")
       ]);
-      return res.status(200).json({ ok: true, missionaries, invoices, products });
+      return res.status(200).json({ ok: true, missionaries, invoices, products, logs });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
     }
@@ -82,15 +83,19 @@ export default async function handler(req, res) {
           await runSql("INSERT INTO product_catalog (name, price) VALUES (?, ?)", [p.name.trim(), Number(p.price) || 0]);
         }
       }
-      return res.status(200).json({ ok: true, message: "Product prices saved." });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'verify_missionary') {
+      const { email } = req.body;
+      await runSql("UPDATE missionaries SET verified = 1 WHERE email = ?", [email]);
+      // Auto-delete row from session table upon verification as requested
+      await runSql("DELETE FROM sessions WHERE temp_email = ?", [email]);
+      return res.status(200).json({ ok: true });
     }
 
     if (action === 'create_invoice') {
       const { email, name, phone, items, subtotal, discountType, discountVal, discountAmount, totalAmount } = req.body;
-      if (!name || !items || items.length === 0) {
-        return res.status(400).json({ ok: false, error: "Missing name or items." });
-      }
-
       const invoiceId = 'INV-' + crypto.randomBytes(3).toString('hex').toUpperCase();
       const nowIso = new Date().toISOString();
       const itemsJson = JSON.stringify(items);
@@ -100,7 +105,7 @@ export default async function handler(req, res) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?)
       `, [invoiceId, email || 'Walk-in / Cash', name, phone || '', itemsJson, subtotal, discountType, discountVal, discountAmount, totalAmount, nowIso]);
 
-      return res.status(200).json({ ok: true, invoiceId, message: `Invoice ${invoiceId} created successfully!` });
+      return res.status(200).json({ ok: true, invoiceId });
     }
 
     if (action === 'delete_invoice') {

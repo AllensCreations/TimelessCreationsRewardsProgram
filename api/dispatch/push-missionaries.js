@@ -20,23 +20,7 @@ async function runSql(sql, args = []) {
   });
 }
 
-async function ensureTables() {
-  await runSql(`
-    CREATE TABLE IF NOT EXISTS names (
-      email TEXT PRIMARY KEY,
-      title TEXT,
-      first_name TEXT,
-      last_name TEXT,
-      full_name TEXT,
-      batch_month TEXT,
-      created_at TEXT
-    );
-  `);
-}
-
 export default async function handler(req, res) {
-  await ensureTables();
-
   if (req.method === 'GET') {
     try {
       const logs = await runSql(
@@ -56,7 +40,6 @@ export default async function handler(req, res) {
 
     let added = 0;
     let skipped = 0;
-    const nowIso = new Date().toISOString();
 
     for (const item of entries) {
       const email = (item.email || '').toLowerCase().trim();
@@ -70,11 +53,8 @@ export default async function handler(req, res) {
       }
 
       let titleCohort = "Elder";
-      if (/^sister\b/i.test(titleName)) {
-        titleCohort = "Sister";
-      } else if (/^elder\b/i.test(titleName)) {
-        titleCohort = "Elder";
-      }
+      if (/^sister\b/i.test(titleName)) titleCohort = "Sister";
+      else if (/^elder\b/i.test(titleName)) titleCohort = "Elder";
 
       const lastName = titleName.replace(/^(elder|sister)\s+/i, '').trim();
       const fullName = firstName ? `${titleCohort} ${firstName} ${lastName}` : titleName;
@@ -88,14 +68,10 @@ export default async function handler(req, res) {
 
         const refCode = 'TCRP-' + crypto.randomBytes(2).toString('hex').toUpperCase();
 
+        // Single unified write into 'missionaries' table (no extra 'names' table query needed!)
         await runSql(
-          "INSERT INTO missionaries (email, name, last_name, cohort, batch_month, referral_code, points, status, is_prelisted) VALUES (?, ?, ?, ?, ?, ?, 0, 'active', 1)",
-          [email, titleName, lastName, titleCohort, batchMonth, refCode]
-        );
-
-        await runSql(
-          "INSERT OR REPLACE INTO names (email, title, first_name, last_name, full_name, batch_month, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [email, titleCohort, firstName, lastName, fullName, batchMonth, nowIso]
+          "INSERT INTO missionaries (email, name, last_name, first_name, full_name, cohort, batch_month, referral_code, points, status, is_prelisted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'active', 1)",
+          [email, titleName, lastName, firstName, fullName, titleCohort, batchMonth, refCode]
         );
 
         await logSystemEvent('INFO', `Imported Pre-listed: ${titleName} (${email}) | Cohort: ${titleCohort} | Batch: ${batchMonth}`);

@@ -4,7 +4,17 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Timeless Creations — TCRP Command Center</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a0a0f"/>
+<link rel="apple-touch-icon" href="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js');
+    });
+  }
+</script>
 <style>
   :root {
     --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
@@ -70,7 +80,6 @@
   .stat-label{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;}
   .stat-val{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;margin:4px 0 2px;}
 
-  /* Calendar Heatmap */
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;}
   .calendar-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:6px;margin-top:12px;}
   .cal-day-header{font-size:0.6rem;text-align:center;color:var(--muted);text-transform:uppercase;padding:4px 0;}
@@ -80,7 +89,6 @@
   .cal-num{font-size:0.65rem;color:var(--muted);}
   .cal-count{font-size:0.62rem;font-weight:700;color:var(--gold);align-self:flex-end;}
 
-  /* Collapsible Roster Cards */
   .table-controls{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:var(--radius) var(--radius) 0 0;flex-wrap:wrap;}
   .search-input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;}
   .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:6px;font-size:0.68rem;cursor:pointer;}
@@ -141,7 +149,7 @@
       <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
       <div class="nav-item" onclick="window.location.href='/pusher.html'"><span class="icon">➕</span> Add Missionaries</div>
       <div class="nav-item" onclick="window.location.href='/invoicing.html'"><span class="icon">🧾</span> Invoicing &amp; Billing</div>
-      <div class="nav-item" onclick="window.location.href='/highlight.html'"><span class="icon">🌟</span> Media &amp; Message Hub</div>
+      <div class="nav-item" onclick="window.location.href='/highlight.html'"><span class="icon">🌟</span> Media &amp; Messages Hub</div>
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Roster <span class="badge" id="badge-missionaries">—</span></div>
       
       <div class="nav-label">Operations</div>
@@ -155,7 +163,6 @@
       <div class="topbar-title">Missionary Tracking <span>Overview</span></div>
     </div>
 
-    <!-- 1. DASHBOARD OVERVIEW & MONTHLY CALENDAR HEATMAP -->
     <div class="panel active" id="panel-dashboard">
       <div class="section-head">
         <div><h2>Missionary Dispatch Analytics</h2><p id="dash-date">Real-time Turso Database Status</p></div>
@@ -177,7 +184,6 @@
       </div>
     </div>
 
-    <!-- 2. COLLAPSIBLE MISSIONARIES ROSTER -->
     <div class="panel" id="panel-roster">
       <div class="section-head">
         <div>

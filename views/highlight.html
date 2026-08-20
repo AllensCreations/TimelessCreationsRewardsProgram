@@ -45,7 +45,7 @@
 
   .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   .btn-danger{background:rgba(224,92,92,0.2);color:var(--red);border:1px solid rgba(224,92,92,0.4);margin-left:8px;}
-  .btn-save-msg{background:var(--surface2);border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.65rem;}
+  .btn-save-msg{background:var(--surface2);border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.65rem;font-weight:700;}
   .btn-save-msg:hover{background:var(--gold);color:#0a0a0f;}
 
   /* 1:1 Fixed Width Exact Email Preview Container */
@@ -72,7 +72,6 @@
     display:block;
   }
 
-  /* Table styling for Monthly Messages */
   table{width:100%;border-collapse:collapse;margin-top:8px;}
   th{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;padding:8px;border-bottom:1px solid var(--border);text-align:left;}
   td{padding:8px;font-size:0.7rem;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:top;}
@@ -168,11 +167,11 @@
 
       <!-- 4. 24-Month Messages Directory & Live Editor -->
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <h3>📜 24-Month Messages Directory &amp; Editor</h3>
-          <span style="font-size:0.65rem;color:var(--muted);">Select month to preview</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <h3>📜 24-Month Messages Directory &amp; Editor (Turso `drip_messages`)</h3>
+          <span style="font-size:0.65rem;color:var(--muted);">Saves directly to Turso DB</span>
         </div>
-        <div style="max-height:480px;overflow-y:auto;">
+        <div style="max-height:520px;overflow-y:auto;">
           <table>
             <thead>
               <tr>
@@ -195,7 +194,12 @@
     <div class="preview-wrapper">
       <div class="preview-header">
         <strong style="font-size:0.75rem;color:var(--gold);">1:1 Actual Email View (460px)</strong>
-        <span style="font-size:0.65rem;color:var(--muted);">Fixed Scale</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;">Month:</label>
+          <select id="preview-month-select" class="form-input" style="width:auto;padding:3px 6px;font-size:0.7rem;" onchange="renderLivePreview()">
+            <!-- Generated dynamically 1-24 -->
+          </select>
+        </div>
       </div>
       <div class="exact-email-device">
         <iframe id="email-preview-frame"></iframe>
@@ -234,9 +238,21 @@ function showToast(title, msg, type = 'success') {
 }
 
 async function init() {
+  populateMonthDropdown();
   await fetchTemplate();
   await loadMedia();
   await loadMessages();
+}
+
+function populateMonthDropdown() {
+  const sel = document.getElementById('preview-month-select');
+  sel.innerHTML = '';
+  for (let m = 1; m <= 24; m++) {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = `Month ${m}`;
+    sel.appendChild(opt);
+  }
 }
 
 async function fetchTemplate() {
@@ -287,6 +303,7 @@ async function loadMessages() {
     if (data.ok && data.messages) {
       messagesList = data.messages;
       renderMessagesTable();
+      renderLivePreview();
     }
   } catch (err) {
     console.error(err);
@@ -296,7 +313,7 @@ async function loadMessages() {
 function renderMessagesTable() {
   const tb = document.getElementById('messages-tbody');
   if (!messagesList.length) {
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;">No messages stored in DB.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;">No messages found in Turso.</td></tr>';
     return;
   }
 
@@ -353,6 +370,9 @@ function populateDefaults() {
 }
 
 function renderLivePreview() {
+  const selectedMonth = parseInt(document.getElementById('preview-month-select')?.value || '1', 10);
+  const curMsg = messagesList.find(x => x.month == selectedMonth) || {};
+
   const hlTitle = document.getElementById('hl-title').value.trim();
   const hlImage = document.getElementById('hl-image').value.trim();
   const hlDesc = document.getElementById('hl-desc').value.trim();
@@ -372,17 +392,15 @@ function renderLivePreview() {
     `;
   }
 
-  const sampleMsg = messagesList[0] || {};
-
   let html = rawTemplate || "<p style='padding:20px;'>Loading template...</p>";
 
   html = html
     .replace(/{{DisplayDate}}/g, new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
     .replace(/{{Suffix}}/g, 'Elder')
     .replace(/{{lastName}}/g, 'Dela Cruz')
-    .replace(/{{Msg}}/g, sampleMsg.msg || 'Congratulations on serving faithfully! Your dedication brings light and hope to many lives across your mission.')
-    .replace(/{{MsgAuthor}}/g, sampleMsg.quote || '“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”')
-    .replace(/{{Author}}/g, sampleMsg.theme || 'Proverbs 3:5')
+    .replace(/{{Msg}}/g, curMsg.msg || `Congratulations on serving faithfully for Month ${selectedMonth}! Your dedication brings light and hope to many lives across your mission.`)
+    .replace(/{{MsgAuthor}}/g, curMsg.quote || '“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”')
+    .replace(/{{Author}}/g, curMsg.theme || 'Proverbs 3:5')
     .replace(/{{Points}}/g, '12')
     .replace(/{{points}}/g, '12')
     .replace(/{{referral_code}}/g, 'TEST2026')

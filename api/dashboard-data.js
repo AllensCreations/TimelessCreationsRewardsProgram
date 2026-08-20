@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { queryTurso, unwrap } from '../lib/db.js';
-import { logSystemEvent } from '../lib/logger.js';
 
 const BREVO_KEY = (process.env.BREVO_API_KEY || '').trim();
 const SENDER_EMAIL = 'noreply.timelesscreations.ph@gmail.com';
@@ -24,51 +23,42 @@ async function runSql(sql, args = []) {
   });
 }
 
-function loadTemplate(filename, replacements = {}) {
-  try {
-    const filePath = path.join(process.cwd(), 'templates', filename);
-    if (fs.existsSync(filePath)) {
-      let content = fs.readFileSync(filePath, 'utf8');
-      for (const [key, val] of Object.entries(replacements)) {
-        content = content.replace(new RegExp(`{{${key}}}`, 'g'), val);
-      }
-      return content;
-    }
-  } catch (err) {
-    console.error(`Failed to load template ${filename}:`, err.message);
-  }
-  return `<p>Template ${filename} missing.</p>`;
-}
+async function ensureDripMessages() {
+  await runSql(`
+    CREATE TABLE IF NOT EXISTS drip_messages (
+      month INTEGER PRIMARY KEY,
+      theme TEXT,
+      scripture TEXT,
+      message TEXT,
+      highlight_img TEXT,
+      highlight_label TEXT
+    );
+  `);
 
-async function sendBrevoEmail(toEmail, toName, subject, htmlContent) {
-  if (!BREVO_KEY) return false;
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'api-key': BREVO_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: { name: "Timeless Creations", email: SENDER_EMAIL },
-        to: [{ email: toEmail, name: toName }],
-        subject: subject,
-        htmlContent: htmlContent
-      })
-    });
-    return res.ok;
-  } catch (err) {
-    return false;
+  const countRow = (await runSql("SELECT COUNT(*) as c FROM drip_messages"))[0];
+  if (!countRow || Number(countRow.c) === 0) {
+    // Seed standard 1 to 24 month tracks if table is fresh
+    for (let m = 1; m <= 24; m++) {
+      await runSql(`
+        INSERT OR IGNORE INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
+        VALUES (?, ?, ?, ?, '', '')
+      `, [
+        m,
+        `Month ${m} Focus`,
+        `"Trust in the Lord with all thine heart; and lean not unto thine own understanding." — Proverbs 3:5`,
+        `Congratulations on serving faithfully for ${m} month(s)! Your dedication brings light and hope to many lives across the Philippines.`
+      ]);
+    }
   }
 }
 
 export default async function handler(req, res) {
+  await ensureDripMessages();
+
   if (req.method === 'GET') {
     try {
       const missionaries = await runSql("SELECT * FROM missionaries ORDER BY ROWID DESC");
-      const orders = await runSql("SELECT * FROM orders ORDER BY ROWID DESC");
-      const messages = await runSql("SELECT * FROM messages ORDER BY month ASC");
+      const messages = await runSql("SELECT * FROM drip_messages ORDER BY month ASC");
 
       const todayStr = new Date().toISOString().slice(0, 10);
       const emailsToday = (await runSql("SELECT COUNT(*) as c FROM system_logs WHERE timestamp LIKE ? AND message LIKE '%sent%'", [`${todayStr}%`]))[0]?.c || 0;
@@ -102,20 +92,13 @@ export default async function handler(req, res) {
           limit: m.max_months || 24,
           next_send_date: m.next_send_date
         })),
-        orders: orders.map(o => ({
-          order_id: o.order_id,
-          name: o.name,
-          email: o.email,
-          item: o.item,
-          cost: o.points_cost,
-          status: o.status || 'PENDING',
-          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : 'Just now'
-        })),
         messages: messages.map(msg => ({
           month: msg.month,
           theme: msg.theme,
           quote: msg.scripture,
-          msg: msg.message
+          msg: msg.message,
+          highlight_img: msg.highlight_img,
+          highlight_label: msg.highlight_label
         })),
         emailsToday,
         emailsThisMonth,
@@ -130,73 +113,17 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const { action } = body;
 
-    // Direct Handler to Update Single Month Message from highlight.html Hub
     if (action === 'update_message') {
       const { month, theme, scripture, message } = body;
       await runSql(`
-        INSERT INTO messages (month, theme, scripture, message)
+        INSERT INTO drip_messages (month, theme, scripture, message)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(month) DO UPDATE SET
           theme = excluded.theme,
           scripture = excluded.scripture,
           message = excluded.message;
       `, [month, theme || '', scripture || '', message || '']);
-      return res.status(200).json({ ok: true, message: `Month ${month} updated successfully.` });
-    }
-
-    if (action === 'test_send') {
-      const { email, mode } = body;
-      if (!email || !email.includes('@')) {
-        return res.status(400).json({ ok: false, error: "Invalid recipient email address." });
-      }
-
-      let successCount = 0;
-      const options = { month: 'long', year: 'numeric' };
-      const DisplayDate = new Date().toLocaleDateString('en-US', options);
-
-      if (mode === 'all' || mode === 'monthly') {
-        const html = loadTemplate('monthly-drip.html', {
-          DisplayDate,
-          Suffix: "Elder",
-          lastName: "Dela Cruz",
-          Msg: "Congratulations on serving faithfully! Your dedication brings light and hope to many lives across your mission.",
-          MsgAuthor: "“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”",
-          Author: "Proverbs 3:5",
-          Points: "12",
-          points: "12",
-          referral_code: "TEST2026",
-          ImgTemple: "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG",
-          TitleProd1: "Wooden Nametag",
-          ImgProd1: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
-          TitleProd2: "POS Kit",
-          ImgProd2: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
-          Gal1: "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
-          Gal2: "https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky",
-          Gal3: "https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv",
-          Gal4: "https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR",
-          Gal5: "https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m",
-          Gal6: "https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV",
-          HighlightSection: ""
-        });
-        if (await sendBrevoEmail(email, "Test Missionary", "Test: Monthly Drip Template", html)) successCount++;
-      }
-
-      if (mode === 'all' || mode === 'otp') {
-        const html = loadTemplate('otp-email.html', { name: "Elder Dela Cruz", otp_code: "888999" });
-        if (await sendBrevoEmail(email, "Test Missionary", "Test: OTP Verification Template", html)) successCount++;
-      }
-
-      if (mode === 'all' || mode === 'receipt') {
-        const html = loadTemplate('receipt-email.html', { name: "Elder Dela Cruz", email, order_id: "TX-TEST", item: "Temple Keychain", cost: "6" });
-        if (await sendBrevoEmail(email, "Test Missionary", "Test: Receipt Template", html)) successCount++;
-      }
-
-      await logSystemEvent('INFO', `Test Email Dispenser dispatched ${successCount} test email(s) to ${email}`);
-
-      return res.status(200).json({
-        ok: true,
-        message: `Successfully dispatched ${successCount} test email(s).`
-      });
+      return res.status(200).json({ ok: true, message: `Month ${month} updated in drip_messages successfully.` });
     }
 
     if (action === 'delete_missionary') {

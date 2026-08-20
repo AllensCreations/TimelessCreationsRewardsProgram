@@ -167,7 +167,8 @@ export default async function handler(req, res) {
 
   for (const m of eligibleMissionaries) {
     const currentMonthNum = (m.months_sent || 0) + 1;
-    const msgRecord = (await runSql("SELECT * FROM messages WHERE month = ?", [currentMonthNum]))[0] || {};
+    // Read from drip_messages
+    const msgRecord = (await runSql("SELECT * FROM drip_messages WHERE month = ?", [currentMonthNum]))[0] || {};
     m.custom_msg = msgRecord.message;
     m.quote = msgRecord.scripture;
     m.theme = msgRecord.theme;

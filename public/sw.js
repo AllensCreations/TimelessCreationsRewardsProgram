@@ -1,11 +1,15 @@
-const CACHE_NAME = 'tcrp-cache-v3';
+const CACHE_NAME = 'tcrp-cache-v4';
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.json',
   '/pusher.html',
   '/invoicing.html',
   '/highlight.html',
-  '/settings.html'
+  '/settings.html',
+  '/logs.html',
+  '/rewards.html',
+  '/leaderboard.html',
+  '/inbox.html'
 ];
 
 self.addEventListener('install', event => {
@@ -27,8 +31,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => caches.match('/'));
-    })
+    fetch(event.request).then(response => {
+      // Return fresh network response and update cache
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      return response;
+    }).catch(() => caches.match(event.request))
   );
 });

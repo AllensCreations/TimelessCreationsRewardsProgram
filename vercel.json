@@ -4,6 +4,7 @@
     { "source": "/", "destination": "/views/index.html" },
     { "source": "/pusher.html", "destination": "/views/pusher.html" },
     { "source": "/invoicing.html", "destination": "/views/invoicing.html" },
+    { "source": "/highlight.html", "destination": "/views/highlight.html" },
     { "source": "/manifest.json", "destination": "/views/manifest.json" },
     { "source": "/sw.js", "destination": "/views/sw.js" }
   ],

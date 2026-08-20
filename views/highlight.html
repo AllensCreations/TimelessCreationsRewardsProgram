@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timeless Creations — Product Highlight Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+    --border:rgba(255,255,255,0.08);
+    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+    --green:#4caf82; --red:#e05c5c; --text:#e8e6f0; --muted:#716e88;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
+  .container{max-width:760px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;}
+  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
+  a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
+  a:hover{text-decoration:underline;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:20px;}
+  .form-group{margin-bottom:14px;}
+  .form-group label{font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:6px;}
+  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
+  .form-input:focus{border-color:var(--gold);}
+  
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 20px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
+  .btn-danger{background:rgba(224,92,92,0.2);color:var(--red);border:1px solid rgba(224,92,92,0.4);margin-left:8px;}
+
+  .preview-box{margin-top:16px;padding:16px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px;text-align:center;}
+  .preview-img{max-width:240px;border-radius:6px;border:1px solid var(--gold);display:none;margin:10px auto;}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Product Highlight of the Month</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Custom Highlight Section for Monthly Drips</p>
+    </div>
+    <a href="/">← Return to Dashboard</a>
+  </header>
+
+  <div class="card">
+    <div class="form-group">
+      <label>Highlight Title</label>
+      <input type="text" id="hl-title" class="form-input" placeholder="e.g. Premium Leather Scripture Case"/>
+    </div>
+    <div class="form-group">
+      <label>Product Image Link (Direct URL or Base64 / Google Photos Direct)</label>
+      <input type="text" id="hl-image" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="updatePreview()"/>
+    </div>
+    <div class="form-group">
+      <label>Short Description / Promo Note</label>
+      <input type="text" id="hl-desc" class="form-input" placeholder="e.g. Crafted for durability. Limited slots for this batch."/>
+    </div>
+
+    <div class="preview-box">
+      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:6px;">Live Image Preview:</div>
+      <img id="preview-tag" class="preview-img" alt="Preview"/>
+      <div id="no-img-text" style="font-size:0.72rem;color:var(--muted);">No image specified (Highlight section will be hidden in email).</div>
+    </div>
+
+    <div style="margin-top:20px;display:flex;">
+      <button class="btn" onclick="saveHighlight()">💾 Save Highlight to Turso</button>
+      <button class="btn btn-danger" onclick="clearHighlight()">🗑️ Disable / Remove</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadHighlight() {
+  try {
+    const res = await fetch('/api/highlight');
+    const data = await res.json();
+    if (data.ok && data.highlight) {
+      document.getElementById('hl-title').value = data.highlight.title || '';
+      document.getElementById('hl-image').value = data.highlight.image_url || '';
+      document.getElementById('hl-desc').value = data.highlight.description || '';
+      updatePreview();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function updatePreview() {
+  const url = document.getElementById('hl-image').value.trim();
+  const img = document.getElementById('preview-tag');
+  const noText = document.getElementById('no-img-text');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+    noText.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    noText.style.display = 'block';
+  }
+}
+
+async function saveHighlight() {
+  const title = document.getElementById('hl-title').value.trim();
+  const image_url = document.getElementById('hl-image').value.trim();
+  const description = document.getElementById('hl-desc').value.trim();
+
+  try {
+    const res = await fetch('/api/highlight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, image_url, description, active: image_url ? 1 : 0 })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ Highlight section updated in Turso database!");
+    } else {
+      alert("❌ Error: " + data.error);
+    }
+  } catch (e) {
+    alert("❌ Error: " + e.message);
+  }
+}
+
+async function clearHighlight() {
+  document.getElementById('hl-title').value = '';
+  document.getElementById('hl-image').value = '';
+  document.getElementById('hl-desc').value = '';
+  updatePreview();
+  await saveHighlight();
+}
+
+window.addEventListener('DOMContentLoaded', loadHighlight);
+</script>
+</body>
+</html>

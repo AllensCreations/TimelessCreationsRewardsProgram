@@ -25,12 +25,18 @@
   .sync-bar-wrap{width:320px;height:3px;background:var(--surface2);border-radius:99px;overflow:hidden;}
   .sync-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;width:0%;transition:width 0.3s ease;}
 
-  .app{display:flex;height:100vh;overflow:hidden;}
-  .sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;transition:transform 0.3s ease;z-index:100;}
+  .app{display:flex;height:100vh;overflow:hidden;position:relative;}
+  
+  /* Collapsible & Mobile Friendly Sidebar */
+  .sidebar{
+    width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;height:100vh;transition:transform 0.3s ease;z-index:100;
+  }
   .sidebar-logo{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .sidebar-logo h1{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--gold);line-height:1.1;}
   .sidebar-logo h1 em{font-style:italic;color:var(--text);font-size:1rem;}
   .sidebar-logo p{font-size:0.58rem;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-top:4px;}
+  .close-sidebar-btn{display:none;background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;}
 
   .nav{padding:14px 10px;flex:1;overflow-y:auto;}
   .nav-label{font-size:0.58rem;color:var(--muted);letter-spacing:0.16em;text-transform:uppercase;padding:0 8px;margin:16px 0 6px;}
@@ -40,9 +46,16 @@
   .nav-item .icon{font-size:1rem;width:20px;text-align:center;}
   .nav-item .badge{margin-left:auto;background:var(--gold-dim);color:var(--gold);font-size:0.58rem;padding:2px 6px;border-radius:99px;}
 
+  /* Mobile Backdrop Overlay */
+  .sidebar-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px);z-index:95;
+  }
+
   .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);}
   .topbar{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface);position:sticky;top:0;z-index:90;}
+  .hamburger-btn{display:none;background:var(--surface2);border:1px solid var(--border);color:var(--gold);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:1rem;}
   .topbar-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.02em;flex:1;}
+  .topbar-title span{color:var(--muted);font-weight:400;font-size:0.75rem;margin-left:8px;}
 
   .panel{display:none;padding:22px;animation:fadeIn 0.25s ease;}
   .panel.active{display:block;}
@@ -63,7 +76,7 @@
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;}
   .calendar-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:6px;margin-top:12px;}
   .cal-day-header{font-size:0.6rem;text-align:center;color:var(--muted);text-transform:uppercase;padding:4px 0;}
-  .cal-cell{background:var(--surface2);border:1px solid var(--border);border-radius:6px;min-height:56px;padding:6px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color 0.2s;}
+  .cal-cell{background:var(--surface2);border:1px solid var(--border);border-radius:6px;min-height:56px;padding:6px;display:flex;flex-direction:column;justify-content:space-between;}
   .cal-cell.today{border-color:var(--gold);}
   .cal-cell.has-activity{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.3);}
   .cal-num{font-size:0.65rem;color:var(--muted);}
@@ -95,6 +108,15 @@
 
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.68rem;margin-top:8px;}
+
+  @media(max-width:768px){
+    .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:10px 0 30px rgba(0,0,0,0.8);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-backdrop.active{display:block;}
+    .hamburger-btn{display:block;}
+    .close-sidebar-btn{display:block;}
+    .panel{padding:14px;}
+  }
 </style>
 </head>
 <body>
@@ -105,26 +127,30 @@
   <div class="sync-bar-wrap"><div class="sync-bar" id="sync-bar"></div></div>
 </div>
 
+<div class="sidebar-backdrop" id="backdrop" onclick="toggleMobileSidebar(false)"></div>
+
 <div class="app">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div>
         <h1>Timeless<br><em>Creations</em></h1>
         <p>Command Center</p>
       </div>
+      <button class="close-sidebar-btn" onclick="toggleMobileSidebar(false)">✕</button>
     </div>
     <nav class="nav">
       <div class="nav-label">Main</div>
       <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
       <div class="nav-item" onclick="window.location.href='/pusher.html'"><span class="icon">➕</span> Add Missionaries</div>
       <div class="nav-item" onclick="window.location.href='/invoicing.html'"><span class="icon">🧾</span> Invoicing &amp; Billing</div>
-      <div class="nav-item" onclick="window.location.href='/highlight.html'"><span class="icon">🌟</span> Product Highlight</div>
+      <div class="nav-item" onclick="window.location.href='/highlight.html'"><span class="icon">🌟</span> Media &amp; Message Hub</div>
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries &amp; Roster <span class="badge" id="badge-missionaries">—</span></div>
     </nav>
   </aside>
 
   <main class="main">
     <div class="topbar">
+      <button class="hamburger-btn" onclick="toggleMobileSidebar(true)">☰ Menu</button>
       <div class="topbar-title">Missionary Tracking <span>Overview</span></div>
     </div>
 
@@ -176,6 +202,18 @@
 
 <script>
 let state = { missionaries: [], dailyStats: {}, currentFilter: 'all', searchQuery: '' };
+
+function toggleMobileSidebar(isOpen) {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('backdrop');
+  if (isOpen) {
+    sidebar.classList.add('open');
+    backdrop.classList.add('active');
+  } else {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('active');
+  }
+}
 
 async function doSync() {
   const overlay = document.getElementById('sync-overlay');
@@ -353,6 +391,7 @@ function switchTab(tab, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
   if (el) el.classList.add('active');
+  toggleMobileSidebar(false);
 }
 
 window.addEventListener('DOMContentLoaded', doSync);

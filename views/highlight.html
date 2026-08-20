@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Monthly Media & Product Highlight Hub</title>
+<title>Timeless Creations — Monthly Media & Content Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <style>
   :root {
@@ -14,65 +14,91 @@
     --radius:10px;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:1300px;margin:0 auto;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:20px;min-height:100vh;}
+  .container{max-width:1400px;margin:0 auto;}
   header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
   h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
-  a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
+  .back-btn{color:var(--gold);text-decoration:none;font-size:0.75rem;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);}
+  .back-btn:hover{background:var(--surface);}
 
   .guide-banner{
     background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);
-    padding:14px 18px;margin-bottom:24px;font-size:0.72rem;line-height:1.6;
+    padding:12px 16px;margin-bottom:20px;font-size:0.7rem;line-height:1.5;
   }
   .guide-banner strong{color:var(--gold2);}
   .guide-banner a{color:var(--gold2);text-decoration:underline;}
 
-  .grid-layout{display:grid;grid-template-columns:1fr 500px;gap:24px;align-items:start;}
-  @media(max-width:1050px){.grid-layout{grid-template-columns:1fr;}}
+  .hub-grid{display:grid;grid-template-columns:1fr 490px;gap:24px;align-items:start;}
+  @media(max-width:1100px){.hub-grid{grid-template-columns:1fr;}}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
-  .card h3{font-family:'Syne',sans-serif;font-size:0.92rem;color:var(--gold);margin-bottom:14px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+  .card h3{font-family:'Syne',sans-serif;font-size:0.9rem;color:var(--gold);margin-bottom:12px;}
   
   .form-group{margin-bottom:12px;}
   .form-group label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;}
   .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;}
-  .form-input:focus{border-color:var(--gold);}
+  .form-textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;resize:vertical;min-height:60px;}
+  .form-input:focus, .form-textarea:focus{border-color:var(--gold);}
 
   .gallery-grid-inputs{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;}
+  @media(max-width:600px){.gallery-grid-inputs{grid-template-columns:1fr;}}
 
   .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   .btn-danger{background:rgba(224,92,92,0.2);color:var(--red);border:1px solid rgba(224,92,92,0.4);margin-left:8px;}
+  .btn-save-msg{background:var(--surface2);border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.65rem;}
+  .btn-save-msg:hover{background:var(--gold);color:#0a0a0f;}
 
-  .preview-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:sticky;top:20px;}
-  .iframe-container{width:100%;height:750px;border-radius:8px;border:1px solid #e0d6bc;background:#ffffff;overflow:hidden;}
-  iframe{width:100%;height:100%;border:none;}
+  /* 1:1 Fixed Width Exact Email Preview Container */
+  .preview-wrapper{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;
+    position:sticky;top:20px;display:flex;flex-direction:column;align-items:center;
+  }
+  .preview-header{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  
+  .exact-email-device{
+    width:460px;
+    max-width:100%;
+    height:780px;
+    background:#ffffff;
+    border:1px solid #e0d6bc;
+    border-radius:4px;
+    overflow:hidden;
+    box-shadow:0 12px 36px rgba(0,0,0,0.6);
+  }
+  .exact-email-device iframe{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+  }
 
-  /* Modern Toast Notifications */
+  /* Table styling for Monthly Messages */
+  table{width:100%;border-collapse:collapse;margin-top:8px;}
+  th{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;padding:8px;border-bottom:1px solid var(--border);text-align:left;}
+  td{padding:8px;font-size:0.7rem;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:top;}
+
   #toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
-  .toast{background:var(--surface2);border:1px solid var(--border);padding:12px 18px;border-radius:8px;font-size:0.72rem;min-width:240px;box-shadow:0 10px 30px rgba(0,0,0,0.6);animation:slideUp 0.25s ease;}
+  .toast{background:var(--surface2);border:1px solid var(--border);padding:12px 18px;border-radius:8px;font-size:0.72rem;min-width:240px;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
   .toast.success{border-left:4px solid var(--green);color:var(--text);}
   .toast.error{border-left:4px solid var(--red);color:var(--text);}
-  @keyframes slideUp{from{transform:translateY(10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
 </style>
 </head>
 <body>
 <div class="container">
   <header>
     <div>
-      <h1>Monthly Media & Product Highlight Hub</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Centralized Visual Asset & Product Copy Management</p>
+      <h1>Monthly Media &amp; Content Hub</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Centralized 24-Month Messages, Visual Assets, and 1:1 Email Mockup</p>
     </div>
-    <a href="/">← Return to Dashboard</a>
+    <a href="/" class="back-btn">← Return to Dashboard</a>
   </header>
 
   <div class="guide-banner">
-    📌 <strong>Image Upload Instructions:</strong> Use this site to get direct link and use the web or email size: 
-    <a href="https://postimages.org/" target="_blank">https://postimages.org/</a>.<br>
-    Copy the <strong>"Direct Link"</strong> URL from PostImages and paste it into the respective image fields below.
+    📌 <strong>Image Upload Instructions:</strong> Use <a href="https://postimages.org/" target="_blank">https://postimages.org/</a> to get direct links (use Web or Email size). Copy the <strong>"Direct Link"</strong> URL into the inputs.
   </div>
 
-  <div class="grid-layout">
-    <!-- LEFT: Media Controls -->
+  <div class="hub-grid">
+    <!-- LEFT: Settings, Product Assets, and 24-Month Messages -->
     <div>
       <!-- 1. Spotlight Product of the Month (Strictly 1:1 Aspect Ratio) -->
       <div class="card">
@@ -82,7 +108,7 @@
           <input type="text" id="hl-title" class="form-input" placeholder="e.g. Premium Leather Scripture Case" oninput="renderLivePreview()"/>
         </div>
         <div class="form-group">
-          <label>1:1 Square Image Direct URL (Leave blank to hide Highlight section)</label>
+          <label>1:1 Square Image URL (Leave blank to hide Highlight section)</label>
           <input type="text" id="hl-image" class="form-input" placeholder="https://i.postimg.cc/.../product.jpg" oninput="renderLivePreview()"/>
         </div>
         <div class="form-group">
@@ -91,23 +117,17 @@
         </div>
       </div>
 
-      <!-- 2. Primary Temple Banner -->
+      <!-- 2. Primary Temple Header & Missionary Essentials -->
       <div class="card">
-        <h3>🏛️ Header Temple Banner</h3>
+        <h3>🏛️ Header Banner &amp; Missionary Essentials</h3>
         <div class="form-group">
           <label>Temple Header Image URL</label>
           <input type="text" id="img-temple" class="form-input" placeholder="https://i.postimg.cc/.../temple.jpg" oninput="renderLivePreview()"/>
         </div>
-      </div>
-
-      <!-- 3. Missionary Essentials Products (Editable Titles & 1:1 Images) -->
-      <div class="card">
-        <h3>🛍️ Missionary Essentials Products (1:1 Ratio & Editable Titles)</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <!-- Product 1 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
           <div>
             <div class="form-group">
-              <label>Product 1 Title / Name</label>
+              <label>Product 1 Title</label>
               <input type="text" id="title-prod1" class="form-input" placeholder="Wooden Nametag" oninput="renderLivePreview()"/>
             </div>
             <div class="form-group">
@@ -115,10 +135,9 @@
               <input type="text" id="img-prod1" class="form-input" placeholder="https://i.postimg.cc/.../nametag.jpg" oninput="renderLivePreview()"/>
             </div>
           </div>
-          <!-- Product 2 -->
           <div>
             <div class="form-group">
-              <label>Product 2 Title / Name</label>
+              <label>Product 2 Title</label>
               <input type="text" id="title-prod2" class="form-input" placeholder="POS Kit" oninput="renderLivePreview()"/>
             </div>
             <div class="form-group">
@@ -129,7 +148,7 @@
         </div>
       </div>
 
-      <!-- 4. Community Gallery Grid (6 Slots) -->
+      <!-- 3. Community Gallery Grid -->
       <div class="card">
         <h3>🖼️ Legacy Community Gallery (6 Photos)</h3>
         <div class="gallery-grid-inputs">
@@ -142,19 +161,43 @@
         </div>
       </div>
 
-      <div style="margin-bottom:30px;display:flex;">
-        <button class="btn" onclick="saveMediaHub()">💾 Save All Changes to Turso</button>
-        <button class="btn btn-danger" onclick="clearHighlightOnly()">🗑️ Remove Highlight Only</button>
+      <div style="margin-bottom:20px;display:flex;">
+        <button class="btn" onclick="saveMediaHub()">💾 Save Media Assets to Turso</button>
+        <button class="btn btn-danger" onclick="clearHighlightOnly()">🗑️ Remove Highlight</button>
+      </div>
+
+      <!-- 4. 24-Month Messages Directory & Live Editor -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3>📜 24-Month Messages Directory &amp; Editor</h3>
+          <span style="font-size:0.65rem;color:var(--muted);">Select month to preview</span>
+        </div>
+        <div style="max-height:480px;overflow-y:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:55px;">Mo.</th>
+                <th style="width:140px;">Theme / Speaker</th>
+                <th style="width:160px;">Scripture Quote</th>
+                <th>Message Content</th>
+                <th style="width:75px;text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="messages-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:16px;">Loading messages from Turso...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- RIGHT: Live Email Iframe Preview -->
+    <!-- RIGHT: 1:1 Fixed Width Live Email Preview -->
     <div class="preview-wrapper">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <strong style="font-size:0.75rem;color:var(--gold);">Real-time Monthly Drip Preview</strong>
-        <span style="font-size:0.65rem;color:var(--muted);">1:1 Ratio Locked</span>
+      <div class="preview-header">
+        <strong style="font-size:0.75rem;color:var(--gold);">1:1 Actual Email View (460px)</strong>
+        <span style="font-size:0.65rem;color:var(--muted);">Fixed Scale</span>
       </div>
-      <div class="iframe-container">
+      <div class="exact-email-device">
         <iframe id="email-preview-frame"></iframe>
       </div>
     </div>
@@ -165,6 +208,7 @@
 
 <script>
 let rawTemplate = "";
+let messagesList = [];
 
 const DEFAULTS = {
   temple: "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG",
@@ -192,6 +236,7 @@ function showToast(title, msg, type = 'success') {
 async function init() {
   await fetchTemplate();
   await loadMedia();
+  await loadMessages();
 }
 
 async function fetchTemplate() {
@@ -235,6 +280,64 @@ async function loadMedia() {
   }
 }
 
+async function loadMessages() {
+  try {
+    const res = await fetch('/api/dashboard-data');
+    const data = await res.json();
+    if (data.ok && data.messages) {
+      messagesList = data.messages;
+      renderMessagesTable();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderMessagesTable() {
+  const tb = document.getElementById('messages-tbody');
+  if (!messagesList.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;">No messages stored in DB.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = messagesList.map(m => `
+    <tr>
+      <td style="font-weight:bold;color:var(--gold)">Mo. ${m.month}</td>
+      <td><input type="text" id="msg-theme-${m.month}" class="form-input" value="${m.theme || ''}"/></td>
+      <td><input type="text" id="msg-quote-${m.month}" class="form-input" value="${m.quote || ''}"/></td>
+      <td><textarea id="msg-body-${m.month}" class="form-textarea">${m.msg || ''}</textarea></td>
+      <td style="text-align:center;">
+        <button class="btn-save-msg" onclick="saveSingleMessage(${m.month})">💾 Save</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function saveSingleMessage(month) {
+  const theme = document.getElementById(`msg-theme-${month}`).value.trim();
+  const quote = document.getElementById(`msg-quote-${month}`).value.trim();
+  const message = document.getElementById(`msg-body-${month}`).value.trim();
+
+  try {
+    const res = await fetch('/api/dashboard-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_message', month, theme, scripture: quote, message })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Saved", `Month ${month} message updated in Turso!`, "success");
+      const target = messagesList.find(x => x.month == month);
+      if (target) { target.theme = theme; target.quote = quote; target.msg = message; }
+      renderLivePreview();
+    } else {
+      showToast("Error", data.error || "Failed to save message.", "error");
+    }
+  } catch (err) {
+    showToast("Error", err.message, "error");
+  }
+}
+
 function populateDefaults() {
   document.getElementById('img-temple').value = DEFAULTS.temple;
   document.getElementById('title-prod1').value = DEFAULTS.titleProd1;
@@ -269,15 +372,17 @@ function renderLivePreview() {
     `;
   }
 
+  const sampleMsg = messagesList[0] || {};
+
   let html = rawTemplate || "<p style='padding:20px;'>Loading template...</p>";
 
   html = html
     .replace(/{{DisplayDate}}/g, new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
     .replace(/{{Suffix}}/g, 'Elder')
     .replace(/{{lastName}}/g, 'Dela Cruz')
-    .replace(/{{Msg}}/g, 'Congratulations on serving faithfully! Your dedication brings light and hope to many lives across your mission.')
-    .replace(/{{MsgAuthor}}/g, '“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”')
-    .replace(/{{Author}}/g, 'Proverbs 3:5')
+    .replace(/{{Msg}}/g, sampleMsg.msg || 'Congratulations on serving faithfully! Your dedication brings light and hope to many lives across your mission.')
+    .replace(/{{MsgAuthor}}/g, sampleMsg.quote || '“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”')
+    .replace(/{{Author}}/g, sampleMsg.theme || 'Proverbs 3:5')
     .replace(/{{Points}}/g, '12')
     .replace(/{{points}}/g, '12')
     .replace(/{{referral_code}}/g, 'TEST2026')
@@ -324,7 +429,7 @@ async function saveMediaHub() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast("Saved Successfully", "All media assets and titles are synchronized to Turso!", "success");
+      showToast("Saved Successfully", "Media assets & titles synchronized to Turso!", "success");
     } else {
       showToast("Error", data.error || "Failed to update database.", "error");
     }

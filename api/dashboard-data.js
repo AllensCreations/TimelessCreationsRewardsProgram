@@ -76,7 +76,6 @@ export default async function handler(req, res) {
       const monthPrefix = todayStr.slice(0, 7);
       const emailsThisMonth = (await runSql("SELECT COUNT(*) as c FROM system_logs WHERE timestamp LIKE ? AND message LIKE '%sent%'", [`${monthPrefix}%`]))[0]?.c || 0;
 
-      // Group dispatch activity by day for the calendar heatmap
       const dailyStatsRows = await runSql(`
         SELECT substr(timestamp, 1, 10) as log_date, count(*) as count 
         FROM system_logs 
@@ -131,6 +130,20 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const { action } = body;
 
+    // Direct Handler to Update Single Month Message from highlight.html Hub
+    if (action === 'update_message') {
+      const { month, theme, scripture, message } = body;
+      await runSql(`
+        INSERT INTO messages (month, theme, scripture, message)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(month) DO UPDATE SET
+          theme = excluded.theme,
+          scripture = excluded.scripture,
+          message = excluded.message;
+      `, [month, theme || '', scripture || '', message || '']);
+      return res.status(200).json({ ok: true, message: `Month ${month} updated successfully.` });
+    }
+
     if (action === 'test_send') {
       const { email, mode } = body;
       if (!email || !email.includes('@')) {
@@ -152,6 +165,17 @@ export default async function handler(req, res) {
           Points: "12",
           points: "12",
           referral_code: "TEST2026",
+          ImgTemple: "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG",
+          TitleProd1: "Wooden Nametag",
+          ImgProd1: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+          TitleProd2: "POS Kit",
+          ImgProd2: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+          Gal1: "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
+          Gal2: "https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky",
+          Gal3: "https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv",
+          Gal4: "https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR",
+          Gal5: "https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m",
+          Gal6: "https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV",
           HighlightSection: ""
         });
         if (await sendBrevoEmail(email, "Test Missionary", "Test: Monthly Drip Template", html)) successCount++;

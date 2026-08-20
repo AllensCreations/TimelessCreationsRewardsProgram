@@ -37,16 +37,17 @@
         .logo-text { font-size: 24px; letter-spacing: 6px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
         .logo-sub { font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; letter-spacing: 2px; color: #8c7e5d; margin-top: 10px; text-transform: uppercase; line-height: 1.4; }
         .date-badge { font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px; display: block; }
+        
         .temple-img { width: 100%; height: auto; min-height: 180px; object-fit: cover; display: block; border: 0; }
         .main-content { padding: 24px; text-align: center; line-height: 1.6; }
         .greeting { font-size: 20px; font-style: italic; margin-bottom: 14px; color: #1a1a1a; }
         .monthly-message { font-size: 14px; color: #333; margin-bottom: 20px; }
+        
         .quote-container { margin: 20px 0; padding: 18px; background-color: #fdfbf8; border-left: 2px solid #d4c197; border-right: 2px solid #d4c197; }
         .conference-quote { font-size: 15px; font-style: italic; display: block; margin-bottom: 10px; color: #1a1a1a; line-height: 1.5; }
         .quote-author { font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d; }
         .divider { border: 0; height: 1px; background: #e0d6bc; margin: 28px 0; }
         
-        /* Points Box */
         .points-card {
             background-color: #fcfaf5;
             border: 1px solid #d4c197;
@@ -57,6 +58,7 @@
         }
         .points-val { font-size: 26px; font-weight: bold; color: #8b1a1a; font-family: 'Helvetica', Arial, sans-serif; }
         .points-sub { font-size: 13px; color: #555; margin-top: 4px; }
+        
         .cta-btn-gold {
             display: inline-block;
             margin-top: 14px;
@@ -72,26 +74,6 @@
             border-radius: 2px;
         }
 
-        /* Product Highlight Box */
-        .highlight-card {
-            background: #ffffff;
-            border: 1px solid #e0d6bc;
-            padding: 16px;
-            margin: 24px 0;
-            text-align: center;
-        }
-        .highlight-badge {
-            background: #8b1a1a;
-            color: #fff;
-            font-family: 'Helvetica', Arial, sans-serif;
-            font-size: 9px;
-            padding: 4px 10px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            display: inline-block;
-            margin-bottom: 12px;
-        }
-
         .promo-section { padding: 22px 14px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 20px; }
         .section-title { font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 15px; margin-bottom: 18px; color: #1a1a1a; }
         .product-img { width: 100%; max-width: 140px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 10px auto; }
@@ -102,7 +84,7 @@
         @media (prefers-color-scheme: dark) {
             body, .email-wrapper { background-color: #000000 !important; }
             .email-container { background-color: #121212 !important; border-color: #333 !important; }
-            .brand-header, .promo-section, .highlight-card { background-color: #121212 !important; }
+            .brand-header, .promo-section { background-color: #121212 !important; }
             .logo-text, .greeting, .conference-quote, .monthly-message, .section-title { color: #ffffff !important; }
             .quote-container, .points-card { background-color: #1a1a1a !important; border-color: #444 !important; }
             .points-sub { color: #ccc !important; }
@@ -120,14 +102,12 @@
             <div class="logo-sub">Most Trusted Online LDS Store by Members and Missionaries Across the Philippines</div>
         </div>
 
-        <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" class="temple-img">
+        <img src="{{ImgTemple}}" alt="Temple" class="temple-img">
 
-        <!-- 2. Message & Spiritual Encouragement -->
+        <!-- 2. Spiritual Message -->
         <div class="main-content">
             <div class="greeting">Hello {{Suffix}} {{lastName}},</div>
-            <div class="monthly-message">
-                {{Msg}}
-            </div>
+            <div class="monthly-message">{{Msg}}</div>
 
             <div class="quote-container">
                 <span class="conference-quote">{{MsgAuthor}}</span>
@@ -144,22 +124,23 @@
                 <a href="https://m.me/TimelesscreationsRP" class="cta-btn-gold">Claim Your Rewards</a>
             </div>
 
+            <!-- 4. Product Highlight of the Month (Strictly 1:1) -->
             {{HighlightSection}}
 
             <hr class="divider"/>
 
-            <!-- 4. Missionary Essentials Section -->
+            <!-- 5. Missionary Essentials Section -->
             <div class="promo-section">
                 <h2 class="section-title">Missionary Essentials</h2>
                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
                         <td align="center" width="48%" valign="top">
-                            <img src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" class="product-img" alt="Wooden Nametag">
+                            <img src="{{ImgProd1}}" class="product-img" alt="Wooden Nametag">
                             <div class="product-label">Wooden Nametag</div>
                         </td>
                         <td width="4%"></td>
                         <td align="center" width="48%" valign="top">
-                            <img src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" class="product-img" alt="POS Kit">
+                            <img src="{{ImgProd2}}" class="product-img" alt="POS Kit">
                             <div class="product-label">POS Kit</div>
                         </td>
                     </tr>
@@ -175,7 +156,7 @@
 
             <hr class="divider"/>
 
-            <!-- 5. Community Gallery -->
+            <!-- 6. Community Gallery (6 Photos) -->
             <div style="max-width: 420px; margin: 30px auto 10px; text-align: center;">
                 <h2 class="section-title" style="margin-bottom: 10px;">Engrave Your Legacy</h2>
                 <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 18px; font-style: italic;">
@@ -184,14 +165,14 @@
                 
                 <table width="100%" border="0" cellspacing="4" cellpadding="0" style="table-layout: fixed; margin-bottom: 18px;">
                     <tr>
-                        <td><img src="https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 1"></td>
-                        <td><img src="https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 2"></td>
-                        <td><img src="https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 3"></td>
+                        <td><img src="{{Gal1}}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 1"></td>
+                        <td><img src="{{Gal2}}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 2"></td>
+                        <td><img src="{{Gal3}}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 3"></td>
                     </tr>
                     <tr>
-                        <td><img src="https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 4"></td>
-                        <td><img src="https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 5"></td>
-                        <td><img src="https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 6"></td>
+                        <td><img src="{{Gal4}}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 4"></td>
+                        <td><img src="{{Gal5}}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 5"></td>
+                        <td><img src="{{Gal6}}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border: 1px solid #f0eadd;" alt="Community Photo 6"></td>
                     </tr>
                 </table>
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Product Highlight & Live Email Preview</title>
+<title>Timeless Creations — Monthly Media & Product Highlight Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <style>
   :root {
@@ -15,30 +15,36 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:1160px;margin:0 auto;}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
+  .container{max-width:1300px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
   h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
   a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
-  a:hover{text-decoration:underline;}
+
+  .guide-banner{
+    background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);
+    padding:14px 18px;margin-bottom:24px;font-size:0.72rem;line-height:1.6;
+  }
+  .guide-banner strong{color:var(--gold2);}
+  .guide-banner a{color:var(--gold2);text-decoration:underline;}
 
   .grid-layout{display:grid;grid-template-columns:1fr 500px;gap:24px;align-items:start;}
-  @media(max-width:980px){.grid-layout{grid-template-columns:1fr;}}
+  @media(max-width:1050px){.grid-layout{grid-template-columns:1fr;}}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
-  .card h3{font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);margin-bottom:14px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+  .card h3{font-family:'Syne',sans-serif;font-size:0.92rem;color:var(--gold);margin-bottom:14px;}
   
-  .form-group{margin-bottom:14px;}
-  .form-group label{font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:6px;}
-  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
+  .form-group{margin-bottom:12px;}
+  .form-group label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;}
+  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;}
   .form-input:focus{border-color:var(--gold);}
+
+  .gallery-grid-inputs{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;}
 
   .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   .btn-danger{background:rgba(224,92,92,0.2);color:var(--red);border:1px solid rgba(224,92,92,0.4);margin-left:8px;}
 
-  /* Live Email Iframe Container */
-  .preview-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
-  .preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-  .iframe-container{width:100%;height:680px;border-radius:8px;border:1px solid #e0d6bc;background:#ffffff;overflow:hidden;}
+  .preview-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:sticky;top:20px;}
+  .iframe-container{width:100%;height:750px;border-radius:8px;border:1px solid #e0d6bc;background:#ffffff;overflow:hidden;}
   iframe{width:100%;height:100%;border:none;}
 </style>
 </head>
@@ -46,53 +52,86 @@
 <div class="container">
   <header>
     <div>
-      <h1>Product Highlight of the Month</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Manage Spotlight Item with Live Monthly Drip Email Preview</p>
+      <h1>Monthly Media & Product Highlight Hub</h1>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Centralized Visual Asset Management for Monthly Email Drips</p>
     </div>
     <a href="/">← Return to Dashboard</a>
   </header>
 
+  <div class="guide-banner">
+    📌 <strong>Image Upload Instructions:</strong> Use this site to get direct link and use the web or email size: 
+    <a href="https://postimages.org/" target="_blank">https://postimages.org/</a>.<br>
+    Copy the <strong>"Direct Link"</strong> URL from PostImages and paste it into the respective image fields below.
+  </div>
+
   <div class="grid-layout">
-    <!-- LEFT: Settings Form -->
+    <!-- LEFT: Media Controls -->
     <div>
+      <!-- 1. Spotlight Product of the Month (Strictly 1:1 Aspect Ratio) -->
       <div class="card">
-        <h3>Configure Highlight Item</h3>
-        
+        <h3>⭐ Product Highlight of the Month (Strictly 1:1)</h3>
         <div class="form-group">
           <label>Highlight Title</label>
           <input type="text" id="hl-title" class="form-input" placeholder="e.g. Premium Leather Scripture Case" oninput="renderLivePreview()"/>
         </div>
-        
         <div class="form-group">
-          <label>Product Image Link (Direct URL)</label>
-          <input type="text" id="hl-image" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="renderLivePreview()"/>
+          <label>1:1 Square Image Direct URL (Leave blank to hide Highlight section)</label>
+          <input type="text" id="hl-image" class="form-input" placeholder="https://i.postimg.cc/.../product.jpg" oninput="renderLivePreview()"/>
         </div>
-        
         <div class="form-group">
-          <label>Short Description / Promo Note</label>
-          <input type="text" id="hl-desc" class="form-input" placeholder="e.g. Crafted for durability. Limited slots for this batch." oninput="renderLivePreview()"/>
-        </div>
-
-        <div style="margin-top:20px;display:flex;">
-          <button class="btn" onclick="saveHighlight()">💾 Save Highlight to Turso</button>
-          <button class="btn btn-danger" onclick="clearHighlight()">🗑️ Disable / Remove</button>
+          <label>Short Promo Description</label>
+          <input type="text" id="hl-desc" class="form-input" placeholder="e.g. Handcrafted with genuine full-grain leather." oninput="renderLivePreview()"/>
         </div>
       </div>
 
+      <!-- 2. Primary Temple Banner -->
       <div class="card">
-        <h3 style="font-size:0.85rem;">💡 How It Works</h3>
-        <p style="font-size:0.7rem;color:var(--muted);line-height:1.6;">
-          • If you leave the image URL blank, the highlight block is automatically stripped out of outgoing emails.<br>
-          • Changes saved here are stored directly in your live Turso database and instantly applied to both cron jobs and test emails.
-        </p>
+        <h3>🏛️ Header Temple Banner</h3>
+        <div class="form-group">
+          <label>Temple Header Image URL</label>
+          <input type="text" id="img-temple" class="form-input" placeholder="https://i.postimg.cc/.../temple.jpg" oninput="renderLivePreview()"/>
+        </div>
+      </div>
+
+      <!-- 3. Missionary Essentials Products -->
+      <div class="card">
+        <h3>🛍️ Missionary Essentials Products (1:1 Ratio)</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Product 1 Image URL</label>
+            <input type="text" id="img-prod1" class="form-input" placeholder="https://i.postimg.cc/.../nametag.jpg" oninput="renderLivePreview()"/>
+          </div>
+          <div class="form-group">
+            <label>Product 2 Image URL</label>
+            <input type="text" id="img-prod2" class="form-input" placeholder="https://i.postimg.cc/.../poskit.jpg" oninput="renderLivePreview()"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Community Gallery Grid (6 Slots) -->
+      <div class="card">
+        <h3>🖼️ Legacy Community Gallery (6 Photos)</h3>
+        <div class="gallery-grid-inputs">
+          <input type="text" id="gal-1" class="form-input" placeholder="Photo 1 URL" oninput="renderLivePreview()"/>
+          <input type="text" id="gal-2" class="form-input" placeholder="Photo 2 URL" oninput="renderLivePreview()"/>
+          <input type="text" id="gal-3" class="form-input" placeholder="Photo 3 URL" oninput="renderLivePreview()"/>
+          <input type="text" id="gal-4" class="form-input" placeholder="Photo 4 URL" oninput="renderLivePreview()"/>
+          <input type="text" id="gal-5" class="form-input" placeholder="Photo 5 URL" oninput="renderLivePreview()"/>
+          <input type="text" id="gal-6" class="form-input" placeholder="Photo 6 URL" oninput="renderLivePreview()"/>
+        </div>
+      </div>
+
+      <div style="margin-bottom:30px;display:flex;">
+        <button class="btn" onclick="saveMediaHub()">💾 Save All Media to Turso</button>
+        <button class="btn btn-danger" onclick="clearHighlightOnly()">🗑️ Remove Highlight Only</button>
       </div>
     </div>
 
-    <!-- RIGHT: Real-time Live Drip HTML Iframe Preview -->
+    <!-- RIGHT: Live Email Iframe Preview -->
     <div class="preview-wrapper">
-      <div class="preview-header">
-        <strong style="font-size:0.75rem;color:var(--gold);">Live Email Template Preview</strong>
-        <span style="font-size:0.65rem;color:var(--muted);">monthly-drip.html</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <strong style="font-size:0.75rem;color:var(--gold);">Real-time Monthly Drip Preview</strong>
+        <span style="font-size:0.65rem;color:var(--muted);">1:1 Ratio Locked</span>
       </div>
       <div class="iframe-container">
         <iframe id="email-preview-frame"></iframe>
@@ -104,59 +143,96 @@
 <script>
 let rawTemplate = "";
 
+// Default image assets fallback
+const DEFAULTS = {
+  temple: "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG",
+  prod1: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+  prod2: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+  gal1: "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
+  gal2: "https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky",
+  gal3: "https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv",
+  gal4: "https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR",
+  gal5: "https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m",
+  gal6: "https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV"
+};
+
 async function init() {
   await fetchTemplate();
-  await loadHighlight();
+  await loadMedia();
 }
 
 async function fetchTemplate() {
   try {
     const res = await fetch('/templates/monthly-drip.html');
-    if (res.ok) {
-      rawTemplate = await res.text();
-    }
-  } catch (err) {
-    console.error("Could not load template file directly:", err);
-  }
-}
-
-async function loadHighlight() {
-  try {
-    const res = await fetch('/api/highlight');
-    const data = await res.json();
-    if (data.ok && data.highlight) {
-      document.getElementById('hl-title').value = data.highlight.title || '';
-      document.getElementById('hl-image').value = data.highlight.image_url || '';
-      document.getElementById('hl-desc').value = data.highlight.description || '';
-    }
-    renderLivePreview();
+    if (res.ok) rawTemplate = await res.text();
   } catch (err) {
     console.error(err);
   }
 }
 
+async function loadMedia() {
+  try {
+    const res = await fetch('/api/highlight');
+    const data = await res.json();
+    if (data.ok && data.media) {
+      const m = data.media;
+      document.getElementById('hl-title').value = m.title || '';
+      document.getElementById('hl-image').value = m.image_url || '';
+      document.getElementById('hl-desc').value = m.description || '';
+
+      document.getElementById('img-temple').value = m.img_temple || DEFAULTS.temple;
+      document.getElementById('img-prod1').value = m.img_prod1 || DEFAULTS.prod1;
+      document.getElementById('img-prod2').value = m.img_prod2 || DEFAULTS.prod2;
+
+      document.getElementById('gal-1').value = m.gal1 || DEFAULTS.gal1;
+      document.getElementById('gal-2').value = m.gal2 || DEFAULTS.gal2;
+      document.getElementById('gal-3').value = m.gal3 || DEFAULTS.gal3;
+      document.getElementById('gal-4').value = m.gal4 || DEFAULTS.gal4;
+      document.getElementById('gal-5').value = m.gal5 || DEFAULTS.gal5;
+      document.getElementById('gal-6').value = m.gal6 || DEFAULTS.gal6;
+    } else {
+      populateDefaults();
+    }
+    renderLivePreview();
+  } catch (err) {
+    populateDefaults();
+    renderLivePreview();
+  }
+}
+
+function populateDefaults() {
+  document.getElementById('img-temple').value = DEFAULTS.temple;
+  document.getElementById('img-prod1').value = DEFAULTS.prod1;
+  document.getElementById('img-prod2').value = DEFAULTS.prod2;
+  document.getElementById('gal-1').value = DEFAULTS.gal1;
+  document.getElementById('gal-2').value = DEFAULTS.gal2;
+  document.getElementById('gal-3').value = DEFAULTS.gal3;
+  document.getElementById('gal-4').value = DEFAULTS.gal4;
+  document.getElementById('gal-5').value = DEFAULTS.gal5;
+  document.getElementById('gal-6').value = DEFAULTS.gal6;
+}
+
 function renderLivePreview() {
-  const title = document.getElementById('hl-title').value.trim();
-  const image_url = document.getElementById('hl-image').value.trim();
-  const desc = document.getElementById('hl-desc').value.trim();
+  const hlTitle = document.getElementById('hl-title').value.trim();
+  const hlImage = document.getElementById('hl-image').value.trim();
+  const hlDesc = document.getElementById('hl-desc').value.trim();
 
   let highlightHtml = "";
-  if (image_url) {
+  if (hlImage) {
     highlightHtml = `
-      <div class="highlight-card" style="background:#ffffff;border:1px solid #e0d6bc;padding:16px;margin:24px 0;text-align:center;">
+      <div style="background:#ffffff;border:1px solid #e0d6bc;padding:18px;margin:24px 0;text-align:center;">
         <span style="background:#8b1a1a;color:#fff;font-family:'Helvetica',Arial,sans-serif;font-size:9px;padding:4px 10px;letter-spacing:1.5px;text-transform:uppercase;display:inline-block;margin-bottom:12px;">⭐ Highlight Product of the Month</span>
-        <h3 style="margin:0 0 10px 0;font-size:16px;color:#1a1a1a;text-transform:uppercase;letter-spacing:1px;">${title || 'Featured Missionary Gear'}</h3>
-        <img src="${image_url}" alt="Highlight" style="width:100%;max-width:320px;aspect-ratio:16/9;object-fit:cover;border:1px solid #d4c197;border-radius:4px;display:block;margin:0 auto 12px auto;">
-        <p style="font-size:13px;color:#555;margin:0 0 14px 0;">${desc || ''}</p>
-        <a href="https://m.me/TimelesscreationsRP" class="cta-btn-gold" style="display:inline-block;padding:12px 24px;background-color:#1a1a1a;color:#d4c197!important;text-decoration:none;font-family:'Helvetica',Arial,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">Claim / Inquire Now</a>
+        <h3 style="margin:0 0 12px 0;font-size:16px;color:#1a1a1a;text-transform:uppercase;letter-spacing:1px;">${hlTitle || 'Featured Missionary Item'}</h3>
+        <div style="width:100%;max-width:240px;margin:0 auto 14px auto;">
+          <img src="${hlImage}" alt="Product Highlight" style="width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid #d4c197;border-radius:4px;display:block;">
+        </div>
+        <p style="font-size:13px;color:#555;margin:0 0 14px 0;">${hlDesc || ''}</p>
+        <a href="https://m.me/TimelesscreationsRP" style="display:inline-block;padding:12px 24px;background-color:#1a1a1a;color:#d4c197!important;text-decoration:none;font-family:'Helvetica',Arial,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">Claim / Inquire Now</a>
       </div>
     `;
   }
 
-  let html = rawTemplate;
-  if (!html) {
-    html = "<p style='padding:20px;color:#222;'>Loading monthly drip template...</p>";
-  }
+  let html = rawTemplate || "<p style='padding:20px;'>Loading template...</p>";
 
   html = html
     .replace(/{{DisplayDate}}/g, new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
@@ -168,40 +244,60 @@ function renderLivePreview() {
     .replace(/{{Points}}/g, '12')
     .replace(/{{points}}/g, '12')
     .replace(/{{referral_code}}/g, 'TEST2026')
+    .replace(/{{ImgTemple}}/g, document.getElementById('img-temple').value.trim() || DEFAULTS.temple)
+    .replace(/{{ImgProd1}}/g, document.getElementById('img-prod1').value.trim() || DEFAULTS.prod1)
+    .replace(/{{ImgProd2}}/g, document.getElementById('img-prod2').value.trim() || DEFAULTS.prod2)
+    .replace(/{{Gal1}}/g, document.getElementById('gal-1').value.trim() || DEFAULTS.gal1)
+    .replace(/{{Gal2}}/g, document.getElementById('gal-2').value.trim() || DEFAULTS.gal2)
+    .replace(/{{Gal3}}/g, document.getElementById('gal-3').value.trim() || DEFAULTS.gal3)
+    .replace(/{{Gal4}}/g, document.getElementById('gal-4').value.trim() || DEFAULTS.gal4)
+    .replace(/{{Gal5}}/g, document.getElementById('gal-5').value.trim() || DEFAULTS.gal5)
+    .replace(/{{Gal6}}/g, document.getElementById('gal-6').value.trim() || DEFAULTS.gal6)
     .replace(/{{HighlightSection}}/g, highlightHtml);
 
-  const frame = document.getElementById('email-preview-frame');
-  frame.srcdoc = html;
+  document.getElementById('email-preview-frame').srcdoc = html;
 }
 
-async function saveHighlight() {
-  const title = document.getElementById('hl-title').value.trim();
-  const image_url = document.getElementById('hl-image').value.trim();
-  const description = document.getElementById('hl-desc').value.trim();
+async function saveMediaHub() {
+  const payload = {
+    title: document.getElementById('hl-title').value.trim(),
+    image_url: document.getElementById('hl-image').value.trim(),
+    description: document.getElementById('hl-desc').value.trim(),
+    active: document.getElementById('hl-image').value.trim() ? 1 : 0,
+    img_temple: document.getElementById('img-temple').value.trim(),
+    img_prod1: document.getElementById('img-prod1').value.trim(),
+    img_prod2: document.getElementById('img-prod2').value.trim(),
+    gal1: document.getElementById('gal-1').value.trim(),
+    gal2: document.getElementById('gal-2').value.trim(),
+    gal3: document.getElementById('gal-3').value.trim(),
+    gal4: document.getElementById('gal-4').value.trim(),
+    gal5: document.getElementById('gal-5').value.trim(),
+    gal6: document.getElementById('gal-6').value.trim()
+  };
 
   try {
     const res = await fetch('/api/highlight', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, image_url, description, active: image_url ? 1 : 0 })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if (data.ok) {
-      alert("✅ Highlight updated in Turso database!");
+      alert("✅ All media links & highlight settings successfully saved in Turso!");
     } else {
       alert("❌ Error: " + data.error);
     }
   } catch (e) {
-    alert("❌ Error: " + e.message);
+    alert("❌ Connection Error: " + e.message);
   }
 }
 
-async function clearHighlight() {
+function clearHighlightOnly() {
   document.getElementById('hl-title').value = '';
   document.getElementById('hl-image').value = '';
   document.getElementById('hl-desc').value = '';
   renderLivePreview();
-  await saveHighlight();
+  saveMediaHub();
 }
 
 window.addEventListener('DOMContentLoaded', init);

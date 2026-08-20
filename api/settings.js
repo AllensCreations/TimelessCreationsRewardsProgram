@@ -37,16 +37,18 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const stopRec = (await runSql("SELECT value FROM system_config WHERE key = 'force_stop'"))[0];
     const maintRec = (await runSql("SELECT value FROM system_config WHERE key = 'maintenance_mode'"))[0];
+    const emailRec = (await runSql("SELECT value FROM system_config WHERE key = 'test_email'"))[0];
 
     return res.status(200).json({
       ok: true,
       forceStop: stopRec?.value === '1',
-      maintenanceMode: maintRec?.value === '1'
+      maintenanceMode: maintRec?.value === '1',
+      testEmail: emailRec?.value || '2ndsalviejomark2019@gmail.com'
     });
   }
 
   if (req.method === 'POST') {
-    const { action, state } = req.body || {};
+    const { action, state, email } = req.body || {};
 
     if (action === 'toggle_stop') {
       const val = state ? '1' : '0';
@@ -62,10 +64,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, maintenanceMode: state });
     }
 
+    if (action === 'save_test_email') {
+      await runSql("INSERT OR REPLACE INTO system_config (key, value) VALUES ('test_email', ?)", [email || '']);
+      return res.status(200).json({ ok: true });
+    }
+
     if (action === 'reset_daily_quota') {
       const todayStr = new Date().toISOString().slice(0, 10);
       await runSql("DELETE FROM system_config WHERE key LIKE 'drip_count_%'");
-      await logSystemEvent('INFO', `Daily send quota manually reset for ${todayStr}`);
+      await logSystemEvent('INFO', `Daily send quota reset for ${todayStr}`);
       return res.status(200).json({ ok: true });
     }
 

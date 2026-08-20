@@ -1,5 +1,4 @@
 import { queryTurso, unwrap } from '../lib/db.js';
-import { logSystemEvent } from '../lib/logger.js';
 
 const PAGE_ACCESS_TOKEN = (process.env.PAGE_ACCESS_TOKEN || '').trim();
 const VERIFY_TOKEN = (process.env.VERIFY_TOKEN || 'TCRP_VERIFY_TOKEN').trim();
@@ -41,7 +40,6 @@ async function sendMessengerMessage(recipientId, messagePayload) {
 }
 
 export default async function handler(req, res) {
-  // Webhook Verification (GET)
   if (req.method === 'GET') {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
@@ -53,12 +51,10 @@ export default async function handler(req, res) {
     return res.status(403).send('Forbidden');
   }
 
-  // Incoming Messages (POST)
   if (req.method === 'POST') {
     const body = req.body;
 
     if (body.object === 'page') {
-      // Check Maintenance Mode in Turso
       const maintRec = (await runSql("SELECT value FROM system_config WHERE key = 'maintenance_mode'"))[0];
       const isMaintenance = maintRec?.value === '1';
 
@@ -69,20 +65,51 @@ export default async function handler(req, res) {
         const senderPsid = webhookEvent.sender?.id;
         if (!senderPsid) continue;
 
-        // If Maintenance Mode is active, send maintenance notice and skip normal bot pipeline
         if (isMaintenance) {
+          // Send maintenance text notice
           await sendMessengerMessage(senderPsid, {
             text: "🛠️ Timeless Creations System Maintenance\n\nOur Rewards & Invoicing bot is currently undergoing scheduled system updates and improvements.\n\nPlease check back in a short while! For urgent concerns, feel free to leave a direct message here."
+          });
+
+          // Send Dashboard button
+          await sendMessengerMessage(senderPsid, {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "button",
+                text: "You can still access your Rewards Dashboard below:",
+                buttons: [
+                  {
+                    type: "web_url",
+                    url: "https://timelesscreationsrewardsprogram.vercel.app/",
+                    title: "Open Dashboard"
+                  }
+                ]
+              }
+            }
           });
           continue;
         }
 
-        // Standard Bot Logic
+        // Normal Bot Mode
         if (webhookEvent.message) {
           const text = webhookEvent.message.text?.trim();
           if (text) {
             await sendMessengerMessage(senderPsid, {
-              text: `✨ Welcome to Timeless Creations Rewards Program!\n\nTo check your rewards status, please type your registered @missionary.org email or your 6-digit verification code.`
+              attachment: {
+                type: "template",
+                payload: {
+                  template_type: "button",
+                  text: `✨ Welcome to Timeless Creations Rewards Program!\n\nYou can access your account, check points, and view rewards anytime:`,
+                  buttons: [
+                    {
+                      type: "web_url",
+                      url: "https://timelesscreationsrewardsprogram.vercel.app/",
+                      title: "Open Dashboard"
+                    }
+                  ]
+                }
+              }
             });
           }
         }

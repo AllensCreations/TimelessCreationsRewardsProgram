@@ -27,7 +27,6 @@
 
   .section-title{font-family:'Syne',sans-serif;font-size:1.05rem;color:var(--text);margin-bottom:16px;font-weight:700;}
   
-  /* 10 Control Cards Grid */
   .control-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:16px;margin-bottom:30px;}
   .control-card{
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;
@@ -46,7 +45,6 @@
   .control-card p{font-size:0.68rem;color:var(--muted);line-height:1.5;}
 
   .form-group{margin-bottom:8px;}
-  .form-group label{font-size:0.6rem;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;}
   .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;}
 
   .btn-action{
@@ -68,7 +66,7 @@
   <header>
     <div>
       <h1>Control Room &amp; Operations Center</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Master Automation Switches, Overrides, &amp; System Health Controls</p>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Auto-Saved Settings Matrix &amp; System Health Controls</p>
     </div>
     <div class="nav-links">
       <a href="/" class="btn-link">← Dashboard</a>
@@ -77,132 +75,132 @@
     </div>
   </header>
 
-  <div class="section-title">System Operations Matrix (10 Core Controls)</div>
+  <div class="section-title">System Operations Matrix (Auto-Saves to Turso)</div>
 
   <div class="control-grid">
-    <!-- BUTTON 1: Master Pause / Resume Automated Sending -->
+    <!-- 1. Master Dispatch Switch -->
     <div class="control-card red">
       <div>
         <div class="card-head">
           <h3>1. Master Dispatch Switch</h3>
           <span class="card-num">#01</span>
         </div>
-        <p>Immediately halt or resume all scheduled daily cron monthly drip emails system-wide.</p>
+        <p>Halt or resume scheduled automated daily drip runs. Auto-saves on toggle.</p>
       </div>
       <button class="btn-action" id="btn-pause-send" onclick="toggleSending()">
         <span id="pause-status-dot">🟢</span> <span id="pause-btn-text">Automated Sending: ACTIVE</span>
       </button>
     </div>
 
-    <!-- BUTTON 2: Bot Maintenance Mode -->
+    <!-- 2. Maintenance Mode -->
     <div class="control-card gold">
       <div>
         <div class="card-head">
           <h3>2. Messenger Maintenance Mode</h3>
           <span class="card-num">#02</span>
         </div>
-        <p>Temporarily set the Messenger Chatbot to display a friendly maintenance notice during updates.</p>
+        <p>Enable maintenance notice for incoming messages. Auto-saves on toggle.</p>
       </div>
       <button class="btn-action" id="btn-maint" onclick="toggleMaintenance()">
         <span id="maint-status-dot">⚪</span> <span id="maint-btn-text">Maintenance: OFF</span>
       </button>
     </div>
 
-    <!-- BUTTON 3: Multi-Drip Test Dispenser -->
+    <!-- 3. Test Mode Dispenser -->
     <div class="control-card blue">
       <div>
         <div class="card-head">
           <h3>3. Test Mode Dispenser</h3>
           <span class="card-num">#03</span>
         </div>
-        <p>Dispatch core templates to any custom test email address via Brevo.</p>
+        <p>Dispatch core templates to any custom test recipient.</p>
         <div class="form-group" style="margin-top:6px;">
-          <input type="email" id="test-email-target" class="form-input" placeholder="test@example.com" value="2ndsalviejomark2019@gmail.com"/>
+          <input type="email" id="test-email-target" class="form-input" placeholder="test@example.com" value="2ndsalviejomark2019@gmail.com" onchange="autoSaveTestEmail()"/>
         </div>
       </div>
       <button class="btn-action" onclick="dispatchTestDrip()">🚀 Fire Test Drip Template</button>
     </div>
 
-    <!-- BUTTON 4: Instant Force Cron Run -->
+    <!-- 4. Force Cron Run -->
     <div class="control-card green">
       <div>
         <div class="card-head">
           <h3>4. Force Cron Run Now</h3>
           <span class="card-num">#04</span>
         </div>
-        <p>Manually execute a 30-email safe batch immediately without waiting for the scheduled daily timer.</p>
+        <p>Trigger a 30-email safe batch immediately without waiting for daily cron.</p>
       </div>
       <button class="btn-action" onclick="forceCronRun()">⚡ Trigger Batch Run</button>
     </div>
 
-    <!-- BUTTON 5: Reset Daily Send Quota Limit -->
+    <!-- 5. Reset Quota -->
     <div class="control-card purple">
       <div>
         <div class="card-head">
           <h3>5. Reset Daily Send Limit</h3>
           <span class="card-num">#05</span>
         </div>
-        <p>Reset today's sent counter lock in Turso to allow emergency manual batch sends.</p>
+        <p>Reset today's sent counter in Turso to allow emergency manual batch sends.</p>
       </div>
       <button class="btn-action" onclick="resetDailyQuota()">🔄 Clear Daily Quota Lock</button>
     </div>
 
-    <!-- BUTTON 6: Prune Inactive Activity Logs -->
+    <!-- 6. Prune Logs -->
     <div class="control-card red">
       <div>
         <div class="card-head">
           <h3>6. Prune Stale System Logs</h3>
           <span class="card-num">#06</span>
         </div>
-        <p>Optimize database performance by archiving or removing system logs older than 90 days.</p>
+        <p>Optimize database performance by cleaning up old activity records.</p>
       </div>
       <button class="btn-action" onclick="pruneLogs()">🧹 Clean Old Turso Logs</button>
     </div>
 
-    <!-- BUTTON 7: Referral Code Sync & Audit -->
+    <!-- 7. Referral Audit -->
     <div class="control-card gold">
       <div>
         <div class="card-head">
           <h3>7. Audit Referral Integrity</h3>
           <span class="card-num">#07</span>
         </div>
-        <p>Scan all active missionaries for missing or duplicate referral codes and auto-repair them.</p>
+        <p>Scan active missionaries for missing or duplicate referral codes.</p>
       </div>
       <button class="btn-action" onclick="auditReferralCodes()">🏷️ Run Referral Audit</button>
     </div>
 
-    <!-- BUTTON 8: Brevo SMTPS & API Health Check -->
+    <!-- 8. Brevo Health -->
     <div class="control-card blue">
       <div>
         <div class="card-head">
           <h3>8. Brevo API Health Diagnostic</h3>
           <span class="card-num">#08</span>
         </div>
-        <p>Validate Brevo API authentication credentials and credit quota limits in real time.</p>
+        <p>Validate Brevo credentials and balance quota in real time.</p>
       </div>
       <button class="btn-action" onclick="checkBrevoHealth()">🔍 Check Brevo Status</button>
     </div>
 
-    <!-- BUTTON 9: Messenger Webhook Heartbeat -->
+    <!-- 9. Webhook Ping -->
     <div class="control-card green">
       <div>
         <div class="card-head">
           <h3>9. Messenger Webhook Ping</h3>
           <span class="card-num">#09</span>
         </div>
-        <p>Test the Meta Graph API verification token handshake and webhook availability.</p>
+        <p>Test the Meta Graph API verification token handshake and endpoint status.</p>
       </div>
       <button class="btn-action" onclick="pingWebhook()">🛡️ Ping Webhook Route</button>
     </div>
 
-    <!-- BUTTON 10: Export Database JSON Backup -->
+    <!-- 10. Backup Download -->
     <div class="control-card purple">
       <div>
         <div class="card-head">
           <h3>10. Full JSON Cloud Backup</h3>
           <span class="card-num">#10</span>
         </div>
-        <p>Download a full snapshot of missionaries, drip messages, and invoices for cold storage.</p>
+        <p>Download a full snapshot of missionaries, messages, and invoices.</p>
       </div>
       <button class="btn-action" onclick="downloadBackup()">📦 Download JSON Backup</button>
     </div>
@@ -220,7 +218,7 @@ function showToast(title, msg, type = 'success') {
   el.className = `toast ${type}`;
   el.innerHTML = `<strong>${title}</strong><div style="color:var(--muted);margin-top:2px;">${msg}</div>`;
   tc.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  setTimeout(() => el.remove(), 3500);
 }
 
 async function init() {
@@ -230,6 +228,9 @@ async function init() {
     if (data.ok) {
       state.forceStop = Boolean(data.forceStop);
       state.maintenanceMode = Boolean(data.maintenanceMode);
+      if (data.testEmail) {
+        document.getElementById('test-email-target').value = data.testEmail;
+      }
       updateUI();
     }
   } catch (err) {
@@ -267,7 +268,6 @@ function updateUI() {
   }
 }
 
-// 1. Toggle Sending
 async function toggleSending() {
   const nextState = !state.forceStop;
   try {
@@ -280,12 +280,11 @@ async function toggleSending() {
     if (data.ok) {
       state.forceStop = data.forceStop;
       updateUI();
-      showToast("Dispatch Status Updated", state.forceStop ? "All outgoing automated emails paused." : "Automated email dispatch resumed.", state.forceStop ? "error" : "success");
+      showToast("Auto-Saved", state.forceStop ? "Automated sending paused." : "Automated sending active.", state.forceStop ? "error" : "success");
     }
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 2. Toggle Maintenance
 async function toggleMaintenance() {
   const nextState = !state.maintenanceMode;
   try {
@@ -298,19 +297,30 @@ async function toggleMaintenance() {
     if (data.ok) {
       state.maintenanceMode = data.maintenanceMode;
       updateUI();
-      showToast("Maintenance Updated", state.maintenanceMode ? "Bot in maintenance mode." : "Bot active for all users.", "success");
+      showToast("Auto-Saved", state.maintenanceMode ? "Maintenance mode activated." : "Maintenance mode deactivated.", "success");
     }
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 3. Test Dispenser
+async function autoSaveTestEmail() {
+  const email = document.getElementById('test-email-target').value.trim();
+  try {
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_test_email', email })
+    });
+    showToast("Auto-Saved", "Test email recipient updated.", "success");
+  } catch (e) {}
+}
+
 async function dispatchTestDrip() {
   const email = document.getElementById('test-email-target').value.trim();
   if (!email || !email.includes('@')) {
-    showToast("Invalid Email", "Please enter a valid test recipient email.", "error");
+    showToast("Invalid Email", "Enter a valid recipient email.", "error");
     return;
   }
-  showToast("Sending...", `Sending monthly test email to ${email}...`, "success");
+  showToast("Sending...", `Dispatching test email to ${email}...`, "success");
   try {
     const res = await fetch('/api/dashboard-data', {
       method: 'POST',
@@ -323,21 +333,19 @@ async function dispatchTestDrip() {
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 4. Force Cron Run
 async function forceCronRun() {
   showToast("Running...", "Triggering automated batch run...", "success");
   try {
     const res = await fetch('/api/cron-monthly-drip');
     const data = await res.json();
     if (data.ok) {
-      showToast("Cron Finished", `Sent: ${data.batch_sent || 0} | Total Today: ${data.total_sent_today || 0}`, "success");
+      showToast("Cron Finished", `Sent: ${data.batch_sent || 0} | Today: ${data.total_sent_today || 0}`, "success");
     } else {
       showToast("Cron Notice", data.message || "No eligible users.", "error");
     }
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 5. Reset Daily Send Limit
 async function resetDailyQuota() {
   try {
     const res = await fetch('/api/settings', {
@@ -346,11 +354,10 @@ async function resetDailyQuota() {
       body: JSON.stringify({ action: 'reset_daily_quota' })
     });
     const data = await res.json();
-    if (data.ok) showToast("Quota Reset", "Daily send counter cleared. Next cron will proceed immediately.", "success");
+    if (data.ok) showToast("Quota Reset", "Daily send counter cleared in Turso.", "success");
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 6. Prune Stale Logs
 async function pruneLogs() {
   try {
     const res = await fetch('/api/settings', {
@@ -359,11 +366,10 @@ async function pruneLogs() {
       body: JSON.stringify({ action: 'prune_logs' })
     });
     const data = await res.json();
-    if (data.ok) showToast("Logs Pruned", "Cleaned up old activity records from Turso.", "success");
+    if (data.ok) showToast("Logs Pruned", "Cleaned up old activity records.", "success");
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 7. Audit Referral Codes
 async function auditReferralCodes() {
   try {
     const res = await fetch('/api/settings', {
@@ -372,13 +378,12 @@ async function auditReferralCodes() {
       body: JSON.stringify({ action: 'audit_referrals' })
     });
     const data = await res.json();
-    if (data.ok) showToast("Audit Complete", data.message || "All referral codes are intact.", "success");
+    if (data.ok) showToast("Audit Complete", data.message || "Referrals verified.", "success");
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 8. Check Brevo Health
 async function checkBrevoHealth() {
-  showToast("Checking...", "Contacting Brevo SMTPS API gateway...", "success");
+  showToast("Checking...", "Validating Brevo gateway...", "success");
   try {
     const res = await fetch('/api/settings', {
       method: 'POST',
@@ -386,12 +391,11 @@ async function checkBrevoHealth() {
       body: JSON.stringify({ action: 'check_brevo' })
     });
     const data = await res.json();
-    if (data.ok) showToast("Brevo Healthy", `Connected: ${data.email} (${data.companyName || 'Verified'})`, "success");
+    if (data.ok) showToast("Brevo Healthy", `Connected: ${data.email}`, "success");
     else showToast("Brevo Issue", data.error || "Authentication failed.", "error");
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 9. Ping Webhook
 async function pingWebhook() {
   try {
     const res = await fetch('/api/webhook');
@@ -399,7 +403,6 @@ async function pingWebhook() {
   } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-// 10. Download JSON Backup
 async function downloadBackup() {
   try {
     const res = await fetch('/api/settings', {
@@ -415,7 +418,7 @@ async function downloadBackup() {
       a.href = url;
       a.download = `TCRP-Database-Backup-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
-      showToast("Backup Downloaded", "Full Turso database JSON snapshot saved.", "success");
+      showToast("Backup Saved", "Full Turso JSON snapshot downloaded.", "success");
     }
   } catch (e) { showToast("Error", e.message, "error"); }
 }

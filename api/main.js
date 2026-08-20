@@ -3,9 +3,19 @@ import { runSql } from '../lib/db.js';
 export default async function handler(req, res) {
   const action = req.query.action || req.body?.action;
 
-  if (req.method === 'GET' || action === 'dashboard_data') {
+  // 1. GET: Dashboard data or Highlight/Drip messages fetch
+  if (req.method === 'GET') {
+    if (action === 'get_highlight' || req.query.month) {
+      const month = req.query.month || 1;
+      try {
+        const rows = await runSql("SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages WHERE month = ?", [month]);
+        return res.status(200).json({ ok: true, data: rows[0] || null });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     try {
-      // Alias snake_case columns to camelCase for the frontend UI
       const missionaries = await runSql(`
         SELECT 
           email, 
@@ -38,14 +48,16 @@ export default async function handler(req, res) {
       `);
 
       const logs = await runSql("SELECT * FROM system_logs ORDER BY ROWID DESC LIMIT 100");
+      const dripMessages = await runSql("SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages ORDER BY month ASC");
 
-      return res.status(200).json({ ok: true, missionaries, orders, logs });
+      return res.status(200).json({ ok: true, missionaries, orders, logs, dripMessages });
     } catch (err) {
       console.error("Dashboard API Error:", err.message);
       return res.status(500).json({ ok: false, error: err.message, missionaries: [] });
     }
   }
 
+  // 2. POST: Actions (Delete, Update Orders, Save Highlight/Drip Message)
   if (req.method === 'POST') {
     if (action === 'delete_missionary') {
       const { email } = req.body;
@@ -57,6 +69,25 @@ export default async function handler(req, res) {
       const { order_id, status } = req.body;
       await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
       return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'save_highlight' || action === 'save_drip_message') {
+      const { month, theme, scripture, message, highlight_img, highlight_label } = req.body;
+      try {
+        await runSql(`
+          INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(month) DO UPDATE SET
+            theme = excluded.theme,
+            scripture = excluded.scripture,
+            message = excluded.message,
+            highlight_img = excluded.highlight_img,
+            highlight_label = excluded.highlight_label
+        `, [month, theme, scripture, message, highlight_img, highlight_label]);
+        return res.status(200).json({ ok: true, message: "Drip message saved successfully!" });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
     }
   }
 

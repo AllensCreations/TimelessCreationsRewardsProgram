@@ -12,6 +12,7 @@
     { "source": "/inbox.html", "destination": "/views/inbox.html" },
     
     { "source": "/api/dashboard-data", "destination": "/api/main" },
+    { "source": "/api/highlight", "destination": "/api/main" },
     { "source": "/api/invoicing", "destination": "/api/invoicing" },
     { "source": "/api/push-missionaries", "destination": "/api/push-missionaries" },
     { "source": "/api/webhook", "destination": "/api/webhook" }

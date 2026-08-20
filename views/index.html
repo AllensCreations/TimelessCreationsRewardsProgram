@@ -140,6 +140,7 @@
     <div class="sidebar-logo">
       <div>
         <h1>Timeless<br><em>Creations</em></h1>
+<div id="connection-badge" style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold; background:#fee2e2; color:#991b1b; margin-left:10px;"><span id="badge-dot" style="width:8px; height:8px; border-radius:50%; background:#dc2626;"></span> <span id="badge-text">OFFLINE</span></div>
         <p>Command Center</p>
       </div>
       <button class="close-sidebar-btn" onclick="toggleMobileSidebar(false)">✕</button>
@@ -409,5 +410,53 @@ function switchTab(tab, el) {
 
 window.addEventListener('DOMContentLoaded', doSync);
 </script>
+
+    <script>
+    async function checkConnection() {
+      try {
+        const res = await fetch("/api/main?action=health_check");
+        const data = await res.json();
+        const badge = document.getElementById("connection-badge");
+        const dot = document.getElementById("badge-dot");
+        const text = document.getElementById("badge-text");
+        if (data.ok && data.status === "ONLINE") {
+          badge.style.background = "#dcfce7";
+          badge.style.color = "#166534";
+          dot.style.background = "#16a34a";
+          text.textContent = "ONLINE";
+        } else {
+          throw new Error("Offline");
+        }
+      } catch (e) {
+        const badge = document.getElementById("connection-badge");
+        const dot = document.getElementById("badge-dot");
+        const text = document.getElementById("badge-text");
+        badge.style.background = "#fee2e2";
+        badge.style.color = "#991b1b";
+        dot.style.background = "#dc2626";
+        text.textContent = "OFFLINE";
+      }
+    }
+    setInterval(checkConnection, 10000);
+    window.addEventListener("DOMContentLoaded", checkConnection);
+
+    function confirmForceCron() {
+      const val = prompt("⚠️ WARNING: Forcing a cron run will immediately dispatch scheduled emails and notifications.
+
+Please type "Pogi si Allen" to confirm:");
+      if (val === "Pogi si Allen") {
+        fetch("/api/main", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "force_cron" })
+        }).then(r => r.json()).then(res => {
+          alert("Cron executed successfully!");
+        }).catch(err => alert("Error executing cron."));
+      } else if (val !== null) {
+        alert("❌ Confirmation failed. Phrase did not match "Pogi si Allen".");
+      }
+    }
+    </script>
+    
 </body>
 </html>

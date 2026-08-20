@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Product Highlight Manager</title>
+<title>Timeless Creations — Product Highlight & Live Email Preview</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <style>
   :root {
@@ -11,26 +11,35 @@
     --border:rgba(255,255,255,0.08);
     --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
     --green:#4caf82; --red:#e05c5c; --text:#e8e6f0; --muted:#716e88;
+    --radius:10px;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:760px;margin:0 auto;}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;}
+  .container{max-width:1160px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
   h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
   a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
   a:hover{text-decoration:underline;}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:20px;}
+  .grid-layout{display:grid;grid-template-columns:1fr 500px;gap:24px;align-items:start;}
+  @media(max-width:980px){.grid-layout{grid-template-columns:1fr;}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
+  .card h3{font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);margin-bottom:14px;}
+  
   .form-group{margin-bottom:14px;}
   .form-group label{font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:6px;}
   .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
   .form-input:focus{border-color:var(--gold);}
-  
-  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 20px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
+
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
   .btn-danger{background:rgba(224,92,92,0.2);color:var(--red);border:1px solid rgba(224,92,92,0.4);margin-left:8px;}
 
-  .preview-box{margin-top:16px;padding:16px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px;text-align:center;}
-  .preview-img{max-width:240px;border-radius:6px;border:1px solid var(--gold);display:none;margin:10px auto;}
+  /* Live Email Iframe Container */
+  .preview-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .iframe-container{width:100%;height:680px;border-radius:8px;border:1px solid #e0d6bc;background:#ffffff;overflow:hidden;}
+  iframe{width:100%;height:100%;border:none;}
 </style>
 </head>
 <body>
@@ -38,39 +47,79 @@
   <header>
     <div>
       <h1>Product Highlight of the Month</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Custom Highlight Section for Monthly Drips</p>
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Manage Spotlight Item with Live Monthly Drip Email Preview</p>
     </div>
     <a href="/">← Return to Dashboard</a>
   </header>
 
-  <div class="card">
-    <div class="form-group">
-      <label>Highlight Title</label>
-      <input type="text" id="hl-title" class="form-input" placeholder="e.g. Premium Leather Scripture Case"/>
-    </div>
-    <div class="form-group">
-      <label>Product Image Link (Direct URL or Base64 / Google Photos Direct)</label>
-      <input type="text" id="hl-image" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="updatePreview()"/>
-    </div>
-    <div class="form-group">
-      <label>Short Description / Promo Note</label>
-      <input type="text" id="hl-desc" class="form-input" placeholder="e.g. Crafted for durability. Limited slots for this batch."/>
+  <div class="grid-layout">
+    <!-- LEFT: Settings Form -->
+    <div>
+      <div class="card">
+        <h3>Configure Highlight Item</h3>
+        
+        <div class="form-group">
+          <label>Highlight Title</label>
+          <input type="text" id="hl-title" class="form-input" placeholder="e.g. Premium Leather Scripture Case" oninput="renderLivePreview()"/>
+        </div>
+        
+        <div class="form-group">
+          <label>Product Image Link (Direct URL)</label>
+          <input type="text" id="hl-image" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="renderLivePreview()"/>
+        </div>
+        
+        <div class="form-group">
+          <label>Short Description / Promo Note</label>
+          <input type="text" id="hl-desc" class="form-input" placeholder="e.g. Crafted for durability. Limited slots for this batch." oninput="renderLivePreview()"/>
+        </div>
+
+        <div style="margin-top:20px;display:flex;">
+          <button class="btn" onclick="saveHighlight()">💾 Save Highlight to Turso</button>
+          <button class="btn btn-danger" onclick="clearHighlight()">🗑️ Disable / Remove</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:0.85rem;">💡 How It Works</h3>
+        <p style="font-size:0.7rem;color:var(--muted);line-height:1.6;">
+          • If you leave the image URL blank, the highlight block is automatically stripped out of outgoing emails.<br>
+          • Changes saved here are stored directly in your live Turso database and instantly applied to both cron jobs and test emails.
+        </p>
+      </div>
     </div>
 
-    <div class="preview-box">
-      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:6px;">Live Image Preview:</div>
-      <img id="preview-tag" class="preview-img" alt="Preview"/>
-      <div id="no-img-text" style="font-size:0.72rem;color:var(--muted);">No image specified (Highlight section will be hidden in email).</div>
-    </div>
-
-    <div style="margin-top:20px;display:flex;">
-      <button class="btn" onclick="saveHighlight()">💾 Save Highlight to Turso</button>
-      <button class="btn btn-danger" onclick="clearHighlight()">🗑️ Disable / Remove</button>
+    <!-- RIGHT: Real-time Live Drip HTML Iframe Preview -->
+    <div class="preview-wrapper">
+      <div class="preview-header">
+        <strong style="font-size:0.75rem;color:var(--gold);">Live Email Template Preview</strong>
+        <span style="font-size:0.65rem;color:var(--muted);">monthly-drip.html</span>
+      </div>
+      <div class="iframe-container">
+        <iframe id="email-preview-frame"></iframe>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
+let rawTemplate = "";
+
+async function init() {
+  await fetchTemplate();
+  await loadHighlight();
+}
+
+async function fetchTemplate() {
+  try {
+    const res = await fetch('/templates/monthly-drip.html');
+    if (res.ok) {
+      rawTemplate = await res.text();
+    }
+  } catch (err) {
+    console.error("Could not load template file directly:", err);
+  }
+}
+
 async function loadHighlight() {
   try {
     const res = await fetch('/api/highlight');
@@ -79,25 +128,50 @@ async function loadHighlight() {
       document.getElementById('hl-title').value = data.highlight.title || '';
       document.getElementById('hl-image').value = data.highlight.image_url || '';
       document.getElementById('hl-desc').value = data.highlight.description || '';
-      updatePreview();
     }
+    renderLivePreview();
   } catch (err) {
     console.error(err);
   }
 }
 
-function updatePreview() {
-  const url = document.getElementById('hl-image').value.trim();
-  const img = document.getElementById('preview-tag');
-  const noText = document.getElementById('no-img-text');
-  if (url) {
-    img.src = url;
-    img.style.display = 'block';
-    noText.style.display = 'none';
-  } else {
-    img.style.display = 'none';
-    noText.style.display = 'block';
+function renderLivePreview() {
+  const title = document.getElementById('hl-title').value.trim();
+  const image_url = document.getElementById('hl-image').value.trim();
+  const desc = document.getElementById('hl-desc').value.trim();
+
+  let highlightHtml = "";
+  if (image_url) {
+    highlightHtml = `
+      <div class="highlight-card" style="background:#ffffff;border:1px solid #e0d6bc;padding:16px;margin:24px 0;text-align:center;">
+        <span style="background:#8b1a1a;color:#fff;font-family:'Helvetica',Arial,sans-serif;font-size:9px;padding:4px 10px;letter-spacing:1.5px;text-transform:uppercase;display:inline-block;margin-bottom:12px;">⭐ Highlight Product of the Month</span>
+        <h3 style="margin:0 0 10px 0;font-size:16px;color:#1a1a1a;text-transform:uppercase;letter-spacing:1px;">${title || 'Featured Missionary Gear'}</h3>
+        <img src="${image_url}" alt="Highlight" style="width:100%;max-width:320px;aspect-ratio:16/9;object-fit:cover;border:1px solid #d4c197;border-radius:4px;display:block;margin:0 auto 12px auto;">
+        <p style="font-size:13px;color:#555;margin:0 0 14px 0;">${desc || ''}</p>
+        <a href="https://m.me/TimelesscreationsRP" class="cta-btn-gold" style="display:inline-block;padding:12px 24px;background-color:#1a1a1a;color:#d4c197!important;text-decoration:none;font-family:'Helvetica',Arial,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;">Claim / Inquire Now</a>
+      </div>
+    `;
   }
+
+  let html = rawTemplate;
+  if (!html) {
+    html = "<p style='padding:20px;color:#222;'>Loading monthly drip template...</p>";
+  }
+
+  html = html
+    .replace(/{{DisplayDate}}/g, new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
+    .replace(/{{Suffix}}/g, 'Elder')
+    .replace(/{{lastName}}/g, 'Dela Cruz')
+    .replace(/{{Msg}}/g, 'Congratulations on serving faithfully! Your dedication brings light and hope to many lives across your mission.')
+    .replace(/{{MsgAuthor}}/g, '“Trust in the Lord with all thine heart; and lean not unto thine own understanding.”')
+    .replace(/{{Author}}/g, 'Proverbs 3:5')
+    .replace(/{{Points}}/g, '12')
+    .replace(/{{points}}/g, '12')
+    .replace(/{{referral_code}}/g, 'TEST2026')
+    .replace(/{{HighlightSection}}/g, highlightHtml);
+
+  const frame = document.getElementById('email-preview-frame');
+  frame.srcdoc = html;
 }
 
 async function saveHighlight() {
@@ -113,7 +187,7 @@ async function saveHighlight() {
     });
     const data = await res.json();
     if (data.ok) {
-      alert("✅ Highlight section updated in Turso database!");
+      alert("✅ Highlight updated in Turso database!");
     } else {
       alert("❌ Error: " + data.error);
     }
@@ -126,11 +200,11 @@ async function clearHighlight() {
   document.getElementById('hl-title').value = '';
   document.getElementById('hl-image').value = '';
   document.getElementById('hl-desc').value = '';
-  updatePreview();
+  renderLivePreview();
   await saveHighlight();
 }
 
-window.addEventListener('DOMContentLoaded', loadHighlight);
+window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

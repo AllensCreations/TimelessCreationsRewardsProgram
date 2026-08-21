@@ -1,456 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Master Control Room & Settings</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-    --border:rgba(255,255,255,0.08);
-    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
-    --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
-    --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
-    --blue:#5c8de0; --blue-dim:rgba(92,141,224,0.15);
-    --purple:#9b7de0; --purple-dim:rgba(155,125,224,0.15);
-    --text:#e8e6f0; --muted:#716e88;
-    --radius:10px;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:1200px;margin:0 auto;}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
-  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
-  .nav-links{display:flex;gap:10px;}
-  .btn-link{color:var(--gold);text-decoration:none;font-size:0.75rem;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);}
-
-  .section-title{font-family:'Syne',sans-serif;font-size:1.05rem;color:var(--text);margin-bottom:16px;font-weight:700;}
-  
-  .control-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:16px;margin-bottom:30px;}
-  .control-card{
-    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;
-    display:flex;flex-direction:column;justify-content:space-between;gap:12px;position:relative;overflow:hidden;
-  }
-  .control-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
-  .control-card.gold::before{background:var(--gold);}
-  .control-card.green::before{background:var(--green);}
-  .control-card.red::before{background:var(--red);}
-  .control-card.blue::before{background:var(--blue);}
-  .control-card.purple::before{background:var(--purple);}
-
-  .card-head{display:flex;justify-content:space-between;align-items:flex-start;}
-  .card-num{font-size:0.6rem;color:var(--muted);font-weight:700;}
-  .control-card h3{font-family:'Syne',sans-serif;font-size:0.92rem;color:var(--text);margin-top:2px;}
-  .control-card p{font-size:0.68rem;color:var(--muted);line-height:1.5;}
-
-  .form-group{margin-bottom:8px;}
-  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;width:100%;}
-
-  .btn-action{
-    background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;
-    font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;
-  }
-  .btn-action:hover{background:var(--surface);border-color:var(--gold);color:var(--gold);}
-  .btn-action.active-red{background:var(--red-dim);border-color:rgba(224,92,92,0.4);color:var(--red);}
-  .btn-action.active-green{background:var(--green-dim);border-color:rgba(76,175,130,0.4);color:var(--green);}
-
-  #toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
-  .toast{background:var(--surface2);border:1px solid var(--border);padding:12px 18px;border-radius:8px;font-size:0.72rem;min-width:240px;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
-  .toast.success{border-left:4px solid var(--green);color:var(--text);}
-  .toast.error{border-left:4px solid var(--red);color:var(--text);}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings & Control Room | Timeless Creations</title>
+    <style>
+        :root { --bg: #f9f7f2; --surface: #ffffff; --surface2: #fdfaf3; --text: #1a1a1a; --muted: #78716c; --gold: #c9a84c; --border: #e0d6bc; }
+        body { font-family: 'Garamond', 'Georgia', serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+        .container { max-width: 700px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); padding: 30px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        h1 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: var(--text); border-bottom: 2px solid var(--gold); padding-bottom: 12px; margin-top: 0; font-size: 24px; }
+        .section { margin: 25px 0; padding: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
+        .section-title { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; color: var(--text); }
+        .desc { font-size: 13px; color: var(--muted); margin-bottom: 15px; line-height: 1.5; }
+        .btn { padding: 12px 20px; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; cursor: pointer; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
+        .btn-green { background: #16a34a; color: #fff; }
+        .btn-red { background: #dc2626; color: #fff; }
+        .btn-dark { background: #1a1a1a; color: var(--gold); border: 1px solid var(--gold); }
+        .back-link { display: inline-block; margin-bottom: 20px; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-decoration: none; }
+    </style>
 </head>
 <body>
+
 <div class="container">
-  <header>
-    <div>
-      <h1>Control Room &amp; Operations Center</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Auto-Saved Settings Matrix &amp; System Health Controls</p>
-    </div>
-    <div class="nav-links">
-      <a href="/" class="btn-link">← Dashboard</a>
-      <a href="/highlight.html" class="btn-link">🌟 Media Hub</a>
-      <a href="/invoicing.html" class="btn-link">🧾 Invoicing</a>
-    </div>
-  </header>
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    <h1>System Settings & Control Room</h1>
 
-  <div class="section-title">System Operations Matrix (Auto-Saves to Turso)</div>
-
-  <div class="control-grid">
-    <!-- 1. Master Dispatch Switch -->
-    <div class="control-card red">
-      <div>
-        <div class="card-head">
-          <h3>1. Master Dispatch Switch</h3>
-          <span class="card-num">#01</span>
+    <div class="section">
+        <div class="section-title">⚡ System Master Power Switch</div>
+        <div class="desc">
+            When set to <strong>ONLINE</strong>, the system runs cron jobs and automated bot dispatches passively. When switched to <strong>OFFLINE (Sleep)</strong>, background processes are paused.
         </div>
-        <p>Halt or resume scheduled automated daily drip runs. Auto-saves on toggle.</p>
-      </div>
-      <button class="btn-action" id="btn-pause-send" onclick="toggleSending()">
-        <span id="pause-status-dot">🟢</span> <span id="pause-btn-text">Automated Sending: ACTIVE</span>
-      </button>
+        <button id="power-toggle-btn" class="btn btn-green" onclick="togglePowerState()">Loading Status...</button>
     </div>
 
-    <!-- 2. Maintenance Mode -->
-    <div class="control-card gold">
-      <div>
-        <div class="card-head">
-          <h3>2. Messenger Maintenance Mode</h3>
-          <span class="card-num">#02</span>
+    <div class="section">
+        <div class="section-title">⚙️ Cron & Dispatch Control Room</div>
+        <div class="desc">
+            Manually force cron execution or trigger immediate background sync. Requires security confirmation.
         </div>
-        <p>Enable maintenance notice for incoming messages. Auto-saves on toggle.</p>
-      </div>
-      <button class="btn-action" id="btn-maint" onclick="toggleMaintenance()">
-        <span id="maint-status-dot">⚪</span> <span id="maint-btn-text">Maintenance: OFF</span>
-      </button>
+        <button class="btn btn-dark" onclick="confirmForceCron()">Force Cron Run Now</button>
     </div>
-
-    <!-- 3. Test Mode Dispenser -->
-    <div class="control-card blue">
-      <div>
-        <div class="card-head">
-          <h3>3. Test Mode Dispenser</h3>
-          <span class="card-num">#03</span>
-        </div>
-        <p>Dispatch core templates to any custom test recipient.</p>
-        <div class="form-group" style="margin-top:6px;">
-          <input type="email" id="test-email-target" class="form-input" placeholder="test@example.com" value="2ndsalviejomark2019@gmail.com" onchange="autoSaveTestEmail()"/>
-        </div>
-      </div>
-      <button class="btn-action" onclick="dispatchTestDrip()">🚀 Fire Test Drip Template</button>
-    </div>
-
-    <!-- 4. Force Cron Run -->
-    <div class="control-card green">
-      <div>
-        <div class="card-head">
-          <h3>4. Force Cron Run Now</h3>
-          <span class="card-num">#04</span>
-        </div>
-        <p>Trigger a 30-email safe batch immediately without waiting for daily cron.</p>
-      </div>
-      <button class="btn-action" onclick="forceCronRun()">⚡ Trigger Batch Run</button>
-    </div>
-
-    <!-- 5. Reset Quota -->
-    <div class="control-card purple">
-      <div>
-        <div class="card-head">
-          <h3>5. Reset Daily Send Limit</h3>
-          <span class="card-num">#05</span>
-        </div>
-        <p>Reset today's sent counter in Turso to allow emergency manual batch sends.</p>
-      </div>
-      <button class="btn-action" onclick="resetDailyQuota()">🔄 Clear Daily Quota Lock</button>
-    </div>
-
-    <!-- 6. Prune Logs -->
-    <div class="control-card red">
-      <div>
-        <div class="card-head">
-          <h3>6. Prune Stale System Logs</h3>
-          <span class="card-num">#06</span>
-        </div>
-        <p>Optimize database performance by cleaning up old activity records.</p>
-      </div>
-      <button class="btn-action" onclick="pruneLogs()">🧹 Clean Old Turso Logs</button>
-    </div>
-
-    <!-- 7. Referral Audit -->
-    <div class="control-card gold">
-      <div>
-        <div class="card-head">
-          <h3>7. Audit Referral Integrity</h3>
-          <span class="card-num">#07</span>
-        </div>
-        <p>Scan active missionaries for missing or duplicate referral codes.</p>
-      </div>
-      <button class="btn-action" onclick="auditReferralCodes()">🏷️ Run Referral Audit</button>
-    </div>
-
-    <!-- 8. Brevo Health -->
-    <div class="control-card blue">
-      <div>
-        <div class="card-head">
-          <h3>8. Brevo API Health Diagnostic</h3>
-          <span class="card-num">#08</span>
-        </div>
-        <p>Validate Brevo credentials and balance quota in real time.</p>
-      </div>
-      <button class="btn-action" onclick="checkBrevoHealth()">🔍 Check Brevo Status</button>
-    </div>
-
-    <!-- 9. Webhook Ping -->
-    <div class="control-card green">
-      <div>
-        <div class="card-head">
-          <h3>9. Messenger Webhook Ping</h3>
-          <span class="card-num">#09</span>
-        </div>
-        <p>Test the Meta Graph API verification token handshake and endpoint status.</p>
-      </div>
-      <button class="btn-action" onclick="pingWebhook()">🛡️ Ping Webhook Route</button>
-    </div>
-
-    <!-- 10. Backup Download -->
-    <div class="control-card purple">
-      <div>
-        <div class="card-head">
-          <h3>10. Full JSON Cloud Backup</h3>
-          <span class="card-num">#10</span>
-        </div>
-        <p>Download a full snapshot of missionaries, messages, and invoices.</p>
-      </div>
-      <button class="btn-action" onclick="downloadBackup()">📦 Download JSON Backup</button>
-    </div>
-  </div>
 </div>
 
-<div id="toast-container"></div>
-
 <script>
-let state = { forceStop: false, maintenanceMode: false };
-
-function showToast(title, msg, type = 'success') {
-  const tc = document.getElementById('toast-container');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<strong>${title}</strong><div style="color:var(--muted);margin-top:2px;">${msg}</div>`;
-  tc.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-async function init() {
+async function loadSettings() {
   try {
-    const res = await fetch('/api/settings');
+    const res = await fetch("/api/main?action=health_check");
     const data = await res.json();
+    const btn = document.getElementById("power-toggle-btn");
     if (data.ok) {
-      state.forceStop = Boolean(data.forceStop);
-      state.maintenanceMode = Boolean(data.maintenanceMode);
-      if (data.testEmail) {
-        document.getElementById('test-email-target').value = data.testEmail;
+      if (data.status === "ONLINE") {
+        btn.className = "btn btn-green";
+        btn.textContent = "Status: ONLINE (Click to Sleep)";
+        window.powerState = "online";
+      } else {
+        btn.className = "btn btn-red";
+        btn.textContent = "Status: OFFLINE / SLEEPING (Click to Wake)";
+        window.powerState = "offline";
       }
-      updateUI();
     }
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
+    console.error("Failed to load power state");
   }
 }
 
-function updateUI() {
-  const pauseBtn = document.getElementById('btn-pause-send');
-  const pauseText = document.getElementById('pause-btn-text');
-  const pauseDot = document.getElementById('pause-status-dot');
-
-  if (state.forceStop) {
-    pauseBtn.className = 'btn-action active-red';
-    pauseText.textContent = "Automated Sending: PAUSED";
-    pauseDot.textContent = "🔴";
-  } else {
-    pauseBtn.className = 'btn-action active-green';
-    pauseText.textContent = "Automated Sending: ACTIVE";
-    pauseDot.textContent = "🟢";
-  }
-
-  const maintBtn = document.getElementById('btn-maint');
-  const maintText = document.getElementById('maint-btn-text');
-  const maintDot = document.getElementById('maint-status-dot');
-
-  if (state.maintenanceMode) {
-    maintBtn.className = 'btn-action active-red';
-    maintText.textContent = "Maintenance Mode: ON";
-    maintDot.textContent = "🛠️";
-  } else {
-    maintBtn.className = 'btn-action';
-    maintText.textContent = "Maintenance Mode: OFF";
-    maintDot.textContent = "⚪";
+async function togglePowerState() {
+  const nextState = window.powerState === "online" ? "offline" : "online";
+  const msg = nextState === "offline" 
+    ? "⚠️ Put system into SLEEP (OFFLINE)? Background cron jobs will pause."
+    : "🚀 Wake system up (ONLINE)? Background cron jobs will resume.";
+  
+  if (confirm(msg)) {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggle_power", state: nextState })
+    });
+    const data = await res.json();
+    if (data.ok) loadSettings();
   }
 }
 
-async function toggleSending() {
-  const nextState = !state.forceStop;
-  try {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'toggle_stop', state: nextState })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      state.forceStop = data.forceStop;
-      updateUI();
-      showToast("Auto-Saved", state.forceStop ? "Automated sending paused." : "Automated sending active.", state.forceStop ? "error" : "success");
-    }
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function toggleMaintenance() {
-  const nextState = !state.maintenanceMode;
-  try {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'toggle_maintenance', state: nextState })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      state.maintenanceMode = data.maintenanceMode;
-      updateUI();
-      showToast("Auto-Saved", state.maintenanceMode ? "Maintenance mode activated." : "Maintenance mode deactivated.", "success");
-    }
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function autoSaveTestEmail() {
-  const email = document.getElementById('test-email-target').value.trim();
-  try {
-    await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'save_test_email', email })
-    });
-    showToast("Auto-Saved", "Test email recipient updated.", "success");
-  } catch (e) {}
-}
-
-async function dispatchTestDrip() {
-  const email = document.getElementById('test-email-target').value.trim();
-  if (!email || !email.includes('@')) {
-    showToast("Invalid Email", "Enter a valid recipient email.", "error");
-    return;
+function confirmForceCron() {
+  const val = prompt("⚠️ WARNING: Forcing a cron run will immediately dispatch scheduled emails and notifications.\n\nPlease type \"Pogi si Allen\" to confirm:");
+  if (val === "Pogi si Allen") {
+    fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "force_cron" })
+    }).then(r => r.json()).then(res => {
+      alert("Cron executed successfully!");
+    }).catch(err => alert("Error executing cron."));
+  } else if (val !== null) {
+    alert("❌ Confirmation failed. Phrase did not match \"Pogi si Allen\".");
   }
-  showToast("Sending...", `Dispatching test email to ${email}...`, "success");
-  try {
-    const res = await fetch('/api/dashboard-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'test_send', email, mode: 'monthly' })
-    });
-    const data = await res.json();
-    if (data.ok) showToast("Test Dispatched", data.message, "success");
-    else showToast("Failed", data.error, "error");
-  } catch (e) { showToast("Error", e.message, "error"); }
 }
 
-async function forceCronRun() {
-  showToast("Running...", "Triggering automated batch run...", "success");
-  try {
-    const res = await fetch('/api/cron-monthly-drip');
-    const data = await res.json();
-    if (data.ok) {
-      showToast("Cron Finished", `Sent: ${data.batch_sent || 0} | Today: ${data.total_sent_today || 0}`, "success");
-    } else {
-      showToast("Cron Notice", data.message || "No eligible users.", "error");
-    }
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function resetDailyQuota() {
-  try {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'reset_daily_quota' })
-    });
-    const data = await res.json();
-    if (data.ok) showToast("Quota Reset", "Daily send counter cleared in Turso.", "success");
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function pruneLogs() {
-  try {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'prune_logs' })
-    });
-    const data = await res.json();
-    if (data.ok) showToast("Logs Pruned", "Cleaned up old activity records.", "success");
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function auditReferralCodes() {
-  try {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'audit_referrals' })
-    });
-    const data = await res.json();
-    if (data.ok) showToast("Audit Complete", data.message || "Referrals verified.", "success");
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function checkBrevoHealth() {
-  showToast("Checking...", "Validating Brevo gateway...", "success");
-  try {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'check_brevo' })
-    });
-    const data = await res.json();
-    if (data.ok) showToast("Brevo Healthy", `Connected: ${data.email}`, "success");
-    else showToast("Brevo Issue", data.error || "Authentication failed.", "error");
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function pingWebhook() {
-  try {
-    const res = await fetch('/api/webhook');
-    showToast("Webhook Status", `Status ${res.status} — Endpoint alive and listening.`, "success");
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-async function downloadBackup() {
-  try {
-    const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'export_backup' })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const blob = new Blob([JSON.stringify(data.backup, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `TCRP-Database-Backup-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      showToast("Backup Saved", "Full Turso JSON snapshot downloaded.", "success");
-    }
-  } catch (e) { showToast("Error", e.message, "error"); }
-}
-
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener("DOMContentLoaded", loadSettings);
 </script>
+
 </body>
 </html>
-
-<!-- Update Checker Script & Button -->
-<script>
-async function checkForAppUpdates() {
-  if ('serviceWorker' in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    for (let reg of registrations) {
-      await reg.unregister();
-    }
-  }
-  if ('caches' in window) {
-    const keys = await caches.keys();
-    for (let key of keys) {
-      await caches.delete(key);
-    }
-  }
-  showToast("Updating...", "Purging local cache and fetching latest version...", "success");
-  setTimeout(() => {
-    window.location.href = window.location.pathname + '?v=' + new Date().getTime();
-  }, 1000);
-}
-</script>
-<div style="margin-top: 30px; text-align: center;">
-  <button class="btn-action" style="width: 100%; max-width: 400px; margin: 0 auto; background: var(--surface2); border: 1px solid var(--gold); color: var(--gold);" onclick="checkForAppUpdates()">
-    🔄 Check for App Updates &amp; Purge Cache
-  </button>
-</div>

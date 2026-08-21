@@ -46,6 +46,43 @@ export default async function handler(req, res) {
       bodyData = req.body;
     }
     if (bodyData.action) action = bodyData.action;
+
+    // ----------------------------------------------------
+    // PRODUCT CATALOG & MESSENGER REWARDS SYNC
+    // ----------------------------------------------------
+    if (action === "get_products") {
+      try {
+        const products = await runSql("SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog ORDER BY price ASC");
+        return res.status(200).json({ ok: true, products: products || [] });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
+    if (action === "sync_catalog") {
+      try {
+        const products = bodyData.products || req.body?.products || [];
+        
+        // Clear old reward entries and re-insert atomically
+        await runSql("DELETE FROM product_catalog WHERE type = 'reward' OR type IS NULL");
+        
+        for (const item of products) {
+          if (!item.name) continue;
+          const cost = parseInt(item.price, 10) || 0;
+          const img = item.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
+          
+          await runSql(
+            "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, 'reward') ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url",
+            [item.name.trim(), cost, img]
+          );
+        }
+        return res.status(200).json({ ok: true, message: "Catalog synchronized successfully" });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
+
   }
 
   res.setHeader('Content-Type', 'application/json');

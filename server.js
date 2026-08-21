@@ -1,8 +1,8 @@
-import "dotenv/config";
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import 'dotenv/config';
 import mainHandler from './api/main.js';
 import webhookHandler from './api/webhook.js';
 
@@ -24,8 +24,32 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer(async (req, res) => {
+  // Helper for parsing status and json helpers
+  res.status = function(code) {
+    res.statusCode = code;
+    return res;
+  };
+  res.json = function(data) {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(data));
+    return res;
+  };
+
   const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = urlObj.pathname;
+  req.query = Object.fromEntries(urlObj.searchParams);
+
+  // Parse Body for POST / PUT / PATCH
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    let bodyStr = '';
+    req.on('data', chunk => { bodyStr += chunk; });
+    await new Promise(resolve => req.on('end', resolve));
+    try {
+      req.body = JSON.parse(bodyStr);
+    } catch (e) {
+      req.body = bodyStr;
+    }
+  }
 
   // 1. API Route Handlers
   if (pathname.startsWith('/api/webhook')) {
@@ -38,7 +62,6 @@ const server = http.createServer(async (req, res) => {
   // 2. Static File Resolution (public, views, root)
   let targetFile = pathname === '/' ? '/views/index.html' : pathname;
   
-  // Check if requesting an html page without extension
   if (!path.extname(targetFile)) {
     if (fs.existsSync(path.join(__dirname, 'views', `${targetFile}.html`))) {
       targetFile = `/views/${targetFile}.html`;

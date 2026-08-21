@@ -43,15 +43,16 @@ async function checkSystemHealth() {
   const text = document.getElementById("nav-status-text");
   if (!dot || !text) return;
   try {
-    const res = await fetch("/api/main?action=get_stats");
-    if (res.ok) {
+    const res = await fetch("/api/main?action=health_check");
+    const data = await res.json();
+    if (data.ok && data.status === "ONLINE") {
       dot.style.background = "var(--green, #4caf82)";
       dot.style.boxShadow = "0 0 8px var(--green, #4caf82)";
       text.textContent = "Online";
     } else {
-      dot.style.background = "var(--red, #e05c5c)";
-      dot.style.boxShadow = "0 0 8px var(--red, #e05c5c)";
-      text.textContent = "Sleeping / Error";
+      dot.style.background = "var(--gold, #c9a84c)";
+      dot.style.boxShadow = "0 0 8px var(--gold, #c9a84c)";
+      text.textContent = "Sleeping";
     }
   } catch (e) {
     dot.style.background = "var(--red, #e05c5c)";
@@ -80,15 +81,19 @@ async function triggerGlobalRefresh() {
       statsRes.json(), missRes.json(), ordersRes.json(), dripsRes.json(), prodsRes.json()
     ]);
 
-    if (stats.ok) LocalStore.set('stats', stats.stats);
+    if (stats.ok) {
+      LocalStore.set('stats_payload', stats);
+      LocalStore.set('stats', stats.stats);
+    }
     if (miss.ok) LocalStore.set('missionaries', miss.missionaries);
     if (orders.ok) LocalStore.set('orders', orders.orders);
     if (drips.ok) LocalStore.set('drips', drips.drips);
     if (prods.ok) LocalStore.set('products', prods.products);
 
-    showToast("Global data successfully synchronized!");
+    showToast("Global data synchronized successfully!");
 
-    // Trigger local page update handlers if registered
+    // Broadcast sync event to whatever page is active
+    window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
     if (window.onPageDataRefreshed) window.onPageDataRefreshed();
     checkSystemHealth();
   } catch (err) {

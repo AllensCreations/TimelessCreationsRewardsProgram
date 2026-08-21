@@ -16,9 +16,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      transition: transform 0.2s, border-color 0.2s;
     }
-    .stat-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-2px); }
     .stat-card.gold { border-left: 4px solid var(--gold, #c9a84c); }
     .stat-card.green { border-left: 4px solid var(--green, #4caf82); }
     .stat-card.blue { border-left: 4px solid var(--blue, #5c8de0); }
@@ -92,11 +90,10 @@
 
 <div style="max-width:1180px; margin:20px auto; padding:0 16px 40px;">
   <div style="margin-bottom:20px;">
-    <h2 style="font-family:'Syne',sans-serif; color:var(--gold, #c9a84c); font-size:1.4rem; font-weight:800;">Command Center & Operations</h2>
-    <p style="font-size:0.75rem; color:var(--muted, #8c90a4); margin-top:2px;">Real-time missionary engagement analytics, live dispatches, and activity feeds.</p>
+    <h2 style="font-family:'Syne',sans-serif; color:var(--gold, #c9a84c); font-size:1.4rem; font-weight:800;">Command Center &amp; Operations</h2>
+    <p style="font-size:0.75rem; color:var(--muted, #8c90a4); margin-top:2px;">Viewing local cached state. Tap <strong>↻ Global Refresh</strong> to synchronize live updates.</p>
   </div>
 
-  <!-- Primary Stat Metrics -->
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:12px; margin-bottom:20px;">
     <div class="stat-card gold">
       <div class="stat-label">Total Missionaries</div>
@@ -120,49 +117,44 @@
     </div>
   </div>
 
-  <!-- Calendar Heatmap Section -->
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:10px;">
       <div>
         <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold, #c9a84c);">Monthly Drip Dispatch Heatmap</div>
-        <div style="font-size:0.65rem; color:var(--muted, #8c90a4);">Live missionary delivery distribution across days.</div>
+        <div style="font-size:0.65rem; color:var(--muted, #8c90a4);">Delivery distribution across days.</div>
       </div>
       <span id="cal-month-name" style="font-size:0.72rem; color:var(--text, #e8e6f0); font-weight:bold; text-transform:uppercase; letter-spacing:1px;"></span>
     </div>
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
 
-  <!-- 3-Column Grid: Recently Sent Emails, System Logs, Recent Claims -->
   <div class="three-col-grid">
-    <!-- Recently Sent Emails -->
     <div class="card" style="margin-bottom:0;">
       <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
         <span>✉️ Recently Sent Emails</span>
-        <span style="font-size:0.6rem; color:var(--green, #4caf82); text-transform:uppercase; font-weight:bold;">Live Feed</span>
+        <span style="font-size:0.6rem; color:var(--green, #4caf82); text-transform:uppercase; font-weight:bold;">Feed</span>
       </div>
       <div id="recent-sent-emails-list" style="display:flex; flex-direction:column; gap:8px; font-size:0.72rem;">
-        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading dispatches...</div>
+        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">No dispatches cached.</div>
       </div>
     </div>
 
-    <!-- 10 Live Dispatch Logs -->
     <div class="card" style="margin-bottom:0;">
       <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
         <span>📜 System Logs</span>
         <span style="font-size:0.6rem; color:var(--muted, #8c90a4); text-transform:uppercase;">Top 10</span>
       </div>
       <div id="logs-container" style="display:flex; flex-direction:column; gap:8px; font-size:0.72rem;">
-        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading logs...</div>
+        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">No logs cached.</div>
       </div>
     </div>
 
-    <!-- Recent Reward Claims -->
     <div class="card" style="margin-bottom:0;">
       <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px;">
         🎁 Recent Reward Claims
       </div>
       <div id="recent-orders-list" style="display:flex; flex-direction:column; gap:8px; font-size:0.75rem;">
-        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading claims...</div>
+        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">No orders cached.</div>
       </div>
     </div>
   </div>
@@ -171,77 +163,70 @@
 <script>
 let dashboardState = { dailyStats: {} };
 
-async function loadDashboard() {
-  try {
-    const res = await fetch("/api/main?action=get_stats");
-    const data = await res.json();
-    
-    if (data.ok && data.stats) {
-      const s = data.stats;
-      document.getElementById("stat-missionaries").textContent = (s.total_missionaries || 0).toLocaleString();
-      document.getElementById("stat-points").textContent = (s.circulating_points || 0).toLocaleString();
-      document.getElementById("stat-pending").textContent = (s.pending_orders || 0).toLocaleString();
-      document.getElementById("stat-sent-today").textContent = (s.emails_today || 0).toLocaleString();
-      document.getElementById("stat-sent-month").textContent = (s.emails_month || 0).toLocaleString();
+function renderFromCache() {
+  const cachedPayload = LocalStore.get('stats_payload', null);
+  if (!cachedPayload) {
+    // First run fallback
+    triggerGlobalRefresh();
+    return;
+  }
 
-      dashboardState.dailyStats = data.daily_stats || {};
-      renderCalendar();
+  const s = cachedPayload.stats || {};
+  document.getElementById("stat-missionaries").textContent = (s.total_missionaries || 0).toLocaleString();
+  document.getElementById("stat-points").textContent = (s.circulating_points || 0).toLocaleString();
+  document.getElementById("stat-pending").textContent = (s.pending_orders || 0).toLocaleString();
+  document.getElementById("stat-sent-today").textContent = (s.emails_today || 0).toLocaleString();
+  document.getElementById("stat-sent-month").textContent = (s.emails_month || 0).toLocaleString();
 
-      // Render Recently Sent Emails
-      const sentContainer = document.getElementById("recent-sent-emails-list");
-      const sentList = data.recently_sent_missionaries || [];
-      if (sentList.length > 0) {
-        sentContainer.innerHTML = sentList.map(m => `
-          <div style="padding:8px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="color:var(--text, #e8e6f0);">${m.name || 'Missionary'}</strong>
-              <span style="color:var(--gold, #c9a84c); font-size:0.65rem; font-weight:bold; background:rgba(201,168,76,0.15); padding:1px 6px; border-radius:3px;">M${m.months_sent}</span>
-            </div>
-            <div style="font-size:0.65rem; color:var(--muted, #8c90a4); margin-top:2px; display:flex; justify-content:space-between;">
-              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${m.email}</span>
-              <span>${m.last_sent_at ? new Date(m.last_sent_at).toLocaleDateString([], {month:'short', day:'numeric'}) : 'Recently'}</span>
-            </div>
-          </div>
-        `).join('');
-      } else {
-        sentContainer.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent dispatches logged.</div>`;
-      }
+  dashboardState.dailyStats = cachedPayload.daily_stats || {};
+  renderCalendar();
 
-      // Render System Logs
-      const logsContainer = document.getElementById("logs-container");
-      const logs = data.recent_logs || [];
-      if (logs.length > 0) {
-        logsContainer.innerHTML = logs.slice(0, 10).map(l => `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
-            <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
-              <span style="font-size:0.58rem; padding:1px 5px; border-radius:3px; font-weight:bold; background:${l.level === 'ERROR' ? 'rgba(224,92,92,0.2)' : 'rgba(76,175,130,0.2)'}; color:${l.level === 'ERROR' ? 'var(--red)' : 'var(--green)'};">${l.level || 'INFO'}</span>
-              <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:var(--text);">${l.message}</span>
-            </div>
-            <span style="font-size:0.6rem; color:var(--muted); flex-shrink:0; margin-left:6px;">${l.created_at ? new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
-          </div>
-        `).join('');
-      } else {
-        logsContainer.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent logs.</div>`;
-      }
+  // Render Sent Emails
+  const sentContainer = document.getElementById("recent-sent-emails-list");
+  const sentList = cachedPayload.recently_sent_missionaries || [];
+  if (sentList.length > 0) {
+    sentContainer.innerHTML = sentList.map(m => `
+      <div style="padding:8px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong style="color:var(--text, #e8e6f0);">${m.name || 'Missionary'}</strong>
+          <span style="color:var(--gold, #c9a84c); font-size:0.65rem; font-weight:bold; background:rgba(201,168,76,0.15); padding:1px 6px; border-radius:3px;">M${m.months_sent}</span>
+        </div>
+        <div style="font-size:0.65rem; color:var(--muted, #8c90a4); margin-top:2px; display:flex; justify-content:space-between;">
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${m.email}</span>
+          <span>${m.last_sent_at ? new Date(m.last_sent_at).toLocaleDateString([], {month:'short', day:'numeric'}) : 'Recently'}</span>
+        </div>
+      </div>
+    `).join('');
+  }
 
-      // Render Recent Orders
-      const ordersList = document.getElementById("recent-orders-list");
-      if (data.recent_orders && data.recent_orders.length > 0) {
-        ordersList.innerHTML = data.recent_orders.slice(0, 5).map(o => `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
-            <div>
-              <strong style="color:var(--text);">${o.name || 'Anonymous'}</strong>
-              <div style="font-size:0.65rem; color:var(--muted);">${o.item} (${o.points_cost} PTS)</div>
-            </div>
-            <span style="color:var(--gold); font-size:0.65rem; font-weight:bold; text-transform:uppercase;">${o.status}</span>
-          </div>
-        `).join('');
-      } else {
-        ordersList.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent reward claims.</div>`;
-      }
-    }
-  } catch (err) {
-    console.error("Dashboard fetch error:", err);
+  // Render Logs
+  const logsContainer = document.getElementById("logs-container");
+  const logs = cachedPayload.recent_logs || [];
+  if (logs.length > 0) {
+    logsContainer.innerHTML = logs.slice(0, 10).map(l => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+        <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+          <span style="font-size:0.58rem; padding:1px 5px; border-radius:3px; font-weight:bold; background:${l.level === 'ERROR' ? 'rgba(224,92,92,0.2)' : 'rgba(76,175,130,0.2)'}; color:${l.level === 'ERROR' ? 'var(--red)' : 'var(--green)'};">${l.level || 'INFO'}</span>
+          <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:var(--text);">${l.message}</span>
+        </div>
+        <span style="font-size:0.6rem; color:var(--muted); flex-shrink:0; margin-left:6px;">${l.created_at ? new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
+      </div>
+    `).join('');
+  }
+
+  // Render Orders
+  const ordersList = document.getElementById("recent-orders-list");
+  const orders = cachedPayload.recent_orders || [];
+  if (orders.length > 0) {
+    ordersList.innerHTML = orders.slice(0, 5).map(o => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+        <div>
+          <strong style="color:var(--text);">${o.name || 'Anonymous'}</strong>
+          <div style="font-size:0.65rem; color:var(--muted);">${o.item} (${o.points_cost} PTS)</div>
+        </div>
+        <span style="color:var(--gold); font-size:0.65rem; font-weight:bold; text-transform:uppercase;">${o.status}</span>
+      </div>
+    `).join('');
   }
 }
 
@@ -290,9 +275,10 @@ function renderCalendar() {
   }
 }
 
+window.addEventListener("tcrp:data-synced", renderFromCache);
 window.addEventListener("DOMContentLoaded", () => {
   initAppLayout('dashboard', 'Dashboard');
-  loadDashboard();
+  renderFromCache();
 });
 </script>
 </body>

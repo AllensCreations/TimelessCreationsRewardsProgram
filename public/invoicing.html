@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Missionary Invoicing &amp; Billing</title>
+<title>Invoicing & Cash POS | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/app.css">
+<script src="/assets/app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
@@ -18,12 +20,8 @@
     --radius:10px;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:1160px;margin:0 auto;}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
-  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
-  a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
-  a:hover{text-decoration:underline;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+  .container{max-width:1160px;margin:20px auto;padding:0 16px 40px;}
 
   .nav-tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap;}
   .tab-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;}
@@ -62,7 +60,6 @@
   .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;margin-bottom:8px;color:var(--muted);}
   .summary-row.total{font-size:1.05rem;font-weight:800;color:var(--gold);border-top:1px solid var(--border);padding-top:10px;margin-top:10px;}
 
-  /* FIXED-SIZE INVOICE PREVIEW CARD */
   .preview-wrapper{position:sticky;top:20px;}
   .invoice-preview-card{
     width:420px;
@@ -80,7 +77,6 @@
   .inv-table th{background:#fdfaf3;border-bottom:1px solid #e7d8b8;padding:6px 8px;text-align:left;color:#78716c;position:sticky;top:0;}
   .inv-table td{padding:6px 8px;border-bottom:1px solid #f5eedf;}
 
-  /* Data Table */
   .data-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
   .data-table th{padding:10px 12px;background:var(--surface2);color:var(--muted);text-align:left;font-size:0.62rem;text-transform:uppercase;border-bottom:1px solid var(--border);}
   .data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
@@ -89,14 +85,6 @@
   .status-select.pending{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
   .status-select.completed{border-color:var(--green);color:var(--green);background:var(--green-dim);}
 
-  /* Toast & Notification System */
-  #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:99999;}
-  .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--gold);padding:12px 16px;border-radius:8px;font-size:0.72rem;min-width:240px;box-shadow:0 8px 30px rgba(0,0,0,0.6);animation:slideIn 0.3s ease;}
-  .toast.success{border-left-color:var(--green);}
-  .toast.error{border-left-color:var(--red);}
-  @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-
-  /* Custom Confirmation Modal */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
   .modal-overlay.active{opacity:1;visibility:visible;}
   .dialog-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:440px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,0.8);text-align:center;}
@@ -125,8 +113,6 @@
 </style>
 </head>
 <body>
-
-<div id="toast-container"></div>
 
 <div class="modal-overlay" id="confirm-modal">
   <div class="dialog-box">
@@ -157,22 +143,11 @@
 </div>
 
 <div class="container">
-  <header>
-    <div>
-      <h1>Timeless Creations</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Missionary Invoicing &amp; POS Billing Terminal</p>
-    </div>
-    <div style="display:flex;gap:12px;align-items:center;">
-      <a href="/">← Command Center</a>
-      <a href="/pusher.html">Batch Pusher</a>
-    </div>
-  </header>
-
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Generate Invoice</button>
     <button class="tab-btn" onclick="switchNavTab('history-tab', this)">📜 Invoice History <span id="history-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
-    <button class="tab-btn" onclick="switchNavTab('pos-tab', this)">📖 POS Redemption Logbook <span id="pos-badge" style="background:var(--blue-dim);color:var(--blue);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
-    <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Product Settings</button>
+    <button class="tab-btn" onclick="switchNavTab('pos-tab', this)">📦 Rewards Claims Logbook <span id="pos-badge" style="background:var(--blue-dim);color:var(--blue);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
+    <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash Product Catalog</button>
   </div>
 
   <div class="tab-pane active" id="create-tab">
@@ -264,15 +239,15 @@
           </div>
 
           <div style="margin-top:16px;">
-            <button class="btn" id="generate-btn" style="width:100%;justify-content:center;" onclick="submitInvoice()">🧾 Finalize &amp; Generate Invoice</button>
+            <button class="btn" id="generate-btn" style="width:100%;justify-content:center;" onclick="submitInvoice()">🧾 Finalize &amp; Save Invoice</button>
           </div>
         </div>
       </div>
 
       <div class="preview-wrapper">
         <div class="card" style="padding:16px;">
-          <h3 style="margin-bottom:8px;">Live Invoice Card</h3>
-          <p style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;">Fixed proportions for clean image export.</p>
+          <h3 style="margin-bottom:8px;">Live Invoice Preview</h3>
+          <p style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;">Formatted for instant client export.</p>
 
           <div class="invoice-preview-card" id="invoice-node">
             <div>
@@ -283,7 +258,7 @@
                 </div>
                 <div style="text-align:right;">
                   <div class="inv-id" id="prev-inv-id">INV-DRAFT</div>
-                  <div style="font-size:0.65rem;color:#a8a29e;" id="prev-date">August 2026</div>
+                  <div style="font-size:0.65rem;color:#a8a29e;" id="prev-date">Today</div>
                 </div>
               </div>
 
@@ -329,7 +304,7 @@
           </div>
 
           <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;">
-            <button class="btn" style="padding:8px 14px;font-size:0.7rem;" onclick="downloadInvoiceImage()">📥 Download Card PNG</button>
+            <button class="btn" style="padding:8px 14px;font-size:0.7rem;" onclick="downloadInvoiceImage()">📥 Download PNG</button>
             <button class="btn btn-secondary" style="padding:8px 14px;font-size:0.7rem;" onclick="copyInvoiceText()">📋 Copy Text</button>
           </div>
         </div>
@@ -341,8 +316,8 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
-          <h3>Invoice History &amp; Records</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">All issued cash invoices.</p>
+          <h3>Invoice Records</h3>
+          <p style="font-size:0.68rem;color:var(--muted);">All issued cash invoices in Turso.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
       </div>
@@ -352,16 +327,15 @@
           <thead>
             <tr>
               <th>Invoice ID</th>
-              <th>Customer / Missionary</th>
+              <th>Customer</th>
               <th>Email</th>
-              <th>Phone</th>
               <th>Total (₱)</th>
               <th>Date</th>
-              <th style="text-align:center;">Action</th>
+              <th style="text-align:center;">Status</th>
             </tr>
           </thead>
           <tbody id="invoices-tbody">
-            <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Loading invoices...</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading invoices...</td></tr>
           </tbody>
         </table>
       </div>
@@ -372,27 +346,26 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
-          <h3>POS Redemption Logbook (Rewards Orders)</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Track customer reward redemptions placed via Facebook Messenger.</p>
+          <h3>Rewards Claims Logbook (Messenger Orders)</h3>
+          <p style="font-size:0.68rem;color:var(--muted);">Track points-based rewards claimed by missionaries.</p>
         </div>
-        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadPosOrders()">🔄 Refresh Orders</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadOrders()">🔄 Refresh Orders</button>
       </div>
 
       <div style="overflow-x:auto;">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Order Ref</th>
+              <th>Order ID</th>
               <th>Recipient</th>
               <th>Email</th>
-              <th>Item Purchased</th>
-              <th>Points / Cost</th>
-              <th>Date Placed</th>
-              <th>Status (Editable)</th>
+              <th>Item Claimed</th>
+              <th>Points Cost</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody id="pos-tbody">
-            <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Loading POS orders...</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading orders...</td></tr>
           </tbody>
         </table>
       </div>
@@ -403,10 +376,10 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div>
-          <h3>Product Catalog &amp; PHP Price Settings (Turso Cloud Synced)</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Unit prices saved here are stored directly in your live Turso database.</p>
+          <h3>Cash POS Catalog (PHP Pricing)</h3>
+          <p style="font-size:0.68rem;color:var(--muted);">Cash inventory items are stored with <code>type = 'cash'</code>.</p>
         </div>
-        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addNewProductSetting()">+ Add New Product</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addNewProductSetting()">+ Add Product</button>
       </div>
 
       <table class="data-table">
@@ -421,7 +394,7 @@
       </table>
 
       <div style="margin-top:16px;">
-        <button class="btn" id="save-products-btn" onclick="saveProductSettings()">💾 Save Product Settings to Turso</button>
+        <button class="btn" id="save-products-btn" onclick="saveProductSettings()">💾 Save Cash Products to Turso</button>
       </div>
     </div>
   </div>
@@ -430,72 +403,63 @@
 <script>
 let missionaries = [];
 let cashInvoices = [];
-let posOrders = [];
+let orders = [];
 let productCatalog = [];
 let recipientMode = 'db';
 
-function showToast(title, msg, type = 'success') {
-  const tc = document.getElementById('toast-container');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<strong>${title}</strong><div style="color:var(--muted);margin-top:2px">${msg}</div>`;
-  tc.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
-}
-
-function showConfirmDialog(title, desc, onConfirm) {
-  document.getElementById('confirm-title').textContent = title;
-  document.getElementById('confirm-desc').textContent = desc;
-  const btn = document.getElementById('confirm-yes-btn');
-  btn.onclick = () => {
-    closeConfirmModal();
-    onConfirm();
-  };
-  document.getElementById('confirm-modal').classList.add('active');
-}
-
-function closeConfirmModal() {
-  document.getElementById('confirm-modal').classList.remove('active');
-}
-
-async function init() {
-  document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  await loadData();
-  await loadPosOrders();
+function switchNavTab(tabId, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
 }
 
 async function loadData() {
   try {
-    const res = await fetch('/api/invoicing');
-    const data = await res.json();
-    if (data.ok) {
-      missionaries = data.missionaries || [];
-      cashInvoices = data.invoices || [];
-      productCatalog = data.products || [];
-      
-      populateMissionarySelect(missionaries);
-      renderInvoicesTable();
-      renderProductSettings();
-      
-      if (document.querySelectorAll('#items-tbody tr').length === 0 && productCatalog.length > 0) {
-        addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
-      }
+    const [mRes, invRes, prodRes] = await Promise.all([
+      fetch('/api/main?action=get_missionaries'),
+      fetch('/api/main?action=get_invoices'),
+      fetch('/api/main?action=get_products&type=cash')
+    ]);
+
+    const mData = await mRes.json();
+    const invData = await invRes.json();
+    const prodData = await prodRes.json();
+
+    missionaries = mData.missionaries || [];
+    cashInvoices = invData.invoices || [];
+    productCatalog = prodData.products || [];
+
+    if (productCatalog.length === 0) {
+      productCatalog = [
+        { name: "Standard Missionary Strap", price: 150 },
+        { name: "Customized Nametag", price: 250 },
+        { name: "Scripture Cover Set", price: 450 }
+      ];
+    }
+
+    populateMissionarySelect(missionaries);
+    renderInvoicesTable();
+    renderProductSettings();
+
+    if (document.querySelectorAll('#items-tbody tr').length === 0 && productCatalog.length > 0) {
+      addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
     }
   } catch (err) {
-    showToast("Network Error", err.message, "error");
+    showToast("Failed to load inventory data", "error");
   }
 }
 
-async function loadPosOrders() {
+async function loadOrders() {
   try {
-    const res = await fetch('/api/dashboard-data');
+    const res = await fetch('/api/main?action=get_orders');
     const data = await res.json();
     if (data.ok) {
-      posOrders = data.orders || [];
-      renderPosTable();
+      orders = data.orders || [];
+      renderOrdersTable();
     }
   } catch (e) {
-    console.error("Failed to load POS orders:", e);
+    showToast("Failed to load orders", "error");
   }
 }
 
@@ -503,15 +467,11 @@ function switchRecipientMode(mode) {
   recipientMode = mode;
   document.getElementById('mode-db-btn').classList.toggle('active', mode === 'db');
   document.getElementById('mode-custom-btn').classList.toggle('active', mode === 'custom');
-
   document.getElementById('recipient-db-box').style.display = mode === 'db' ? 'block' : 'none';
   document.getElementById('recipient-custom-box').style.display = mode === 'custom' ? 'block' : 'none';
 
-  if (mode === 'db') {
-    handleMissionarySelect();
-  } else {
-    handleCustomInput();
-  }
+  if (mode === 'db') handleMissionarySelect();
+  else handleCustomInput();
 }
 
 function handleDbPhoneInput() {
@@ -529,102 +489,6 @@ function handleCustomInput() {
   document.getElementById('prev-phone').textContent = phone;
 }
 
-function renderPosTable() {
-  const tbody = document.getElementById('pos-tbody');
-  document.getElementById('pos-badge').textContent = posOrders.length;
-
-  if (!posOrders || !posOrders.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">No POS purchase logs recorded yet.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = posOrders.map(o => {
-    const isPending = (o.status || 'PENDING').toUpperCase() === 'PENDING';
-    return `
-      <tr>
-        <td style="font-weight:bold;color:var(--gold)">${o.order_id}</td>
-        <td style="font-weight:600">${o.name}</td>
-        <td style="color:var(--muted)">${o.email || '—'}</td>
-        <td>${o.item}</td>
-        <td><span style="font-weight:bold;color:var(--gold);">${o.cost} Pts</span></td>
-        <td style="color:var(--muted)">${o.date || 'Just now'}</td>
-        <td>
-          <select class="status-select ${isPending ? 'pending' : 'completed'}" onchange="updateOrderStatus('${o.order_id}', this)">
-            <option value="PENDING" ${isPending ? 'selected' : ''}>⏳ PENDING</option>
-            <option value="COMPLETED" ${!isPending ? 'selected' : ''}>✅ COMPLETED</option>
-          </select>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-async function updateOrderStatus(orderId, selectEl) {
-  const status = selectEl.value;
-  selectEl.className = `status-select ${status.toLowerCase()}`;
-
-  try {
-    const res = await fetch('/api/dashboard-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_order_status', order_id: orderId, status })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const o = posOrders.find(x => x.order_id === orderId);
-      if (o) {
-        o.status = status;
-        if (status === 'COMPLETED') showReceiptModal(o);
-      }
-      showToast("Order Updated", `Order ${orderId} marked ${status}`, "success");
-    }
-  } catch (e) {
-    showToast("Error", "Failed to update order status", "error");
-  }
-}
-
-function showReceiptModal(order) {
-  const cardHtml = `Title: ${order.name}<br>` +
-                   `Email: ${order.email}<br>` +
-                   `Reference code: <strong>${order.order_id}</strong><br>` +
-                   `Item Purchased: <strong>${order.item}</strong><br>` +
-                   `Cost: ${order.cost} Pts`;
-
-  document.getElementById('receipt-preview-text').innerHTML = cardHtml;
-  document.getElementById('receipt-modal').classList.add('active');
-}
-
-function closeReceiptModal() {
-  document.getElementById('receipt-modal').classList.remove('active');
-}
-
-function copyReceiptText() {
-  const node = document.getElementById('receipt-preview-text');
-  const text = `🎟️ 𝐑𝐄𝐃𝐄𝐄𝐌𝐏𝐓𝐈𝐎𝐍 𝐂𝐎𝐍𝐅𝐈𝐑𝐌𝐄𝐃!\n\n` + node.innerText + `\n\n💖 Thank you! Please shop again! 🌸\nVisit us at https://m.me/timeless.creations.06`;
-  navigator.clipboard.writeText(text).then(() => {
-    showToast("Copied", "Receipt text copied to clipboard!", "success");
-    closeReceiptModal();
-  });
-}
-
-function downloadReceiptImage() {
-  const node = document.getElementById('receipt-card-node');
-  html2canvas(node, { scale: 2, backgroundColor: null }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = `TCRP-Receipt-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast("Downloaded", "Receipt saved as PNG image!", "success");
-  });
-}
-
-function switchNavTab(tabId, btn) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  btn.classList.add('active');
-}
-
 function populateMissionarySelect(list) {
   const sel = document.getElementById('missionary-select');
   sel.innerHTML = '<option value="">-- Choose Missionary --</option>' + 
@@ -633,7 +497,7 @@ function populateMissionarySelect(list) {
 
 function filterMissionaryDropdown(query) {
   const q = query.toLowerCase();
-  const filtered = missionaries.filter(m => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
+  const filtered = missionaries.filter(m => (m.name || '').toLowerCase().includes(q) || (m.email || '').toLowerCase().includes(q));
   populateMissionarySelect(filtered);
 }
 
@@ -704,13 +568,7 @@ function recalculateTotal() {
 
   const discountType = document.getElementById('discount-type').value;
   const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
-  let discountDeducted = 0;
-
-  if (discountType === 'percent') {
-    discountDeducted = (subtotal * (discountVal / 100));
-  } else {
-    discountDeducted = discountVal;
-  }
+  let discountDeducted = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
   if (discountDeducted > subtotal) discountDeducted = subtotal;
 
   const grandTotal = subtotal - discountDeducted;
@@ -741,24 +599,21 @@ function recalculateTotal() {
 async function submitInvoice() {
   let customerName = "";
   let customerEmail = "";
-  let customerPhone = "";
 
   if (recipientMode === 'db') {
     const email = document.getElementById('missionary-select').value;
     if (!email) {
-      showToast("Missing Selection", "Please search and select a missionary first.", "error");
+      showToast("Please select a missionary first.", "error");
       return;
     }
     const m = missionaries.find(x => x.email === email);
     customerName = m ? m.name : 'Missionary';
     customerEmail = email;
-    customerPhone = document.getElementById('db-phone-input').value.trim();
   } else {
     customerName = document.getElementById('custom-name-input').value.trim();
     customerEmail = document.getElementById('custom-email-input').value.trim();
-    customerPhone = document.getElementById('custom-phone-input').value.trim();
     if (!customerName) {
-      showToast("Missing Name", "Please enter the customer's name.", "error");
+      showToast("Please enter customer name.", "error");
       return;
     }
   }
@@ -777,7 +632,7 @@ async function submitInvoice() {
   });
 
   if (items.length === 0) {
-    showToast("Missing Items", "Please add at least one product item.", "error");
+    showToast("Please add at least one item.", "error");
     return;
   }
 
@@ -787,41 +642,41 @@ async function submitInvoice() {
   if (discountAmount > subtotal) discountAmount = subtotal;
   const totalAmount = subtotal - discountAmount;
 
+  const invId = `INV-${Date.now().toString().slice(-6)}`;
   const btn = document.getElementById('generate-btn');
   btn.disabled = true;
-  btn.textContent = 'Generating Invoice...';
+  btn.textContent = 'Saving...';
 
   try {
-    const res = await fetch('/api/invoicing', {
+    const res = await fetch('/api/main', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'create_invoice',
+        invoice_id: invId,
         email: customerEmail,
         name: customerName,
-        phone: customerPhone,
-        items,
+        items_json: items,
         subtotal,
-        discountType,
-        discountVal,
-        discountAmount,
-        totalAmount
+        discount_type: discountType,
+        discount_val: discountVal,
+        discount_amount: discountAmount,
+        total_amount: totalAmount
       })
     });
     const data = await res.json();
-
     if (data.ok) {
-      document.getElementById('prev-inv-id').textContent = data.invoiceId;
-      showToast("Invoice Generated", `${data.invoiceId} created successfully!`, "success");
+      document.getElementById('prev-inv-id').textContent = invId;
+      showToast(`Invoice ${invId} saved to Turso!`);
       await loadData();
     } else {
-      showToast("Error", data.error, "error");
+      showToast(data.error || "Failed to save invoice", "error");
     }
   } catch (err) {
-    showToast("Error", err.message, "error");
+    showToast("Network error generating invoice", "error");
   } finally {
     btn.disabled = false;
-    btn.textContent = '🧾 Finalize & Generate Invoice';
+    btn.textContent = '🧾 Finalize & Save Invoice';
   }
 }
 
@@ -830,7 +685,7 @@ function renderInvoicesTable() {
   document.getElementById('history-badge').textContent = cashInvoices.length;
 
   if (cashInvoices.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">No invoices recorded yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No invoices recorded yet.</td></tr>';
     return;
   }
 
@@ -839,46 +694,37 @@ function renderInvoicesTable() {
       <td style="font-weight:bold;color:var(--gold);">${inv.invoice_id}</td>
       <td style="font-weight:600;">${inv.name}</td>
       <td style="color:var(--muted);">${inv.email || '—'}</td>
-      <td style="color:var(--muted);">${inv.phone || '—'}</td>
       <td style="font-weight:bold;">₱${Number(inv.total_amount).toFixed(2)}</td>
       <td style="color:var(--muted);font-size:0.65rem;">${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-      <td style="text-align:center;">
-        <button class="btn-danger" style="padding:5px 8px;font-size:0.68rem;" onclick="promptDeleteInvoice('${inv.invoice_id}', '${inv.name}')">🗑️</button>
-      </td>
+      <td style="text-align:center;"><span style="color:var(--green);font-size:0.65rem;font-weight:bold;">${inv.status || 'PENDING'}</span></td>
     </tr>
   `).join('');
 }
 
-function promptDeleteInvoice(invoiceId, name) {
-  showConfirmDialog(
-    `Delete Invoice ${invoiceId}?`,
-    `Are you sure you want to permanently remove and delete the invoice record for ${name}?`,
-    () => executeDeleteInvoice(invoiceId)
-  );
-}
+function renderOrdersTable() {
+  const tbody = document.getElementById('pos-tbody');
+  document.getElementById('pos-badge').textContent = orders.length;
 
-async function executeDeleteInvoice(invoiceId) {
-  try {
-    const res = await fetch('/api/invoicing', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete_invoice', invoice_id: invoiceId })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showToast("Deleted", `Invoice ${invoiceId} has been removed.`, "success");
-      await loadData();
-    } else {
-      showToast("Error", data.error, "error");
-    }
-  } catch (err) {
-    showToast("Error", err.message, "error");
+  if (!orders || !orders.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No rewards orders recorded yet.</td></tr>';
+    return;
   }
+
+  tbody.innerHTML = orders.map(o => `
+    <tr>
+      <td style="font-weight:bold;color:var(--gold)">${o.order_id}</td>
+      <td style="font-weight:600">${o.name || 'Anonymous'}</td>
+      <td style="color:var(--muted)">${o.email || '—'}</td>
+      <td>${o.item}</td>
+      <td><span style="font-weight:bold;color:var(--gold);">${o.points_cost} PTS</span></td>
+      <td><span style="font-size:0.65rem;color:${o.status === 'COMPLETED' ? 'var(--green)' : 'var(--gold)'};font-weight:bold;">${o.status}</span></td>
+    </tr>
+  `).join('');
 }
 
 function renderProductSettings() {
   const tbody = document.getElementById('products-settings-tbody');
-  tbody.innerHTML = productCatalog.map((p, i) => `
+  tbody.innerHTML = productCatalog.map(p => `
     <tr>
       <td><input type="text" class="form-input p-name" value="${p.name}" style="padding:4px 8px;font-size:0.72rem;"/></td>
       <td><input type="number" class="form-input p-price" value="${p.price}" min="0" style="padding:4px 8px;font-size:0.72rem;"/></td>
@@ -904,7 +750,7 @@ async function saveProductSettings() {
   rows.forEach(r => {
     const name = r.querySelector('.p-name').value.trim();
     const price = parseFloat(r.querySelector('.p-price').value) || 0;
-    if (name) updated.push({ name, price });
+    if (name) updated.push({ name, price, type: 'cash' });
   });
 
   const btn = document.getElementById('save-products-btn');
@@ -912,67 +758,60 @@ async function saveProductSettings() {
   btn.textContent = 'Saving to Turso...';
 
   try {
-    const res = await fetch('/api/invoicing', {
+    const res = await fetch('/api/main', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'save_products', products: updated })
+      body: JSON.stringify({ action: 'sync_catalog', type: 'cash', products: updated })
     });
     const data = await res.json();
     if (data.ok) {
-      showToast("Saved", "Product catalog & prices saved to Turso database!", "success");
+      showToast("Cash products saved to Turso!");
       productCatalog = updated;
       document.getElementById('items-tbody').innerHTML = '';
       if (productCatalog.length > 0) addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
     } else {
-      showToast("Error", data.error, "error");
+      showToast(data.error || "Failed to save products", "error");
     }
   } catch (err) {
-    showToast("Error", err.message, "error");
+    showToast("Network error saving products", "error");
   } finally {
     btn.disabled = false;
-    btn.textContent = '💾 Save Product Settings to Turso';
+    btn.textContent = '💾 Save Cash Products to Turso';
   }
 }
 
 function downloadInvoiceImage() {
   const node = document.getElementById('invoice-node');
-  const rawName = document.getElementById('prev-name').textContent.trim().replace(/[^a-zA-Z0-9-_]/g, "_");
-  const invId = document.getElementById('prev-inv-id').textContent;
   html2canvas(node, { scale: 2 }).then(canvas => {
     const link = document.createElement('a');
-    link.download = `TCRP-Invoice-${rawName}-${invId}.png`;
+    link.download = `TCRP-Invoice-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-    showToast("Downloaded", "Invoice saved as PNG image!", "success");
+    showToast("Invoice saved as PNG!");
   });
 }
 
 function copyInvoiceText() {
   const invId = document.getElementById('prev-inv-id').textContent;
   const name = document.getElementById('prev-name').textContent;
-  const phone = document.getElementById('prev-phone').textContent;
   const total = document.getElementById('prev-total').textContent;
   const rows = Array.from(document.querySelectorAll('.item-row')).map(r => {
     return `• ${r.querySelector('.item-qty').value}x ${r.querySelector('.item-select').value} (${r.querySelector('.item-subtotal').textContent})`;
   }).join('\n');
 
-  const text = `🧾 𝐓𝐈𝐌𝐄𝐋𝐄𝐒𝐒 𝐂𝐑𝐄𝐀𝐓𝐈𝐎𝐍𝐒 𝐈𝐍𝐕𝐎𝐈𝐂𝐄\n\n` +
-               `Invoice Ref: ${invId}\n` +
-               `Recipient: ${name}\n` +
-               `Phone: ${phone}\n` +
-               `Date: ${document.getElementById('prev-date').textContent}\n\n` +
-               `Items:\n${rows}\n\n` +
-               `Subtotal: ${document.getElementById('prev-subtotal').textContent}\n` +
-               `Discount: ${document.getElementById('prev-discount').textContent}\n` +
-               `Total Amount: ${total}\n\n` +
-               `Thank you for supporting Timeless Creations! 🌸`;
+  const text = `🧾 TIMELESS CREATIONS INVOICE\n\nInvoice Ref: ${invId}\nRecipient: ${name}\nDate: ${document.getElementById('prev-date').textContent}\n\nItems:\n${rows}\n\nSubtotal: ${document.getElementById('prev-subtotal').textContent}\nDiscount: ${document.getElementById('prev-discount').textContent}\nTotal: ${total}\n\nThank you for supporting Timeless Creations! 🌸`;
 
   navigator.clipboard.writeText(text).then(() => {
-    showToast("Copied", "Invoice summary copied to clipboard!", "success");
+    showToast("Invoice text copied to clipboard!");
   });
 }
 
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('DOMContentLoaded', () => {
+  initAppLayout('invoicing', 'Invoicing & Cash POS');
+  document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  loadData();
+  loadOrders();
+});
 </script>
 </body>
 </html>

@@ -45,11 +45,11 @@
     <div>
         <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab('tab-messages')">📝 24-Month Drips</button>
-            <button class="tab-btn" onclick="switchTab('tab-images')">🖼️ Images &amp; 9-Grid</button>
-            <button class="tab-btn" onclick="switchTab('tab-products')">🌟 Monthly Product Highlight (1:1)</button>
+            <button class="tab-btn" onclick="switchTab('tab-images')">🖼️ Essentials &amp; 9-Grid</button>
+            <button class="tab-btn" onclick="switchTab('tab-products')">🌟 Product of the Month (1:1)</button>
         </div>
 
-        <!-- TAB 1: 24-Month Messages (Directly maps to drip_messages table) -->
+        <!-- TAB 1: 24-Month Messages -->
         <div id="tab-messages" class="tab-content active">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -77,17 +77,21 @@
             </div>
         </div>
 
-        <!-- TAB 2: Images Customizer (2 Essentials + 9 Community Photos) -->
+        <!-- TAB 2: Images & Labels Customizer (2 Essentials + 9 Community Photos) -->
         <div id="tab-images" class="tab-content">
             <div class="card">
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">2 Missionary Essentials Images (1:1)</div>
+                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">2 Missionary Essentials (Names &amp; 1:1 Images)</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-                    <div>
-                        <label class="form-label">Essential 1 (Wooden Nametag)</label>
+                    <div style="background:var(--surface2); padding:10px; border-radius:6px; border:1px solid var(--border);">
+                        <label class="form-label">Essential 1 Name</label>
+                        <input type="text" id="inp-ess1-name" class="form-input" value="Wooden Nametag" oninput="updateLivePreview()">
+                        <label class="form-label" style="margin-top:6px;">Essential 1 Image (1:1)</label>
                         <input type="url" id="inp-img-ess1" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" oninput="updateLivePreview()">
                     </div>
-                    <div>
-                        <label class="form-label">Essential 2 (POS Kit)</label>
+                    <div style="background:var(--surface2); padding:10px; border-radius:6px; border:1px solid var(--border);">
+                        <label class="form-label">Essential 2 Name</label>
+                        <input type="text" id="inp-ess2-name" class="form-input" value="POS Kit" oninput="updateLivePreview()">
+                        <label class="form-label" style="margin-top:6px;">Essential 2 Image (1:1)</label>
                         <input type="url" id="inp-img-ess2" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" oninput="updateLivePreview()">
                     </div>
                 </div>
@@ -112,13 +116,13 @@
             </div>
         </div>
 
-        <!-- TAB 3: Product Highlight of the Month (Toggleable 1:1) -->
+        <!-- TAB 3: Independent Product of the Month (Toggleable 1:1) -->
         <div id="tab-products" class="tab-content">
             <div class="card">
                 <div class="toggle-wrap">
                     <div>
                         <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Enable Product of the Month</div>
-                        <div style="font-size:0.68rem; color:var(--muted);">Toggles the exclusive featured item banner inside the monthly letter.</div>
+                        <div style="font-size:0.68rem; color:var(--muted);">Placed in between the Essentials and the Gallery Archive.</div>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="inp-highlight-toggle" onchange="updateLivePreview()">
@@ -127,16 +131,20 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Highlight Title / Badge</label>
-                    <input type="text" id="inp-highlight-title" class="form-input" value="Exclusive Product of the Month" oninput="updateLivePreview()">
+                    <label class="form-label">Highlight Banner Header</label>
+                    <input type="text" id="inp-highlight-title" class="form-input" value="⭐ Product of the Month" oninput="updateLivePreview()">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Product Name (highlight_label)</label>
                     <input type="text" id="inp-highlight-name" class="form-input" value="Handcrafted Olive Scripture Case" oninput="updateLivePreview()">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Product Image URL (1:1 Aspect Ratio) (highlight_img)</label>
+                    <label class="form-label">Product Image URL (Strict 1:1) (highlight_img)</label>
                     <input type="url" id="inp-highlight-img" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" oninput="updateLivePreview()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Short Description / Catchphrase</label>
+                    <input type="text" id="inp-highlight-desc" class="form-input" value="Special edition hand-stitched leather cover with personalized nameplate." oninput="updateLivePreview()">
                 </div>
             </div>
         </div>
@@ -146,7 +154,7 @@
             <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">⚡ Simulated Missionary Points Balance</div>
             <div style="display:flex; gap:10px; align-items:center;">
                 <input type="number" id="inp-sim-points" class="form-input" style="width:140px;" value="24" oninput="updateLivePreview()">
-                <span style="font-size:0.7rem; color:var(--muted);">Adjust to test the dynamic rewards claiming section in the email preview below.</span>
+                <span style="font-size:0.7rem; color:var(--muted);">Adjust points to test the dynamic claims section placed below the gallery.</span>
             </div>
         </div>
 
@@ -183,18 +191,11 @@
                     <div id="prev-author" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">Proverbs 3:5</div>
                 </div>
 
-                <!-- Product of the Month (Toggleable) -->
-                <div id="prev-highlight-container" style="display:none; margin: 20px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
-                    <span id="prev-highlight-badge" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px;">Exclusive Product of the Month</span>
-                    <img id="prev-highlight-img" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" style="width: 130px; height: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 10px auto;" alt="Highlight">
-                    <div id="prev-highlight-name" style="font-family: 'Syne', sans-serif; font-size: 12px; font-weight: bold; color: #1a1a1a;">Handcrafted Olive Scripture Case</div>
-                </div>
-
                 <div style="margin: 20px 0; padding: 12px 8px; font-style: italic; color: #8c7e5d; font-size: 12.5px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc;">
                     As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
                 </div>
 
-                <!-- 2 Missionary Essentials -->
+                <!-- 1. TWO MISSIONARY ESSENTIALS (EDITABLE TEXT & 1:1 IMAGES) -->
                 <div style="padding: 20px 12px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 18px;">
                     <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; margin-bottom: 16px; color: #1a1a1a;">Missionary Essentials</h2>
                     
@@ -202,12 +203,12 @@
                         <tr>
                             <td align="center" width="48%" valign="top">
                                 <img id="prev-ess1-img" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 1">
-                                <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">Wooden Nametag</div>
+                                <div id="prev-ess1-name" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">Wooden Nametag</div>
                             </td>
                             <td width="4%"></td>
                             <td align="center" width="48%" valign="top">
                                 <img id="prev-ess2-img" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 2">
-                                <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">POS Kit</div>
+                                <div id="prev-ess2-name" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">POS Kit</div>
                             </td>
                         </tr>
                     </table>
@@ -220,7 +221,16 @@
                     <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold;">Order Yours Now</a>
                 </div>
 
-                <!-- 9 Community Grid Images -->
+                <!-- 2. PRODUCT OF THE MONTH (IN BETWEEN ESSENTIALS & GALLERY) -->
+                <div id="prev-highlight-container" style="display:none; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
+                    <span id="prev-highlight-badge" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px;">⭐ Product of the Month</span>
+                    <img id="prev-highlight-img" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" style="width: 140px; height: 140px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 10px auto;" alt="Highlight">
+                    <div id="prev-highlight-name" style="font-family: 'Syne', sans-serif; font-size: 12.5px; font-weight: bold; color: #1a1a1a; margin-bottom: 4px;">Handcrafted Olive Scripture Case</div>
+                    <div id="prev-highlight-desc" style="font-size: 11px; color: #666; font-style: italic; line-height: 1.4; margin-bottom: 12px;">Special edition hand-stitched leather cover with personalized nameplate.</div>
+                    <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 8px 18px; background: #8b1a1a; color: #fff !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 3px;">Inquire Item</a>
+                </div>
+
+                <!-- 3. COMMUNITY GALLERY ARCHIVE (9 GRID) -->
                 <div style="margin: 30px auto; text-align: center;">
                     <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
                     <p style="font-size: 12.5px; color: #555; line-height: 1.5; margin-bottom: 16px; font-style: italic;">
@@ -252,7 +262,7 @@
                     </div>
                 </div>
 
-                <!-- DYNAMIC POINTS-BASED REWARDS (Placed After Gallery) -->
+                <!-- 4. DYNAMIC POINTS REWARDS SYSTEM (PLACED AFTER GALLERY) -->
                 <div id="prev-points-section" style="padding: 20px 14px; background-color: #fdfaf3; border: 1px solid #c9a84c; border-radius: 4px; margin-top: 25px;">
                     <div id="prev-points-header" style="font-family: 'Syne', sans-serif; font-size: 13px; font-weight: bold; color: #8b1a1a; margin-bottom: 6px;">🎁 Your TCRP Reward Balance</div>
                     <div id="prev-points-desc" style="font-size: 12px; color: #555; margin-bottom: 14px; line-height: 1.4;">
@@ -342,8 +352,10 @@ function updateLivePreview() {
   document.getElementById("prev-quote").innerHTML = `"${quote.replace(/^"|"$/g, '')}"`;
   document.getElementById("prev-author").textContent = author;
 
-  // Update 2 Essentials
+  // Update 2 Essentials (Names & 1:1 Images)
+  document.getElementById("prev-ess1-name").textContent = document.getElementById("inp-ess1-name").value.trim();
   document.getElementById("prev-ess1-img").src = document.getElementById("inp-img-ess1").value.trim();
+  document.getElementById("prev-ess2-name").textContent = document.getElementById("inp-ess2-name").value.trim();
   document.getElementById("prev-ess2-img").src = document.getElementById("inp-img-ess2").value.trim();
 
   // Update 9 Grid Images
@@ -356,7 +368,7 @@ function updateLivePreview() {
   // Update Gallery Link
   document.getElementById("prev-gallery-link").href = document.getElementById("inp-gallery-url").value.trim();
 
-  // Update Product Highlight (Toggleable)
+  // Update Product of the Month (Toggleable, Between Essentials & Gallery)
   const isHighlightEnabled = document.getElementById("inp-highlight-toggle").checked;
   const highlightContainer = document.getElementById("prev-highlight-container");
   if (isHighlightEnabled) {
@@ -364,11 +376,12 @@ function updateLivePreview() {
     document.getElementById("prev-highlight-badge").textContent = document.getElementById("inp-highlight-title").value.trim();
     document.getElementById("prev-highlight-name").textContent = document.getElementById("inp-highlight-name").value.trim();
     document.getElementById("prev-highlight-img").src = document.getElementById("inp-highlight-img").value.trim();
+    document.getElementById("prev-highlight-desc").textContent = document.getElementById("inp-highlight-desc").value.trim();
   } else {
     highlightContainer.style.display = "none";
   }
 
-  // Dynamic Points Evaluation (type = 'reward')
+  // Dynamic Points Rewards (type = 'reward')
   const points = parseInt(document.getElementById("inp-sim-points").value, 10) || 0;
   document.getElementById("prev-points-val").textContent = points;
   const claimableBox = document.getElementById("prev-claimable-items");

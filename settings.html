@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings & Control Room | Timeless Creations</title>
+    <style>
+        :root { --bg: #f9f7f2; --surface: #ffffff; --surface2: #fdfaf3; --text: #1a1a1a; --muted: #78716c; --gold: #c9a84c; --border: #e0d6bc; }
+        body { font-family: 'Garamond', 'Georgia', serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+        .container { max-width: 700px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); padding: 30px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        h1 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: var(--text); border-bottom: 2px solid var(--gold); padding-bottom: 12px; margin-top: 0; font-size: 24px; }
+        .section { margin: 25px 0; padding: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
+        .section-title { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; color: var(--text); }
+        .desc { font-size: 13px; color: var(--muted); margin-bottom: 15px; line-height: 1.5; }
+        .btn { padding: 12px 20px; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; cursor: pointer; border: none; border-radius: 4px; text-decoration: none; display: inline-block; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-green { background: #16a34a; color: #fff; }
+        .btn-red { background: #dc2626; color: #fff; }
+        .btn-loading { background: #d97706; color: #fff; cursor: wait; }
+        .btn-dark { background: #1a1a1a; color: var(--gold); border: 1px solid var(--gold); }
+        .back-link { display: inline-block; margin-bottom: 20px; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-decoration: none; }
+        .input-field { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 14px; margin-bottom: 12px; box-sizing: border-box; background: #fff; }
+        .console-output { background: #111118; color: #4caf82; padding: 12px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; margin-top: 10px; white-space: pre-wrap; display: none; }
+
+        /* Custom Modal Popup Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
+        .modal-box { background: var(--surface); border: 2px solid var(--gold); padding: 30px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #8b1a1a; text-transform: uppercase; letter-spacing: 1px; }
+        .modal-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+        .modal-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 14px; margin-bottom: 20px; box-sizing: border-box; text-align: center; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    <h1>System Settings & Control Room</h1>
+
+    <!-- Master Power Control Synced to Turso system_config -->
+    <div class="section">
+        <div class="section-title">⚡ System Master Power Switch (Turso Synced)</div>
+        <div class="desc">
+            When set to <strong>ONLINE</strong>, the system runs cron jobs and automated bot dispatches passively. When switched to <strong>OFFLINE (Sleep)</strong>, background processes are paused.
+        </div>
+        <button id="power-toggle-btn" class="btn btn-loading" onclick="togglePowerState()">⏳ Loading Status...</button>
+    </div>
+
+    <!-- Test Email Dispatcher Section -->
+    <div class="section">
+        <div class="section-title">✉️ Test Email Sender</div>
+        <div class="desc">
+            Enter a recipient email address to perform a live test dispatch and inspect what actually happens in real-time.
+        </div>
+        <input type="email" id="test-email-input" class="input-field" placeholder="Enter any email address to test..." />
+        <button class="btn btn-green" onclick="sendTestEmail()">Send Test Dispatch</button>
+        <div id="test-console" class="console-output"></div>
+    </div>
+
+    <!-- Manual Cron Control Room -->
+    <div class="section">
+        <div class="section-title">⚙️ Cron & Dispatch Control Room</div>
+        <div class="desc">
+            Manually force cron execution or trigger immediate background sync. Requires typing confirmation.
+        </div>
+        <button class="btn btn-dark" onclick="openCronModal()">Force Cron Run Now</button>
+    </div>
+</div>
+
+<!-- Custom Styled Modal Popup -->
+<div id="custom-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title" id="modal-title">Security Confirmation</div>
+        <div class="modal-desc" id="modal-desc">Please type <strong>"Pogi si Allen"</strong> below to proceed:</div>
+        <input type="text" id="modal-input-val" class="modal-input" placeholder="Type here...">
+        <div class="modal-actions">
+            <button class="btn btn-dark" onclick="closeModal()" style="background:#e5e7eb; color:#333; border:none;">Cancel</button>
+            <button class="btn btn-green" id="modal-confirm-btn" onclick="submitModal()">Confirm & Execute</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPowerState = "offline";
+
+async function loadSettings() {
+  const btn = document.getElementById("power-toggle-btn");
+  btn.className = "btn btn-loading";
+  btn.textContent = "⏳ Loading from Turso...";
+  
+  try {
+    const res = await fetch("/api/main?action=health_check");
+    const data = await res.json();
+    if (data.ok) {
+      if (data.status === "ONLINE") {
+        currentPowerState = "online";
+        btn.className = "btn btn-green";
+        btn.textContent = "⚡ System: ONLINE (Click to Sleep)";
+      } else {
+        currentPowerState = "offline";
+        btn.className = "btn btn-red";
+        btn.textContent = "💤 System: OFFLINE / SLEEPING (Click to Wake)";
+      }
+    }
+  } catch (e) {
+    btn.className = "btn btn-red";
+    btn.textContent = "⚠️ Connection Failed";
+  }
+}
+
+async function togglePowerState() {
+  const btn = document.getElementById("power-toggle-btn");
+  const nextState = currentPowerState === "online" ? "offline" : "online";
+  const msg = nextState === "offline" 
+    ? "⚠️ Put system into SLEEP (OFFLINE) in Turso? Background cron jobs will pause."
+    : "🚀 Wake system up (ONLINE) in Turso? Background cron jobs will resume.";
+  
+  if (confirm(msg)) {
+    btn.className = "btn btn-loading";
+    btn.textContent = "⏳ Saving to Turso DB...";
+
+    try {
+      const res = await fetch("/api/main", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_power", state: nextState })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        loadSettings();
+      } else {
+        alert("Failed to update power state in Turso.");
+        loadSettings();
+      }
+    } catch (err) {
+      alert("Network error updating power state.");
+      loadSettings();
+    }
+  }
+}
+
+async function sendTestEmail() {
+  const email = document.getElementById("test-email-input").value.trim();
+  const consoleBox = document.getElementById("test-console");
+  consoleBox.style.display = "block";
+  consoleBox.textContent = "⏳ Dispatching test email to " + (email || "default recipient") + "...\n";
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "test_email", email })
+    });
+    const data = await res.json();
+    consoleBox.textContent += JSON.stringify(data, null, 2);
+    if (data.ok) {
+      consoleBox.textContent += "\n\n✅ Test email dispatch completed successfully!";
+    } else {
+      consoleBox.textContent += "\n\n❌ Test dispatch returned an error: " + (data.error || "Unknown error");
+    }
+  } catch (err) {
+    consoleBox.textContent += "\n\n❌ Network or server execution failed: " + err.message;
+  }
+}
+
+// Custom Modal Controls
+function openCronModal() {
+  document.getElementById("modal-title").textContent = "Force Cron Execution";
+  document.getElementById("modal-desc").innerHTML = "⚠️ WARNING: Forcing a cron run will immediately dispatch scheduled emails and notifications.<br><br>Please type <strong>\"Pogi si Allen\"</strong> to confirm:";
+  document.getElementById("modal-input-val").value = "";
+  document.getElementById("custom-modal").style.display = "flex";
+  document.getElementById("modal-input-val").focus();
+}
+
+function closeModal() {
+  document.getElementById("custom-modal").style.display = "none";
+}
+
+function submitModal() {
+  const val = document.getElementById("modal-input-val").value.trim();
+  if (val === "Pogi si Allen") {
+    closeModal();
+    const btn = document.querySelector(".section:nth-child(4) .btn");
+    btn.textContent = "⏳ Executing Cron...";
+    
+    fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "force_cron" })
+    })
+    .then(r => r.json())
+    .then(res => {
+      alert("✅ Cron executed successfully!");
+      btn.textContent = "Force Cron Run Now";
+    })
+    .catch(err => {
+      alert("❌ Error executing cron.");
+      btn.textContent = "Force Cron Run Now";
+    });
+  } else {
+    alert("❌ Confirmation failed. Phrase did not match \"Pogi si Allen\".");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", loadSettings);
+</script>
+
+</body>
+</html>

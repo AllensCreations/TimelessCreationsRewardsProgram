@@ -67,6 +67,8 @@ const threadCache = new Map();
 
 async function loadInboxThreads(force = false) {
   const container = document.getElementById("thread-container");
+  container.innerHTML = "<div style=\"padding:20px; color:var(--muted); font-size:0.75rem; text-align:center;\">Fetching latest threads...</div>";
+  const container = document.getElementById("thread-container");
   try {
     const res = await fetch("/api/main?action=get_inbox_threads");
     const data = await res.json();

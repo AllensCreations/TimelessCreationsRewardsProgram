@@ -17,16 +17,15 @@ jobs:
     - name: Set up Node.js Runtime
       uses: actions/setup-node@v4
       with:
-        node-version: 20
-        cache: 'npm'
+        node-version: 22
 
-    - name: Install NPM Dependencies
+    - name: Install Dependencies
       run: npm install
 
     - name: Build and Sync Frontend Assets
       run: npm run build
 
-    - name: Execute Master 620+ Assertion Bug Finder
+    - name: Execute Master Bug Finder Test Suite
       env:
         TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
         TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}

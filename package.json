@@ -22,6 +22,7 @@
   },
   "type": "module",
   "devDependencies": {
-    "jsdom": "^30.0.1"
+    "jsdom": "^30.0.1",
+    "undici": "^8.10.0"
   }
 }

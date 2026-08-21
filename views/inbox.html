@@ -10,7 +10,7 @@
     <style>
       .inbox-layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 120px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
       .thread-list { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); }
-      .thread-item { padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+      .thread-item { padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
       .thread-item:hover { background: var(--surface2); }
       .thread-item.active { background: var(--gold-dim); border-left: 3px solid var(--gold); }
       .thread-name { font-weight: bold; font-size: 0.85rem; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
@@ -18,7 +18,7 @@
       
       .chat-view { display: flex; flex-direction: column; height: 100%; background: var(--bg); }
       .chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; justify-content: space-between; align-items: center; }
-      .chat-body { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+      .chat-body { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
       
       .bubble { max-width: 70%; padding: 10px 14px; border-radius: 10px; font-size: 0.78rem; line-height: 1.4; word-break: break-word; }
       .bubble.user { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
@@ -63,8 +63,9 @@
 
 <script>
 let currentPsid = null;
+const threadCache = new Map();
 
-async function loadInboxThreads() {
+async function loadInboxThreads(force = false) {
   const container = document.getElementById("thread-container");
   try {
     const res = await fetch("/api/main?action=get_inbox_threads");
@@ -102,8 +103,15 @@ async function openConversation(psid, name, email, points) {
   document.getElementById("active-user-meta").textContent = email ? `${email} • ${points} Points Balance` : `PSID: ${psid}`;
 
   const msgBox = document.getElementById("chat-messages");
-  msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">Loading timeline...</div>';
 
+  // Fast In-Memory Render
+  if (threadCache.has(psid)) {
+    renderMessages(threadCache.get(psid), name);
+  } else {
+    msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">Loading timeline...</div>';
+  }
+
+  // Background fetch
   try {
     const res = await fetch(`/api/main?action=get_thread_messages&psid=${psid}`);
     const data = await res.json();
@@ -113,35 +121,49 @@ async function openConversation(psid, name, email, points) {
       (data.orders || []).forEach(o => allEvents.push({ type: 'order', ...o }));
       allEvents.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-      if (allEvents.length === 0) {
-        msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">No activity history recorded.</div>';
-        return;
-      }
-
-      msgBox.innerHTML = allEvents.map(e => {
-        if (e.type === 'order') {
-          return `<div class="order-pill">🛍️ CLAIM PURCHASE: ${e.item} (#${e.order_id}) • ${e.points_cost} PTS [${e.status.toUpperCase()}]</div>`;
-        }
-        return `
-          <div class="bubble ${e.sender}">
-            <div style="font-size:0.6rem; opacity:0.7; margin-bottom:2px; text-transform:uppercase;">${e.sender === 'user' ? (name || 'Missionary') : (e.sender === 'admin' ? 'Staff Admin' : 'TCRP Bot')}</div>
-            ${e.message}
-          </div>
-        `;
-      }).join('');
-      msgBox.scrollTop = msgBox.scrollHeight;
+      threadCache.set(psid, allEvents);
+      renderMessages(allEvents, name);
     }
   } catch(e) {
-    msgBox.innerHTML = '<div style="color:var(--red); font-size:0.75rem;">Failed to load timeline.</div>';
+    if (!threadCache.has(psid)) {
+      msgBox.innerHTML = '<div style="color:var(--red); font-size:0.75rem;">Failed to load timeline.</div>';
+    }
   }
-  loadInboxThreads();
+
+  // Update active highlighted card
+  document.querySelectorAll('.thread-item').forEach(el => el.classList.remove('active'));
+  event?.currentTarget?.classList?.add('active');
+}
+
+function renderMessages(events, name) {
+  const msgBox = document.getElementById("chat-messages");
+  if (!events || events.length === 0) {
+    msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">No activity history recorded.</div>';
+    return;
+  }
+
+  msgBox.innerHTML = events.map(e => {
+    if (e.type === 'order') {
+      return `<div class="order-pill">🛍️ CLAIM PURCHASE: ${e.item} (#${e.order_id}) • ${e.points_cost} PTS [${(e.status || 'pending').toUpperCase()}]</div>`;
+    }
+    return `
+      <div class="bubble ${e.sender}">
+        <div style="font-size:0.6rem; opacity:0.7; margin-bottom:2px; text-transform:uppercase;">${e.sender === 'user' ? (name || 'Missionary') : (e.sender === 'admin' ? 'Staff Admin' : 'TCRP Bot')}</div>
+        ${e.message}
+      </div>
+    `;
+  }).join('');
+  msgBox.scrollTop = msgBox.scrollHeight;
 }
 
 function closeChatPane() {
   document.getElementById("chat-pane").classList.remove("active");
 }
 
-window.syncData = loadInboxThreads;
+window.syncData = () => {
+  threadCache.clear();
+  loadInboxThreads(true);
+};
 
 window.addEventListener("DOMContentLoaded", () => {
   initAppLayout('inbox', 'Messenger Activity & Purchases');

@@ -29,11 +29,33 @@
       text-transform: uppercase;
       letter-spacing: 0.8px;
     }
+    .btn {
+      background: linear-gradient(135deg, var(--gold, #c9a84c), var(--gold2, #f0d080));
+      color: #0a0a0f;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
   </style>
 </head>
 <body>
 
 <div style="max-width:1100px; margin:24px auto; padding:0 16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h2 style="font-family:'Syne',sans-serif; color:var(--gold, #c9a84c); font-size:1.4rem;">Live Operations Dashboard</h2>
+      <p style="font-size:0.75rem; color:var(--muted, #8c90a4); margin-top:2px;">Real-time missionary metrics, active orders, and circulating points.</p>
+    </div>
+    <button class="btn" id="btn-refresh-stats" onclick="loadDashboard()">↻ Refresh Live Stats</button>
+  </div>
+
   <!-- Live Stats Counter Grid -->
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
     <div class="stat-card">
@@ -93,7 +115,6 @@ async function loadDashboard() {
     }
   } catch (err) {
     console.error("Dashboard fetch error:", err);
-    document.getElementById("stat-missionaries").textContent = "1,406";
   }
 }
 

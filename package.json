@@ -8,7 +8,8 @@
     "test": "node tester.js",
     "test500": "node tester500.js",
     "test250": "node tester250.js",
-    "testui": "node tester_ui_500.js"
+    "testui": "node tester_ui_500.js",
+    "bugfinder": "node master_bug_finder.js"
   },
   "dependencies": {
     "csv-parse": "^7.0.2",

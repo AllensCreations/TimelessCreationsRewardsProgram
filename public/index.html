@@ -41,79 +41,86 @@
     width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
     display:flex;flex-direction:column;height:100vh;transition:transform 0.3s ease;z-index:100;
   }
-  .sidebar-logo{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .sidebar-logo{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .sidebar-logo h1{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--gold);line-height:1.1;}
   .sidebar-logo h1 em{font-style:italic;color:var(--text);font-size:1rem;}
   .sidebar-logo p{font-size:0.58rem;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-top:4px;}
   .close-sidebar-btn{display:none;background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;}
 
-  .nav{padding:14px 10px;flex:1;overflow-y:auto;}
-  .nav-label{font-size:0.58rem;color:var(--muted);letter-spacing:0.16em;text-transform:uppercase;padding:0 8px;margin:16px 0 6px;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.74rem;color:var(--muted);transition:all 0.2s;border:1px solid transparent;margin-bottom:3px;}
+  .nav{padding:12px 10px;flex:1;overflow-y:auto;}
+  .nav-label{font-size:0.56rem;color:var(--muted);letter-spacing:0.16em;text-transform:uppercase;padding:0 8px;margin:12px 0 4px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:0.73rem;color:var(--muted);transition:all 0.2s;border:1px solid transparent;margin-bottom:2px;text-decoration:none;}
   .nav-item:hover{background:var(--surface2);color:var(--text);}
   .nav-item.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.25);}
-  .nav-item .icon{font-size:1rem;width:20px;text-align:center;}
+  .nav-item .icon{font-size:0.95rem;width:20px;text-align:center;}
   .nav-item .badge{margin-left:auto;background:var(--gold-dim);color:var(--gold);font-size:0.58rem;padding:2px 6px;border-radius:99px;}
 
-  .sidebar-backdrop{
-    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px);z-index:95;
-  }
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px);z-index:95;}
 
-  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);}
-  .topbar{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface);position:sticky;top:0;z-index:90;}
-  .hamburger-btn{display:none;background:var(--surface2);border:1px solid var(--border);color:var(--gold);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:1rem;}
-  .topbar-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.02em;flex:1;}
-  .topbar-title span{color:var(--muted);font-weight:400;font-size:0.75rem;margin-left:8px;}
+  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);padding:20px;}
+  
+  /* Compact Luxury Status Banner */
+  .status-banner{display:flex;align-items:center;justify-content:between;background:var(--surface);border:1px solid var(--border);padding:10px 16px;border-radius:var(--radius);margin-bottom:20px;gap:12px;}
+  .status-left{display:flex;align-items:center;gap:8px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);}
+  .status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green);}
+  .control-btn{font-family:'DM Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;background:var(--surface2);color:var(--gold);padding:6px 12px;border:1px solid rgba(201,168,76,0.3);border-radius:6px;text-decoration:none;font-weight:bold;cursor:pointer;}
+  .control-btn:hover{background:var(--gold-dim);}
 
-  .panel{display:none;padding:22px;animation:fadeIn 0.25s ease;}
+  .topbar{display:flex;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--border);gap:14px;margin-bottom:20px;}
+  .hamburger-btn{display:none;background:var(--surface2);border:1px solid var(--border);color:var(--gold);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.9rem;}
+  .topbar-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:0.02em;flex:1;}
+  .topbar-title span{color:var(--muted);font-weight:400;font-size:0.75rem;margin-left:6px;}
+
+  .panel{display:none;animation:fadeIn 0.25s ease;}
   .panel.active{display:block;}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 
-  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
-  .section-head h2{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .section-head h2{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;}
 
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
-  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;}
   .stat-card.gold{border-left:3px solid var(--gold);}
   .stat-card.green{border-left:3px solid var(--green);}
   .stat-card.blue{border-left:3px solid var(--blue);}
-  .stat-label{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;}
-  .stat-val{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;margin:4px 0 2px;}
+  .stat-label{font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
+  .stat-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin:4px 0 0;}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;}
-  .calendar-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:6px;margin-top:12px;}
-  .cal-day-header{font-size:0.6rem;text-align:center;color:var(--muted);text-transform:uppercase;padding:4px 0;}
-  .cal-cell{background:var(--surface2);border:1px solid var(--border);border-radius:6px;min-height:56px;padding:6px;display:flex;flex-direction:column;justify-content:space-between;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:4px;margin-top:10px;}
+  .cal-day-header{font-size:0.55rem;text-align:center;color:var(--muted);text-transform:uppercase;padding:2px 0;}
+  .cal-cell{background:var(--surface2);border:1px solid var(--border);border-radius:5px;min-height:48px;padding:5px;display:flex;flex-direction:column;justify-content:space-between;}
   .cal-cell.today{border-color:var(--gold);}
   .cal-cell.has-activity{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.3);}
-  .cal-num{font-size:0.65rem;color:var(--muted);}
-  .cal-count{font-size:0.62rem;font-weight:700;color:var(--gold);align-self:flex-end;}
+  .cal-num{font-size:0.6rem;color:var(--muted);}
+  .cal-count{font-size:0.58rem;font-weight:700;color:var(--gold);align-self:flex-end;}
 
-  .table-controls{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:var(--radius) var(--radius) 0 0;flex-wrap:wrap;}
-  .search-input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none;}
-  .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:6px;font-size:0.68rem;cursor:pointer;}
+  .table-controls{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:var(--radius) var(--radius) 0 0;flex-wrap:wrap;}
+  .search-input{flex:1;min-width:140px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.71rem;outline:none;}
+  .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 12px;border-radius:6px;font-size:0.65rem;cursor:pointer;}
   .filter-btn.active{color:var(--gold);border-color:rgba(201,168,76,0.4);background:var(--gold-dim);font-weight:700;}
 
-  .roster-list{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:12px;}
-  .missionary-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-  .card-summary{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none;gap:12px;}
-  .card-summary:hover{background:rgba(255,255,255,0.03);}
-  .m-title-group{display:flex;align-items:center;gap:10px;}
-  .cohort-pill{font-size:0.6rem;padding:2px 8px;border-radius:4px;font-weight:700;text-transform:uppercase;}
+  .roster-list{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:10px;}
+  .missionary-card{background:var(--surface2);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+  .card-summary{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;user-select:none;gap:10px;}
+  .card-summary:hover{background:rgba(255,255,255,0.02);}
+  .m-title-group{display:flex;align-items:center;gap:8px;}
+  .cohort-pill{font-size:0.58rem;padding:2px 6px;border-radius:4px;font-weight:700;text-transform:uppercase;}
   .cohort-elder{background:rgba(92,141,224,0.15);color:var(--blue);border:1px solid rgba(92,141,224,0.3);}
   .cohort-sister{background:rgba(224,92,92,0.15);color:var(--red);border:1px solid rgba(224,92,92,0.3);}
-  .m-name{font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text);}
+  .m-name{font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;color:var(--text);}
   
-  .card-details{display:none;padding:14px 16px;background:rgba(0,0,0,0.2);border-top:1px solid var(--border);font-size:0.72rem;line-height:1.8;}
+  .card-details{display:none;padding:12px 14px;background:rgba(0,0,0,0.2);border-top:1px solid var(--border);font-size:0.7rem;line-height:1.7;}
   .missionary-card.open .card-details{display:block;}
   .missionary-card.open .chevron-icon{transform:rotate(180deg);}
 
-  .prog-container{display:flex;flex-direction:column;gap:4px;margin:8px 0;}
-  .prog-track{width:100%;height:8px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+  .prog-container{display:flex;flex-direction:column;gap:3px;margin:6px 0;}
+  .prog-track{width:100%;height:6px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;}
   .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;}
 
-  .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
-  .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.68rem;margin-top:8px;}
+  .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:7px 14px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.71rem;font-weight:700;cursor:pointer;}
+  .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:5px 10px;border-radius:4px;cursor:pointer;font-size:0.65rem;margin-top:6px;}
 
   @media(max-width:768px){
     .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:10px 0 30px rgba(0,0,0,0.8);}
@@ -121,25 +128,9 @@
     .sidebar-backdrop.active{display:block;}
     .hamburger-btn{display:block;}
     .close-sidebar-btn{display:block;}
-    .panel{padding:14px;}
+    .main{padding:14px;}
   }
 </style>
-
-    <style>
-    @keyframes pulse-green {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
-    }
-    @keyframes pulse-red {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-    }
-    .badge-online { background: #dcfce7 !important; color: #166534 !important; animation: pulse-green 2s infinite; }
-    .badge-offline { background: #fee2e2 !important; color: #991b1b !important; animation: pulse-red 2s infinite; }
-    </style>
-    
 </head>
 <body>
 
@@ -152,23 +143,10 @@
 <div class="sidebar-backdrop" id="backdrop" onclick="toggleMobileSidebar(false)"></div>
 
 <div class="app">
-
-    <div id="live-status-card" style="display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #e0d6bc; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span id="status-pulse-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #dc2626; display: inline-block;"></span>
-            <span style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #78716c;">System Status:</span>
-            <span id="status-text-label" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #dc2626;">CHECKING...</span>
-        </div>
-        <div>
-            <a href="/settings.html" style="font-family: Helvetica, Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; background: #1a1a1a; color: #c9a84c; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: bold;">⚙️ Open Control Room</a>
-        </div>
-    </div>
-    
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div>
         <h1>Timeless<br><em>Creations</em></h1>
-<div id="connection-badge" style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold; background:#fee2e2; color:#991b1b; margin-left:10px;"><span id="badge-dot" style="width:8px; height:8px; border-radius:50%; background:#dc2626;"></span> <span id="badge-text">OFFLINE</span></div>
         <p>Command Center</p>
       </div>
       <button class="close-sidebar-btn" onclick="toggleMobileSidebar(false)">✕</button>
@@ -179,20 +157,29 @@
       <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries Roster <span class="badge" id="badge-missionaries">—</span></div>
       
       <div class="nav-label">Modules</div>
-      <div class="nav-item" onclick="window.location.href='/inbox.html'"><span class="icon">💬</span> Messenger Inbox</div>
-      <div class="nav-item" onclick="window.location.href='/pusher.html'"><span class="icon">➕</span> Add Missionaries</div>
-      <div class="nav-item" onclick="window.location.href='/invoicing.html'"><span class="icon">🧾</span> Invoicing &amp; Billing</div>
-      <div class="nav-item" onclick="window.location.href='/rewards.html'"><span class="icon">🎁</span> Rewards &amp; Claims</div>
-      <div class="nav-item" onclick="window.location.href='/highlight.html'"><span class="icon">🌟</span> Media &amp; Messages Hub</div>
-      <div class="nav-item" onclick="window.location.href='/leaderboard.html'"><span class="icon">🏆</span> Referral Leaderboard</div>
+      <a href="/inbox.html" class="nav-item"><span class="icon">💬</span> Messenger Inbox</a>
+      <a href="/pusher.html" class="nav-item"><span class="icon">➕</span> Add Missionaries</a>
+      <a href="/invoicing.html" class="nav-item"><span class="icon">🧾</span> Invoicing &amp; Billing</a>
+      <a href="/rewards.html" class="nav-item"><span class="icon">🎁</span> Rewards &amp; Claims</a>
+      <a href="/highlight.html" class="nav-item"><span class="icon">🌟</span> Media &amp; Messages Hub</a>
+      <a href="/leaderboard.html" class="nav-item"><span class="icon">🏆</span> Referral Leaderboard</a>
       
       <div class="nav-label">Operations</div>
-      <div class="nav-item" onclick="window.location.href='/logs.html'"><span class="icon">📜</span> System Logs</div>
-      <div class="nav-item" onclick="window.location.href='/settings.html'"><span class="icon">⚙️</span> Control Room</div>
+      <a href="/logs.html" class="nav-item"><span class="icon">📜</span> System Logs</a>
+      <a href="/settings.html" class="nav-item"><span class="icon">⚙️</span> Control Room</a>
     </nav>
   </aside>
 
   <main class="main">
+    <!-- Compact Luxury Status Banner -->
+    <div class="status-banner">
+      <div class="status-left">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-label">Checking System...</span>
+      </div>
+      <a href="/settings.html" class="control-btn">⚙️ Control Room</a>
+    </div>
+
     <div class="topbar">
       <button class="hamburger-btn" onclick="toggleMobileSidebar(true)">☰ Menu</button>
       <div class="topbar-title">Missionary Tracking <span>Overview</span></div>
@@ -200,20 +187,20 @@
 
     <div class="panel active" id="panel-dashboard">
       <div class="section-head">
-        <div><h2>Missionary Dispatch Analytics</h2><p id="dash-date">Real-time Turso Database Status</p></div>
+        <div><h2>Dispatch Analytics</h2><p id="dash-date" style="font-size:0.65rem;color:var(--muted);">Live Turso Database Status</p></div>
         <button class="btn-submit" onclick="doSync()">↻ Re-Sync</button>
       </div>
 
       <div class="stats-grid">
-        <div class="stat-card gold"><div class="stat-label">Total Active Missionaries</div><div class="stat-val" id="stat-total">0</div></div>
-        <div class="stat-card green"><div class="stat-label">Emails Dispatched Today</div><div class="stat-val" id="stat-emails-today">0</div></div>
-        <div class="stat-card blue"><div class="stat-label">Total Sent This Month</div><div class="stat-val" id="stat-emails-month">0</div></div>
+        <div class="stat-card gold"><div class="stat-label">Total Missionaries</div><div class="stat-val" id="stat-total">0</div></div>
+        <div class="stat-card green"><div class="stat-label">Dispatched Today</div><div class="stat-val" id="stat-emails-today">0</div></div>
+        <div class="stat-card blue"><div class="stat-label">Sent This Month</div><div class="stat-val" id="stat-emails-month">0</div></div>
       </div>
 
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <h3 style="font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);">Monthly Dispatch Calendar Heatmap</h3>
-          <span id="cal-month-name" style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;"></span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="font-family:'Syne',sans-serif;font-size:0.85rem;color:var(--gold);">Monthly Dispatch Calendar Heatmap</h3>
+          <span id="cal-month-name" style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;"></span>
         </div>
         <div class="calendar-grid" id="calendar-grid"></div>
       </div>
@@ -223,20 +210,20 @@
       <div class="section-head">
         <div>
           <h2>Missionaries Roster</h2>
-          <p style="font-size:0.68rem;color:var(--muted);">Tap any missionary card to view or collapse details</p>
+          <p style="font-size:0.65rem;color:var(--muted);">Tap any missionary card to view details</p>
         </div>
         <button class="btn-submit" onclick="doSync()">↻ Refresh</button>
       </div>
 
       <div class="table-controls">
-        <input class="search-input" placeholder="Search missionary title, email, or referral code..." oninput="filterRoster(this.value)"/>
+        <input class="search-input" placeholder="Search missionary name, email, or code..." oninput="filterRoster(this.value)"/>
         <button class="filter-btn active" onclick="filterType('all',this)">All Active</button>
         <button class="filter-btn" onclick="filterType('elder',this)">Elders (24M)</button>
         <button class="filter-btn" onclick="filterType('sister',this)">Sisters (18M)</button>
       </div>
 
       <div class="roster-list" id="roster-container">
-        <div style="text-align:center;padding:24px;color:var(--muted);">Loading missionaries from Turso...</div>
+        <div style="text-align:center;padding:20px;color:var(--muted);">Loading missionaries from Turso...</div>
       </div>
     </div>
   </main>
@@ -257,11 +244,34 @@ function toggleMobileSidebar(isOpen) {
   }
 }
 
+async function checkSystemStatus() {
+  try {
+    const res = await fetch("/api/main?action=health_check");
+    const data = await res.json();
+    const dot = document.getElementById("status-dot");
+    const label = document.getElementById("status-label");
+    if (data.ok && data.status === "ONLINE") {
+      dot.classList.add("online");
+      label.textContent = "System Online (Passive Cron Running)";
+    } else {
+      dot.classList.remove("online");
+      label.textContent = "System Offline / Sleeping";
+    }
+  } catch (e) {
+    const dot = document.getElementById("status-dot");
+    const label = document.getElementById("status-label");
+    dot.classList.remove("online");
+    label.textContent = "Connection Disconnected";
+  }
+}
+
 async function doSync() {
   const overlay = document.getElementById('sync-overlay');
   overlay.classList.remove('hidden');
   const bar = document.getElementById('sync-bar');
   bar.style.width = '40%';
+
+  checkSystemStatus();
 
   try {
     const res = await fetch('/api/dashboard-data');
@@ -357,7 +367,7 @@ function applyFilterAndRender() {
     list = list.filter(m => 
       (m.name || '').toLowerCase().includes(state.searchQuery) ||
       (m.email || '').toLowerCase().includes(state.searchQuery) ||
-      (m.ref || '').toLowerCase().includes(state.searchQuery)
+      (m.referralCode || m.ref || '').toLowerCase().includes(state.searchQuery)
     );
   }
 
@@ -371,14 +381,14 @@ function toggleCard(cardElement) {
 function renderRosterCards(list) {
   const container = document.getElementById('roster-container');
   if (!list.length) {
-    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);">No matching missionaries found.</div>';
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">No matching missionaries found.</div>';
     return;
   }
 
   container.innerHTML = list.map(m => {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-    const totalMonths = isSister ? 18 : 24;
-    const sentCount = Math.min(Number(m.monthsDiff) || 0, totalMonths);
+    const totalMonths = m.maxMonths || (isSister ? 18 : 24);
+    const sentCount = Math.min(Number(m.monthsSent) || 0, totalMonths);
     const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
 
     return `
@@ -388,19 +398,19 @@ function renderRosterCards(list) {
             <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
             <span class="m-name">${m.name}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span style="color:var(--gold);font-weight:bold;background:var(--gold-dim);padding:3px 8px;border-radius:4px;font-size:0.7rem;">${m.points} Pts</span>
-            <span class="chevron-icon" style="color:var(--muted);font-size:0.75rem;">▼</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--gold);font-weight:bold;background:var(--gold-dim);padding:2px 6px;border-radius:4px;font-size:0.68rem;">${m.points || 0} Pts</span>
+            <span class="chevron-icon" style="color:var(--muted);font-size:0.7rem;">▼</span>
           </div>
         </div>
         
         <div class="card-details">
           <div>✉️ <strong>Email:</strong> ${m.email}</div>
-          <div>🏷️ <strong>Referral Code:</strong> ${m.ref}</div>
-          <div>📅 <strong>Next Send Check:</strong> ${m.next_send_date ? new Date(m.next_send_date).toLocaleDateString() : 'Due for Check'}</div>
+          <div>🏷️ <strong>Referral Code:</strong> ${m.referralCode || m.ref || 'N/A'}</div>
+          <div>📅 <strong>Next Send Check:</strong> ${m.nextSendDate || m.next_send_date ? new Date(m.nextSendDate || m.next_send_date).toLocaleDateString() : 'Due for Check'}</div>
           
           <div class="prog-container">
-            <div style="display:flex;justify-content:space-between;font-size:0.64rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.62rem;">
               <span>📩 <strong>${sentCount}</strong> / ${totalMonths} Drip Letters Delivered</span>
               <span>${pct}%</span>
             </div>
@@ -436,87 +446,11 @@ function switchTab(tab, el) {
   toggleMobileSidebar(false);
 }
 
-window.addEventListener('DOMContentLoaded', doSync);
+window.addEventListener('DOMContentLoaded', () => {
+  doSync();
+  setInterval(checkSystemStatus, 10000);
+});
 </script>
 
-    <script>
-    async function checkConnection() {
-      try {
-        const res = await fetch("/api/main?action=health_check");
-        const data = await res.json();
-        const badge = document.getElementById("connection-badge");
-        const dot = document.getElementById("badge-dot");
-        const text = document.getElementById("badge-text");
-        if (data.ok && data.status === "ONLINE") {
-          badge.style.background = "#dcfce7";
-          badge.style.color = "#166534";
-          dot.style.background = "#16a34a";
-          text.textContent = "ONLINE";
-        } else {
-          throw new Error("Offline");
-        }
-      } catch (e) {
-        const badge = document.getElementById("connection-badge");
-        const dot = document.getElementById("badge-dot");
-        const text = document.getElementById("badge-text");
-        badge.style.background = "#fee2e2";
-        badge.style.color = "#991b1b";
-        dot.style.background = "#dc2626";
-        text.textContent = "OFFLINE";
-      }
-    }
-    setInterval(checkConnection, 10000);
-    window.addEventListener("DOMContentLoaded", checkConnection);
-
-    function confirmForceCron() {
-      const val = prompt("⚠️ WARNING: Forcing a cron run will immediately dispatch scheduled emails and notifications.
-
-Please type "Pogi si Allen" to confirm:");
-      if (val === "Pogi si Allen") {
-        fetch("/api/main", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "force_cron" })
-        }).then(r => r.json()).then(res => {
-          alert("Cron executed successfully!");
-        }).catch(err => alert("Error executing cron."));
-      } else if (val !== null) {
-        alert("❌ Confirmation failed. Phrase did not match "Pogi si Allen".");
-      }
-    }
-    </script>
-    
-
-    <script>
-    async function updateDashboardStatus() {
-      try {
-        const res = await fetch("/api/main?action=health_check");
-        const data = await res.json();
-        const dot = document.getElementById("status-pulse-dot");
-        const label = document.getElementById("status-text-label");
-        
-        if (data.ok && data.status === "ONLINE") {
-          dot.style.background = "#16a34a";
-          dot.style.boxShadow = "0 0 10px #16a34a";
-          label.textContent = "ONLINE (Passive Cron Running)";
-          label.style.color = "#16a34a";
-        } else {
-          dot.style.background = "#dc2626";
-          dot.style.boxShadow = "0 0 10px #dc2626";
-          label.textContent = "OFFLINE / SLEEPING";
-          label.style.color = "#dc2626";
-        }
-      } catch (e) {
-        const dot = document.getElementById("status-pulse-dot");
-        const label = document.getElementById("status-text-label");
-        dot.style.background = "#dc2626";
-        label.textContent = "DISCONNECTED";
-        label.style.color = "#dc2626";
-      }
-    }
-    window.addEventListener("DOMContentLoaded", updateDashboardStatus);
-    setInterval(updateDashboardStatus, 5000);
-    </script>
-    
 </body>
 </html>

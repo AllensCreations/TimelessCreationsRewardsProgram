@@ -25,6 +25,7 @@
       input:checked + .slider { background-color: var(--gold-dim); border-color: var(--gold); }
       input:checked + .slider:before { transform: translateX(20px); background-color: var(--gold); }
 
+      .save-actions { display: flex; gap: 12px; margin-top: 20px; }
       .save-banner { position: sticky; bottom: 20px; background: var(--surface2); border: 1px solid var(--gold); padding: 14px 22px; border-radius: var(--radius); display: none; justify-content: space-between; align-items: center; margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 80; }
       .preview-wrapper { background: #12121a; border: 1px solid var(--border); border-radius: 12px; padding: 16px; max-height: calc(100vh - 120px); overflow-y: auto; position: sticky; top: 20px; }
       .preview-frame { width: 100%; max-width: 440px; margin: 0 auto; background: #ffffff; color: #1a1a1a; font-family: 'Garamond', 'Georgia', serif; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.5); overflow: hidden; }
@@ -136,8 +137,14 @@
             </div>
         </div>
 
+        <!-- Direct Save Bar below Tabs -->
+        <div class="save-actions">
+            <button class="btn btn-gold" id="btn-main-save" style="flex:1; justify-content:center; padding:12px;" onclick="saveActiveMonth()">💾 Save Month to Database</button>
+            <button class="btn btn-dark" onclick="window.syncData ? window.syncData() : location.reload()">↻ Re-Sync</button>
+        </div>
+
         <!-- Points Testing Controls -->
-        <div class="card" style="border-color: rgba(201,168,76,0.25);">
+        <div class="card" style="border-color: rgba(201,168,76,0.25); margin-top:20px;">
             <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">⚡ Points Simulation Sandbox</div>
             <div style="display:flex; gap:10px; align-items:center;">
                 <input type="number" id="inp-sim-points" class="form-input" style="width:120px;" value="2" oninput="renderPreview()">
@@ -435,9 +442,12 @@ function renderPreview() {
 }
 
 async function saveActiveMonth() {
-  const btn = document.getElementById("btn-save-turso");
+  const btn = document.getElementById("btn-main-save");
+  const saveBannerBtn = document.getElementById("btn-save-turso");
   const data = liveDripMap[currentMonth] || {};
-  btn.textContent = "⏳ Saving...";
+  
+  if (btn) btn.textContent = "⏳ Saving Month to Database...";
+  if (saveBannerBtn) saveBannerBtn.textContent = "⏳ Saving...";
 
   try {
     const res = await fetch("/api/main", {
@@ -456,15 +466,18 @@ async function saveActiveMonth() {
     const resData = await res.json();
     if (resData.ok) {
       document.getElementById("save-banner").style.display = "none";
-      btn.textContent = "💾 Save Month to Turso";
-      showToast(`Month ${currentMonth} saved to Turso database!`);
+      if (btn) btn.textContent = "💾 Save Month to Database";
+      if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
+      showToast(`Month ${currentMonth} successfully saved to Turso database!`);
     } else {
       showToast(resData.error || "Failed to save.", "error");
-      btn.textContent = "💾 Save Month to Turso";
+      if (btn) btn.textContent = "💾 Save Month to Database";
+      if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
     }
   } catch(e) {
     showToast("Network error saving to Turso.", "error");
-    btn.textContent = "💾 Save Month to Turso";
+    if (btn) btn.textContent = "💾 Save Month to Database";
+    if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
   }
 }
 

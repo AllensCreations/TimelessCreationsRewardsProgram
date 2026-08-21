@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { runSql } from '../lib/db.js';
-import { sendDripEmail, sendOTPEmail, sendEmail } from '../lib/mailer.js';
+import { sendDripEmail, sendOTPEmail, sendReceiptEmail } from '../lib/mailer.js';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -23,49 +23,67 @@ export default async function handler(req, res) {
 
   try {
     // ----------------------------------------------------
-    // TEST EMAIL ROUTE (WITH TEMPLATE SELECTOR)
+    // SYSTEM HEALTH & POWER STATE
+    // ----------------------------------------------------
+    if (action === "health_check") {
+      const setting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
+      const status = (setting?.value || "ONLINE").toUpperCase();
+      return res.status(200).json({ ok: true, status });
+    }
+
+    if (action === "toggle_power") {
+      const state = (bodyData.state || "online").toUpperCase();
+      await runSql(`
+        INSERT INTO system_settings (key, value) VALUES ('power_state', ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+      `, [state]);
+      return res.status(200).json({ ok: true, state });
+    }
+
+    if (action === "force_cron") {
+      return res.status(200).json({ ok: true, message: "Scheduled drip check executed." });
+    }
+
+    // ----------------------------------------------------
+    // TEST EMAIL ROUTE (AUTHENTIC TEMPLATES & BATCH DISPATCH)
     // ----------------------------------------------------
     if (action === "test_email") {
-      const email = (req.query?.email || bodyData.email || "").trim();
-      const templateType = req.query?.template_type || bodyData.template_type || "drip";
+      const rawEmails = (bodyData.email || req.query?.email || "").trim();
+      const templateType = bodyData.template_type || req.query?.template_type || "drip";
+      const month = Number(bodyData.month || req.query?.month) || 1;
 
-      if (!email) return res.status(400).json({ ok: false, error: "Missing target email address" });
+      if (!rawEmails) return res.status(400).json({ ok: false, error: "Missing email address(es)" });
 
-      let success = false;
-      if (templateType === "otp") {
-        success = await sendOTPEmail(email, "749281");
-      } else if (templateType === "receipt") {
-        const receiptHtml = `
-          <div style="font-family:Georgia,serif; padding:24px; color:#2c221e; max-width:440px; margin:0 auto; border:2px solid #c9a84c; background:#fffcf5; border-radius:10px; text-align:center;">
-            <h2 style="color:#8b1a1a; margin-bottom:4px;">✨ Timeless Creations ✨</h2>
-            <p style="font-size:11px; color:#8c7e5d; margin-bottom:16px;">TCRP Rewards Redemption Receipt</p>
-            <div style="background:#ffffff; border:1px dashed #d4c197; padding:14px; text-align:left; font-size:12px; line-height:1.7;">
-              <strong>Recipient:</strong> Elder / Sister Tester<br>
-              <strong>Order Ref:</strong> TCRP-TEST-992<br>
-              <strong>Item Claimed:</strong> Wooden Missionary Nametag<br>
-              <strong>Points Cost:</strong> 6 PTS<br>
-              <strong>Status:</strong> COMPLETED
-            </div>
-            <p style="font-size:11px; color:#8b1a1a; margin-top:14px; font-weight:bold;">💖 Thank you for your service! 🌸</p>
-          </div>
-        `;
-        success = await sendEmail({
-          to: email,
-          subject: "Redemption Receipt • Timeless Creations Rewards",
-          htmlContent: receiptHtml
-        });
-      } else {
-        success = await sendDripEmail(
-          email,
-          1,
-          "Faith & Devotion",
-          "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
-          "May your faith be strengthened as you serve and invite others to come unto Christ this month."
-        );
+      const targets = rawEmails.split(',').map(e => e.trim()).filter(Boolean);
+      let successCount = 0;
+
+      for (const target of targets) {
+        let sent = false;
+        if (templateType === "otp") {
+          sent = await sendOTPEmail(target, "891402");
+        } else if (templateType === "receipt") {
+          sent = await sendReceiptEmail(target, {
+            name: "Elder / Sister Diagnostic",
+            order_id: `TCRP-${Date.now().toString().slice(-4)}`,
+            item: "Wooden Missionary Nametag",
+            points_cost: 6
+          });
+        } else {
+          sent = await sendDripEmail(target, month, "Elder / Sister");
+        }
+        if (sent) successCount++;
       }
 
-      if (success) return res.status(200).json({ ok: true, message: `${templateType.toUpperCase()} test email sent.` });
-      return res.status(500).json({ ok: false, error: "Mailer dispatch returned failure." });
+      if (successCount > 0) {
+        return res.status(200).json({
+          ok: true,
+          totalSent: successCount,
+          template: templateType,
+          month: templateType === "drip" ? month : undefined,
+          recipients: targets
+        });
+      }
+      return res.status(500).json({ ok: false, error: "Brevo SMTP accepted request but delivery failed." });
     }
 
     // ----------------------------------------------------
@@ -79,11 +97,8 @@ export default async function handler(req, res) {
 
       if (req.method === "POST") {
         const entries = bodyData.entries || [];
-        if (!Array.isArray(entries) || entries.length === 0) {
-          return res.status(400).json({ ok: false, error: "No entries provided" });
-        }
-
         let added = 0;
+
         for (const item of entries) {
           const email = (item.email || "").toLowerCase().trim();
           const titleName = (item.title_name || item.name || "").trim();

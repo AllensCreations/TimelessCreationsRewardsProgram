@@ -1,100 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Live System Audit Logs</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-    --border:rgba(255,255,255,0.08);
-    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
-    --green:#4caf82; --red:#e05c5c; --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
-    --radius:10px;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:20px;min-height:100vh;}
-  .container{max-width:1300px;margin:0 auto;}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;flex-wrap:wrap;gap:12px;}
-  h1{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--gold);}
-  .nav-links{display:flex;gap:10px;align-items:center;}
-  .btn-link{color:var(--gold);text-decoration:none;font-size:0.75rem;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);}
-
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
-  table{width:100%;border-collapse:collapse;}
-  th{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;padding:10px;border-bottom:1px solid var(--border);text-align:left;}
-  td{padding:12px 10px;font-size:0.7rem;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
-  .level-badge{font-size:0.58rem;padding:2px 6px;border-radius:4px;font-weight:bold;text-transform:uppercase;}
-  .level-info{background:rgba(92,141,224,0.15);color:var(--blue);border:1px solid rgba(92,141,224,0.3);}
-  .level-warn{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
-  .level-error{background:rgba(224,92,92,0.15);color:var(--red);border:1px solid rgba(224,92,92,0.3);}
-  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs | Timeless Creations</title>
+    <style>
+        :root { --bg: #f9f7f2; --surface: #ffffff; --surface2: #fdfaf3; --text: #1a1a1a; --muted: #78716c; --gold: #c9a84c; --border: #e0d6bc; }
+        body { font-family: 'Garamond', 'Georgia', serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+        .container { max-width: 800px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); padding: 30px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        h1 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: var(--text); border-bottom: 2px solid var(--gold); padding-bottom: 12px; margin-top: 0; font-size: 24px; }
+        .back-link { display: inline-block; margin-bottom: 20px; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-decoration: none; }
+        .log-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        .log-table th, .log-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+        .log-table th { background: var(--surface2); font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .badge-info { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; font-family: Helvetica, sans-serif; }
+        .badge-error { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; font-family: Helvetica, sans-serif; }
+    </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div>
-      <h1>Live System Audit Terminal</h1>
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Brevo Dispatches, Webhooks &amp; Error Stream</p>
-    </div>
-    <div class="nav-links">
-      <a href="/" class="btn-link">← Dashboard</a>
-      <a href="/settings.html" class="btn-link">⚙️ Control Room</a>
-    </div>
-  </header>
 
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-      <h3 style="font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);">📋 Recent Activity Log Feed</h3>
-      <button class="btn" onclick="loadLogs()">↻ Refresh Logs</button>
+<div class="container">
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    <h1>System Logs (Max 50)</h1>
+    
+    <div style="overflow-x: auto;">
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>Time Stamp</th>
+                    <th>Level</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="logs-tbody">
+                <tr><td colspan="3" style="text-align:center; color:var(--muted);">Loading system logs...</td></tr>
+            </tbody>
+        </table>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:130px;">Timestamp</th>
-          <th style="width:80px;">Level</th>
-          <th>Event / Description</th>
-        </tr>
-      </thead>
-      <tbody id="logs-tbody">
-        <tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px;">Loading logs from Turso...</td></tr>
-      </tbody>
-    </table>
-  </div>
 </div>
 
 <script>
 async function loadLogs() {
   try {
-    const res = await fetch('/api/logs');
+    const res = await fetch("/api/dashboard-data");
     const data = await res.json();
-    if (data.ok) {
-      const list = data.logs || [];
-      const tbody = document.getElementById('logs-tbody');
-      if (!list.length) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:24px;">No system logs recorded yet.</td></tr>';
+    const tbody = document.getElementById("logs-tbody");
+    
+    if (data.ok && data.logs) {
+      const recentLogs = data.logs.slice(0, 50); // Max cap of 50
+      if (recentLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted);">No logs recorded yet.</td></tr>';
         return;
       }
-      tbody.innerHTML = list.map(l => {
-        const lvl = (l.level || 'INFO').toLowerCase();
-        const badgeClass = lvl === 'error' ? 'level-error' : lvl === 'warn' ? 'level-warn' : 'level-info';
-        return `
-          <tr>
-            <td style="color:var(--muted);">${l.timestamp || l.created_at || 'Just now'}</td>
-            <td><span class="level-badge ${badgeClass}">${l.level || 'INFO'}</span></td>
-            <td><code>${l.message}</code></td>
-          </tr>
-        `;
-      }).join('');
+      tbody.innerHTML = recentLogs.map(l => `
+        <tr>
+          <td style="white-space: nowrap; color: var(--muted); font-size: 12px;">${l.createdAt || l.created_at || '—'}</td>
+          <td><span class="${(l.level || 'INFO').toUpperCase() === 'ERROR' ? 'badge-error' : 'badge-info'}">${l.level || 'INFO'}</span></td>
+          <td style="word-break: break-all;">${l.message || ''}</td>
+        </tr>
+      `).join('');
     }
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
+    console.error("Failed to load logs", e);
   }
 }
-
-window.addEventListener('DOMContentLoaded', loadLogs);
+window.addEventListener("DOMContentLoaded", loadLogs);
 </script>
+
 </body>
 </html>

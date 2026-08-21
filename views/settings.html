@@ -19,6 +19,8 @@
         .btn-loading { background: #d97706; color: #fff; cursor: wait; }
         .btn-dark { background: #1a1a1a; color: var(--gold); border: 1px solid var(--gold); }
         .back-link { display: inline-block; margin-bottom: 20px; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-decoration: none; }
+        .input-field { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 14px; margin-bottom: 12px; box-sizing: border-box; background: #fff; }
+        .console-output { background: #111118; color: #4caf82; padding: 12px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; margin-top: 10px; white-space: pre-wrap; display: none; }
 
         /* Custom Modal Popup Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
@@ -39,9 +41,20 @@
     <div class="section">
         <div class="section-title">⚡ System Master Power Switch (Turso Synced)</div>
         <div class="desc">
-            When set to <strong>ONLINE</strong>, the system runs cron jobs and automated bot dispatches passively. When switched to <strong>OFFLINE (Sleep)</strong>, background processes are paused. Status is saved directly in Turso <code>system_config</code>[cite: 4].
+            When set to <strong>ONLINE</strong>, the system runs cron jobs and automated bot dispatches passively. When switched to <strong>OFFLINE (Sleep)</strong>, background processes are paused.
         </div>
         <button id="power-toggle-btn" class="btn btn-loading" onclick="togglePowerState()">⏳ Loading Status...</button>
+    </div>
+
+    <!-- Test Email Dispatcher Section -->
+    <div class="section">
+        <div class="section-title">✉️ Test Email Sender</div>
+        <div class="desc">
+            Enter a recipient email address to perform a live test dispatch and inspect what actually happens in real-time.
+        </div>
+        <input type="email" id="test-email-input" class="input-field" placeholder="test.missionary@missionary.org" />
+        <button class="btn btn-green" onclick="sendTestEmail()">Send Test Dispatch</button>
+        <div id="test-console" class="console-output"></div>
     </div>
 
     <!-- Manual Cron Control Room -->
@@ -126,6 +139,30 @@ async function togglePowerState() {
   }
 }
 
+async function sendTestEmail() {
+  const email = document.getElementById("test-email-input").value.trim();
+  const consoleBox = document.getElementById("test-console");
+  consoleBox.style.display = "block";
+  consoleBox.textContent = "⏳ Dispatching test email to " + (email || "default recipient") + "...\n";
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "test_email", email })
+    });
+    const data = await res.json();
+    consoleBox.textContent += JSON.stringify(data, null, 2);
+    if (data.ok) {
+      consoleBox.textContent += "\n\n✅ Test email dispatch completed successfully!";
+    } else {
+      consoleBox.textContent += "\n\n❌ Test dispatch returned an error: " + (data.error || "Unknown error");
+    }
+  } catch (err) {
+    consoleBox.textContent += "\n\n❌ Network or server execution failed: " + err.message;
+  }
+}
+
 // Custom Modal Controls
 function openCronModal() {
   document.getElementById("modal-title").textContent = "Force Cron Execution";
@@ -143,7 +180,7 @@ function submitModal() {
   const val = document.getElementById("modal-input-val").value.trim();
   if (val === "Pogi si Allen") {
     closeModal();
-    const btn = document.querySelector(".section:nth-child(3) .btn");
+    const btn = document.querySelector(".section:nth-child(4) .btn");
     btn.textContent = "⏳ Executing Cron...";
     
     fetch("/api/main", {

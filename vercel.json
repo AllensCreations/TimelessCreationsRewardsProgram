@@ -8,8 +8,6 @@
     { "source": "/settings.html", "destination": "/views/settings.html" },
     { "source": "/logs.html", "destination": "/views/logs.html" },
     { "source": "/rewards.html", "destination": "/views/rewards.html" },
-    { "source": "/leaderboard.html", "destination": "/views/leaderboard.html" },
-    { "source": "/inbox.html", "destination": "/views/inbox.html" },
     
     { "source": "/api/dashboard-data", "destination": "/api/main" },
     { "source": "/api/highlight", "destination": "/api/main" },

@@ -53,40 +53,14 @@ export default async function handler(req, res) {
     }
 
     try {
-      const missionaries = await runSql(`
-        SELECT 
-          email, 
-          name, 
-          last_name as lastName, 
-          cohort, 
-          batch_month as batchMonth, 
-          points, 
-          referral_code as referralCode, 
-          status, 
-          months_sent as monthsSent, 
-          max_months as maxMonths, 
-          next_send_date as nextSendDate 
-        FROM missionaries 
-        ORDER BY name ASC
-      `);
-      
-      const orders = await runSql(`
-        SELECT 
-          order_id as orderId, 
-          psid, 
-          email, 
-          name, 
-          item, 
-          points_cost as cost, 
-          status, 
-          created_at as date 
-        FROM orders 
-        ORDER BY ROWID DESC
-      `);
-
-      const logs = await runSql("SELECT id, level, message, created_at as createdAt FROM system_logs ORDER BY id DESC LIMIT 100");
-      const dripMessages = await runSql("SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages ORDER BY month ASC");
-      const systemConfig = await runSql("SELECT key, value FROM system_config");
+      // Bundle everything in a single request batch to optimize loading speed
+      const [missionaries, orders, logs, dripMessages, systemConfig] = await Promise.all([
+        runSql(`SELECT email, name, last_name as lastName, cohort, batch_month as batchMonth, points, referral_code as referralCode, status, months_sent as monthsSent, max_months as maxMonths, next_send_date as nextSendDate FROM missionaries ORDER BY name ASC`),
+        runSql(`SELECT order_id as orderId, psid, email, name, item, points_cost as cost, status, created_at as date FROM orders ORDER BY ROWID DESC`),
+        runSql(`SELECT id, level, message, created_at as createdAt FROM system_logs ORDER BY id DESC LIMIT 100`),
+        runSql(`SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages ORDER BY month ASC`),
+        runSql(`SELECT key, value FROM system_config`)
+      ]);
 
       return res.status(200).json({ 
         ok: true, 
@@ -97,6 +71,7 @@ export default async function handler(req, res) {
         systemConfig: systemConfig.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {})
       });
     } catch (err) {
+      console.error("Dashboard API Error:", err.message);
       return res.status(500).json({ ok: false, error: err.message, missionaries: [], logs: [] });
     }
   }
@@ -115,9 +90,8 @@ export default async function handler(req, res) {
     }
 
     if (action === 'toggle_power') {
-      const { state } = req.body; // 'online' or 'offline'
+      const { state } = req.body;
       try {
-        // Safe SQLite upsert using INSERT OR REPLACE
         await runSql(`INSERT OR REPLACE INTO system_config (key, value) VALUES ('master_power', ?)`, [state]);
         return res.status(200).json({ ok: true, state });
       } catch (err) {

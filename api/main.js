@@ -27,7 +27,27 @@ async function runSql(sql, args = []) {
 }
 
 export default async function handler(req, res) {
-  const action = req.query.action || req.body?.action;
+  // Enable CORS & Preflight Handling
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+    let action = req.query?.action;
+  let bodyData = {};
+
+  if (req.body) {
+    if (typeof req.body === "string") {
+      try { bodyData = JSON.parse(req.body); } catch(e) {}
+    } else {
+      bodyData = req.body;
+    }
+    if (bodyData.action) action = bodyData.action;
+  }
+
   res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'GET') {

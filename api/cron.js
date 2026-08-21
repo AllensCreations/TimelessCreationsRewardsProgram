@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "System is in sleep mode. No drips sent." });
     }
 
-    // 1. Fetch up to 130 due Elders (Oldest waiting first)
+    // 1. Fetch up to 15 due Elders (Oldest waiting first)
     const dueElders = await runSql(`
       SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
@@ -26,10 +26,10 @@ export default async function handler(req, res) {
         CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
         last_sent_at ASC,
         ROWID ASC
-      LIMIT 130
+      LIMIT 15
     `);
 
-    // 2. Fetch up to 130 due Sisters (Oldest waiting first)
+    // 2. Fetch up to 15 due Sisters (Oldest waiting first)
     const dueSisters = await runSql(`
       SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
@@ -41,10 +41,10 @@ export default async function handler(req, res) {
         CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
         last_sent_at ASC,
         ROWID ASC
-      LIMIT 130
+      LIMIT 15
     `);
 
-    // Combine queues (Total max 260 emails, safe buffer for Brevo 300/day limit)
+    // Combine queue (Total max 30 emails, safely executing well within Vercel's 10s limit)
     const dueMissionaries = [...(dueElders || []), ...(dueSisters || [])];
 
     if (!dueMissionaries || dueMissionaries.length === 0) {

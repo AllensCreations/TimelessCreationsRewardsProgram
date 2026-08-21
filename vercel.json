@@ -1,69 +1,8 @@
 {
-  "version": 2,
-  "rewrites": [
+  "crons": [
     {
-      "source": "/",
-      "destination": "/views/index.html"
-    },
-    {
-      "source": "/inbox.html",
-      "destination": "/views/inbox.html"
-    },
-    {
-      "source": "/pusher.html",
-      "destination": "/views/pusher.html"
-    },
-    {
-      "source": "/invoicing.html",
-      "destination": "/views/invoicing.html"
-    },
-    {
-      "source": "/highlight.html",
-      "destination": "/views/highlight.html"
-    },
-    {
-      "source": "/settings.html",
-      "destination": "/views/settings.html"
-    },
-    {
-      "source": "/logs.html",
-      "destination": "/views/logs.html"
-    },
-    {
-      "source": "/messengerbot.html",
-      "destination": "/views/messengerbot.html"
-    },
-    {
-      "source": "/Messengerbot.html",
-      "destination": "/views/messengerbot.html"
-    },
-    {
-      "source": "/api/dashboard-data",
-      "destination": "/api/main"
-    },
-    {
-      "source": "/api/highlight",
-      "destination": "/api/main"
-    },
-    {
-      "source": "/api/settings",
-      "destination": "/api/main"
-    },
-    {
-      "source": "/api/logs",
-      "destination": "/api/main"
-    },
-    {
-      "source": "/api/invoicing",
-      "destination": "/api/invoicing"
-    },
-    {
-      "source": "/api/push-missionaries",
-      "destination": "/api/push-missionaries"
-    },
-    {
-      "source": "/api/webhook",
-      "destination": "/api/webhook"
+      "path": "/api/cron",
+      "schedule": "0 */2 * * *"
     }
   ]
 }

@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       return res.status(200).send('EVENT_RECEIVED');
     } catch (err) {
       console.error("Webhook processing error:", err.message);
-      return.status(200).send('EVENT_RECEIVED');
+      return res.status(200).send('EVENT_RECEIVED');
     }
   }
 

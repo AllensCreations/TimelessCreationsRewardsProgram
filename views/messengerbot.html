@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger Bot Rewards & Products | Timeless Creations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --bg: #0a0a0f; --surface: #111118; --surface2: #181822;
+            --border: rgba(255,255,255,0.08);
+            --gold: #c9a84c; --gold2: #f0d080; --gold-dim: rgba(201,168,76,0.15);
+            --green: #4caf82; --red: #e05c5c; --text: #e8e6f0; --muted: #716e88;
+            --radius: 8px;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body { font-family: 'DM Mono', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 24px; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; color: var(--gold); }
+        .back-link { font-size: 0.72rem; color: var(--muted); text-decoration: none; text-transform: uppercase; letter-spacing: 0.1em; }
+        .back-link:hover { color: var(--gold); }
+
+        .info-box { background: var(--surface2); border: 1px solid rgba(201,168,76,0.3); border-radius: var(--radius); padding: 14px 18px; font-size: 0.75rem; color: var(--text); margin-bottom: 24px; line-height: 1.5; }
+        
+        .section-title { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .product-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+        .product-img { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); }
+        .product-name { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: bold; color: var(--text); }
+        .product-price { font-size: 0.75rem; color: var(--gold); font-weight: bold; background: var(--gold-dim); padding: 3px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
+        .card-actions { display: flex; gap: 8px; margin-top: auto; }
+        .btn { padding: 8px 14px; border-radius: 5px; font-family: inherit; font-size: 0.7rem; font-weight: bold; cursor: pointer; border: none; text-transform: uppercase; letter-spacing: 0.05em; }
+        .btn-edit { background: var(--surface2); color: var(--text); border: 1px solid var(--border); flex: 1; }
+        .btn-edit:hover { border-color: var(--gold); color: var(--gold); }
+        .btn-delete { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
+
+        .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 30px; }
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.75rem; }
+        .btn-save { background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0a0a0f; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <a href="/" class="back-link">← Back to Command Center</a>
+            <h1>Messenger Bot Rewards Catalog</h1>
+        </div>
+    </div>
+
+    <div class="info-box">
+        🤖 <strong>Independent Bot Rewards:</strong> The products configured here are strictly for the <strong>Facebook Messenger Bot Carousel</strong> and point redemptions. These are separate from your cash invoicing and POS billing catalog.
+    </div>
+
+    <div class="section-title">Active Messenger Carousel Items</div>
+    <div class="product-grid" id="bot-product-grid">
+        <div style="color:var(--muted); font-size:0.75rem;">Loading Messenger reward products...</div>
+    </div>
+
+    <div class="form-card">
+        <div class="section-title" id="form-heading" style="color:var(--gold);">Add / Edit Messenger Reward Product</div>
+        <input type="hidden" id="prod-id" value="">
+        <div class="form-group">
+            <label class="form-label">Reward Item Name</label>
+            <input type="text" id="prod-name" class="form-input" placeholder="e.g. Temple Keychain">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Redemption Cost in Points</label>
+            <input type="number" id="prod-price" class="form-input" placeholder="e.g. 6">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Messenger Carousel Image URL</label>
+            <input type="url" id="prod-img" class="form-input" placeholder="https://i.postimg.cc/.../item.png">
+        </div>
+        <button class="btn-save" onclick="saveBotProduct()">💾 Save to Messenger Carousel</button>
+    </div>
+</div>
+
+<script>
+async function loadBotProducts() {
+  try {
+    const res = await fetch("/api/main?action=get_products");
+    const data = await res.json();
+    const grid = document.getElementById("bot-product-grid");
+    if (data.ok && data.products) {
+      if (data.products.length === 0) {
+        grid.innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">No reward products configured for Messenger yet.</div>';
+        return;
+      }
+      grid.innerHTML = data.products.map(p => `
+        <div class="product-card">
+          <img src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" class="product-img" alt="${p.name}">
+          <div class="product-name">${p.name}</div>
+          <div class="product-price">⭐ ${p.price || 0} PTS</div>
+          <div class="card-actions">
+            <button class="btn btn-edit" onclick='editProduct(${JSON.stringify(p)})'>✏️ Edit</button>
+            <button class="btn btn-delete" onclick="deleteProduct(${p.id})">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    console.error("Failed to load bot products", e);
+  }
+}
+
+function editProduct(p) {
+  document.getElementById("prod-id").value = p.id || "";
+  document.getElementById("prod-name").value = p.name || "";
+  document.getElementById("prod-price").value = p.price || 0;
+  document.getElementById("prod-img").value = p.image_url || "";
+  document.getElementById("form-heading").textContent = "Edit Messenger Reward: " + p.name;
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+async function saveBotProduct() {
+  const id = document.getElementById("prod-id").value;
+  const name = document.getElementById("prod-name").value.trim();
+  const price = parseInt(document.getElementById("prod-price").value, 10) || 0;
+  const image_url = document.getElementById("prod-img").value.trim();
+
+  if (!name) return alert("Product name is required.");
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "save_product", id, name, price, image_url })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ Messenger Reward Product saved! Live carousel updated.");
+      document.getElementById("prod-id").value = "";
+      document.getElementById("prod-name").value = "";
+      document.getElementById("prod-price").value = "";
+      document.getElementById("prod-img").value = "";
+      document.getElementById("form-heading").textContent = "Add / Edit Messenger Reward Product";
+      loadBotProducts();
+    } else {
+      alert("Error: " + (data.error || "Failed to save product"));
+    }
+  } catch (err) {
+    alert("Network error saving product.");
+  }
+}
+
+async function deleteProduct(id) {
+  if (!confirm("Are you sure you want to remove this reward from the Messenger Bot?")) return;
+  try {
+    await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_product", id })
+    });
+    loadBotProducts();
+  } catch(e){}
+}
+
+window.addEventListener("DOMContentLoaded", loadBotProducts);
+</script>
+
+</body>
+</html>

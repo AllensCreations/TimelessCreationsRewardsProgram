@@ -88,6 +88,26 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     
     
+    
+    if (action === "save_highlight") {
+      const { month, theme, message, scripture, highlight_img, highlight_label } = req.body;
+      try {
+        await runSql(`
+          INSERT INTO drip_messages (month, theme, message, scripture, highlight_img, highlight_label)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(month) DO UPDATE SET 
+            theme = excluded.theme,
+            message = excluded.message,
+            scripture = excluded.scripture,
+            highlight_img = excluded.highlight_img,
+            highlight_label = excluded.highlight_label
+        `, [Number(month) || 1, theme || "", message || "", scripture || "", highlight_img || "", highlight_label || ""]);
+        return res.status(200).json({ ok: true, message: "Highlight message saved." });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     if (action === "sync_catalog") {
       const { products } = req.body;
       try {

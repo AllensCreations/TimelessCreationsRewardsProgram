@@ -9,44 +9,48 @@
     <script src="/assets/app.js"></script>
     <style>
       .modal-overlay {
-        position: fixed; inset: 0; background: rgba(5, 5, 8, 0.82);
-        backdrop-filter: blur(8px); display: none; justify-content: center;
-        align-items: center; z-index: 1000; padding: 20px; animation: fadeIn 0.2s ease;
+        position: fixed; inset: 0; background: rgba(5, 5, 8, 0.85);
+        backdrop-filter: blur(6px); display: none; justify-content: center;
+        align-items: center; z-index: 1000; padding: 20px;
       }
       .modal-content {
         background: var(--surface); border: 1px solid var(--gold); border-radius: 12px;
-        padding: 28px; max-width: 460px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.8);
-        position: relative;
+        padding: 24px; max-width: 440px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.8);
       }
       .img-preview {
-        width: 100%; height: 140px; object-fit: cover; border-radius: 6px;
+        width: 100%; height: 130px; object-fit: cover; border-radius: 6px;
         border: 1px solid var(--border); margin-top: 6px; background: var(--surface2);
       }
-      @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+      .save-banner {
+        position: sticky; bottom: 20px; background: var(--surface2);
+        border: 1px solid var(--gold); padding: 14px 22px; border-radius: var(--radius);
+        display: none; justify-content: space-between; align-items: center;
+        margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 80;
+      }
     </style>
 </head>
 <body>
 
 <div class="card" style="border-color: rgba(201,168,76,0.3); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <div>
-        <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Live Messenger Carousel Rewards</div>
-        <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Direct Turso Sync Active • Changes immediately update the live bot carousel.</div>
+        <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Instant Messenger Rewards Workspace</div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">All edits &amp; deletions happen locally in 0ms. Click <strong>"💾 Save Changes to Turso"</strong> when ready.</div>
     </div>
     <button class="btn btn-gold" onclick="openProductModal()">+ Add New Reward</button>
 </div>
 
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;" id="products-grid">
-    <div style="color:var(--muted); font-size:0.75rem;">Loading rewards directly from Turso...</div>
+    <div style="color:var(--muted); font-size:0.75rem;">Loading rewards workspace...</div>
 </div>
 
-<!-- Modal Popup for Adding / Editing Reward Product -->
+<!-- Modal Popup for Instant Local Add / Edit -->
 <div class="modal-overlay" id="product-modal">
     <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold);" id="modal-heading">Add Reward Item</div>
             <button onclick="closeProductModal()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
         </div>
-        <input type="hidden" id="modal-prod-id">
+        <input type="hidden" id="modal-item-index">
         <div class="form-group">
             <label class="form-label">Reward Item Name</label>
             <input type="text" id="modal-prod-name" class="form-input" placeholder="e.g. Temple Keychain">
@@ -60,64 +64,82 @@
             <input type="url" id="modal-prod-img" class="form-input" placeholder="https://i.postimg.cc/.../item.png" oninput="updateImagePreview(this.value)">
             <img id="modal-preview-box" class="img-preview" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" alt="Preview">
         </div>
-        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
             <button class="btn btn-dark" onclick="closeProductModal()">Cancel</button>
-            <button class="btn btn-gold" id="btn-save-modal" onclick="saveDirectToTurso()">💾 Save to Turso</button>
+            <button class="btn btn-gold" onclick="applyModalChanges()">✓ Apply to List</button>
         </div>
     </div>
 </div>
 
-<script>
-let liveProducts = [];
+<!-- Floating Action Bar for Syncing -->
+<div class="save-banner" id="save-banner">
+    <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ You have unsaved local edits</span>
+    <button class="btn btn-gold" id="btn-sync-turso" onclick="saveAllToTurso()">💾 Save Changes to Turso</button>
+</div>
 
-async function loadProducts() {
-  const grid = document.getElementById("products-grid");
+<script>
+let localItems = [];
+
+function markDirty() {
+  document.getElementById("save-banner").style.display = "flex";
+  LocalStore.set('temp_products', localItems);
+}
+
+async function loadInitialData(forceFetch = false) {
+  const cached = LocalStore.get('temp_products', null);
+  if (cached && !forceFetch) {
+    localItems = cached;
+    renderGrid();
+    return;
+  }
+
   try {
     const res = await fetch("/api/main?action=get_products");
     const data = await res.json();
     if (data.ok) {
-      liveProducts = data.products || [];
-      renderProducts();
+      localItems = data.products || [];
+      LocalStore.set('temp_products', localItems);
+      renderGrid();
     }
   } catch(e) {
-    grid.innerHTML = '<div style="color:var(--red); font-size:0.75rem;">Error loading products from Turso.</div>';
+    document.getElementById("products-grid").innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">Error loading items.</div>';
   }
 }
 
-function renderProducts() {
+function renderGrid() {
   const grid = document.getElementById("products-grid");
-  if (!liveProducts.length) {
-    grid.innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">No reward products found in Turso. Click "+ Add New Reward" to create one!</div>';
+  if (!localItems.length) {
+    grid.innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">No reward products. Click "+ Add New Reward" above to create one instantly.</div>';
     return;
   }
-  grid.innerHTML = liveProducts.map(p => `
+  grid.innerHTML = localItems.map((p, idx) => `
     <div class="card" style="display:flex; flex-direction:column; gap:8px; margin-bottom:0;">
       <img src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:100%; height:130px; object-fit:cover; border-radius:6px; background:var(--surface2);" alt="${p.name}">
       <div style="font-weight:bold; font-size:0.85rem;">${p.name}</div>
       <div style="color:var(--gold); font-size:0.72rem; font-weight:bold;">⭐ ${p.price || 0} PTS</div>
       <div style="display:flex; gap:6px; margin-top:6px;">
-        <button class="btn btn-dark" style="flex:1;" onclick='openProductModal(${JSON.stringify(p)})'>✏️ Edit</button>
-        <button class="btn btn-red" onclick="deleteFromTurso(${p.id})">🗑️</button>
+        <button class="btn btn-dark" style="flex:1;" onclick="openProductModal(${idx})">✏️ Edit</button>
+        <button class="btn btn-red" onclick="deleteLocalItem(${idx})">🗑️</button>
       </div>
     </div>
   `).join('');
 }
 
 function updateImagePreview(url) {
-  const box = document.getElementById("modal-preview-box");
-  box.src = url.trim() || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png';
+  document.getElementById("modal-preview-box").src = url.trim() || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png';
 }
 
-function openProductModal(p = null) {
-  if (p) {
-    document.getElementById("modal-prod-id").value = p.id || "";
+function openProductModal(idx = null) {
+  if (idx !== null && localItems[idx]) {
+    const p = localItems[idx];
+    document.getElementById("modal-item-index").value = idx;
     document.getElementById("modal-prod-name").value = p.name || "";
     document.getElementById("modal-prod-price").value = p.price || 0;
     document.getElementById("modal-prod-img").value = p.image_url || "";
     updateImagePreview(p.image_url || "");
-    document.getElementById("modal-heading").textContent = "Edit Reward: " + p.name;
+    document.getElementById("modal-heading").textContent = "Edit Reward Item";
   } else {
-    document.getElementById("modal-prod-id").value = "";
+    document.getElementById("modal-item-index").value = "";
     document.getElementById("modal-prod-name").value = "";
     document.getElementById("modal-prod-price").value = "";
     document.getElementById("modal-prod-img").value = "";
@@ -131,60 +153,68 @@ function closeProductModal() {
   document.getElementById("product-modal").style.display = "none";
 }
 
-async function saveDirectToTurso() {
-  const id = document.getElementById("modal-prod-id").value;
+function applyModalChanges() {
+  const idx = document.getElementById("modal-item-index").value;
   const name = document.getElementById("modal-prod-name").value.trim();
   const price = parseInt(document.getElementById("modal-prod-price").value, 10) || 0;
   const image_url = document.getElementById("modal-prod-img").value.trim();
-  const btn = document.getElementById("btn-save-modal");
 
-  if (!name) return alert("Reward item name is required.");
+  if (!name) return alert("Product name is required.");
 
-  btn.textContent = "⏳ Saving to Turso...";
+  if (idx !== "") {
+    localItems[Number(idx)] = { name, price, image_url };
+  } else {
+    localItems.push({ name, price, image_url });
+  }
+
+  closeProductModal();
+  renderGrid();
+  markDirty();
+}
+
+function deleteLocalItem(idx) {
+  localItems.splice(idx, 1);
+  renderGrid();
+  markDirty();
+}
+
+async function saveAllToTurso() {
+  const btn = document.getElementById("btn-sync-turso");
+  btn.textContent = "⏳ Syncing to Turso...";
   try {
     const res = await fetch("/api/main", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        action: "save_product", 
-        id: id ? Number(id) : null, 
-        name, 
-        price, 
-        image_url 
+        action: "sync_catalog", 
+        products: localItems 
       })
     });
     const data = await res.json();
     if (data.ok) {
-      closeProductModal();
-      btn.textContent = "💾 Save to Turso";
-      loadProducts();
+      document.getElementById("save-banner").style.display = "none";
+      btn.textContent = "💾 Save Changes to Turso";
+      alert("✅ Reward catalog successfully synced and saved to Turso database!");
     } else {
-      alert("Error: " + (data.error || "Failed to save to Turso"));
-      btn.textContent = "💾 Save to Turso";
+      alert("Sync error: " + (data.error || "Failed to save."));
+      btn.textContent = "💾 Save Changes to Turso";
     }
   } catch(e) {
     alert("Network error saving to Turso.");
-    btn.textContent = "💾 Save to Turso";
+    btn.textContent = "💾 Save Changes to Turso";
   }
 }
 
-async function deleteFromTurso(id) {
-  if (!confirm("Remove this reward from Turso and live bot carousel?")) return;
-  try {
-    await fetch("/api/main", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete_product", id })
-    });
-    loadProducts();
-  } catch(e){}
-}
-
-window.syncData = loadProducts;
+window.syncData = async () => {
+  localStorage.removeItem('tcrp_temp_products');
+  document.getElementById("save-banner").style.display = "none";
+  await loadInitialData(true);
+  alert("Re-synced workspace with live Turso database.");
+};
 
 window.addEventListener("DOMContentLoaded", () => {
   initAppLayout('messengerbot', 'Messenger Bot Rewards');
-  loadProducts();
+  loadInitialData();
 });
 </script>
 

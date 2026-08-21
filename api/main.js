@@ -87,6 +87,26 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     
+    
+    if (action === "sync_catalog") {
+      const { products } = req.body;
+      try {
+        await runSql("DELETE FROM product_catalog");
+        for (const p of products || []) {
+          if (p.name) {
+            await runSql("INSERT INTO product_catalog (name, price, image_url) VALUES (?, ?, ?)", [
+              p.name, 
+              Number(p.price) || 0, 
+              p.image_url || ""
+            ]);
+          }
+        }
+        return res.status(200).json({ ok: true, message: "Catalog batch synced successfully." });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     if (action === "save_product") {
       const { id, name, price, image_url } = req.body;
       try {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messenger Inbox | Timeless Creations</title>
+    <title>Messenger Activity Monitor | Timeless Creations</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js"></script>
@@ -24,11 +24,10 @@
       .bubble.user { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
       .bubble.bot { align-self: flex-end; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: var(--gold2); border-bottom-right-radius: 2px; }
       .bubble.admin { align-self: flex-end; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0a0a0f; font-weight: 500; border-bottom-right-radius: 2px; }
-      .order-pill { align-self: center; background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.4); color: var(--green); padding: 6px 14px; border-radius: 99px; font-size: 0.7rem; font-weight: bold; margin: 4px 0; }
       
-      .chat-footer { padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 10px; align-items: center; }
-      .reply-input { flex: 1; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.78rem; outline: none; }
-      
+      .order-pill { align-self: center; background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.4); color: var(--green); padding: 8px 16px; border-radius: 99px; font-size: 0.72rem; font-weight: bold; margin: 6px 0; text-align: center; }
+      .meta-footer-note { padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface); font-size: 0.68rem; color: var(--muted); text-align: center; }
+
       @media(max-width: 850px) {
         .inbox-layout { grid-template-columns: 1fr; }
         .chat-view { display: none; }
@@ -40,32 +39,30 @@
 
 <div class="inbox-layout">
     <div class="thread-list" id="thread-container">
-        <div style="padding:20px; color:var(--muted); font-size:0.75rem; text-align:center;">Loading conversations...</div>
+        <div style="padding:20px; color:var(--muted); font-size:0.75rem; text-align:center;">Loading activity feeds...</div>
     </div>
 
     <div class="chat-view" id="chat-pane">
         <div class="chat-header">
             <div>
-                <div style="font-family:'Syne',sans-serif; font-weight:bold; font-size:0.95rem;" id="active-user-title">Select a conversation</div>
+                <div style="font-family:'Syne',sans-serif; font-weight:bold; font-size:0.95rem;" id="active-user-title">Select a missionary thread</div>
                 <div style="font-size:0.68rem; color:var(--muted);" id="active-user-meta">—</div>
             </div>
             <button class="btn btn-dark" style="display:none;" id="btn-close-chat" onclick="closeChatPane()">← Back</button>
         </div>
 
         <div class="chat-body" id="chat-messages">
-            <div style="margin:auto; color:var(--muted); font-size:0.75rem;">Choose a contact on the left to review messages & orders.</div>
+            <div style="margin:auto; color:var(--muted); font-size:0.75rem;">Choose a contact on the left to review recent messages &amp; claim purchases.</div>
         </div>
 
-        <div class="chat-footer">
-            <input type="text" id="admin-reply-input" class="reply-input" placeholder="Type direct reply (anti-spam 3s delay active)..." onkeydown="if(event.key==='Enter') sendAdminReply()">
-            <button class="btn btn-gold" id="btn-send-reply" onclick="sendAdminReply()">Send</button>
+        <div class="meta-footer-note">
+            👁️ <strong>Read-Only Activity Viewer</strong> • To reply directly, use the official <a href="https://business.facebook.com" target="_blank" style="color:var(--gold); text-decoration:none; font-weight:bold;">Meta Business Suite</a> app.
         </div>
     </div>
 </div>
 
 <script>
 let currentPsid = null;
-let replyCooldown = false;
 
 async function loadInboxThreads() {
   const container = document.getElementById("thread-container");
@@ -74,7 +71,7 @@ async function loadInboxThreads() {
     const data = await res.json();
     if (data.ok && data.threads) {
       if (data.threads.length === 0) {
-        container.innerHTML = '<div style="padding:20px; color:var(--muted); font-size:0.75rem; text-align:center;">No Messenger chats recorded yet.</div>';
+        container.innerHTML = '<div style="padding:20px; color:var(--muted); font-size:0.75rem; text-align:center;">No Messenger interactions recorded yet.</div>';
         return;
       }
       container.innerHTML = data.threads.map(t => {
@@ -86,13 +83,13 @@ async function loadInboxThreads() {
               <span>${displayName}</span>
               ${badge}
             </div>
-            <div class="thread-preview">${t.last_message || '[Activity]'}</div>
+            <div class="thread-preview">${t.last_message || '[Activity Feed]'}</div>
           </div>
         `;
       }).join('');
     }
   } catch(e) {
-    container.innerHTML = '<div style="padding:20px; color:var(--red); font-size:0.75rem; text-align:center;">Failed to load inbox threads.</div>';
+    container.innerHTML = '<div style="padding:20px; color:var(--red); font-size:0.75rem; text-align:center;">Failed to load activity feeds.</div>';
   }
 }
 
@@ -105,7 +102,7 @@ async function openConversation(psid, name, email, points) {
   document.getElementById("active-user-meta").textContent = email ? `${email} • ${points} Points Balance` : `PSID: ${psid}`;
 
   const msgBox = document.getElementById("chat-messages");
-  msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">Loading chat history...</div>';
+  msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">Loading timeline...</div>';
 
   try {
     const res = await fetch(`/api/main?action=get_thread_messages&psid=${psid}`);
@@ -117,13 +114,13 @@ async function openConversation(psid, name, email, points) {
       allEvents.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
       if (allEvents.length === 0) {
-        msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">No conversation history found.</div>';
+        msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">No activity history recorded.</div>';
         return;
       }
 
       msgBox.innerHTML = allEvents.map(e => {
         if (e.type === 'order') {
-          return `<div class="order-pill">🛍️ CLAIM PURCHASE: ${e.item} (#${e.order_id}) - ${e.points_cost} PTS [${e.status.toUpperCase()}]</div>`;
+          return `<div class="order-pill">🛍️ CLAIM PURCHASE: ${e.item} (#${e.order_id}) • ${e.points_cost} PTS [${e.status.toUpperCase()}]</div>`;
         }
         return `
           <div class="bubble ${e.sender}">
@@ -135,7 +132,7 @@ async function openConversation(psid, name, email, points) {
       msgBox.scrollTop = msgBox.scrollHeight;
     }
   } catch(e) {
-    msgBox.innerHTML = '<div style="color:var(--red); font-size:0.75rem;">Failed to load messages.</div>';
+    msgBox.innerHTML = '<div style="color:var(--red); font-size:0.75rem;">Failed to load timeline.</div>';
   }
   loadInboxThreads();
 }
@@ -144,49 +141,10 @@ function closeChatPane() {
   document.getElementById("chat-pane").classList.remove("active");
 }
 
-async function sendAdminReply() {
-  if (!currentPsid) return showToast("Select a conversation first.", "error");
-  if (replyCooldown) return showToast("Anti-Spam active: Please wait 3s between replies.", "error");
-
-  const input = document.getElementById("admin-reply-input");
-  const text = input.value.trim();
-  if (!text) return;
-
-  const btn = document.getElementById("btn-send-reply");
-  btn.textContent = "⏳";
-  btn.disabled = true;
-
-  try {
-    const res = await fetch("/api/main", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "admin_reply", psid: currentPsid, text })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      input.value = "";
-      showToast("Reply sent to Messenger!");
-      
-      // Anti-spam cooldown (3 seconds)
-      replyCooldown = true;
-      setTimeout(() => { replyCooldown = false; }, 3000);
-      
-      openConversation(currentPsid, document.getElementById("active-user-title").textContent, "", 0);
-    } else {
-      showToast(data.error || "Failed to send message.", "error");
-    }
-  } catch(e) {
-    showToast("Network error dispatching reply.", "error");
-  } finally {
-    btn.textContent = "Send";
-    btn.disabled = false;
-  }
-}
-
 window.syncData = loadInboxThreads;
 
 window.addEventListener("DOMContentLoaded", () => {
-  initAppLayout('inbox', 'Messenger Inbox & Purchases');
+  initAppLayout('inbox', 'Messenger Activity & Purchases');
   loadInboxThreads();
 });
 </script>

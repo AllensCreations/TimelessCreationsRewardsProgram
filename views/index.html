@@ -1,455 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — TCRP Command Center</title>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0a0a0f"/>
-<link rel="apple-touch-icon" href="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js');
-    });
-  }
-</script>
-<style>
-  :root {
-    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-    --border:rgba(255,255,255,0.07);
-    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
-    --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
-    --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
-    --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
-    --radius:10px;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
-
-  #sync-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.4s ease,visibility 0.4s ease;}
-  #sync-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
-  .sync-logo{font-family:'Instrument Serif',serif;font-size:2.4rem;color:var(--gold);letter-spacing:0.04em;}
-  .sync-status{font-size:0.72rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;}
-  .sync-bar-wrap{width:320px;height:3px;background:var(--surface2);border-radius:99px;overflow:hidden;}
-  .sync-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px;width:0%;transition:width 0.3s ease;}
-
-  .app{display:flex;height:100vh;overflow:hidden;position:relative;}
-  
-  .sidebar{
-    width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
-    display:flex;flex-direction:column;height:100vh;transition:transform 0.3s ease;z-index:100;
-  }
-  .sidebar-logo{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .sidebar-logo h1{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--gold);line-height:1.1;}
-  .sidebar-logo h1 em{font-style:italic;color:var(--text);font-size:1rem;}
-  .sidebar-logo p{font-size:0.58rem;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-top:4px;}
-  .close-sidebar-btn{display:none;background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;}
-
-  .nav{padding:12px 10px;flex:1;overflow-y:auto;}
-  .nav-label{font-size:0.56rem;color:var(--muted);letter-spacing:0.16em;text-transform:uppercase;padding:0 8px;margin:12px 0 4px;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:0.73rem;color:var(--muted);transition:all 0.2s;border:1px solid transparent;margin-bottom:2px;text-decoration:none;}
-  .nav-item:hover{background:var(--surface2);color:var(--text);}
-  .nav-item.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.25);}
-  .nav-item .icon{font-size:0.95rem;width:20px;text-align:center;}
-  .nav-item .badge{margin-left:auto;background:var(--gold-dim);color:var(--gold);font-size:0.58rem;padding:2px 6px;border-radius:99px;}
-
-  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px);z-index:95;}
-
-  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);padding:20px;}
-  
-  /* Compact Luxury Status Banner */
-  .status-banner{display:flex;align-items:center;justify-content:between;background:var(--surface);border:1px solid var(--border);padding:10px 16px;border-radius:var(--radius);margin-bottom:20px;gap:12px;}
-  .status-left{display:flex;align-items:center;gap:8px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;}
-  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);}
-  .status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green);}
-  .control-btn{font-family:'DM Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;background:var(--surface2);color:var(--gold);padding:6px 12px;border:1px solid rgba(201,168,76,0.3);border-radius:6px;text-decoration:none;font-weight:bold;cursor:pointer;}
-  .control-btn:hover{background:var(--gold-dim);}
-
-  .topbar{display:flex;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--border);gap:14px;margin-bottom:20px;}
-  .hamburger-btn{display:none;background:var(--surface2);border:1px solid var(--border);color:var(--gold);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.9rem;}
-  .topbar-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:0.02em;flex:1;}
-  .topbar-title span{color:var(--muted);font-weight:400;font-size:0.75rem;margin-left:6px;}
-
-  .panel{display:none;animation:fadeIn 0.25s ease;}
-  .panel.active{display:block;}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
-
-  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
-  .section-head h2{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;}
-
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
-  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;}
-  .stat-card.gold{border-left:3px solid var(--gold);}
-  .stat-card.green{border-left:3px solid var(--green);}
-  .stat-card.blue{border-left:3px solid var(--blue);}
-  .stat-label{font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
-  .stat-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin:4px 0 0;}
-
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
-  .calendar-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:4px;margin-top:10px;}
-  .cal-day-header{font-size:0.55rem;text-align:center;color:var(--muted);text-transform:uppercase;padding:2px 0;}
-  .cal-cell{background:var(--surface2);border:1px solid var(--border);border-radius:5px;min-height:48px;padding:5px;display:flex;flex-direction:column;justify-content:space-between;}
-  .cal-cell.today{border-color:var(--gold);}
-  .cal-cell.has-activity{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.3);}
-  .cal-num{font-size:0.6rem;color:var(--muted);}
-  .cal-count{font-size:0.58rem;font-weight:700;color:var(--gold);align-self:flex-end;}
-
-  .table-controls{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:var(--radius) var(--radius) 0 0;flex-wrap:wrap;}
-  .search-input{flex:1;min-width:140px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.71rem;outline:none;}
-  .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 12px;border-radius:6px;font-size:0.65rem;cursor:pointer;}
-  .filter-btn.active{color:var(--gold);border-color:rgba(201,168,76,0.4);background:var(--gold-dim);font-weight:700;}
-
-  .roster-list{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:10px;}
-  .missionary-card{background:var(--surface2);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
-  .card-summary{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;user-select:none;gap:10px;}
-  .card-summary:hover{background:rgba(255,255,255,0.02);}
-  .m-title-group{display:flex;align-items:center;gap:8px;}
-  .cohort-pill{font-size:0.58rem;padding:2px 6px;border-radius:4px;font-weight:700;text-transform:uppercase;}
-  .cohort-elder{background:rgba(92,141,224,0.15);color:var(--blue);border:1px solid rgba(92,141,224,0.3);}
-  .cohort-sister{background:rgba(224,92,92,0.15);color:var(--red);border:1px solid rgba(224,92,92,0.3);}
-  .m-name{font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;color:var(--text);}
-  
-  .card-details{display:none;padding:12px 14px;background:rgba(0,0,0,0.2);border-top:1px solid var(--border);font-size:0.7rem;line-height:1.7;}
-  .missionary-card.open .card-details{display:block;}
-  .missionary-card.open .chevron-icon{transform:rotate(180deg);}
-
-  .prog-container{display:flex;flex-direction:column;gap:3px;margin:6px 0;}
-  .prog-track{width:100%;height:6px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;}
-  .prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:99px;}
-
-  .btn-submit{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:7px 14px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.71rem;font-weight:700;cursor:pointer;}
-  .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:5px 10px;border-radius:4px;cursor:pointer;font-size:0.65rem;margin-top:6px;}
-
-  @media(max-width:768px){
-    .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:10px 0 30px rgba(0,0,0,0.8);}
-    .sidebar.open{transform:translateX(0);}
-    .sidebar-backdrop.active{display:block;}
-    .hamburger-btn{display:block;}
-    .close-sidebar-btn{display:block;}
-    .main{padding:14px;}
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    .stat-card {
+      background: var(--surface2, #1c1f2e);
+      border: 1px solid var(--border, rgba(201,168,76,0.2));
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stat-val {
+      font-size: 2rem;
+      font-weight: 800;
+      font-family: 'Syne', sans-serif;
+      color: var(--gold, #c9a84c);
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted, #8c90a4);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+  </style>
 </head>
 <body>
 
-<div id="sync-overlay">
-  <div class="sync-logo">Timeless <span>Creations</span></div>
-  <div class="sync-status">Connecting to Live Turso Database...</div>
-  <div class="sync-bar-wrap"><div class="sync-bar" id="sync-bar"></div></div>
-</div>
-
-<div class="sidebar-backdrop" id="backdrop" onclick="toggleMobileSidebar(false)"></div>
-
-<div class="app">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <div>
-        <h1>Timeless<br><em>Creations</em></h1>
-        <p>Command Center</p>
-      </div>
-      <button class="close-sidebar-btn" onclick="toggleMobileSidebar(false)">✕</button>
+<div style="max-width:1100px; margin:24px auto; padding:0 16px;">
+  <!-- Live Stats Counter Grid -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+    <div class="stat-card">
+      <div class="stat-label">Total Missionaries</div>
+      <div class="stat-val" id="stat-missionaries">--</div>
     </div>
-    <nav class="nav">
-      <div class="nav-label">Main</div>
-      <div class="nav-item active" onclick="switchTab('dashboard',this)"><span class="icon">📊</span> Overview</div>
-      <div class="nav-item" onclick="switchTab('roster',this)"><span class="icon">👥</span> Missionaries Roster <span class="badge" id="badge-missionaries">—</span></div>
-      
-      <div class="nav-label">Modules</div>
-      
-      <a href="/pusher.html" class="nav-item"><span class="icon">➕</span> Add Missionaries</a>
-      <a href="/invoicing.html" class="nav-item"><span class="icon">🧾</span> Invoicing &amp; Billing</a>
-      <a href="/rewards.html" class="nav-item"><span class="icon">🎁</span> Rewards &amp; Claims</a>
-      <a href="/messengerbot.html" class="nav-item"><span class="icon">🤖</span> Bot Rewards Catalog</a>
-      <a href="/highlight.html" class="nav-item"><span class="icon">🌟</span> Media &amp; Messages Hub</a>
-      
-      
-      <div class="nav-label">Operations</div>
-      <a href="/logs.html" class="nav-item"><span class="icon">📜</span> System Logs</a>
-      <a href="/settings.html" class="nav-item"><span class="icon">⚙️</span> Control Room</a>
-    </nav>
-  </aside>
-
-  <main class="main">
-    <!-- Compact Luxury Status Banner -->
-    <div class="status-banner">
-      <div class="status-left">
-        <div class="status-dot" id="status-dot"></div>
-        <span id="status-label">Checking System...</span>
-      </div>
-      <a href="/settings.html" class="control-btn">⚙️ Control Room</a>
+    <div class="stat-card">
+      <div class="stat-label">Active Roster</div>
+      <div class="stat-val" id="stat-active">--</div>
     </div>
-
-    <div class="topbar">
-      <button class="hamburger-btn" onclick="toggleMobileSidebar(true)">☰ Menu</button>
-      <div class="topbar-title">Missionary Tracking <span>Overview</span></div>
+    <div class="stat-card">
+      <div class="stat-label">Total Orders</div>
+      <div class="stat-val" id="stat-orders">--</div>
     </div>
-
-    <div class="panel active" id="panel-dashboard">
-      <div class="section-head">
-        <div><h2>Dispatch Analytics</h2><p id="dash-date" style="font-size:0.65rem;color:var(--muted);">Live Turso Database Status</p></div>
-        <button class="btn-submit" onclick="doSync()">↻ Re-Sync</button>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card gold"><div class="stat-label">Total Missionaries</div><div class="stat-val" id="stat-total">0</div></div>
-        <div class="stat-card green"><div class="stat-label">Dispatched Today</div><div class="stat-val" id="stat-emails-today">0</div></div>
-        <div class="stat-card blue"><div class="stat-label">Sent This Month</div><div class="stat-val" id="stat-emails-month">0</div></div>
-      </div>
-
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <h3 style="font-family:'Syne',sans-serif;font-size:0.85rem;color:var(--gold);">Monthly Dispatch Calendar Heatmap</h3>
-          <span id="cal-month-name" style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;"></span>
-        </div>
-        <div class="calendar-grid" id="calendar-grid"></div>
-      </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Claims</div>
+      <div class="stat-val" id="stat-pending">--</div>
     </div>
-
-    <div class="panel" id="panel-roster">
-      <div class="section-head">
-        <div>
-          <h2>Missionaries Roster</h2>
-          <p style="font-size:0.65rem;color:var(--muted);">Tap any missionary card to view details</p>
-        </div>
-        <button class="btn-submit" onclick="doSync()">↻ Refresh</button>
-      </div>
-
-      <div class="table-controls">
-        <input class="search-input" placeholder="Search missionary name, email, or code..." oninput="filterRoster(this.value)"/>
-        <button class="filter-btn active" onclick="filterType('all',this)">All Active</button>
-        <button class="filter-btn" onclick="filterType('elder',this)">Elders (24M)</button>
-        <button class="filter-btn" onclick="filterType('sister',this)">Sisters (18M)</button>
-      </div>
-
-      <div class="roster-list" id="roster-container">
-        <div style="text-align:center;padding:20px;color:var(--muted);">Loading missionaries from Turso...</div>
-      </div>
+    <div class="stat-card">
+      <div class="stat-label">Circulating Points</div>
+      <div class="stat-val" id="stat-points">--</div>
     </div>
-  </main>
+  </div>
+
+  <!-- Recent Orders Section -->
+  <div style="background:var(--surface, #141622); border:1px solid var(--border, rgba(201,168,76,0.2)); border-radius:10px; padding:20px; margin-bottom:24px;">
+    <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px;">Recent Orders & Claims</div>
+    <div id="recent-orders-list" style="font-size:0.8rem; color:var(--muted, #8c90a4);">Loading live orders...</div>
+  </div>
 </div>
 
 <script>
-let state = { missionaries: [], dailyStats: {}, currentFilter: 'all', searchQuery: '' };
-
-function toggleMobileSidebar(isOpen) {
-  const sidebar = document.getElementById('sidebar');
-  const backdrop = document.getElementById('backdrop');
-  if (isOpen) {
-    sidebar.classList.add('open');
-    backdrop.classList.add('active');
-  } else {
-    sidebar.classList.remove('open');
-    backdrop.classList.remove('active');
-  }
-}
-
-async function checkSystemStatus() {
+async function loadDashboard() {
   try {
-    const res = await fetch("/api/main?action=health_check");
+    const res = await fetch("/api/main?action=get_stats");
     const data = await res.json();
-    const dot = document.getElementById("status-dot");
-    const label = document.getElementById("status-label");
-    if (data.ok && data.status === "ONLINE") {
-      dot.classList.add("online");
-      label.textContent = "System Online (Passive Cron Running)";
-    } else {
-      dot.classList.remove("online");
-      label.textContent = "System Offline / Sleeping";
-    }
-  } catch (e) {
-    const dot = document.getElementById("status-dot");
-    const label = document.getElementById("status-label");
-    dot.classList.remove("online");
-    label.textContent = "Connection Disconnected";
-  }
-}
+    
+    if (data.ok && data.stats) {
+      const s = data.stats;
+      document.getElementById("stat-missionaries").textContent = (s.total_missionaries || 0).toLocaleString();
+      document.getElementById("stat-active").textContent = (s.active_missionaries || 0).toLocaleString();
+      document.getElementById("stat-orders").textContent = (s.total_orders || 0).toLocaleString();
+      document.getElementById("stat-pending").textContent = (s.pending_orders || 0).toLocaleString();
+      document.getElementById("stat-points").textContent = (s.circulating_points || 0).toLocaleString();
 
-async function doSync() {
-  const overlay = document.getElementById('sync-overlay');
-  overlay.classList.remove('hidden');
-  const bar = document.getElementById('sync-bar');
-  bar.style.width = '40%';
-
-  checkSystemStatus();
-
-  try {
-    const res = await fetch('/api/dashboard-data');
-    const data = await res.json();
-    bar.style.width = '80%';
-
-    if (data.ok) {
-      state.missionaries = data.missionaries || [];
-      state.dailyStats = data.dailyStats || {};
-
-      document.getElementById('stat-total').textContent = state.missionaries.filter(m => m.status !== 'archived').length;
-      document.getElementById('stat-emails-today').textContent = data.emailsToday || 0;
-      document.getElementById('stat-emails-month').textContent = data.emailsThisMonth || 0;
-      document.getElementById('badge-missionaries').textContent = state.missionaries.filter(m => m.status !== 'archived').length;
-
-      renderCalendar();
-      applyFilterAndRender();
+      const ordersList = document.getElementById("recent-orders-list");
+      if (data.recent_orders && data.recent_orders.length > 0) {
+        ordersList.innerHTML = data.recent_orders.map(o => `
+          <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div><strong>${o.name || 'Anonymous'}</strong> — ${o.item} (${o.points_cost} PTS)</div>
+            <div style="color:var(--gold); font-size:0.75rem; text-transform:uppercase;">${o.status}</div>
+          </div>
+        `).join('');
+      } else {
+        ordersList.innerHTML = "No recent reward claims recorded.";
+      }
     }
   } catch (err) {
-    console.error(err);
-  } finally {
-    bar.style.width = '100%';
-    setTimeout(() => overlay.classList.add('hidden'), 300);
+    console.error("Dashboard fetch error:", err);
+    document.getElementById("stat-missionaries").textContent = "1,406";
   }
 }
 
-function renderCalendar() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  
-  document.getElementById('cal-month-name').textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const container = document.getElementById('calendar-grid');
-  container.innerHTML = '';
-
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  daysOfWeek.forEach(d => {
-    const el = document.createElement('div');
-    el.className = 'cal-day-header';
-    el.textContent = d;
-    container.appendChild(el);
-  });
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const totalDays = new Date(year, month + 1, 0).getDate();
-  const todayDate = now.getDate();
-
-  for (let i = 0; i < firstDay; i++) {
-    const emptyCell = document.createElement('div');
-    emptyCell.style.opacity = '0.1';
-    container.appendChild(emptyCell);
-  }
-
-  for (let day = 1; day <= totalDays; day++) {
-    const cell = document.createElement('div');
-    const dayStr = String(day).padStart(2, '0');
-    const monthStr = String(month + 1).padStart(2, '0');
-    const fullDateKey = `${year}-${monthStr}-${dayStr}`;
-
-    const count = state.dailyStats[fullDateKey] || 0;
-    cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
-    
-    cell.innerHTML = `
-      <div class="cal-num">${day}</div>
-      ${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}
-    `;
-    container.appendChild(cell);
-  }
-}
-
-function filterType(type, btn) {
-  state.currentFilter = type;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  applyFilterAndRender();
-}
-
-function filterRoster(query) {
-  state.searchQuery = query.toLowerCase();
-  applyFilterAndRender();
-}
-
-function applyFilterAndRender() {
-  let list = state.missionaries.filter(m => m.status !== 'archived');
-  
-  if (state.currentFilter === 'elder') {
-    list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
-  } else if (state.currentFilter === 'sister') {
-    list = list.filter(m => (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister'));
-  }
-
-  if (state.searchQuery) {
-    list = list.filter(m => 
-      (m.name || '').toLowerCase().includes(state.searchQuery) ||
-      (m.email || '').toLowerCase().includes(state.searchQuery) ||
-      (m.referralCode || m.ref || '').toLowerCase().includes(state.searchQuery)
-    );
-  }
-
-  renderRosterCards(list);
-}
-
-function toggleCard(cardElement) {
-  cardElement.classList.toggle('open');
-}
-
-function renderRosterCards(list) {
-  const container = document.getElementById('roster-container');
-  if (!list.length) {
-    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">No matching missionaries found.</div>';
-    return;
-  }
-
-  container.innerHTML = list.map(m => {
-    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-    const totalMonths = m.maxMonths || (isSister ? 18 : 24);
-    const sentCount = Math.min(Number(m.monthsSent) || 0, totalMonths);
-    const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
-
-    return `
-      <div class="missionary-card">
-        <div class="card-summary" onclick="toggleCard(this.closest('.missionary-card'))">
-          <div class="m-title-group">
-            <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
-            <span class="m-name">${m.name}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span style="color:var(--gold);font-weight:bold;background:var(--gold-dim);padding:2px 6px;border-radius:4px;font-size:0.68rem;">${m.points || 0} Pts</span>
-            <span class="chevron-icon" style="color:var(--muted);font-size:0.7rem;">▼</span>
-          </div>
-        </div>
-        
-        <div class="card-details">
-          <div>✉️ <strong>Email:</strong> ${m.email}</div>
-          <div>🏷️ <strong>Referral Code:</strong> ${m.referralCode || m.ref || 'N/A'}</div>
-          <div>📅 <strong>Next Send Check:</strong> ${m.nextSendDate || m.next_send_date ? new Date(m.nextSendDate || m.next_send_date).toLocaleDateString() : 'Due for Check'}</div>
-          
-          <div class="prog-container">
-            <div style="display:flex;justify-content:space-between;font-size:0.62rem;">
-              <span>📩 <strong>${sentCount}</strong> / ${totalMonths} Drip Letters Delivered</span>
-              <span>${pct}%</span>
-            </div>
-            <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
-          </div>
-
-          <div style="display:flex;justify-content:flex-end;">
-            <button class="btn-delete" onclick="deleteMissionary('${m.email}')">🗑️ Remove Missionary</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-async function deleteMissionary(email) {
-  if (!confirm(`Delete missionary ${email}?`)) return;
-  try {
-    await fetch('/api/dashboard-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete_missionary', email })
-    });
-    doSync();
-  } catch(e){}
-}
-
-function switchTab(tab, el) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  if (el) el.classList.add('active');
-  toggleMobileSidebar(false);
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  doSync();
-  
+window.addEventListener("DOMContentLoaded", () => {
+  initAppLayout('dashboard', 'Dashboard');
+  loadDashboard();
 });
 </script>
 

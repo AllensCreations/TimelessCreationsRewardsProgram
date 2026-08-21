@@ -13,6 +13,7 @@ function initAppLayout(activeKey, pageTitle) {
         <a href="/" class="nav-item ${activeKey === 'overview' ? 'active' : ''}"><span class="icon">📊</span> Overview</a>
         
         <div class="nav-label">Modules</div>
+        <a href="/inbox.html" class="nav-item ${activeKey === 'inbox' ? 'active' : ''}"><span class="icon">💬</span> Messenger Inbox</a>
         <a href="/messengerbot.html" class="nav-item ${activeKey === 'messengerbot' ? 'active' : ''}"><span class="icon">🤖</span> Bot Rewards Catalog</a>
         <a href="/pusher.html" class="nav-item ${activeKey === 'pusher' ? 'active' : ''}"><span class="icon">➕</span> Add Missionaries</a>
         <a href="/invoicing.html" class="nav-item ${activeKey === 'invoicing' ? 'active' : ''}"><span class="icon">🧾</span> Invoicing &amp; Billing</a>

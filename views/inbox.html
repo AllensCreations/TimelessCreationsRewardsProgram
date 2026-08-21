@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger Inbox | Timeless Creations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js"></script>
+    <style>
+      .inbox-layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 120px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+      .thread-list { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); }
+      .thread-item { padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+      .thread-item:hover { background: var(--surface2); }
+      .thread-item.active { background: var(--gold-dim); border-left: 3px solid var(--gold); }
+      .thread-name { font-weight: bold; font-size: 0.85rem; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+      .thread-preview { font-size: 0.7rem; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      
+      .chat-view { display: flex; flex-direction: column; height: 100%; background: var(--bg); }
+      .chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; justify-content: space-between; align-items: center; }
+      .chat-body { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+      
+      .bubble { max-width: 70%; padding: 10px 14px; border-radius: 10px; font-size: 0.78rem; line-height: 1.4; word-break: break-word; }
+      .bubble.user { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
+      .bubble.bot { align-self: flex-end; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: var(--gold2); border-bottom-right-radius: 2px; }
+      .bubble.admin { align-self: flex-end; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0a0a0f; font-weight: 500; border-bottom-right-radius: 2px; }
+      .order-pill { align-self: center; background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.4); color: var(--green); padding: 6px 14px; border-radius: 99px; font-size: 0.7rem; font-weight: bold; margin: 4px 0; }
+      
+      .chat-footer { padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 10px; align-items: center; }
+      .reply-input { flex: 1; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.78rem; outline: none; }
+      
+      @media(max-width: 850px) {
+        .inbox-layout { grid-template-columns: 1fr; }
+        .chat-view { display: none; }
+        .chat-view.active { display: flex; position: fixed; inset: 0; z-index: 120; }
+      }
+    </style>
+</head>
+<body>
+
+<div class="inbox-layout">
+    <div class="thread-list" id="thread-container">
+        <div style="padding:20px; color:var(--muted); font-size:0.75rem; text-align:center;">Loading conversations...</div>
+    </div>
+
+    <div class="chat-view" id="chat-pane">
+        <div class="chat-header">
+            <div>
+                <div style="font-family:'Syne',sans-serif; font-weight:bold; font-size:0.95rem;" id="active-user-title">Select a conversation</div>
+                <div style="font-size:0.68rem; color:var(--muted);" id="active-user-meta">—</div>
+            </div>
+            <button class="btn btn-dark" style="display:none;" id="btn-close-chat" onclick="closeChatPane()">← Back</button>
+        </div>
+
+        <div class="chat-body" id="chat-messages">
+            <div style="margin:auto; color:var(--muted); font-size:0.75rem;">Choose a contact on the left to review messages & orders.</div>
+        </div>
+
+        <div class="chat-footer">
+            <input type="text" id="admin-reply-input" class="reply-input" placeholder="Type direct reply (anti-spam 3s delay active)..." onkeydown="if(event.key==='Enter') sendAdminReply()">
+            <button class="btn btn-gold" id="btn-send-reply" onclick="sendAdminReply()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPsid = null;
+let replyCooldown = false;
+
+async function loadInboxThreads() {
+  const container = document.getElementById("thread-container");
+  try {
+    const res = await fetch("/api/main?action=get_inbox_threads");
+    const data = await res.json();
+    if (data.ok && data.threads) {
+      if (data.threads.length === 0) {
+        container.innerHTML = '<div style="padding:20px; color:var(--muted); font-size:0.75rem; text-align:center;">No Messenger chats recorded yet.</div>';
+        return;
+      }
+      container.innerHTML = data.threads.map(t => {
+        const displayName = t.missionary_name ? `👤 ${t.missionary_name}` : `🆔 PSID: ${t.psid.slice(0, 10)}...`;
+        const badge = t.missionary_points !== null ? `<span style="font-size:0.65rem; color:var(--gold); font-weight:bold;">${t.missionary_points} Pts</span>` : '';
+        return `
+          <div class="thread-item ${currentPsid === t.psid ? 'active' : ''}" onclick="openConversation('${t.psid}', '${t.missionary_name || ''}', '${t.missionary_email || ''}', ${t.missionary_points || 0})">
+            <div class="thread-name">
+              <span>${displayName}</span>
+              ${badge}
+            </div>
+            <div class="thread-preview">${t.last_message || '[Activity]'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px; color:var(--red); font-size:0.75rem; text-align:center;">Failed to load inbox threads.</div>';
+  }
+}
+
+async function openConversation(psid, name, email, points) {
+  currentPsid = psid;
+  document.getElementById("chat-pane").classList.add("active");
+  if (window.innerWidth <= 850) document.getElementById("btn-close-chat").style.display = "block";
+
+  document.getElementById("active-user-title").textContent = name ? name : `Guest (PSID: ${psid})`;
+  document.getElementById("active-user-meta").textContent = email ? `${email} • ${points} Points Balance` : `PSID: ${psid}`;
+
+  const msgBox = document.getElementById("chat-messages");
+  msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">Loading chat history...</div>';
+
+  try {
+    const res = await fetch(`/api/main?action=get_thread_messages&psid=${psid}`);
+    const data = await res.json();
+    if (data.ok) {
+      const allEvents = [];
+      (data.messages || []).forEach(m => allEvents.push({ type: 'msg', ...m }));
+      (data.orders || []).forEach(o => allEvents.push({ type: 'order', ...o }));
+      allEvents.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      if (allEvents.length === 0) {
+        msgBox.innerHTML = '<div style="margin:auto; color:var(--muted); font-size:0.75rem;">No conversation history found.</div>';
+        return;
+      }
+
+      msgBox.innerHTML = allEvents.map(e => {
+        if (e.type === 'order') {
+          return `<div class="order-pill">🛍️ CLAIM PURCHASE: ${e.item} (#${e.order_id}) - ${e.points_cost} PTS [${e.status.toUpperCase()}]</div>`;
+        }
+        return `
+          <div class="bubble ${e.sender}">
+            <div style="font-size:0.6rem; opacity:0.7; margin-bottom:2px; text-transform:uppercase;">${e.sender === 'user' ? (name || 'Missionary') : (e.sender === 'admin' ? 'Staff Admin' : 'TCRP Bot')}</div>
+            ${e.message}
+          </div>
+        `;
+      }).join('');
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  } catch(e) {
+    msgBox.innerHTML = '<div style="color:var(--red); font-size:0.75rem;">Failed to load messages.</div>';
+  }
+  loadInboxThreads();
+}
+
+function closeChatPane() {
+  document.getElementById("chat-pane").classList.remove("active");
+}
+
+async function sendAdminReply() {
+  if (!currentPsid) return showToast("Select a conversation first.", "error");
+  if (replyCooldown) return showToast("Anti-Spam active: Please wait 3s between replies.", "error");
+
+  const input = document.getElementById("admin-reply-input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById("btn-send-reply");
+  btn.textContent = "⏳";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "admin_reply", psid: currentPsid, text })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      input.value = "";
+      showToast("Reply sent to Messenger!");
+      
+      // Anti-spam cooldown (3 seconds)
+      replyCooldown = true;
+      setTimeout(() => { replyCooldown = false; }, 3000);
+      
+      openConversation(currentPsid, document.getElementById("active-user-title").textContent, "", 0);
+    } else {
+      showToast(data.error || "Failed to send message.", "error");
+    }
+  } catch(e) {
+    showToast("Network error dispatching reply.", "error");
+  } finally {
+    btn.textContent = "Send";
+    btn.disabled = false;
+  }
+}
+
+window.syncData = loadInboxThreads;
+
+window.addEventListener("DOMContentLoaded", () => {
+  initAppLayout('inbox', 'Messenger Inbox & Purchases');
+  loadInboxThreads();
+});
+</script>
+
+</body>
+</html>

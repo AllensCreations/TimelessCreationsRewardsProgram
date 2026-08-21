@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js"></script>
     <style>
-      /* Enforce strict 1:1 square aspect ratio */
       .card-img-wrap {
         width: 100%;
         aspect-ratio: 1 / 1;
@@ -187,12 +186,17 @@ function applyModalChanges() {
   const price = parseInt(document.getElementById("modal-prod-price").value, 10) || 0;
   const image_url = document.getElementById("modal-prod-img").value.trim();
 
-  if (!name) return alert("Product name is required.");
+  if (!name) {
+    showToast("Reward item name is required.", "error");
+    return;
+  }
 
   if (idx !== "") {
     localItems[Number(idx)] = { name, price, image_url };
+    showToast(`Updated "${name}" in local list.`);
   } else {
     localItems.push({ name, price, image_url });
+    showToast(`Added "${name}" to local list.`);
   }
 
   closeProductModal();
@@ -201,9 +205,10 @@ function applyModalChanges() {
 }
 
 function deleteLocalItem(idx) {
-  localItems.splice(idx, 1);
+  const removed = localItems.splice(idx, 1);
   renderGrid();
   markDirty();
+  showToast(`Removed "${removed[0]?.name || 'Item'}" from list.`);
 }
 
 async function saveAllToTurso() {
@@ -222,13 +227,13 @@ async function saveAllToTurso() {
     if (data.ok) {
       document.getElementById("save-banner").style.display = "none";
       btn.textContent = "💾 Save Changes to Turso";
-      alert("✅ Reward catalog synced and saved to Turso database!");
+      showToast("Reward catalog saved to Turso database!");
     } else {
-      alert("Sync error: " + (data.error || "Failed to save."));
+      showToast(data.error || "Failed to save to Turso.", "error");
       btn.textContent = "💾 Save Changes to Turso";
     }
   } catch(e) {
-    alert("Network error saving to Turso.");
+    showToast("Network error saving to Turso.", "error");
     btn.textContent = "💾 Save Changes to Turso";
   }
 }
@@ -237,7 +242,7 @@ window.syncData = async () => {
   localStorage.removeItem('tcrp_temp_products');
   document.getElementById("save-banner").style.display = "none";
   await loadInitialData(true);
-  alert("Re-synced workspace with live Turso database.");
+  showToast("Re-synced workspace with Turso database.");
 };
 
 window.addEventListener("DOMContentLoaded", () => {

@@ -8,6 +8,25 @@
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js"></script>
     <style>
+      /* Enforce strict 1:1 square aspect ratio */
+      .card-img-wrap {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        border-radius: 6px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        aspect-ratio: 1 / 1;
+        display: block;
+      }
       .modal-overlay {
         position: fixed; inset: 0; background: rgba(5, 5, 8, 0.85);
         backdrop-filter: blur(6px); display: none; justify-content: center;
@@ -17,9 +36,16 @@
         background: var(--surface); border: 1px solid var(--gold); border-radius: 12px;
         padding: 24px; max-width: 440px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.8);
       }
-      .img-preview {
-        width: 100%; height: 130px; object-fit: cover; border-radius: 6px;
-        border: 1px solid var(--border); margin-top: 6px; background: var(--surface2);
+      .img-preview-box {
+        width: 140px;
+        height: 140px;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        margin: 8px auto 0;
+        background: var(--surface2);
+        display: block;
       }
       .save-banner {
         position: sticky; bottom: 20px; background: var(--surface2);
@@ -34,12 +60,12 @@
 <div class="card" style="border-color: rgba(201,168,76,0.3); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <div>
         <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Instant Messenger Rewards Workspace</div>
-        <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">All edits &amp; deletions happen locally in 0ms. Click <strong>"💾 Save Changes to Turso"</strong> when ready.</div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">All item images are strictly locked to a <strong>1:1 square format</strong> for optimal Messenger carousel rendering.</div>
     </div>
     <button class="btn btn-gold" onclick="openProductModal()">+ Add New Reward</button>
 </div>
 
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;" id="products-grid">
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;" id="products-grid">
     <div style="color:var(--muted); font-size:0.75rem;">Loading rewards workspace...</div>
 </div>
 
@@ -60,9 +86,9 @@
             <input type="number" id="modal-prod-price" class="form-input" placeholder="e.g. 6">
         </div>
         <div class="form-group">
-            <label class="form-label">Image URL</label>
+            <label class="form-label">Image URL (1:1 Ratio)</label>
             <input type="url" id="modal-prod-img" class="form-input" placeholder="https://i.postimg.cc/.../item.png" oninput="updateImagePreview(this.value)">
-            <img id="modal-preview-box" class="img-preview" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" alt="Preview">
+            <img id="modal-preview-box" class="img-preview-box" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" alt="1:1 Preview">
         </div>
         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
             <button class="btn btn-dark" onclick="closeProductModal()">Cancel</button>
@@ -109,13 +135,15 @@ async function loadInitialData(forceFetch = false) {
 function renderGrid() {
   const grid = document.getElementById("products-grid");
   if (!localItems.length) {
-    grid.innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">No reward products. Click "+ Add New Reward" above to create one instantly.</div>';
+    grid.innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">No reward products. Click "+ Add New Reward" above to create one.</div>';
     return;
   }
   grid.innerHTML = localItems.map((p, idx) => `
     <div class="card" style="display:flex; flex-direction:column; gap:8px; margin-bottom:0;">
-      <img src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:100%; height:130px; object-fit:cover; border-radius:6px; background:var(--surface2);" alt="${p.name}">
-      <div style="font-weight:bold; font-size:0.85rem;">${p.name}</div>
+      <div class="card-img-wrap">
+        <img src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" alt="${p.name}">
+      </div>
+      <div style="font-weight:bold; font-size:0.85rem; margin-top:4px;">${p.name}</div>
       <div style="color:var(--gold); font-size:0.72rem; font-weight:bold;">⭐ ${p.price || 0} PTS</div>
       <div style="display:flex; gap:6px; margin-top:6px;">
         <button class="btn btn-dark" style="flex:1;" onclick="openProductModal(${idx})">✏️ Edit</button>
@@ -194,7 +222,7 @@ async function saveAllToTurso() {
     if (data.ok) {
       document.getElementById("save-banner").style.display = "none";
       btn.textContent = "💾 Save Changes to Turso";
-      alert("✅ Reward catalog successfully synced and saved to Turso database!");
+      alert("✅ Reward catalog synced and saved to Turso database!");
     } else {
       alert("Sync error: " + (data.error || "Failed to save."));
       btn.textContent = "💾 Save Changes to Turso";

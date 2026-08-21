@@ -33,6 +33,26 @@
     .pagination-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); font-size: 0.72rem; }
     .page-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: 'DM Mono', monospace; }
     .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    
+    .btn-delete {
+      background: rgba(224,92,92,0.12);
+      border: 1px solid rgba(224,92,92,0.3);
+      color: var(--red);
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .btn-delete:hover {
+      background: var(--red);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -56,7 +76,6 @@
     <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries...</div>
   </div>
 
-  <!-- Pagination Controller (50 per page) -->
   <div class="pagination-bar">
     <button class="page-btn" id="prev-page-btn" onclick="changePage(-1)">← Previous</button>
     <span id="page-indicator">Page 1</span>
@@ -141,6 +160,30 @@ function changePage(delta) {
   renderPaginatedCards();
 }
 
+async function deleteMissionary(email, name) {
+  if (!confirm(`Are you sure you want to permanently remove ${name} (${email}) from the database?`)) return;
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_missionary", email })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Removed ${name} from roster.`);
+      state.missionaries = state.missionaries.filter(m => m.email.toLowerCase() !== email.toLowerCase());
+      LocalStore.set('missionaries', state.missionaries);
+      document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
+      applyFilterAndRender();
+    } else {
+      showToast(data.error || "Failed to delete missionary", "error");
+    }
+  } catch (err) {
+    showToast("Network error: " + err.message, "error");
+  }
+}
+
 function renderPaginatedCards() {
   const totalItems = state.filteredList.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
@@ -149,7 +192,7 @@ function renderPaginatedCards() {
   const startIdx = (state.page - 1) * state.pageSize;
   const pageItems = state.filteredList.slice(startIdx, startIdx + state.pageSize);
 
-  document.getElementById('showing-count').textContent = `${startIdx + 1}-${Math.min(startIdx + state.pageSize, totalItems)}`;
+  document.getElementById('showing-count').textContent = totalItems > 0 ? `${startIdx + 1}-${Math.min(startIdx + state.pageSize, totalItems)}` : '0';
   document.getElementById('page-indicator').textContent = `Page ${state.page} of ${totalPages}`;
   document.getElementById('prev-page-btn').disabled = state.page <= 1;
   document.getElementById('next-page-btn').disabled = state.page >= totalPages;
@@ -191,6 +234,10 @@ function renderPaginatedCards() {
           </div>
           <div style="width:100%; height:5px; background:rgba(255,255,255,0.05); border-radius:99px; overflow:hidden; margin-top:3px;">
             <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,var(--green),var(--gold));"></div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn-delete" onclick="deleteMissionary('${m.email}', '${m.name || 'Missionary'}')">🗑️ Delete Missionary</button>
           </div>
         </div>
       </div>

@@ -64,16 +64,9 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: all 0.2s;
     }
-    .cal-cell.today {
-      border-color: var(--gold, #c9a84c);
-      box-shadow: 0 0 10px rgba(201,168,76,0.2) inset;
-    }
-    .cal-cell.has-activity {
-      background: rgba(201,168,76,0.12);
-      border-color: rgba(201,168,76,0.4);
-    }
+    .cal-cell.today { border-color: var(--gold, #c9a84c); box-shadow: 0 0 10px rgba(201,168,76,0.2) inset; }
+    .cal-cell.has-activity { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); }
     .cal-num { font-size: 0.65rem; color: var(--muted, #8c90a4); font-weight: bold; }
     .cal-count {
       font-size: 0.6rem;
@@ -84,24 +77,23 @@
       padding: 2px 5px;
       border-radius: 4px;
     }
-    .two-col-grid {
+    .three-col-grid {
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 20px;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap: 16px;
       margin-bottom: 20px;
     }
-    @media (max-width: 900px) {
-      .two-col-grid { grid-template-columns: 1fr; }
+    @media (max-width: 1024px) {
+      .three-col-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<div style="max-width:1150px; margin:20px auto; padding:0 16px 40px;">
-  <!-- Header Title -->
+<div style="max-width:1180px; margin:20px auto; padding:0 16px 40px;">
   <div style="margin-bottom:20px;">
     <h2 style="font-family:'Syne',sans-serif; color:var(--gold, #c9a84c); font-size:1.4rem; font-weight:800;">Command Center & Operations</h2>
-    <p style="font-size:0.75rem; color:var(--muted, #8c90a4); margin-top:2px;">Real-time missionary engagement analytics, live dispatches, and heatmap tracking.</p>
+    <p style="font-size:0.75rem; color:var(--muted, #8c90a4); margin-top:2px;">Real-time missionary engagement analytics, live dispatches, and activity feeds.</p>
   </div>
 
   <!-- Primary Stat Metrics -->
@@ -140,36 +132,44 @@
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
 
-  <!-- 2-Column Grid: 10 Recent Activity Logs & Recent Claims -->
-  <div class="two-col-grid">
+  <!-- 3-Column Grid: Recently Sent Emails, System Logs, Recent Claims -->
+  <div class="three-col-grid">
+    <!-- Recently Sent Emails -->
+    <div class="card" style="margin-bottom:0;">
+      <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span>✉️ Recently Sent Emails</span>
+        <span style="font-size:0.6rem; color:var(--green, #4caf82); text-transform:uppercase; font-weight:bold;">Live Feed</span>
+      </div>
+      <div id="recent-sent-emails-list" style="display:flex; flex-direction:column; gap:8px; font-size:0.72rem;">
+        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading dispatches...</div>
+      </div>
+    </div>
+
     <!-- 10 Live Dispatch Logs -->
     <div class="card" style="margin-bottom:0;">
-      <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-        <span>📜 System & Dispatch Logs (Top 10)</span>
-        <span style="font-size:0.62rem; color:var(--muted, #8c90a4); text-transform:uppercase;">Real-Time</span>
+      <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span>📜 System Logs</span>
+        <span style="font-size:0.6rem; color:var(--muted, #8c90a4); text-transform:uppercase;">Top 10</span>
       </div>
       <div id="logs-container" style="display:flex; flex-direction:column; gap:8px; font-size:0.72rem;">
-        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading system logs...</div>
+        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading logs...</div>
       </div>
     </div>
 
     <!-- Recent Reward Claims -->
     <div class="card" style="margin-bottom:0;">
-      <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px;">
-        🎁 Recent Reward Orders & Claims
+      <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px;">
+        🎁 Recent Reward Claims
       </div>
       <div id="recent-orders-list" style="display:flex; flex-direction:column; gap:8px; font-size:0.75rem;">
-        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading live orders...</div>
+        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">Loading claims...</div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-let dashboardState = {
-  dailyStats: {},
-  logs: []
-};
+let dashboardState = { dailyStats: {} };
 
 async function loadDashboard() {
   try {
@@ -187,21 +187,41 @@ async function loadDashboard() {
       dashboardState.dailyStats = data.daily_stats || {};
       renderCalendar();
 
-      // Render 10 Logs
+      // Render Recently Sent Emails
+      const sentContainer = document.getElementById("recent-sent-emails-list");
+      const sentList = data.recently_sent_missionaries || [];
+      if (sentList.length > 0) {
+        sentContainer.innerHTML = sentList.map(m => `
+          <div style="padding:8px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:var(--text, #e8e6f0);">${m.name || 'Missionary'}</strong>
+              <span style="color:var(--gold, #c9a84c); font-size:0.65rem; font-weight:bold; background:rgba(201,168,76,0.15); padding:1px 6px; border-radius:3px;">M${m.months_sent}</span>
+            </div>
+            <div style="font-size:0.65rem; color:var(--muted, #8c90a4); margin-top:2px; display:flex; justify-content:space-between;">
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${m.email}</span>
+              <span>${m.last_sent_at ? new Date(m.last_sent_at).toLocaleDateString([], {month:'short', day:'numeric'}) : 'Recently'}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        sentContainer.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent dispatches logged.</div>`;
+      }
+
+      // Render System Logs
       const logsContainer = document.getElementById("logs-container");
       const logs = data.recent_logs || [];
       if (logs.length > 0) {
         logsContainer.innerHTML = logs.slice(0, 10).map(l => `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
-            <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-              <span style="font-size:0.6rem; padding:2px 6px; border-radius:4px; font-weight:bold; background:${l.level === 'ERROR' ? 'rgba(224,92,92,0.2)' : 'rgba(76,175,130,0.2)'}; color:${l.level === 'ERROR' ? 'var(--red, #e05c5c)' : 'var(--green, #4caf82)'};">${l.level || 'INFO'}</span>
-              <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:var(--text, #e8e6f0);">${l.message}</span>
+            <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+              <span style="font-size:0.58rem; padding:1px 5px; border-radius:3px; font-weight:bold; background:${l.level === 'ERROR' ? 'rgba(224,92,92,0.2)' : 'rgba(76,175,130,0.2)'}; color:${l.level === 'ERROR' ? 'var(--red)' : 'var(--green)'};">${l.level || 'INFO'}</span>
+              <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:var(--text);">${l.message}</span>
             </div>
-            <span style="font-size:0.62rem; color:var(--muted, #8c90a4); flex-shrink:0; margin-left:8px;">${l.created_at ? new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Today'}</span>
+            <span style="font-size:0.6rem; color:var(--muted); flex-shrink:0; margin-left:6px;">${l.created_at ? new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
           </div>
         `).join('');
       } else {
-        logsContainer.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent system logs recorded.</div>`;
+        logsContainer.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent logs.</div>`;
       }
 
       // Render Recent Orders
@@ -211,13 +231,13 @@ async function loadDashboard() {
           <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
             <div>
               <strong style="color:var(--text);">${o.name || 'Anonymous'}</strong>
-              <div style="font-size:0.68rem; color:var(--muted);">${o.item} (${o.points_cost} PTS)</div>
+              <div style="font-size:0.65rem; color:var(--muted);">${o.item} (${o.points_cost} PTS)</div>
             </div>
-            <span style="color:var(--gold); font-size:0.65rem; font-weight:bold; text-transform:uppercase; background:rgba(201,168,76,0.15); padding:3px 8px; border-radius:4px;">${o.status}</span>
+            <span style="color:var(--gold); font-size:0.65rem; font-weight:bold; text-transform:uppercase;">${o.status}</span>
           </div>
         `).join('');
       } else {
-        ordersList.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent reward claims recorded.</div>`;
+        ordersList.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No recent reward claims.</div>`;
       }
     }
   } catch (err) {
@@ -275,6 +295,5 @@ window.addEventListener("DOMContentLoaded", () => {
   loadDashboard();
 });
 </script>
-
 </body>
 </html>

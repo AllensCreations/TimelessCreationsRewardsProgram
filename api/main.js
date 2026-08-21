@@ -45,90 +45,80 @@ export default async function handler(req, res) {
     }
 
     // ----------------------------------------------------
-    // PRODUCT CATALOG SYNC & MANAGEMENT
+    // DASHBOARD STATS & RECENT DISPATCHES FEED
     // ----------------------------------------------------
-    if (action === "get_products") {
-      const typeFilter = req.query?.type || bodyData.type;
-      let query = "SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog";
-      let params = [];
-      if (typeFilter) {
-        query += " WHERE type = ? ORDER BY price ASC";
-        params.push(typeFilter);
-      } else {
-        query += " ORDER BY type ASC, price ASC";
-      }
-      const products = await runSql(query, params);
-      return res.status(200).json({ ok: true, products: products || [] });
-    }
+    if (action === "get_stats" || !action) {
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const monthIso = new Date().toISOString().slice(0, 7);
 
-    if (action === "sync_catalog" || action === "synch catalog" || action === "save_products") {
-      const products = bodyData.products || req.body?.products || [];
-      const catalogType = bodyData.type || req.body?.type || "reward";
+      const [
+        totalM, activeM, totalO, pendingO, totalDrips, pts,
+        recentOrders, recentLogs, todaySent, monthSent, recentlySent
+      ] = await Promise.all([
+        runSql("SELECT COUNT(*) as count FROM missionaries"),
+        runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'"),
+        runSql("SELECT COUNT(*) as count FROM orders"),
+        runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'"),
+        runSql("SELECT COUNT(*) as count FROM drip_messages"),
+        runSql("SELECT SUM(points) as pts FROM missionaries"),
+        runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
+        runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 10"),
+        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]),
+        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"]),
+        runSql("SELECT email, name, cohort, months_sent, last_sent_at FROM missionaries WHERE last_sent_at IS NOT NULL ORDER BY last_sent_at DESC LIMIT 8")
+      ]);
 
-      await runSql("DELETE FROM product_catalog WHERE type = ?", [catalogType]);
-
-      for (const item of products) {
-        if (!item.name) continue;
-        const cost = parseFloat(item.price) || 0;
-        const img = item.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
-
-        await runSql(
-          "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url, type = excluded.type",
-          [item.name.trim(), cost, img, catalogType]
-        );
-      }
-      return res.status(200).json({ ok: true, message: `${catalogType} catalog synchronized successfully` });
-    }
-
-    // ----------------------------------------------------
-    // TEST EMAIL ROUTE (BREVO REST API)
-    // ----------------------------------------------------
-    if (action === "test_email") {
-      const rawEmails = (bodyData.email || req.query?.email || "").trim();
-      const templateType = bodyData.template_type || req.query?.template_type || "drip";
-      const month = Number(bodyData.month || req.query?.month) || 1;
-
-      if (!rawEmails) return res.status(400).json({ ok: false, error: "Missing email address(es)" });
-
-      const targets = rawEmails.split(",").map(e => e.trim()).filter(Boolean);
-      let successCount = 0;
-      const results = [];
-
-      for (const target of targets) {
-        let dispatchResult;
-        if (templateType === "otp") {
-          dispatchResult = await sendOTPEmail(target, "891402");
-        } else if (templateType === "receipt") {
-          dispatchResult = await sendReceiptEmail(target, {
-            name: "Elder / Sister Diagnostic",
-            order_id: "TCRP-" + Date.now().toString().slice(-4),
-            item: "Wooden Missionary Nametag",
-            points_cost: 6
-          });
-        } else {
-          dispatchResult = await sendDripEmail(target, month, "Elder / Sister");
-        }
-
-        results.push({ email: target, ...dispatchResult });
-        if (dispatchResult?.ok) successCount++;
-      }
-
-      if (successCount > 0) {
-        return res.status(200).json({
-          ok: true,
-          totalSent: successCount,
-          template: templateType,
-          month: templateType === "drip" ? month : undefined,
-          recipients: targets,
-          details: results
-        });
-      }
-
-      return res.status(500).json({
-        ok: false,
-        error: "Brevo REST API rejected dispatch.",
-        details: results
+      return res.status(200).json({
+        ok: true,
+        stats: {
+          total_missionaries: totalM[0]?.count || 0,
+          active_missionaries: activeM[0]?.count || 0,
+          total_orders: totalO[0]?.count || 0,
+          pending_orders: pendingO[0]?.count || 0,
+          total_drips: totalDrips[0]?.count || 0,
+          circulating_points: pts[0]?.pts || 0,
+          emails_today: todaySent[0]?.count || 0,
+          emails_month: monthSent[0]?.count || 0
+        },
+        recent_orders: recentOrders || [],
+        recent_logs: recentLogs || [],
+        recently_sent_missionaries: recentlySent || [],
+        daily_stats: { [todayIso]: todaySent[0]?.count || 0 }
       });
+    }
+
+    // ----------------------------------------------------
+    // ROSTER & DATA MUTATIONS (DELETE / UPDATE / FETCH)
+    // ----------------------------------------------------
+    if (action === "get_missionaries") {
+      const rows = await runSql("SELECT * FROM missionaries ORDER BY is_prelisted DESC, name ASC");
+      return res.status(200).json({ ok: true, missionaries: rows || [] });
+    }
+
+    if (action === "delete_missionary") {
+      const email = (bodyData.email || req.query?.email || "").toLowerCase().trim();
+      if (!email) return res.status(400).json({ ok: false, error: "Missing missionary email address" });
+
+      const missionary = (await runSql("SELECT psid FROM missionaries WHERE LOWER(email) = ?", [email]))[0];
+      if (missionary?.psid) {
+        await runSql("DELETE FROM sessions WHERE psid = ?", [missionary.psid]);
+      }
+      await runSql("DELETE FROM missionaries WHERE LOWER(email) = ?", [email]);
+      await runSql("INSERT INTO system_logs (level, message) VALUES ('WARN', ?)", [`Removed missionary ${email} from roster`]);
+
+      return res.status(200).json({ ok: true, message: `Successfully deleted missionary ${email}` });
+    }
+
+    if (action === "update_missionary_points") {
+      const { email, delta } = bodyData;
+      await runSql("UPDATE missionaries SET points = MAX(0, points + ?) WHERE LOWER(email) = LOWER(?)", [delta, email]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === "toggle_missionary_status") {
+      const { email, status } = bodyData;
+      await runSql("UPDATE missionaries SET status = ? WHERE LOWER(email) = LOWER(?)", [status, email]);
+      return res.status(200).json({ ok: true });
     }
 
     // ----------------------------------------------------
@@ -192,61 +182,90 @@ export default async function handler(req, res) {
     }
 
     // ----------------------------------------------------
-    // DASHBOARD STATS
+    // TEST EMAIL ROUTE (BREVO REST API)
     // ----------------------------------------------------
-    if (action === "get_stats" || !action) {
-      const todayIso = new Date().toISOString().slice(0, 10);
-      const monthIso = new Date().toISOString().slice(0, 7);
+    if (action === "test_email") {
+      const rawEmails = (bodyData.email || req.query?.email || "").trim();
+      const templateType = bodyData.template_type || req.query?.template_type || "drip";
+      const month = Number(bodyData.month || req.query?.month) || 1;
 
-      const [totalM, activeM, totalO, pendingO, totalDrips, pts, recentOrders, recentLogs, todaySent, monthSent] = await Promise.all([
-        runSql("SELECT COUNT(*) as count FROM missionaries"),
-        runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'"),
-        runSql("SELECT COUNT(*) as count FROM orders"),
-        runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'"),
-        runSql("SELECT COUNT(*) as count FROM drip_messages"),
-        runSql("SELECT SUM(points) as pts FROM missionaries"),
-        runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
-        runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 10"),
-        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]),
-        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"])
-      ]);
+      if (!rawEmails) return res.status(400).json({ ok: false, error: "Missing email address(es)" });
 
-      return res.status(200).json({
-        ok: true,
-        stats: {
-          total_missionaries: totalM[0]?.count || 0,
-          active_missionaries: activeM[0]?.count || 0,
-          total_orders: totalO[0]?.count || 0,
-          pending_orders: pendingO[0]?.count || 0,
-          total_drips: totalDrips[0]?.count || 0,
-          circulating_points: pts[0]?.pts || 0,
-          emails_today: todaySent[0]?.count || 0,
-          emails_month: monthSent[0]?.count || 0
-        },
-        recent_orders: recentOrders || [],
-        recent_logs: recentLogs || [],
-        daily_stats: { [todayIso]: todaySent[0]?.count || 0 }
+      const targets = rawEmails.split(",").map(e => e.trim()).filter(Boolean);
+      let successCount = 0;
+      const results = [];
+
+      for (const target of targets) {
+        let dispatchResult;
+        if (templateType === "otp") {
+          dispatchResult = await sendOTPEmail(target, "891402");
+        } else if (templateType === "receipt") {
+          dispatchResult = await sendReceiptEmail(target, {
+            name: "Elder / Sister Diagnostic",
+            order_id: "TCRP-" + Date.now().toString().slice(-4),
+            item: "Wooden Missionary Nametag",
+            points_cost: 6
+          });
+        } else {
+          dispatchResult = await sendDripEmail(target, month, "Elder / Sister");
+        }
+
+        results.push({ email: target, ...dispatchResult });
+        if (dispatchResult?.ok) successCount++;
+      }
+
+      if (successCount > 0) {
+        return res.status(200).json({
+          ok: true,
+          totalSent: successCount,
+          template: templateType,
+          month: templateType === "drip" ? month : undefined,
+          recipients: targets,
+          details: results
+        });
+      }
+
+      return res.status(500).json({
+        ok: false,
+        error: "Brevo REST API rejected dispatch.",
+        details: results
       });
     }
 
     // ----------------------------------------------------
-    // ROSTER & DATA ENDPOINTS
+    // PRODUCT CATALOG & DRIPS
     // ----------------------------------------------------
-    if (action === "get_missionaries") {
-      const rows = await runSql("SELECT * FROM missionaries ORDER BY is_prelisted DESC, name ASC");
-      return res.status(200).json({ ok: true, missionaries: rows || [] });
+    if (action === "get_products") {
+      const typeFilter = req.query?.type || bodyData.type;
+      let query = "SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog";
+      let params = [];
+      if (typeFilter) {
+        query += " WHERE type = ? ORDER BY price ASC";
+        params.push(typeFilter);
+      } else {
+        query += " ORDER BY type ASC, price ASC";
+      }
+      const products = await runSql(query, params);
+      return res.status(200).json({ ok: true, products: products || [] });
     }
 
-    if (action === "update_missionary_points") {
-      const { email, delta } = bodyData;
-      await runSql("UPDATE missionaries SET points = MAX(0, points + ?) WHERE email = ?", [delta, email]);
-      return res.status(200).json({ ok: true });
-    }
+    if (action === "sync_catalog" || action === "synch catalog" || action === "save_products") {
+      const products = bodyData.products || req.body?.products || [];
+      const catalogType = bodyData.type || req.body?.type || "reward";
 
-    if (action === "toggle_missionary_status") {
-      const { email, status } = bodyData;
-      await runSql("UPDATE missionaries SET status = ? WHERE email = ?", [status, email]);
-      return res.status(200).json({ ok: true });
+      await runSql("DELETE FROM product_catalog WHERE type = ?", [catalogType]);
+
+      for (const item of products) {
+        if (!item.name) continue;
+        const cost = parseFloat(item.price) || 0;
+        const img = item.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
+
+        await runSql(
+          "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url, type = excluded.type",
+          [item.name.trim(), cost, img, catalogType]
+        );
+      }
+      return res.status(200).json({ ok: true, message: `${catalogType} catalog synchronized successfully` });
     }
 
     if (action === "get_orders") {

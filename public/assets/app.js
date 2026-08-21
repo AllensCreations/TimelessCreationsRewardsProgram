@@ -22,7 +22,7 @@ function showToast(msg, type = "success") {
     toast.style.borderRadius = "8px";
     toast.style.fontWeight = "bold";
     toast.style.fontSize = "0.85rem";
-    toast.style.zIndex = "9999";
+    toast.style.zIndex = "99999";
     toast.style.transition = "all 0.3s ease";
     toast.style.boxShadow = "0 10px 30px rgba(0,0,0,0.6)";
     document.body.appendChild(toast);
@@ -41,17 +41,18 @@ function showToast(msg, type = "success") {
 function initAppLayout(activeTab = 'dashboard', title = 'Dashboard') {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', href: '/index.html', icon: '📊' },
-    { id: 'missionaries', label: 'Missionaries', href: '/missionaries.html', icon: '👥' },
+    { id: 'missionaries', label: 'Roster', href: '/missionaries.html', icon: '👥' },
+    { id: 'pusher', label: '+ Add Missionaries', href: '/pusher.html', icon: '➕' },
     { id: 'messengerbot', label: 'Bot Rewards', href: '/messengerbot.html', icon: '🎁' },
     { id: 'drips', label: '24M Drips', href: '/drips.html', icon: '✉️' },
-    { id: 'claims', label: 'Orders', href: '/claims.html', icon: '📦' },
+    { id: 'claims', label: 'Claims & Orders', href: '/claims.html', icon: '📦' },
     { id: 'invoicing', label: 'Cash POS', href: '/invoicing.html', icon: '💵' },
     { id: 'settings', label: 'Settings', href: '/settings.html', icon: '⚙️' }
   ];
 
   const header = document.querySelector("header") || document.createElement("header");
   header.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px; background:var(--surface, #141622); border-bottom:1px solid var(--border, rgba(201,168,76,0.2));">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px; background:var(--surface, #141622); border-bottom:1px solid var(--border, rgba(201,168,76,0.2)); flex-wrap:wrap; gap:12px;">
       <div style="display:flex; align-items:center; gap:10px;">
         <span style="font-size:1.4rem;">🏛️</span>
         <div>

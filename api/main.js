@@ -186,13 +186,20 @@ export default async function handler(req, res) {
     // DASHBOARD STATS
     // ----------------------------------------------------
     if (action === "get_stats" || !action) {
-      const [totalM, activeM, totalO, pendingO, totalDrips, pts] = await Promise.all([
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const monthIso = new Date().toISOString().slice(0, 7);
+
+      const [totalM, activeM, totalO, pendingO, totalDrips, pts, recentOrders, recentLogs, todaySent, monthSent] = await Promise.all([
         runSql("SELECT COUNT(*) as count FROM missionaries"),
         runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'"),
         runSql("SELECT COUNT(*) as count FROM orders"),
         runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'"),
         runSql("SELECT COUNT(*) as count FROM drip_messages"),
-        runSql("SELECT SUM(points) as pts FROM missionaries")
+        runSql("SELECT SUM(points) as pts FROM missionaries"),
+        runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
+        runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 10"),
+        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]),
+        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"])
       ]);
 
       return res.status(200).json({
@@ -203,8 +210,13 @@ export default async function handler(req, res) {
           total_orders: totalO[0]?.count || 0,
           pending_orders: pendingO[0]?.count || 0,
           total_drips: totalDrips[0]?.count || 0,
-          circulating_points: pts[0]?.pts || 0
-        }
+          circulating_points: pts[0]?.pts || 0,
+          emails_today: todaySent[0]?.count || 0,
+          emails_month: monthSent[0]?.count || 0
+        },
+        recent_orders: recentOrders || [],
+        recent_logs: recentLogs || [],
+        daily_stats: { [todayIso]: todaySent[0]?.count || 0 }
       });
     }
 

@@ -152,6 +152,18 @@
 <div class="sidebar-backdrop" id="backdrop" onclick="toggleMobileSidebar(false)"></div>
 
 <div class="app">
+
+    <div id="live-status-card" style="display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #e0d6bc; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="status-pulse-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #dc2626; display: inline-block;"></span>
+            <span style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #78716c;">System Status:</span>
+            <span id="status-text-label" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #dc2626;">CHECKING...</span>
+        </div>
+        <div>
+            <a href="/settings.html" style="font-family: Helvetica, Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; background: #1a1a1a; color: #c9a84c; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: bold;">⚙️ Open Control Room</a>
+        </div>
+    </div>
+    
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div>
@@ -472,6 +484,38 @@ Please type "Pogi si Allen" to confirm:");
         alert("❌ Confirmation failed. Phrase did not match "Pogi si Allen".");
       }
     }
+    </script>
+    
+
+    <script>
+    async function updateDashboardStatus() {
+      try {
+        const res = await fetch("/api/main?action=health_check");
+        const data = await res.json();
+        const dot = document.getElementById("status-pulse-dot");
+        const label = document.getElementById("status-text-label");
+        
+        if (data.ok && data.status === "ONLINE") {
+          dot.style.background = "#16a34a";
+          dot.style.boxShadow = "0 0 10px #16a34a";
+          label.textContent = "ONLINE (Passive Cron Running)";
+          label.style.color = "#16a34a";
+        } else {
+          dot.style.background = "#dc2626";
+          dot.style.boxShadow = "0 0 10px #dc2626";
+          label.textContent = "OFFLINE / SLEEPING";
+          label.style.color = "#dc2626";
+        }
+      } catch (e) {
+        const dot = document.getElementById("status-pulse-dot");
+        const label = document.getElementById("status-text-label");
+        dot.style.background = "#dc2626";
+        label.textContent = "DISCONNECTED";
+        label.style.color = "#dc2626";
+      }
+    }
+    window.addEventListener("DOMContentLoaded", updateDashboardStatus);
+    setInterval(updateDashboardStatus, 5000);
     </script>
     
 </body>

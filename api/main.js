@@ -169,7 +169,7 @@ export default async function handler(req, res) {
             "Accept": "application/json"
           },
           body: JSON.stringify({
-            sender: { name: "Timeless Creations", email: "support@timelesscreationsrp.com" },
+            sender: { name: "Timeless Creations", email: "noreply.timelesscreations.ph@gmail.com" },
             to: [{ email: targetEmail }],
             subject: "🧪 TCRP Test Dispatch — Live System Check",
             htmlContent: `<div style="font-family:Georgia,serif;padding:20px;border:1px solid #c9a84c;max-width:400px;margin:0 auto;background:#fdfaf3;"><h2 style="color:#8b1a1a;margin-top:0;">Test Dispatch Success</h2><p>This is a live test email sent to <strong>${targetEmail}</strong> from your Timeless Creations Rewards Program Control Room.</p><p style="font-size:11px;color:#78716c;">Timestamp: ${new Date().toISOString()}</p></div>`

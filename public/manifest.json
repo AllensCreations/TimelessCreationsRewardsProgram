@@ -1,81 +1,25 @@
 {
-  "id": "/?source=pwa",
   "name": "Timeless Creations Rewards Program",
-  "short_name": "TCRP",
-  "description": "LDS Missionary Rewards & Monthly Inspiration Tracking System by Timeless Creations.",
-  "lang": "en-PH",
-  "dir": "ltr",
+  "short_name": "Timeless Rewards",
+  "description": "Earn points, track your rewards, and manage your dashboard seamlessly.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone",
-    "minimal-ui"
-  ],
-  "orientation": "portrait",
-  "theme_color": "#0a0a0f",
-  "background_color": "#0a0a0f",
-  "categories": [
-    "productivity",
-    "utilities",
-    "business"
-  ],
-  "prefer_related_applications": false,
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png",
+      "src": "https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/main/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/main/icon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "TCRP Command Center Desktop"
-    },
-    {
-      "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "TCRP Command Center Mobile"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Add Missionaries",
-      "short_name": "Add",
-      "url": "/pusher.html",
-      "icons": [{ "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Invoicing & Billing",
-      "short_name": "Billing",
-      "url": "/invoicing.html",
-      "icons": [{ "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Operations Hub",
-      "short_name": "Settings",
-      "url": "/settings.html",
-      "icons": [{ "src": "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png", "sizes": "192x192" }]
+      "purpose": "any maskable"
     }
   ]
 }

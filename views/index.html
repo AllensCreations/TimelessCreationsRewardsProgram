@@ -168,7 +168,7 @@ function renderFromCache() {
     logsContainer.innerHTML = logs.slice(0, 10).map(l => `
       <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#181b2a; border-radius:8px; border:1px solid rgba(255,255,255,0.04);">
         <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-          <span style="font-size:0.6rem; padding:2px 6px; border-radius:4px; font-weight:bold; background:${l.level === 'ERROR' ? 'rgba(224,92,92,0.2)' : 'rgba(76,175,130,0.2)'}; color:${l.level === 'ERROR' ? '#e05c5c' : '#4caf82'};">${l.level || 'INFO'}</span>
+          <span style="font-size:0.6rem; padding:2px 6px; border-radius:4px; font-weight:bold; background:${l.level === 'ERROR' ? 'rgba(224,92,92,0.2)' : l.level === 'WARN' ? 'rgba(201,168,76,0.2)' : 'rgba(76,175,130,0.2)'}; color:${l.level === 'ERROR' ? '#e05c5c' : l.level === 'WARN' ? '#c9a84c' : '#4caf82'};">${l.level || 'INFO'}</span>
           <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:#e8e6f0;">${l.message}</span>
         </div>
         <span style="font-size:0.65rem; color:#8c90a4; flex-shrink:0; margin-left:6px;">${l.created_at ? new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>

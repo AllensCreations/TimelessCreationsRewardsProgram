@@ -13,7 +13,6 @@ function initAppLayout(activeKey, pageTitle) {
         <a href="/" class="nav-item ${activeKey === 'overview' ? 'active' : ''}"><span class="icon">📊</span> Overview</a>
         
         <div class="nav-label">Modules</div>
-        <a href="/inbox.html" class="nav-item ${activeKey === 'inbox' ? 'active' : ''}"><span class="icon">💬</span> Messenger Inbox</a>
         <a href="/messengerbot.html" class="nav-item ${activeKey === 'messengerbot' ? 'active' : ''}"><span class="icon">🤖</span> Bot Rewards Catalog</a>
         <a href="/pusher.html" class="nav-item ${activeKey === 'pusher' ? 'active' : ''}"><span class="icon">➕</span> Add Missionaries</a>
         <a href="/invoicing.html" class="nav-item ${activeKey === 'invoicing' ? 'active' : ''}"><span class="icon">🧾</span> Invoicing &amp; Billing</a>
@@ -42,40 +41,7 @@ function initAppLayout(activeKey, pageTitle) {
         <div id="page-root">${document.body.innerHTML}</div>
       </main>
     </div>
-    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px; pointer-events:none;"></div>
   `;
-}
-
-function showToast(message, type = 'success') {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  const toast = document.createElement('div');
-  const isError = type === 'error';
-  toast.style.cssText = `
-    background: ${isError ? '#2a1215' : '#111118'};
-    border: 1px solid ${isError ? '#e05c5c' : '#c9a84c'};
-    color: ${isError ? '#fca5a5' : '#f0d080'};
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  `;
-  toast.innerHTML = `${isError ? '❌' : '✨'} ${message}`;
-  container.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }, 10);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-10px)';
-    setTimeout(() => toast.remove(), 300);
-  }, 3500);
 }
 
 function toggleSidebar(open) {

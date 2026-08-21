@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node tester.js",
-    "test500": "node tester500.js"
+    "test500": "node tester500.js",
+    "test250": "node tester250.js"
   },
   "dependencies": {
     "csv-parse": "^7.0.2",

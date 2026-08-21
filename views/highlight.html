@@ -25,14 +25,17 @@
       input:checked + .slider { background-color: var(--gold-dim); border-color: var(--gold); }
       input:checked + .slider:before { transform: translateX(20px); background-color: var(--gold); }
 
-      .save-actions { display: flex; gap: 12px; margin-top: 20px; }
+      .save-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
       .save-banner { position: sticky; bottom: 20px; background: var(--surface2); border: 1px solid var(--gold); padding: 14px 22px; border-radius: var(--radius); display: none; justify-content: space-between; align-items: center; margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 80; }
+      
       .preview-wrapper { background: #12121a; border: 1px solid var(--border); border-radius: 12px; padding: 16px; max-height: calc(100vh - 120px); overflow-y: auto; position: sticky; top: 20px; }
       .preview-frame { width: 100%; max-width: 440px; margin: 0 auto; background: #ffffff; color: #1a1a1a; font-family: 'Garamond', 'Georgia', serif; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.5); overflow: hidden; }
 
+      /* Mobile Auto-Adjust */
       @media(max-width: 1080px) {
         .editor-grid { grid-template-columns: 1fr; }
-        .preview-wrapper { position: static; max-height: none; }
+        .preview-wrapper { position: static; max-height: 80vh; overflow-y: auto; margin-top: 20px; padding: 10px; }
+        .preview-frame { max-width: 100%; }
       }
     </style>
 </head>
@@ -46,34 +49,38 @@
             <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Product of the Month</button>
         </div>
 
-        <!-- TAB 1: Live 24-Month Database Sync Editor -->
+        <!-- TAB 1: 24-Month Messages (theme = Speaker Name) -->
         <div id="tab-messages" class="tab-content active">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                     <div>
                         <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Drip Month Selector</div>
-                        <div style="font-size:0.68rem; color:var(--muted);">Select month to edit. Syncs directly with <code>drip_messages</code> table.</div>
+                        <div style="font-size:0.68rem; color:var(--muted);">Theme represents the Speaker Name placed under the Quote.</div>
                     </div>
                     <select id="month-selector" class="form-input" style="width:130px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)">
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Theme / Header Badge (theme)</label>
-                    <input type="text" id="inp-theme" class="form-input" placeholder="e.g. Month 1 • Dedicated Service" oninput="onLiveEdit()">
+                    <label class="form-label">Speaker Name / Author Citation (theme)</label>
+                    <input type="text" id="inp-theme" class="form-input" placeholder="e.g. Elder Jeffrey R. Holland" oninput="onLiveEdit()">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Monthly Encouragement Letter (message)</label>
                     <textarea id="inp-msg" class="form-input" rows="4" style="resize:vertical;" oninput="onLiveEdit()"></textarea>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Scripture / Conference Quote (scripture)</label>
+                    <label class="form-label">Conference Quote / Scripture (scripture)</label>
                     <textarea id="inp-quote" class="form-input" rows="2" style="resize:vertical;" oninput="onLiveEdit()"></textarea>
+                </div>
+
+                <div style="margin-top: 14px; text-align: right;">
+                    <button class="btn btn-dark" onclick="resetTab1Defaults()">↺ Reset Tab to Defaults</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: Essentials & Community Grid -->
+        <!-- TAB 2: Essentials & 9-Grid Images -->
         <div id="tab-images" class="tab-content">
             <div class="card">
                 <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">2 Missionary Essentials (Names &amp; 1:1 Images)</div>
@@ -109,10 +116,14 @@
                     <label class="form-label">Gallery Button Link</label>
                     <input type="url" id="inp-gallery-url" class="form-input" value="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" oninput="renderPreview()">
                 </div>
+
+                <div style="margin-top: 14px; text-align: right;">
+                    <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset Tab to Defaults</button>
+                </div>
             </div>
         </div>
 
-        <!-- TAB 3: Product of the Month (Strictly 1:1, Independent) -->
+        <!-- TAB 3: Product of the Month -->
         <div id="tab-products" class="tab-content">
             <div class="card">
                 <div class="toggle-wrap">
@@ -134,10 +145,14 @@
                     <label class="form-label">Product Image URL (1:1) (highlight_img)</label>
                     <input type="url" id="inp-highlight-img" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="onLiveEdit()">
                 </div>
+
+                <div style="margin-top: 14px; text-align: right;">
+                    <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset Tab to Defaults</button>
+                </div>
             </div>
         </div>
 
-        <!-- Direct Save Bar below Tabs -->
+        <!-- Direct Save & Actions Bar -->
         <div class="save-actions">
             <button class="btn btn-gold" id="btn-main-save" style="flex:1; justify-content:center; padding:12px;" onclick="saveActiveMonth()">💾 Save Month to Database</button>
             <button class="btn btn-dark" onclick="window.syncData ? window.syncData() : location.reload()">↻ Re-Sync</button>
@@ -179,8 +194,10 @@
                 <div style="font-size: 19px; font-style: italic; margin-bottom: 12px; color: #1a1a1a;">Hello Elder Smith,</div>
                 <div id="prev-msg" style="font-size: 13.5px; color: #333; margin-bottom: 18px;">May your faith be strengthened as you serve and invite others to come unto Christ this month.</div>
 
-                <div style="margin: 18px 0; padding: 16px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197;">
-                    <span id="prev-quote" style="font-size: 14px; font-style: italic; display: block; color: #1a1a1a; line-height: 1.5;">"Trust in the Lord with all thine heart; and lean not unto thine own understanding."</span>
+                <!-- Quote & Speaker Container (Theme rendered as Speaker under Quote) -->
+                <div style="margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197;">
+                    <span id="prev-quote" style="font-size: 14px; font-style: italic; display: block; color: #1a1a1a; line-height: 1.5; margin-bottom: 8px;"></span>
+                    <div id="prev-speaker" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;"></div>
                 </div>
 
                 <div style="margin: 20px 0; padding: 12px 8px; font-style: italic; color: #8c7e5d; font-size: 12.5px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc;">
@@ -304,9 +321,9 @@ async function fetchFromTurso() {
       data.drips.forEach(d => {
         liveDripMap[Number(d.month)] = {
           month: Number(d.month),
-          theme: d.theme || `Month ${d.month} • Dedicated Service`,
-          scripture: d.scripture || "",
-          message: d.message || "",
+          theme: d.theme || "Elder Jeffrey R. Holland",
+          scripture: d.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
+          message: d.message || `May your faith be strengthened as you serve and invite others to come unto Christ during Month ${d.month}.`,
           highlight_img: d.highlight_img || "",
           highlight_label: d.highlight_label || ""
         };
@@ -327,8 +344,8 @@ function onSelectMonth(m) {
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,
-    theme: `Month ${currentMonth} • Dedicated Service`,
-    scripture: `"Trust in the Lord with all thine heart; and lean not unto thine own understanding." (Proverbs 3:5)`,
+    theme: "Elder Jeffrey R. Holland",
+    scripture: "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
     message: `May your faith be strengthened as you serve and invite others to come unto Christ during Month ${currentMonth}.`,
     highlight_img: "",
     highlight_label: ""
@@ -366,12 +383,22 @@ function onLiveEdit() {
   renderPreview();
 }
 
+function cleanQuoteString(raw) {
+  if (!raw) return "";
+  // Strip duplicate double or single surrounding quotes
+  return raw.replace(/^["'“](.*)["'”]$/, '$1').replace(/^["'“]/, '').replace(/["'”]$/, '').trim();
+}
+
 function renderPreview() {
   const data = liveDripMap[currentMonth] || {};
 
-  document.getElementById("prev-date").textContent = data.theme || `Month ${currentMonth} • Dedicated Service`;
+  document.getElementById("prev-date").textContent = `Month ${currentMonth} • Dedicated Service`;
   document.getElementById("prev-msg").innerHTML = (data.message || "").replace(/\n/g, "<br>");
-  document.getElementById("prev-quote").innerHTML = `"${(data.scripture || "").replace(/^"|"$/g, "")}"`;
+  
+  // Clean quote & render speaker underneath
+  const cleanedQuote = cleanQuoteString(data.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.");
+  document.getElementById("prev-quote").innerHTML = `"${cleanedQuote}"`;
+  document.getElementById("prev-speaker").textContent = data.theme || "Elder Jeffrey R. Holland";
 
   // 2 Essentials
   document.getElementById("prev-ess1-name").textContent = document.getElementById("inp-ess1-name").value.trim();
@@ -441,6 +468,50 @@ function renderPreview() {
   }
 }
 
+// Reset Tab 1 (Messages) Defaults
+function resetTab1Defaults() {
+  document.getElementById("inp-theme").value = "Elder Jeffrey R. Holland";
+  document.getElementById("inp-msg").value = `May your faith be strengthened as you serve and invite others to come unto Christ during Month ${currentMonth}.`;
+  document.getElementById("inp-quote").value = "Trust in the Lord with all thine heart; and lean not unto thine own understanding.";
+  onLiveEdit();
+  showToast(`Reset Tab 1 for Month ${currentMonth} to defaults.`);
+}
+
+// Reset Tab 2 (Essentials & 9 Grid) Defaults
+function resetTab2Defaults() {
+  document.getElementById("inp-ess1-name").value = "Wooden Nametag";
+  document.getElementById("inp-img-ess1").value = "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  document.getElementById("inp-ess2-name").value = "POS Kit";
+  document.getElementById("inp-img-ess2").value = "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+
+  const defaultGrids = [
+    "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
+    "https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky",
+    "https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv",
+    "https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR",
+    "https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m",
+    "https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV",
+    "https://lh3.googleusercontent.com/u/0/d/1ClRvFGc7yUwM03ydd1fb8XwGE1NXWKvY",
+    "https://lh3.googleusercontent.com/u/0/d/15fj9X-Epr_MFvgHuf5PFl0d1Syu4HYJI",
+    "https://lh3.googleusercontent.com/u/0/d/1gGDswVZRyCMnzmdRMWg_Ue4HW7Msi1qC"
+  ];
+  for (let i = 1; i <= 9; i++) {
+    document.getElementById(`inp-grid-${i}`).value = defaultGrids[i - 1];
+  }
+  document.getElementById("inp-gallery-url").value = "https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7";
+  renderPreview();
+  showToast("Reset Tab 2 gallery & essentials to defaults.");
+}
+
+// Reset Tab 3 (Product of Month) Defaults
+function resetTab3Defaults() {
+  document.getElementById("inp-highlight-toggle").checked = false;
+  document.getElementById("inp-highlight-name").value = "";
+  document.getElementById("inp-highlight-img").value = "";
+  onLiveEdit();
+  showToast("Disabled & reset Product of the Month.");
+}
+
 async function saveActiveMonth() {
   const btn = document.getElementById("btn-main-save");
   const saveBannerBtn = document.getElementById("btn-save-turso");
@@ -468,7 +539,7 @@ async function saveActiveMonth() {
       document.getElementById("save-banner").style.display = "none";
       if (btn) btn.textContent = "💾 Save Month to Database";
       if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
-      showToast(`Month ${currentMonth} successfully saved to Turso database!`);
+      showToast(`Month ${currentMonth} saved to database!`);
     } else {
       showToast(resData.error || "Failed to save.", "error");
       if (btn) btn.textContent = "💾 Save Month to Database";
@@ -485,7 +556,7 @@ window.syncData = async () => {
   document.getElementById("save-banner").style.display = "none";
   await fetchFromTurso();
   onSelectMonth(currentMonth);
-  showToast("Re-synced 24 months directly from Turso database.");
+  showToast("Re-synced 24 months from Turso database.");
 };
 
 window.addEventListener("DOMContentLoaded", async () => {

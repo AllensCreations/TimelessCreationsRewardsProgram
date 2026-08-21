@@ -34,7 +34,8 @@ export default async function handler(req, res) {
     
     if (action === "get_products") {
       try {
-        const products = await runSql("SELECT id, name, price, image_url FROM product_catalog ORDER BY id ASC");
+        const typeFilter = req.query.type || "reward";
+        const products = await runSql("SELECT id, name, price, image_url, type FROM product_catalog WHERE type = ? ORDER BY id ASC", [typeFilter]);
         return res.status(200).json({ ok: true, products });
       } catch (err) {
         return res.status(500).json({ ok: false, error: err.message });
@@ -111,14 +112,11 @@ export default async function handler(req, res) {
     if (action === "sync_catalog") {
       const { products } = req.body;
       try {
-        await runSql("DELETE FROM product_catalog");
+        const targetType = req.body.type || "reward";
+        await runSql("DELETE FROM product_catalog WHERE type = ?", [targetType]);
         for (const p of products || []) {
           if (p.name) {
-            await runSql("INSERT INTO product_catalog (name, price, image_url) VALUES (?, ?, ?)", [
-              p.name, 
-              Number(p.price) || 0, 
-              p.image_url || ""
-            ]);
+            await runSql("INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, ?)", [p.name, Number(p.price) || 0, p.image_url || "", targetType]);
           }
         }
         return res.status(200).json({ ok: true, message: "Catalog batch synced successfully." });

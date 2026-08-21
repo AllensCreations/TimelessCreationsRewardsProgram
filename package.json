@@ -7,7 +7,8 @@
     "start": "node server.js",
     "test": "node tester.js",
     "test500": "node tester500.js",
-    "test250": "node tester250.js"
+    "test250": "node tester250.js",
+    "testui": "node tester_ui_500.js"
   },
   "dependencies": {
     "csv-parse": "^7.0.2",
@@ -15,5 +16,8 @@
     "express": "^4.19.2",
     "firebase": "^10.12.0"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  }
 }

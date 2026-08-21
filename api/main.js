@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     // MISSIONARIES DIRECTORY
     // ----------------------------------------------------
     if (action === "get_missionaries") {
-      const rows = await runSql("SELECT email, name, cohort, psid, points, referral_code, status, months_sent, max_months FROM missionaries ORDER BY name ASC");
+      const rows = await runSql("SELECT * FROM missionaries ORDER BY is_prelisted DESC, name ASC");
       return res.status(200).json({ ok: true, missionaries: rows || [] });
     }
 

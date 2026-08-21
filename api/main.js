@@ -1,4 +1,30 @@
-import { runSql } from '../lib/db.js';
+import { queryTurso, unwrap } from '../lib/db.js';
+
+async function runSql(sql, args = []) {
+  const formattedArgs = args.map(val => {
+    if (val === null || val === undefined) return { type: "null" };
+    if (typeof val === "number") return { type: "integer", value: String(val) };
+    return { type: "text", value: String(val) };
+  });
+  const data = await queryTurso([{ type: "execute", stmt: { sql, args: formattedArgs } }]);
+  const results = data.results || [];
+  let targetResult = null;
+  for (const r of results) {
+    if (r && r.response && r.response.result && r.response.result.cols) {
+      targetResult = r.response.result;
+      break;
+    }
+  }
+  if (!targetResult && results.length > 0) targetResult = results[0]?.response?.result;
+  if (!targetResult || !targetResult.cols) return [];
+
+  const cols = targetResult.cols.map(c => (typeof c === 'object' ? c.name : c));
+  return (targetResult.rows || []).map(row => {
+    const obj = {};
+    row.forEach((cell, idx) => { obj[cols[idx]] = unwrap(cell); });
+    return obj;
+  });
+}
 
 export default async function handler(req, res) {
   const action = req.query.action || req.body?.action;
@@ -7,8 +33,9 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     if (action === 'health_check') {
       try {
-        await runSql("SELECT 1");
-        return res.status(200).json({ ok: true, status: 'ONLINE', timestamp: new Date().toISOString() });
+        const configRows = await runSql("SELECT value FROM system_config WHERE key = 'master_power'");
+        const isOnline = configRows.length === 0 || configRows[0].value === 'online';
+        return res.status(200).json({ ok: true, status: isOnline ? 'ONLINE' : 'OFFLINE', timestamp: new Date().toISOString() });
       } catch (err) {
         return res.status(500).json({ ok: false, status: 'OFFLINE', error: err.message });
       }
@@ -70,7 +97,6 @@ export default async function handler(req, res) {
         systemConfig: systemConfig.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {})
       });
     } catch (err) {
-      console.error("Dashboard API Error:", err.message);
       return res.status(500).json({ ok: false, error: err.message, missionaries: [], logs: [] });
     }
   }
@@ -88,8 +114,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    if (action === 'toggle_power') {
+      const { state } = req.body; // 'online' or 'offline'
+      try {
+        // Safe SQLite upsert using INSERT OR REPLACE
+        await runSql(`INSERT OR REPLACE INTO system_config (key, value) VALUES ('master_power', ?)`, [state]);
+        return res.status(200).json({ ok: true, state });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     if (action === 'force_cron') {
-      // Cron execution handler
       return res.status(200).json({ ok: true, message: "Cron job executed successfully." });
     }
   }

@@ -32,6 +32,42 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     
+    
+    if (action === "get_highlight" || action === "get_drips") {
+      try {
+        const rows = await runSql("SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages ORDER BY month ASC");
+        return res.status(200).json({ ok: true, drips: rows });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
+    if (action === "save_drip") {
+      const { month, theme, scripture, message, highlight_img, highlight_label } = req.body;
+      try {
+        await runSql(`
+          INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(month) DO UPDATE SET
+            theme = excluded.theme,
+            scripture = excluded.scripture,
+            message = excluded.message,
+            highlight_img = excluded.highlight_img,
+            highlight_label = excluded.highlight_label
+        `, [
+          Number(month),
+          theme || "",
+          scripture || "",
+          message || "",
+          highlight_img || "",
+          highlight_label || ""
+        ]);
+        return res.status(200).json({ ok: true, message: "Month " + month + " saved to database." });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     if (action === "get_products") {
       try {
         const typeFilter = req.query.type || "reward";

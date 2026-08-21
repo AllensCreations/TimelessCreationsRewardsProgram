@@ -3,26 +3,28 @@ import { runSql } from '../lib/db.js';
 import { sendDripEmail } from '../lib/mailer.js';
 
 export default async function handler(req, res) {
-  // Protect cron endpoint with optional CRON_SECRET authorization header
   const authHeader = req.headers?.authorization || req.query?.key;
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}` && authHeader !== process.env.CRON_SECRET) {
     return res.status(401).json({ ok: false, error: "Unauthorized cron execution." });
   }
 
   try {
-    // Check if master power switch is enabled
     const powerSetting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
     if (powerSetting && powerSetting.value === "OFFLINE") {
       return res.status(200).json({ ok: true, message: "System is in sleep mode. No drips sent." });
     }
 
-    // Query missionaries due for their next monthly drip
+    // STRICT ORDER: Oldest / Longest waiting missionaries dispatched first
     const dueMissionaries = await runSql(`
-      SELECT email, name, cohort, months_sent, max_months 
+      SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
       WHERE status = 'active'
         AND months_sent < max_months
         AND (next_send_date <= date('now') OR next_send_date IS NULL OR last_sent_at IS NULL)
+      ORDER BY 
+        CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
+        last_sent_at ASC,
+        ROWID ASC
       LIMIT 100
     `);
 
@@ -38,15 +40,15 @@ export default async function handler(req, res) {
       const recipientName = m.name || (m.cohort === 'sister' ? 'Sister' : 'Elder');
 
       try {
-        const delivered = await sendDripEmail(m.email, nextMonth, recipientName);
+        const result = await sendDripEmail(m.email, nextMonth, recipientName);
 
-        if (delivered) {
+        if (result?.ok) {
           await runSql(`
             UPDATE missionaries 
             SET months_sent = months_sent + 1,
                 last_sent_at = CURRENT_TIMESTAMP,
                 next_send_date = date('now', '+30 days')
-            WHERE email = ?
+            WHERE LOWER(email) = LOWER(?)
           `, [m.email]);
 
           await runSql(`
@@ -56,7 +58,7 @@ export default async function handler(req, res) {
 
           sentCount++;
         } else {
-          errors.push(`Brevo rejected email for ${m.email}`);
+          errors.push(`Brevo rejected email for ${m.email}: ${result?.error || 'Unknown error'}`);
         }
       } catch (err) {
         errors.push(`Failed for ${m.email}: ${err.message}`);

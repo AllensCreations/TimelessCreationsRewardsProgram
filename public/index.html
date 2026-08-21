@@ -77,7 +77,7 @@
     }
     .three-col-grid {
       display: grid;
-      grid-template-columns: 1.1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 16px;
       margin-bottom: 20px;
     }
@@ -128,6 +128,7 @@
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
 
+  <!-- 3-Column Grid: Recently Sent Emails, System Logs, Brevo / Webhook Delivery Feed -->
   <div class="three-col-grid">
     <div class="card" style="margin-bottom:0;">
       <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
@@ -150,11 +151,12 @@
     </div>
 
     <div class="card" style="margin-bottom:0;">
-      <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px;">
-        🎁 Recent Reward Claims
+      <div style="font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:bold; color:var(--gold, #c9a84c); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span>🌐 Webhook &amp; Delivery Log</span>
+        <span style="font-size:0.6rem; color:var(--blue, #5c8de0); text-transform:uppercase; font-weight:bold;">Brevo API</span>
       </div>
-      <div id="recent-orders-list" style="display:flex; flex-direction:column; gap:8px; font-size:0.75rem;">
-        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">No orders cached.</div>
+      <div id="webhook-logs-list" style="display:flex; flex-direction:column; gap:8px; font-size:0.72rem;">
+        <div style="color:var(--muted, #8c90a4); text-align:center; padding:16px;">No webhook events logged.</div>
       </div>
     </div>
   </div>
@@ -166,7 +168,6 @@ let dashboardState = { dailyStats: {} };
 function renderFromCache() {
   const cachedPayload = LocalStore.get('stats_payload', null);
   if (!cachedPayload) {
-    // First run fallback
     triggerGlobalRefresh();
     return;
   }
@@ -214,19 +215,18 @@ function renderFromCache() {
     `).join('');
   }
 
-  // Render Orders
-  const ordersList = document.getElementById("recent-orders-list");
-  const orders = cachedPayload.recent_orders || [];
-  if (orders.length > 0) {
-    ordersList.innerHTML = orders.slice(0, 5).map(o => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
-        <div>
-          <strong style="color:var(--text);">${o.name || 'Anonymous'}</strong>
-          <div style="font-size:0.65rem; color:var(--muted);">${o.item} (${o.points_cost} PTS)</div>
-        </div>
-        <span style="color:var(--gold); font-size:0.65rem; font-weight:bold; text-transform:uppercase;">${o.status}</span>
+  // Render Webhook & Delivery Logs (filtered from system logs)
+  const webhookContainer = document.getElementById("webhook-logs-list");
+  const webhookLogs = logs.filter(l => (l.message || "").toLowerCase().includes('drip') || (l.message || "").toLowerCase().includes('brevo') || (l.message || "").toLowerCase().includes('webhook'));
+  if (webhookLogs.length > 0) {
+    webhookContainer.innerHTML = webhookLogs.slice(0, 8).map(l => `
+      <div style="padding:7px 10px; background:var(--surface2, #1c1f2e); border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+        <div style="color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${l.message}</div>
+        <div style="font-size:0.6rem; color:var(--muted); margin-top:2px;">${l.created_at || 'Just now'}</div>
       </div>
     `).join('');
+  } else {
+    webhookContainer.innerHTML = `<div style="color:var(--muted); text-align:center; padding:16px;">No delivery logs recorded yet.</div>`;
   }
 }
 

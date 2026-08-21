@@ -245,6 +245,96 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, settings: map });
     }
 
+    
+    // ----------------------------------------------------
+    // BATCH PUSHER
+    // ----------------------------------------------------
+    if (action === "push_missionaries") {
+      if (req.method === "GET") {
+        try {
+          const logs = await runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50");
+          return res.status(200).json({ ok: true, history: logs || [] });
+        } catch (err) {
+          return res.status(500).json({ ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === "POST") {
+        const entries = bodyData.entries || [];
+        if (!Array.isArray(entries) || entries.length === 0) {
+          return res.status(400).json({ ok: false, error: "No entries provided" });
+        }
+
+        let added = 0, skipped = 0;
+        for (const item of entries) {
+          const email = (item.email || "").toLowerCase().trim();
+          const titleName = (item.title_name || item.name || "").trim();
+          const firstName = (item.first_name || "").trim();
+          const batchMonth = (item.batch || "August 2026").trim();
+
+          if (!email || !titleName) { skipped++; continue; }
+
+          let cohort = "elder";
+          let maxMonths = 24;
+          if (/^sister\b/i.test(titleName)) { cohort = "sister"; maxMonths = 18; }
+
+          const lastName = titleName.replace(/^(elder|sister)\s+/i, "").trim();
+          const fullName = `${titleName} ${firstName}`.trim();
+
+          try {
+            const existing = (await runSql("SELECT email FROM missionaries WHERE LOWER(email) = ?", [email]))[0];
+            if (existing) {
+              await runSql(
+                "UPDATE missionaries SET name = ?, last_name = ?, first_name = ?, full_name = ?, cohort = ?, batch_month = ?, max_months = ?, is_prelisted = 1 WHERE LOWER(email) = ?",
+                [titleName, lastName, firstName, fullName, cohort, batchMonth, maxMonths, email]
+              );
+              added++;
+              continue;
+            }
+
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const nums = "23456789";
+            let refCode = "";
+            for (let i = 0; i < 3; i++) {
+              refCode += chars.charAt(Math.floor(Math.random() * chars.length));
+              refCode += nums.charAt(Math.floor(Math.random() * nums.length));
+            }
+
+            await runSql(
+              "INSERT INTO missionaries (email, name, last_name, first_name, full_name, cohort, batch_month, referral_code, max_months, points, status, is_prelisted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, "active", 1)",
+              [email, titleName, lastName, firstName, fullName, cohort, batchMonth, refCode, maxMonths]
+            );
+            added++;
+          } catch (err) { skipped++; }
+        }
+        return res.status(200).json({ ok: true, added, skipped, message: `Successfully Saved/Updated: ${added}` });
+      }
+    }
+
+    // ----------------------------------------------------
+    // TEST EMAIL DISPATCHER
+    // ----------------------------------------------------
+    if (action === "test_email") {
+      try {
+        const email = req.query?.email || bodyData.email;
+        if (!email) return res.status(400).json({ ok: false, error: "Missing email address parameter" });
+        
+        const { sendDripEmail } = await import("../lib/mailer.js");
+        const success = await sendDripEmail(
+          email, 
+          1, 
+          "System Diagnostic", 
+          "This is an automated test from your Command Center.", 
+          "Your API routes and SMTP connections are live and functioning properly."
+        );
+        
+        if (success) return res.status(200).json({ ok: true, message: "Test email dispatched successfully." });
+        return res.status(500).json({ ok: false, error: "SMTP accepted request but mailer failed to dispatch." });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: "Mailer error: " + err.message });
+      }
+    }
+
     return res.status(404).json({ ok: false, error: `Unknown action '${action}'` });
   } catch (err) {
     console.error("API Router Error:", err);

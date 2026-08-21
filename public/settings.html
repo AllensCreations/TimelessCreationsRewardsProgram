@@ -1,366 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Settings & Control Room | Timeless Creations</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="/assets/app.css">
-    <script src="/assets/app.js"></script>
-    <style>
-      .console-box {
-        background: #0d0d14; border: 1px solid var(--border); border-radius: 6px;
-        padding: 14px; font-family: 'DM Mono', monospace; font-size: 0.72rem;
-        color: var(--green); margin-top: 14px; white-space: pre-wrap; display: none;
-        max-height: 280px; overflow-y: auto;
-      }
-      .modal-overlay { 
-        position: fixed; inset: 0; background: rgba(5,5,8,0.88); 
-        backdrop-filter: blur(8px); display: none; justify-content: center; 
-        align-items: center; z-index: 1000; padding: 20px; 
-      }
-      .modal-box { 
-        background: var(--surface); border: 1px solid var(--gold); 
-        padding: 24px; border-radius: 12px; max-width: 480px; width: 100%; 
-        box-shadow: 0 20px 50px rgba(0,0,0,0.85); text-align: center; 
-        position: relative; animation: popIn 0.2s ease-out;
-      }
-
-      /* Game Arena & Cards */
-      .captcha-arena {
-        position: relative; width: 100%; height: 180px;
-        background: #08080d; border: 1px solid var(--border); border-radius: 8px;
-        margin: 16px 0; overflow: hidden; display: flex; justify-content: space-around;
-        align-items: center;
-      }
-      .captcha-card {
-        width: 80px; height: 80px; border-radius: 8px; overflow: hidden;
-        border: 2px solid var(--border); cursor: pointer; transition: transform 0.15s, border-color 0.2s;
-        background: var(--surface2); position: relative; user-select: none;
-      }
-      .captcha-card:hover {
-        border-color: var(--gold);
-        box-shadow: 0 0 15px rgba(201,168,76,0.4);
-      }
-      .captcha-card img {
-        width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
-      }
-
-      /* Moving Animations: Round 2 (Medium) */
-      .move-float-1 { animation: floatAround1 2.2s infinite ease-in-out alternate; }
-      .move-float-2 { animation: floatAround2 2.6s infinite ease-in-out alternate; }
-      .move-float-3 { animation: floatAround3 2.4s infinite ease-in-out alternate; }
-
-      @keyframes floatAround1 {
-        0% { transform: translateY(-30px) translateX(-10px); }
-        100% { transform: translateY(30px) translateX(15px); }
-      }
-      @keyframes floatAround2 {
-        0% { transform: translateY(35px) scale(0.95); }
-        100% { transform: translateY(-35px) scale(1.05); }
-      }
-      @keyframes floatAround3 {
-        0% { transform: translateY(-25px) translateX(12px); }
-        100% { transform: translateY(25px) translateX(-12px); }
-      }
-
-      /* Moving Animations: Round 3 (Hard) */
-      .move-fast-1 { animation: fastBounce1 1.2s infinite ease-in-out alternate; }
-      .move-fast-2 { animation: fastBounce2 0.9s infinite ease-in-out alternate; }
-      .move-fast-3 { animation: fastBounce3 1.1s infinite ease-in-out alternate; }
-
-      @keyframes fastBounce1 {
-        0% { transform: translateY(-45px) translateX(-20px) rotate(-6deg); }
-        50% { transform: translateY(0px) translateX(10px) scale(1.1); }
-        100% { transform: translateY(45px) translateX(25px) rotate(6deg); }
-      }
-      @keyframes fastBounce2 {
-        0% { transform: translateY(40px) translateX(20px) rotate(8deg); }
-        50% { transform: translateY(-10px) scale(0.88); }
-        100% { transform: translateY(-40px) translateX(-20px) rotate(-8deg); }
-      }
-      @keyframes fastBounce3 {
-        0% { transform: translateY(-35px) translateX(15px); }
-        50% { transform: translateY(20px) scale(1.15); }
-        100% { transform: translateY(35px) translateX(-25px); }
-      }
-
-      /* Progress Badges */
-      .progress-bar-wrap {
-        display: flex; justify-content: center; gap: 8px; margin-bottom: 12px;
-      }
-      .progress-dot {
-        width: 32px; height: 6px; border-radius: 99px; background: var(--surface2);
-        border: 1px solid var(--border); transition: all 0.3s;
-      }
-      .progress-dot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.6); }
-
-      @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        20%, 60% { transform: translateX(-10px); }
-        40%, 80% { transform: translateX(10px); }
-      }
-      .shake-box { animation: shake 0.35s ease; border-color: #e05c5c !important; }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Settings &amp; Diagnostics | Timeless Creations</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/app.css">
+<script src="/assets/app.js"></script>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+    --border:rgba(255,255,255,0.07);
+    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+    --green:#4caf82; --red:#e05c5c; --text:#e8e6f0; --muted:#716e88;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+  .container{max-width:850px;margin:20px auto;padding:0 16px 40px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+  .card h3{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--gold);margin-bottom:6px;}
+  .form-group{margin-bottom:14px;}
+  .form-group label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;}
+  .form-input,.form-select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;}
+</style>
 </head>
 <body>
 
-<div class="card" style="border-color: rgba(201,168,76,0.3);">
-    <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">⚡ Master System Power Switch</div>
-    <div style="font-size:0.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
-        Controls background automated drip dispatches and passive cron jobs in Turso.<br>
-        <span style="color:var(--gold);">🔒 Protected by 3-Round Moving Face CAPTCHA (Easy $\rightarrow$ Hard).</span>
-    </div>
-    <button id="power-toggle-btn" class="btn btn-dark" onclick="startPowerCaptcha()">⏳ Loading Status...</button>
-</div>
+<div class="container">
+  <div class="card">
+    <h3>✉️ Email Dispatch Diagnostic Testing</h3>
+    <p style="font-size:0.7rem; color:var(--muted); margin-bottom:16px;">Test live delivery of different transactional email templates directly through Brevo SMTP.</p>
 
-<div class="card">
-    <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">✉️ Live Brevo Email Tester (Single &amp; Small Batch)</div>
-    <div style="font-size:0.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
-        Sender Address: <strong>noreply.timelesscreations.ph@gmail.com</strong><br>
-        Enter a single email or separate multiple emails with commas to test a small batch.
-    </div>
-    
     <div class="form-group">
-        <label class="form-label">Recipient Email(s)</label>
-        <input type="text" id="test-email-input" class="form-input" placeholder="test1@gmail.com, elder.smith@missionary.org" value="2ndsalviejomark2019@gmail.com">
+      <label>Target Recipient Email Address</label>
+      <input type="email" id="test-email-target" class="form-input" placeholder="youremail@gmail.com" value="2ndsalviejomark2019@gmail.com"/>
     </div>
-    
-    <button class="btn btn-gold" id="btn-send-test" onclick="sendTestEmail()">🚀 Dispatch Test Email(s)</button>
-    <div id="test-console" class="console-box"></div>
-</div>
 
-<div class="card">
-    <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">⚙️ Manual Cron Execution</div>
-    <div style="font-size:0.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
-        Manually trigger scheduled drip deliveries for active missionaries. Requires security confirmation.
+    <div class="form-group">
+      <label>Select Email Template Type to Send</label>
+      <select id="test-email-template" class="form-select">
+        <option value="drip">✉️ Monthly Drip Encouragement Letter (Month 1)</option>
+        <option value="otp">🔐 6-Digit OTP Account Verification Code</option>
+        <option value="receipt">🧾 TCRP Reward Redemption Purchase Receipt</option>
+      </select>
     </div>
-    <button class="btn btn-dark" onclick="openCronModal()">Force Cron Run Now</button>
-</div>
 
-<!-- 3-Round Progressive CAPTCHA Modal -->
-<div id="captcha-modal" class="modal-overlay">
-    <div class="modal-box" id="captcha-box">
-        <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold); margin-bottom:4px;">😎 Handsome Face Verification</div>
-        <div style="font-size:0.75rem; color:var(--text); margin-bottom:10px;" id="captcha-round-title">Round 1 of 3: Tap the real Handsome Face (Static)</div>
-        
-        <div class="progress-bar-wrap">
-            <div class="progress-dot active" id="p-dot-1"></div>
-            <div class="progress-dot" id="p-dot-2"></div>
-            <div class="progress-dot" id="p-dot-3"></div>
-        </div>
-
-        <div class="captcha-arena" id="captcha-arena-container">
-            <!-- Cards rendered dynamically based on difficulty -->
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <span style="font-size:0.68rem; color:var(--muted);" id="captcha-difficulty-label">Difficulty: Level 1 (Easy)</span>
-            <button class="btn btn-dark" onclick="closeCaptchaModal()">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- Security Confirmation Modal for Cron -->
-<div id="custom-modal" class="modal-overlay">
-    <div class="modal-box">
-        <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold); margin-bottom:10px;">Security Verification</div>
-        <div style="font-size:0.72rem; color:var(--muted); margin-bottom:16px;">Please type <strong>"Pogi si Allen"</strong> below to proceed:</div>
-        <input type="text" id="modal-input-val" class="form-input" style="text-align:center; margin-bottom:16px;" placeholder="Type here...">
-        <div style="display:flex; justify-content:center; gap:10px;">
-            <button class="btn btn-dark" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-gold" onclick="submitCronModal()">Confirm &amp; Execute</button>
-        </div>
-    </div>
+    <button class="btn" id="btn-send-test-email" onclick="dispatchTestEmail()">🚀 Dispatch Selected Test Email</button>
+  </div>
 </div>
 
 <script>
-let currentPowerState = "offline";
-let captchaRound = 1;
+async function dispatchTestEmail() {
+  const target = document.getElementById("test-email-target").value.trim();
+  const template = document.getElementById("test-email-template").value;
+  const btn = document.getElementById("btn-send-test-email");
 
-const CAPTCHA_IMAGES = [
-  { id: "correct", src: "https://i.postimg.cc/mgjRv9Dy/IMG-7154.jpg", isHandsome: true },
-  { id: "wrong1", src: "https://i.postimg.cc/9X92WK05/images.webp", isHandsome: false },
-  { id: "wrong2", src: "https://i.postimg.cc/s21Fb0qk/images-(1).webp", isHandsome: false }
-];
-
-async function loadSettings() {
-  const btn = document.getElementById("power-toggle-btn");
-  try {
-    const res = await fetch("/api/main?action=health_check");
-    const data = await res.json();
-    if (data.ok && data.status === "ONLINE") {
-      currentPowerState = "online";
-      btn.className = "btn btn-gold";
-      btn.textContent = "⚡ System: ONLINE (Click to Sleep)";
-    } else {
-      currentPowerState = "offline";
-      btn.className = "btn btn-dark";
-      btn.textContent = "💤 System: OFFLINE / SLEEPING (Click to Wake)";
-    }
-  } catch(e) {
-    btn.textContent = "⚠️ Disconnected";
-  }
-}
-
-function startPowerCaptcha() {
-  captchaRound = 1;
-  renderCaptchaRound();
-  document.getElementById("captcha-modal").style.display = "flex";
-}
-
-function closeCaptchaModal() {
-  document.getElementById("captcha-modal").style.display = "none";
-}
-
-function renderCaptchaRound() {
-  const arena = document.getElementById("captcha-arena-container");
-  const title = document.getElementById("captcha-round-title");
-  const diffLabel = document.getElementById("captcha-difficulty-label");
-
-  // Update dots
-  document.getElementById("p-dot-1").className = captchaRound >= 1 ? "progress-dot active" : "progress-dot";
-  document.getElementById("p-dot-2").className = captchaRound >= 2 ? "progress-dot active" : "progress-dot";
-  document.getElementById("p-dot-3").className = captchaRound >= 3 ? "progress-dot active" : "progress-dot";
-
-  let animClasses = ["", "", ""];
-  if (captchaRound === 1) {
-    title.innerHTML = `Round 1 of 3: Tap the real <strong>Handsome Face</strong> (Static)`;
-    diffLabel.textContent = "Difficulty: Level 1 (Easy)";
-  } else if (captchaRound === 2) {
-    title.innerHTML = `Round 2 of 3: Target is <strong>Moving!</strong> (Medium)`;
-    diffLabel.textContent = "Difficulty: Level 2 (Medium)";
-    animClasses = ["move-float-1", "move-float-2", "move-float-3"];
-  } else if (captchaRound === 3) {
-    title.innerHTML = `Round 3 of 3: <strong>Fast Speed & Orbit!</strong> (Hard)`;
-    diffLabel.textContent = "Difficulty: Level 3 (Hard)";
-    animClasses = ["move-fast-1", "move-fast-2", "move-fast-3"];
-  }
-
-  // Shuffle images randomly
-  const shuffled = [...CAPTCHA_IMAGES].sort(() => Math.random() - 0.5);
-
-  arena.innerHTML = shuffled.map((item, idx) => `
-    <div class="captcha-card ${animClasses[idx]}" onclick="handleCaptchaPick(${item.isHandsome})">
-      <img src="${item.src}" alt="Face">
-    </div>
-  `).join('');
-}
-
-async function handleCaptchaPick(isHandsome) {
-  const box = document.getElementById("captcha-box");
-
-  if (!isHandsome) {
-    box.classList.remove("shake-box");
-    void box.offsetWidth;
-    box.classList.add("shake-box");
-    showToast("Wrong face selected! Resetting to Round 1.", "error");
-    captchaRound = 1;
-    renderCaptchaRound();
+  if (!target) {
+    showToast("Please provide an email address.", "error");
     return;
   }
 
-  // Correct Pick
-  if (captchaRound < 3) {
-    showToast(`✓ Round ${captchaRound} Passed! Speed increasing...`);
-    captchaRound++;
-    renderCaptchaRound();
-  } else {
-    // Round 3 Completed!
-    closeCaptchaModal();
-    showToast("🏆 All 3 Rounds Complete! Pogi Certified.");
-    await executePowerToggle();
-  }
-}
-
-async function executePowerToggle() {
-  const nextState = currentPowerState === "online" ? "offline" : "online";
-  const btn = document.getElementById("power-toggle-btn");
-  btn.textContent = "⏳ Saving to Turso...";
-  try {
-    const res = await fetch("/api/main", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "toggle_power", state: nextState })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showToast(`Master power state changed to ${nextState.toUpperCase()}`);
-      loadSettings();
-    }
-  } catch(e) {
-    showToast("Failed to update power state.", "error");
-    loadSettings();
-  }
-}
-
-async function sendTestEmail() {
-  const input = document.getElementById("test-email-input").value.trim();
-  const consoleBox = document.getElementById("test-console");
-  const btn = document.getElementById("btn-send-test");
-
-  if (!input) return showToast("Enter at least one email address.", "error");
-
-  consoleBox.style.display = "block";
-  consoleBox.textContent = `⏳ Dispatching live test email from "noreply.timelesscreations.ph@gmail.com"...\nTarget(s): ${input}\n\n`;
-  btn.textContent = "⏳ Sending...";
   btn.disabled = true;
+  btn.textContent = "⏳ Sending Email...";
 
   try {
     const res = await fetch("/api/main", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "test_email", email: input })
+      body: JSON.stringify({
+        action: "test_email",
+        email: target,
+        template_type: template
+      })
     });
     const data = await res.json();
-    consoleBox.textContent += JSON.stringify(data, null, 2);
-
     if (data.ok) {
-      showToast(`Test dispatch successful (${data.totalSent} sent)!`);
-      consoleBox.textContent += "\n\n✅ ALL DISPATCHES DELIVERED SUCCESSFULLY!";
+      showToast(`Success! ${template.toUpperCase()} email sent to ${target}`);
     } else {
-      showToast(`Dispatch issue: ${data.error || "Review details below"}`, "error");
-      consoleBox.textContent += "\n\n❌ ERROR: See diagnostic response details above.";
+      showToast(data.error || "Failed to dispatch email", "error");
     }
   } catch (err) {
-    consoleBox.textContent += "\n\n❌ Network Error: " + err.message;
-    showToast("Network execution error.", "error");
+    showToast("Network error: " + err.message, "error");
   } finally {
-    btn.textContent = "🚀 Dispatch Test Email(s)";
     btn.disabled = false;
+    btn.textContent = "🚀 Dispatch Selected Test Email";
   }
 }
 
-function openCronModal() {
-  document.getElementById("modal-input-val").value = "";
-  document.getElementById("custom-modal").style.display = "flex";
-}
-function closeModal() {
-  document.getElementById("custom-modal").style.display = "none";
-}
-function submitCronModal() {
-  const val = document.getElementById("modal-input-val").value.trim();
-  if (val === "Pogi si Allen") {
-    closeModal();
-    showToast("Executing scheduled drip cron...");
-    fetch("/api/main", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "force_cron" })
-    }).then(r => r.json()).then(data => {
-      showToast("Cron execution completed successfully!");
-    });
-  } else {
-    showToast("Security phrase did not match.", "error");
-  }
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  initAppLayout('settings', 'System Control Room');
-  loadSettings();
+window.addEventListener('DOMContentLoaded', () => {
+  initAppLayout('settings', 'Settings');
 });
 </script>
-
 </body>
 </html>

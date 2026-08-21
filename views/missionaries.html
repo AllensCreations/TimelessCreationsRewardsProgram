@@ -6,8 +6,7 @@
   <title>Missionaries Roster | Timeless Creations</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0a0a0f"/>
-  <link rel="apple-touch-icon" href="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
   <style>
@@ -15,162 +14,37 @@
       --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
       --border:rgba(255,255,255,0.07);
       --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
-      --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
-      --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
-      --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
+      --green:#4caf82; --red:#e05c5c; --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
       --radius:10px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
-
-    .main-wrap {
-      max-width: 1100px;
-      margin: 20px auto;
-      padding: 0 16px 40px;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+    .main-wrap { max-width: 1100px; margin: 20px auto; padding: 0 16px 40px; }
+    .section-head { margin-bottom: 16px; }
     .section-head h2 { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--gold); }
-
-    .table-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      border-radius: var(--radius) var(--radius) 0 0;
-      flex-wrap: wrap;
-    }
-    .search-input {
-      flex: 1;
-      min-width: 180px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.75rem;
-      outline: none;
-    }
-    .filter-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.7rem;
-      cursor: pointer;
-      font-family: 'DM Mono', monospace;
-      transition: all 0.2s ease;
-    }
-    .filter-btn.active {
-      color: var(--gold);
-      border-color: rgba(201,168,76,0.4);
-      background: var(--gold-dim);
-      font-weight: 700;
-    }
-
-    .roster-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
-      padding: 12px;
-      min-height: 200px;
-    }
-    .missionary-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      overflow: hidden;
-      transition: border-color 0.2s ease;
-    }
-    .missionary-card:hover { border-color: rgba(201,168,76,0.25); }
-
-    .card-summary {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      cursor: pointer;
-      user-select: none;
-      gap: 10px;
-    }
-    .card-summary:hover { background: rgba(255,255,255,0.02); }
-    .m-title-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    
-    .cohort-pill {
-      font-size: 0.6rem;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
+    .table-controls { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid var(--border); background: var(--surface2); border-radius: var(--radius) var(--radius) 0 0; flex-wrap: wrap; }
+    .search-input { flex: 1; min-width: 180px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
+    .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
+    .filter-btn.active { color: var(--gold); border-color: rgba(201,168,76,0.4); background: var(--gold-dim); font-weight: 700; }
+    .roster-list { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 12px; min-height: 200px; }
+    .missionary-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+    .card-summary { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; user-select: none; gap: 10px; }
+    .cohort-pill { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .cohort-elder { background: rgba(92,141,224,0.15); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
     .cohort-sister { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
-    .m-name { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; color: var(--text); }
-    
-    .card-details {
-      display: none;
-      padding: 14px 16px;
-      background: rgba(0,0,0,0.25);
-      border-top: 1px solid var(--border);
-      font-size: 0.72rem;
-      line-height: 1.8;
-    }
+    .card-details { display: none; padding: 14px 16px; background: rgba(0,0,0,0.25); border-top: 1px solid var(--border); font-size: 0.72rem; line-height: 1.8; }
     .missionary-card.open .card-details { display: block; }
-    .missionary-card.open .chevron-icon { transform: rotate(180deg); }
-
-    .prog-container { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
-    .prog-track { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
-    .prog-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 99px; }
-
-    .btn-submit {
-      background: linear-gradient(135deg, var(--gold), var(--gold2));
-      color: #0a0a0f;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-family: 'Syne', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .action-btn {
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 0.65rem;
-      font-family: 'DM Mono', monospace;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-    }
-    .action-btn:hover { background: var(--surface2); border-color: var(--gold); }
+    .action-btn { padding: 4px 10px; border-radius: 4px; font-size: 0.65rem; font-family: 'DM Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
   </style>
 </head>
 <body>
 
 <div class="main-wrap">
   <div class="section-head">
-    <div>
-      <h2>Missionaries Roster</h2>
-      <p style="font-size:0.7rem; color:var(--muted); margin-top:4px;">Full Live Roster (<span id="roster-count">0</span> Registered Missionaries)</p>
-    </div>
-    <button class="btn-submit" onclick="fetchRoster()">↻ Refresh Roster</button>
+    <h2>Missionaries Roster</h2>
+    <p style="font-size:0.7rem; color:var(--muted); margin-top:4px;">
+      Showing cached list (<span id="roster-count">0</span> Missionaries). Tap <strong>↻ Global Refresh</strong> in header to sync live changes.
+    </p>
   </div>
 
   <div class="table-controls">
@@ -181,7 +55,7 @@
   </div>
 
   <div class="roster-list" id="roster-container">
-    <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries from Turso database...</div>
+    <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries...</div>
   </div>
 </div>
 
@@ -192,26 +66,23 @@ let state = {
   searchQuery: ''
 };
 
-async function fetchRoster() {
-  const container = document.getElementById('roster-container');
-  container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries from Turso database...</div>';
-  
-  try {
-    const res = await fetch('/api/main?action=get_missionaries');
-    const data = await res.json();
-    if (data.ok && data.missionaries) {
-      state.missionaries = data.missionaries;
-      document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
-      applyFilterAndRender();
-      showToast(`Loaded ${state.missionaries.length} missionaries.`);
-    } else {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red);">Failed to retrieve missionaries.</div>';
-    }
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red);">Network error connecting to API.</div>';
+function loadRosterFromCacheOrFetch() {
+  const cached = LocalStore.get('missionaries', null);
+  if (cached && Array.isArray(cached) && cached.length > 0) {
+    state.missionaries = cached;
+    document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
+    applyFilterAndRender();
+  } else {
+    // Only fetch if local cache is completely empty on first launch
+    triggerGlobalRefresh();
   }
 }
+
+window.onPageDataRefreshed = () => {
+  state.missionaries = LocalStore.get('missionaries', []);
+  document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
+  applyFilterAndRender();
+};
 
 function filterType(type, btn) {
   state.currentFilter = type;
@@ -227,26 +98,19 @@ function filterRoster(query) {
 
 function applyFilterAndRender() {
   let list = state.missionaries;
-
   if (state.currentFilter === 'elder') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
   } else if (state.currentFilter === 'sister') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister'));
   }
-
   if (state.searchQuery) {
     list = list.filter(m =>
       (m.name || '').toLowerCase().includes(state.searchQuery) ||
       (m.email || '').toLowerCase().includes(state.searchQuery) ||
-      (m.referral_code || m.ref || '').toLowerCase().includes(state.searchQuery)
+      (m.referral_code || '').toLowerCase().includes(state.searchQuery)
     );
   }
-
   renderRosterCards(list);
-}
-
-function toggleCard(cardElement) {
-  cardElement.classList.toggle('open');
 }
 
 function renderRosterCards(list) {
@@ -264,39 +128,29 @@ function renderRosterCards(list) {
 
     return `
       <div class="missionary-card">
-        <div class="card-summary" onclick="toggleCard(this.closest('.missionary-card'))">
-          <div class="m-title-group">
+        <div class="card-summary" onclick="this.closest('.missionary-card').classList.toggle('open')">
+          <div style="display:flex; align-items:center; gap:8px;">
             <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
-            <span class="m-name">${m.name || 'Unnamed Missionary'}</span>
+            <span style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:700;">${m.name || 'Unnamed'}</span>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="color:var(--gold); font-weight:bold; background:var(--gold-dim); padding:2px 8px; border-radius:4px; font-size:0.7rem;">${m.points || 0} PTS</span>
-            <span class="chevron-icon" style="color:var(--muted); font-size:0.7rem; transition:transform 0.2s;">▼</span>
+            <span style="color:var(--muted); font-size:0.7rem;">▼</span>
           </div>
         </div>
 
         <div class="card-details">
           <div>✉️ <strong>Email:</strong> ${m.email}</div>
           <div>🏷️ <strong>Referral Code:</strong> ${m.referral_code || 'N/A'}</div>
-          <div>🆔 <strong>Messenger PSID:</strong> ${m.psid || '<span style="color:var(--muted)">Not Connected Yet</span>'}</div>
+          <div>🆔 <strong>Messenger PSID:</strong> ${m.psid || '<span style="color:var(--muted)">Not Linked</span>'}</div>
           <div>⚡ <strong>Status:</strong> <span style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span></div>
 
-          <div class="prog-container">
-            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted);">
-              <span>📩 <strong>${sentCount}</strong> / ${totalMonths} Drip Letters Delivered</span>
-              <span>${pct}%</span>
-            </div>
-            <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); margin-top:8px;">
+            <span>📩 ${sentCount} / ${totalMonths} Drip Letters</span>
+            <span>${pct}%</span>
           </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
-            <div style="display:flex; gap:6px;">
-              <button class="action-btn" onclick="updatePoints('${m.email}', 1)">+1 Pt</button>
-              <button class="action-btn" onclick="updatePoints('${m.email}', -1)">-1 Pt</button>
-            </div>
-            <button class="action-btn" style="color:var(--gold);" onclick="toggleStatus('${m.email}', '${m.status === 'active' ? 'paused' : 'active'}')">
-              ${m.status === 'active' ? '⏸ Pause Delivery' : '▶ Activate Delivery'}
-            </button>
+          <div style="width:100%; height:5px; background:rgba(255,255,255,0.05); border-radius:99px; overflow:hidden; margin-top:3px;">
+            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,var(--green),var(--gold));"></div>
           </div>
         </div>
       </div>
@@ -304,49 +158,10 @@ function renderRosterCards(list) {
   }).join('');
 }
 
-async function updatePoints(email, delta) {
-  try {
-    const res = await fetch('/api/main', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_missionary_points', email, delta })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const m = state.missionaries.find(x => x.email === email);
-      if (m) m.points = Math.max(0, (m.points || 0) + delta);
-      applyFilterAndRender();
-      showToast(`Updated points for ${email}`);
-    }
-  } catch (err) {
-    showToast("Failed to update points", "error");
-  }
-}
-
-async function toggleStatus(email, status) {
-  try {
-    const res = await fetch('/api/main', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'toggle_missionary_status', email, status })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const m = state.missionaries.find(x => x.email === email);
-      if (m) m.status = status;
-      applyFilterAndRender();
-      showToast(`Status updated to ${status}`);
-    }
-  } catch (err) {
-    showToast("Failed to update status", "error");
-  }
-}
-
 window.addEventListener('DOMContentLoaded', () => {
   initAppLayout('missionaries', 'Missionaries Roster');
-  fetchRoster();
+  loadRosterFromCacheOrFetch();
 });
 </script>
-
 </body>
 </html>

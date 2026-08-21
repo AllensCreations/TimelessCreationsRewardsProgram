@@ -31,6 +31,16 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'GET') {
+    
+    if (action === "get_products") {
+      try {
+        const products = await runSql("SELECT id, name, price, image_url FROM product_catalog ORDER BY id ASC");
+        return res.status(200).json({ ok: true, products });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     if (action === 'health_check') {
       try {
         const configRows = await runSql("SELECT value FROM system_config WHERE key = 'master_power'");
@@ -76,6 +86,21 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    
+    if (action === "save_product") {
+      const { id, name, price, image_url } = req.body;
+      try {
+        if (id) {
+          await runSql("UPDATE product_catalog SET name = ?, price = ?, image_url = ? WHERE id = ?", [name, price, image_url, id]);
+        } else {
+          await runSql("INSERT INTO product_catalog (name, price, image_url) VALUES (?, ?, ?)", [name, price, image_url]);
+        }
+        return res.status(200).json({ ok: true, message: "Product saved successfully." });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
     if (action === 'delete_missionary') {
       const { email } = req.body;
       await runSql("DELETE FROM missionaries WHERE email = ?", [email]);

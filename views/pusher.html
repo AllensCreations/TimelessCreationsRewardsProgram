@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Missionary Pusher & Importer | Timeless Creations</title>
+<title>Add Missionaries &amp; Batch Pusher | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/app.css">
 <script src="/assets/app.js"></script>
@@ -19,6 +19,9 @@
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
   .container{max-width:980px;margin:20px auto;padding:0 16px 40px;}
+
+  .header-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+  .header-actions h2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--gold);}
 
   .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;}
   .card h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:8px;color:var(--text);display:flex;justify-content:space-between;align-items:center;}
@@ -36,7 +39,7 @@
   .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
   .form-input:focus{border-color:var(--gold);}
   
-  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;text-decoration:none;}
   .btn:hover{opacity:0.9;}
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);margin-right:8px;}
@@ -62,6 +65,17 @@
 <body>
 
 <div class="container">
+  <div class="header-actions">
+    <div>
+      <h2>➕ Add Missionaries to Roster</h2>
+      <p style="font-size:0.7rem; color:var(--muted); margin-top:2px;">Register individual missionaries or bulk-push cohort batches into Turso.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <a href="/missionaries.html" class="btn btn-secondary">👥 View Full Roster</a>
+      <button class="btn" onclick="document.getElementById('form-card').scrollIntoView({behavior:'smooth'})">➕ Add Row</button>
+    </div>
+  </div>
+
   <div class="card">
     <h3>
       <span>Active Target Batch</span>
@@ -89,11 +103,11 @@
 
     <div id="manual-rows"></div>
 
-    <div style="display:flex;gap:10px;margin-top:14px;align-items:center;">
+    <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-secondary" onclick="addManualRow()">+ Add Row</button>
       <button class="btn" id="push-manual-btn" onclick="pushManualEntries()">
         <div class="spinner" id="manual-spinner"></div>
-        <span id="manual-btn-text">🚀 Push All to Turso</span>
+        <span id="manual-btn-text">🚀 Push Missionaries to Turso</span>
       </button>
     </div>
   </div>
@@ -400,7 +414,7 @@ async function sendToServer(entries, type) {
   } finally {
     btn.disabled = false;
     spinner.style.display = 'none';
-    btnText.textContent = type === 'manual' ? '🚀 Push All to Turso' : '🚀 Push CSV to Turso';
+    btnText.textContent = type === 'manual' ? '🚀 Push Missionaries to Turso' : '🚀 Push CSV to Turso';
   }
 }
 
@@ -459,7 +473,7 @@ function showResult(txt, status) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  initAppLayout('missionaries', 'Missionary Pusher & Importer');
+  initAppLayout('missionaries', 'Add Missionaries & Pusher');
   addManualRow();
   updateConnectionStatus();
   loadDbHistory();

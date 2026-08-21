@@ -81,7 +81,7 @@ export default async function handler(req, res) {
     }
 
     // ----------------------------------------------------
-    // TEST EMAIL ROUTE (AUTHENTIC TEMPLATES & BATCH DISPATCH)
+    // TEST EMAIL ROUTE (BREVO REST API)
     // ----------------------------------------------------
     if (action === "test_email") {
       const rawEmails = (bodyData.email || req.query?.email || "").trim();
@@ -90,24 +90,27 @@ export default async function handler(req, res) {
 
       if (!rawEmails) return res.status(400).json({ ok: false, error: "Missing email address(es)" });
 
-      const targets = rawEmails.split(',').map(e => e.trim()).filter(Boolean);
+      const targets = rawEmails.split(",").map(e => e.trim()).filter(Boolean);
       let successCount = 0;
+      const results = [];
 
       for (const target of targets) {
-        let sent = false;
+        let dispatchResult;
         if (templateType === "otp") {
-          sent = await sendOTPEmail(target, "891402");
+          dispatchResult = await sendOTPEmail(target, "891402");
         } else if (templateType === "receipt") {
-          sent = await sendReceiptEmail(target, {
+          dispatchResult = await sendReceiptEmail(target, {
             name: "Elder / Sister Diagnostic",
-            order_id: `TCRP-${Date.now().toString().slice(-4)}`,
+            order_id: "TCRP-" + Date.now().toString().slice(-4),
             item: "Wooden Missionary Nametag",
             points_cost: 6
           });
         } else {
-          sent = await sendDripEmail(target, month, "Elder / Sister");
+          dispatchResult = await sendDripEmail(target, month, "Elder / Sister");
         }
-        if (sent) successCount++;
+
+        results.push({ email: target, ...dispatchResult });
+        if (dispatchResult?.ok) successCount++;
       }
 
       if (successCount > 0) {
@@ -116,10 +119,16 @@ export default async function handler(req, res) {
           totalSent: successCount,
           template: templateType,
           month: templateType === "drip" ? month : undefined,
-          recipients: targets
+          recipients: targets,
+          details: results
         });
       }
-      return res.status(500).json({ ok: false, error: "Brevo SMTP delivery failed." });
+
+      return res.status(500).json({
+        ok: false,
+        error: "Brevo REST API rejected dispatch.",
+        details: results
+      });
     }
 
     // ----------------------------------------------------

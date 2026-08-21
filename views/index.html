@@ -61,8 +61,8 @@
     .cal-cell.has-activity { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); }
     .cal-num { font-size: 0.75rem; color: #8c90a4; font-weight: 700; }
     .cal-count { font-size: 0.65rem; font-weight: 700; color: #c9a84c; align-self: flex-end; background: rgba(201,168,76,0.2); padding: 2px 6px; border-radius: 4px; }
-    .three-col-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-    @media (max-width: 1024px) { .three-col-grid { grid-template-columns: 1fr; } }
+    .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    @media (max-width: 1024px) { .two-col-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -115,19 +115,8 @@
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
 
-  <!-- 3-Column Feeds -->
-  <div class="three-col-grid">
-    <!-- Recently Sent Emails -->
-    <div class="card" style="margin-bottom:0;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:#c9a84c; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
-        <span>✉️ Recent Letters Sent</span>
-        <span style="font-size:0.65rem; color:#4caf82; text-transform:uppercase; font-weight:bold; background:rgba(76,175,130,0.15); padding:2px 6px; border-radius:4px;">Live</span>
-      </div>
-      <div id="recent-sent-emails-list" style="display:flex; flex-direction:column; gap:10px; font-size:0.78rem;">
-        <div style="color:#8c90a4; text-align:center; padding:20px;">Loading dispatches...</div>
-      </div>
-    </div>
-
+  <!-- 2-Column Feeds (System Logs & Brevo Delivery Feed) -->
+  <div class="two-col-grid">
     <!-- System Logs -->
     <div class="card" style="margin-bottom:0;">
       <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:#c9a84c; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
@@ -172,29 +161,11 @@ function renderFromCache() {
   dashboardState.dailyStats = cachedPayload.daily_stats || {};
   renderCalendar();
 
-  // Render Sent Emails
-  const sentContainer = document.getElementById("recent-sent-emails-list");
-  const sentList = cachedPayload.recently_sent_missionaries || [];
-  if (sentList.length > 0) {
-    sentContainer.innerHTML = sentList.map(m => `
-      <div style="padding:10px 12px; background:#181b2a; border-radius:8px; border:1px solid rgba(255,255,255,0.04);">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong style="color:#fff; font-size:0.8rem;">${m.name || 'Missionary'}</strong>
-          <span style="color:#c9a84c; font-size:0.68rem; font-weight:bold; background:rgba(201,168,76,0.15); padding:2px 6px; border-radius:4px;">M${m.months_sent}</span>
-        </div>
-        <div style="font-size:0.7rem; color:#8c90a4; margin-top:4px; display:flex; justify-content:space-between;">
-          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${m.email}</span>
-          <span>${m.last_sent_at ? new Date(m.last_sent_at).toLocaleDateString([], {month:'short', day:'numeric'}) : 'Recently'}</span>
-        </div>
-      </div>
-    `).join('');
-  }
-
   // Render Logs
   const logsContainer = document.getElementById("logs-container");
   const logs = cachedPayload.recent_logs || [];
   if (logs.length > 0) {
-    logsContainer.innerHTML = logs.slice(0, 8).map(l => `
+    logsContainer.innerHTML = logs.slice(0, 10).map(l => `
       <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#181b2a; border-radius:8px; border:1px solid rgba(255,255,255,0.04);">
         <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
           <span style="font-size:0.6rem; padding:2px 6px; border-radius:4px; font-weight:bold; background:${l.level === 'ERROR' ? 'rgba(224,92,92,0.2)' : 'rgba(76,175,130,0.2)'}; color:${l.level === 'ERROR' ? '#e05c5c' : '#4caf82'};">${l.level || 'INFO'}</span>
@@ -209,7 +180,7 @@ function renderFromCache() {
   const webhookContainer = document.getElementById("webhook-logs-list");
   const webhookLogs = logs.filter(l => (l.message || "").toLowerCase().includes('drip') || (l.message || "").toLowerCase().includes('brevo'));
   if (webhookLogs.length > 0) {
-    webhookContainer.innerHTML = webhookLogs.slice(0, 8).map(l => `
+    webhookContainer.innerHTML = webhookLogs.slice(0, 10).map(l => `
       <div style="padding:9px 12px; background:#181b2a; border-radius:8px; border:1px solid rgba(255,255,255,0.04);">
         <div style="color:#e8e6f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${l.message}</div>
         <div style="font-size:0.65rem; color:#8c90a4; margin-top:3px;">${l.created_at || 'Just now'}</div>

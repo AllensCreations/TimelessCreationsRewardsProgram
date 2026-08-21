@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Timeless Creations — Missionary Pusher &amp; Importer</title>
+<title>Missionary Pusher & Importer | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/app.css">
+<script src="/assets/app.js"></script>
 <style>
   :root {
     --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
@@ -15,12 +17,8 @@
     --text:#e8e6f0; --muted:#716e88;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:24px;min-height:100vh;}
-  .container{max-width:980px;margin:0 auto;}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;}
-  h1{font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--gold);}
-  a{color:var(--gold);text-decoration:none;font-size:0.75rem;}
-  a:hover{text-decoration:underline;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+  .container{max-width:980px;margin:20px auto;padding:0 16px 40px;}
 
   .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;}
   .card h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:8px;color:var(--text);display:flex;justify-content:space-between;align-items:center;}
@@ -59,30 +57,17 @@
   .recent-item{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;}
   .badge-cohort{background:rgba(255,255,255,0.08);color:var(--text);padding:2px 6px;border-radius:4px;font-size:0.62rem;margin-right:6px;}
   .badge-batch{background:var(--gold-dim);color:var(--gold2);padding:2px 8px;border-radius:4px;font-size:0.65rem;}
-
-  /* Toast Popup System */
-  #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:99999;}
-  .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--gold);padding:12px 16px;border-radius:8px;font-size:0.72rem;min-width:240px;box-shadow:0 8px 30px rgba(0,0,0,0.6);animation:slideIn 0.3s ease;}
-  .toast.success{border-left-color:var(--green);}
-  .toast.error{border-left-color:var(--red);}
-  @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
 </style>
 </head>
 <body>
-<div id="toast-container"></div>
 
 <div class="container">
-  <header>
-    <h1>Missionary Pusher &amp; Importer</h1>
-    <div style="display:flex;align-items:center;gap:14px;">
-      <div id="connection-status" class="status-badge status-online">● Online</div>
-      <a href="/">← Back to Dashboard</a>
-    </div>
-  </header>
-
   <div class="card">
-    <h3>Active Target Batch</h3>
-    <p>Set the batch month once below. It automatically maps to <code>batch_month</code>, and titles automatically map to <code>cohort</code>.</p>
+    <h3>
+      <span>Active Target Batch</span>
+      <div id="connection-status" class="status-badge status-online">● Online</div>
+    </h3>
+    <p>Set the batch month below. It automatically applies to <code>batch_month</code>, and titles map to <code>cohort</code> (Elders = 24M, Sisters = 18M).</p>
     <div class="global-batch-box">
       <div style="flex:1;">
         <label style="font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px;">Target Cohort / Batch Month (Applies to All Entries)</label>
@@ -93,7 +78,7 @@
 
   <div class="card" id="form-card">
     <h3>Manual Batch Registration</h3>
-    <p>Special characters like <strong>ñ</strong> are strictly preserved. Title &amp; Last Name maps to <strong><code>name</code></strong>, Title to <strong><code>cohort</code></strong>, and First Name to <strong><code>names</code></strong> table.</p>
+    <p>Special characters like <strong>ñ</strong> are preserved. Title &amp; Last Name maps to <strong><code>name</code></strong>, Prefix determines <strong><code>cohort</code></strong>, and First Name maps to <strong><code>first_name</code></strong>.</p>
 
     <div class="form-header">
       <div>Title &amp; Last Name (name)</div>
@@ -133,7 +118,7 @@
       <span>Database Import History (Turso Saved Logs)</span>
       <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadDbHistory()">🔄 Refresh Logs</button>
     </h3>
-    <p>Track exactly where you left off. Pulled directly from the live database.</p>
+    <p>Track exactly where you left off. Pulled directly from your live Turso database.</p>
     <div class="recent-pushed-list" id="recent-pushed-list">
       <div style="text-align:center;padding:12px;color:var(--muted);">Loading database logs...</div>
     </div>
@@ -145,15 +130,6 @@
 <script>
 let parsedCsvData = [];
 const OFFLINE_QUEUE_KEY = 'tcrp_offline_queue';
-
-function showToast(title, msg, type = 'success') {
-  const tc = document.getElementById('toast-container');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<strong>${title}</strong><div style="color:var(--muted);margin-top:2px">${msg}</div>`;
-  tc.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
-}
 
 function getOfflineQueue() {
   try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch (e) { return []; }
@@ -285,7 +261,7 @@ async function pushManualEntries() {
   });
 
   if (entries.length === 0) {
-    showToast("Incomplete Form", "Please fill out at least one missionary with Title & Last Name and Email.", "error");
+    showToast("Please fill out at least one missionary.", "error");
     return;
   }
   await sendToServer(entries, 'manual');
@@ -301,9 +277,9 @@ function handleFileSelect(event) {
     if (parsedCsvData.length > 0) {
       document.getElementById('push-csv-btn').style.display = 'inline-flex';
       showResult(`Parsed ${parsedCsvData.length} records from CSV. Ready to push.`, 'loading');
-      showToast("CSV Parsed", `Ready to import ${parsedCsvData.length} records.`, "success");
+      showToast(`Ready to import ${parsedCsvData.length} records.`);
     } else {
-      showToast("CSV Error", "Could not parse valid records from CSV file.", "error");
+      showToast("Could not parse records from CSV file.", "error");
     }
   };
   reader.readAsText(file);
@@ -364,8 +340,8 @@ async function sendToServer(entries, type) {
     setOfflineQueue([...queue, ...entries]);
     updateConnectionStatus();
 
-    showResult(`💾 Offline Mode: ${entries.length} entries saved locally. Will auto-push when online.`, 'loading');
-    showToast("Offline Mode", `${entries.length} entries queued locally.`, "success");
+    showResult(`💾 Offline: ${entries.length} entries saved locally. Will auto-push when online.`, 'loading');
+    showToast(`${entries.length} entries queued locally.`);
 
     if (type === 'manual') {
       document.getElementById('manual-rows').innerHTML = '';
@@ -389,7 +365,7 @@ async function sendToServer(entries, type) {
   showResult(`⏳ Pushing ${entries.length} entries to Turso database...`, 'loading');
 
   try {
-    const res = await fetch('/api/push-missionaries', {
+    const res = await fetch('/api/main?action=push_missionaries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entries })
@@ -397,8 +373,8 @@ async function sendToServer(entries, type) {
     const data = await res.json();
 
     if (data.ok) {
-      showResult(`🎉 Success!\n• Added: ${data.added}\n• Skipped (Duplicates): ${data.skipped}\n\n${data.message || 'All records successfully imported.'}`, 'success');
-      showToast("Success", `Added ${data.added} entries to Turso!`, "success");
+      showResult(`🎉 Success!\n• Added/Updated: ${data.added}\n• Skipped: ${data.skipped}\n\n${data.message || 'Records successfully imported.'}`, 'success');
+      showToast(`Added ${data.added} entries to Turso!`);
 
       if (type === 'manual') {
         document.getElementById('manual-rows').innerHTML = '';
@@ -413,14 +389,14 @@ async function sendToServer(entries, type) {
       await loadDbHistory();
     } else {
       showResult(`❌ Error: ${data.error || 'Failed to push records.'}`, 'error');
-      showToast("Push Failed", data.error || "Failed to push records.", "error");
+      showToast(data.error || "Failed to push records.", "error");
     }
   } catch (err) {
     const queue = getOfflineQueue();
     setOfflineQueue([...queue, ...entries]);
     updateConnectionStatus();
     showResult(`⚠️ Saved to offline queue: ${err.message}`, 'error');
-    showToast("Offline Fallback", "Saved to offline queue.", "error");
+    showToast("Saved to offline queue.", "error");
   } finally {
     btn.disabled = false;
     spinner.style.display = 'none';
@@ -433,7 +409,7 @@ async function syncOfflineQueue() {
   if (queue.length === 0) return;
 
   try {
-    const res = await fetch('/api/push-missionaries', {
+    const res = await fetch('/api/main?action=push_missionaries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entries: queue })
@@ -443,7 +419,7 @@ async function syncOfflineQueue() {
     if (data.ok) {
       setOfflineQueue([]);
       updateConnectionStatus();
-      showToast("Auto-Sync Complete", `Pushed ${data.added} offline records to Turso!`, "success");
+      showToast(`Pushed ${data.added} offline records to Turso!`);
       await loadDbHistory();
     }
   } catch (e) {
@@ -454,13 +430,13 @@ async function syncOfflineQueue() {
 async function loadDbHistory() {
   const list = document.getElementById('recent-pushed-list');
   try {
-    const res = await fetch('/api/push-missionaries');
+    const res = await fetch('/api/main?action=push_missionaries');
     const data = await res.json();
     if (data.ok && data.history && data.history.length > 0) {
       list.innerHTML = data.history.map(item => `
         <div class="recent-item">
           <div>
-            <span class="badge-cohort">${item.cohort || 'Elder'}</span>
+            <span class="badge-cohort">${item.cohort === 'sister' ? 'Sister' : 'Elder'}</span>
             <strong style="color:var(--text);">${item.name}</strong> 
             <span style="color:var(--muted); font-size:0.68rem;">(${item.email})</span>
           </div>
@@ -483,6 +459,7 @@ function showResult(txt, status) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  initAppLayout('missionaries', 'Missionary Pusher & Importer');
   addManualRow();
   updateConnectionStatus();
   loadDbHistory();

@@ -66,6 +66,67 @@ export default async function handler(req, res) {
     // ----------------------------------------------------
     // MISSIONARIES DIRECTORY
     // ----------------------------------------------------
+    
+    // ----------------------------------------------------
+    // MISSIONARY PUSHER & BATCH IMPORTER
+    // ----------------------------------------------------
+    if (action === "push_missionaries" || req.url.includes("/api/push-missionaries")) {
+      if (req.method === "GET") {
+        const history = await runSql(
+          "SELECT name, email, cohort, batch_month, created_at FROM missionaries ORDER BY is_prelisted DESC, rowid DESC LIMIT 30"
+        );
+        return res.status(200).json({ ok: true, history: history || [] });
+      }
+
+      const entries = bodyData.entries || req.body?.entries || [];
+      if (!Array.isArray(entries) || entries.length === 0) {
+        return res.status(400).json({ ok: false, error: "No entries provided" });
+      }
+
+      let added = 0;
+      let skipped = 0;
+
+      for (const item of entries) {
+        const email = (item.email || "").trim().toLowerCase();
+        const titleName = (item.title_name || item.name || "").trim();
+        const firstName = (item.first_name || "").trim();
+        const batchMonth = (item.batch || item.batch_month || "August 2026").trim();
+
+        if (!email || !titleName) {
+          skipped++;
+          continue;
+        }
+
+        const isSister = titleName.toLowerCase().startsWith("sister") || (item.cohort || "").toLowerCase() === "sister";
+        const cohort = isSister ? "sister" : "elder";
+        const maxMonths = isSister ? 18 : 24;
+
+        try {
+          await runSql(`
+            INSERT INTO missionaries (email, name, first_name, cohort, batch_month, max_months, is_prelisted, status, points)
+            VALUES (?, ?, ?, ?, ?, ?, 1, active, 0)
+            ON CONFLICT(email) DO UPDATE SET
+              name = excluded.name,
+              first_name = excluded.first_name,
+              cohort = excluded.cohort,
+              batch_month = excluded.batch_month,
+              max_months = excluded.max_months,
+              status = active
+          `, [email, titleName, firstName, cohort, batchMonth, maxMonths]);
+          added++;
+        } catch (e) {
+          skipped++;
+        }
+      }
+
+      return res.status(200).json({
+        ok: true,
+        added,
+        skipped,
+        message: `Successfully processed ${added} records into Turso (${skipped} skipped/errors).`
+      });
+    }
+
     if (action === "get_missionaries") {
       const rows = await runSql("SELECT * FROM missionaries ORDER BY is_prelisted DESC, name ASC");
       return res.status(200).json({ ok: true, missionaries: rows || [] });

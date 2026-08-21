@@ -4,8 +4,6 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Missionaries Roster | Timeless Creations</title>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0a0a0f"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
@@ -13,43 +11,43 @@
     :root {
       --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
       --border:rgba(255,255,255,0.07);
-      --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
+      --gold:#c9a84c; --gold-dim:rgba(201,168,76,0.15);
       --green:#4caf82; --red:#e05c5c; --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
       --radius:10px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
     .main-wrap { max-width: 1100px; margin: 20px auto; padding: 0 16px 40px; }
-    .section-head { margin-bottom: 16px; }
-    .section-head h2 { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--gold); }
     .table-controls { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid var(--border); background: var(--surface2); border-radius: var(--radius) var(--radius) 0 0; flex-wrap: wrap; }
     .search-input { flex: 1; min-width: 180px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
     .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
     .filter-btn.active { color: var(--gold); border-color: rgba(201,168,76,0.4); background: var(--gold-dim); font-weight: 700; }
-    .roster-list { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 12px; min-height: 200px; }
+    .roster-list { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-top: none; padding: 12px; min-height: 200px; }
     .missionary-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
-    .card-summary { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; user-select: none; gap: 10px; }
+    .card-summary { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; user-select: none; }
     .cohort-pill { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .cohort-elder { background: rgba(92,141,224,0.15); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
     .cohort-sister { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
     .card-details { display: none; padding: 14px 16px; background: rgba(0,0,0,0.25); border-top: 1px solid var(--border); font-size: 0.72rem; line-height: 1.8; }
     .missionary-card.open .card-details { display: block; }
-    .action-btn { padding: 4px 10px; border-radius: 4px; font-size: 0.65rem; font-family: 'DM Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+    .pagination-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); font-size: 0.72rem; }
+    .page-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: 'DM Mono', monospace; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
 
 <div class="main-wrap">
-  <div class="section-head">
-    <h2>Missionaries Roster</h2>
+  <div style="margin-bottom:16px;">
+    <h2 style="font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:800; color:var(--gold);">Missionaries Roster</h2>
     <p style="font-size:0.7rem; color:var(--muted); margin-top:4px;">
-      Showing cached list (<span id="roster-count">0</span> Missionaries). Tap <strong>↻ Global Refresh</strong> in header to sync live changes.
+      Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered missionaries.
     </p>
   </div>
 
   <div class="table-controls">
-    <input class="search-input" placeholder="Search missionary name, email, or referral code..." oninput="filterRoster(this.value)"/>
-    <button class="filter-btn active" onclick="filterType('all', this)">All Missionaries</button>
+    <input class="search-input" id="search-box" placeholder="Search missionary name, email, or code..."/>
+    <button class="filter-btn active" onclick="filterType('all', this)">All</button>
     <button class="filter-btn" onclick="filterType('elder', this)">Elders (24M)</button>
     <button class="filter-btn" onclick="filterType('sister', this)">Sisters (18M)</button>
   </div>
@@ -57,23 +55,40 @@
   <div class="roster-list" id="roster-container">
     <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries...</div>
   </div>
+
+  <!-- Pagination Controller (50 per page) -->
+  <div class="pagination-bar">
+    <button class="page-btn" id="prev-page-btn" onclick="changePage(-1)">← Previous</button>
+    <span id="page-indicator">Page 1</span>
+    <button class="page-btn" id="next-page-btn" onclick="changePage(1)">Next →</button>
+  </div>
 </div>
 
 <script>
 let state = {
   missionaries: [],
+  filteredList: [],
   currentFilter: 'all',
-  searchQuery: ''
+  searchQuery: '',
+  page: 1,
+  pageSize: 50
 };
 
-function loadRosterFromCacheOrFetch() {
-  const cached = LocalStore.get('missionaries', null);
-  if (cached && Array.isArray(cached) && cached.length > 0) {
+function debounce(func, wait = 250) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+function loadRoster() {
+  const cached = LocalStore.get('missionaries', []);
+  if (cached.length > 0) {
     state.missionaries = cached;
-    document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
+    document.getElementById('roster-count').textContent = cached.length.toLocaleString();
     applyFilterAndRender();
   } else {
-    // Only fetch if local cache is completely empty on first launch
     triggerGlobalRefresh();
   }
 }
@@ -86,23 +101,29 @@ window.onPageDataRefreshed = () => {
 
 function filterType(type, btn) {
   state.currentFilter = type;
+  state.page = 1;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   applyFilterAndRender();
 }
 
-function filterRoster(query) {
-  state.searchQuery = query.toLowerCase().trim();
+const handleDebouncedSearch = debounce((val) => {
+  state.searchQuery = val.toLowerCase().trim();
+  state.page = 1;
   applyFilterAndRender();
-}
+});
+
+document.getElementById('search-box').addEventListener('input', (e) => handleDebouncedSearch(e.target.value));
 
 function applyFilterAndRender() {
   let list = state.missionaries;
+
   if (state.currentFilter === 'elder') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
   } else if (state.currentFilter === 'sister') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister'));
   }
+
   if (state.searchQuery) {
     list = list.filter(m =>
       (m.name || '').toLowerCase().includes(state.searchQuery) ||
@@ -110,17 +131,36 @@ function applyFilterAndRender() {
       (m.referral_code || '').toLowerCase().includes(state.searchQuery)
     );
   }
-  renderRosterCards(list);
+
+  state.filteredList = list;
+  renderPaginatedCards();
 }
 
-function renderRosterCards(list) {
+function changePage(delta) {
+  state.page += delta;
+  renderPaginatedCards();
+}
+
+function renderPaginatedCards() {
+  const totalItems = state.filteredList.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+  state.page = Math.max(1, Math.min(state.page, totalPages));
+
+  const startIdx = (state.page - 1) * state.pageSize;
+  const pageItems = state.filteredList.slice(startIdx, startIdx + state.pageSize);
+
+  document.getElementById('showing-count').textContent = `${startIdx + 1}-${Math.min(startIdx + state.pageSize, totalItems)}`;
+  document.getElementById('page-indicator').textContent = `Page ${state.page} of ${totalPages}`;
+  document.getElementById('prev-page-btn').disabled = state.page <= 1;
+  document.getElementById('next-page-btn').disabled = state.page >= totalPages;
+
   const container = document.getElementById('roster-container');
-  if (!list.length) {
+  if (!pageItems.length) {
     container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">No matching missionaries found.</div>';
     return;
   }
 
-  container.innerHTML = list.map(m => {
+  container.innerHTML = pageItems.map(m => {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
     const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
     const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
@@ -160,7 +200,7 @@ function renderRosterCards(list) {
 
 window.addEventListener('DOMContentLoaded', () => {
   initAppLayout('missionaries', 'Missionaries Roster');
-  loadRosterFromCacheOrFetch();
+  loadRoster();
 });
 </script>
 </body>

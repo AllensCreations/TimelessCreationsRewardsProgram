@@ -9,7 +9,9 @@
     "test500": "node tester500.js",
     "test250": "node tester250.js",
     "testui": "node tester_ui_500.js",
-    "bugfinder": "node master_bug_finder.js"
+    "bugfinder": "node master_bug_finder.js",
+    "build": "mkdir -p public/assets && cp -r views/* public/ 2>/dev/null || true && cp -r assets/* public/assets/ 2>/dev/null || true",
+    "prune": "node -r dotenv/config -e \"import('./lib/dbPruner.js').then(m => m.runDatabaseMaintenance())\""
   },
   "dependencies": {
     "csv-parse": "^7.0.2",

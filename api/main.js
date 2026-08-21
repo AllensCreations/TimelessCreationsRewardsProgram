@@ -53,7 +53,6 @@ export default async function handler(req, res) {
     }
 
     try {
-      // Bundle everything in a single request batch to optimize loading speed
       const [missionaries, orders, logs, dripMessages, systemConfig] = await Promise.all([
         runSql(`SELECT email, name, last_name as lastName, cohort, batch_month as batchMonth, points, referral_code as referralCode, status, months_sent as monthsSent, max_months as maxMonths, next_send_date as nextSendDate FROM missionaries ORDER BY name ASC`),
         runSql(`SELECT order_id as orderId, psid, email, name, item, points_cost as cost, status, created_at as date FROM orders ORDER BY ROWID DESC`),
@@ -101,6 +100,54 @@ export default async function handler(req, res) {
 
     if (action === 'force_cron') {
       return res.status(200).json({ ok: true, message: "Cron job executed successfully." });
+    }
+
+    if (action === 'test_email') {
+      const { email } = req.body;
+      const targetEmail = (email || "").trim() || "test.missionary@missionary.org";
+      
+      const brevoKey = (process.env.BREVO_API_KEY || "").trim();
+      if (!brevoKey) {
+        return res.status(200).json({ 
+          ok: false, 
+          error: "BREVO_API_KEY environment variable is missing in Vercel settings.",
+          targetEmail 
+        });
+      }
+
+      try {
+        const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "api-key": brevoKey,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            sender: { name: "Timeless Creations", email: "support@timelesscreationsrp.com" },
+            to: [{ email: targetEmail }],
+            subject: "🧪 TCRP Test Dispatch — Live System Check",
+            htmlContent: `<div style="font-family:Georgia,serif;padding:20px;border:1px solid #c9a84c;max-width:400px;margin:0 auto;background:#fdfaf3;"><h2 style="color:#8b1a1a;margin-top:0;">Test Dispatch Success</h2><p>This is a live test email sent to <strong>${targetEmail}</strong> from your Timeless Creations Rewards Program Control Room.</p><p style="font-size:11px;color:#78716c;">Timestamp: ${new Date().toISOString()}</p></div>`
+          })
+        });
+
+        const respData = await emailRes.json();
+        if (emailRes.ok) {
+          return res.status(200).json({ 
+            ok: true, 
+            message: `Live test email successfully dispatched to ${targetEmail}!`,
+            response: respData 
+          });
+        } else {
+          return res.status(200).json({ 
+            ok: false, 
+            error: "Brevo API rejected request",
+            details: respData 
+          });
+        }
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
     }
   }
 

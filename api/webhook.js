@@ -3,22 +3,26 @@ import { logSystemEvent } from '../lib/logger.js';
 
 const PAGE_ACCESS_TOKEN = (process.env.PAGE_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || '').trim();
 
-async function sendMessengerReply(psid, text) {
-  if (!PAGE_ACCESS_TOKEN) {
-    console.error("PAGE_ACCESS_TOKEN is missing. Cannot send Facebook reply.");
-    return;
-  }
+async function sendMessengerQuickReplies(psid, text) {
+  if (!PAGE_ACCESS_TOKEN) return;
   try {
     await fetch(`https://graph.facebook.com/v18.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipient: { id: psid },
-        message: { text: text }
+        message: {
+          text: text,
+          quick_replies: [
+            { content_type: "text", title: "🎁 Dashboard", payload: "DASHBOARD_PAYLOAD" },
+            { content_type: "text", title: "📖 FAQs", payload: "FAQS_PAYLOAD" },
+            { content_type: "text", title: "✨ Get Started", payload: "START_PAYLOAD" }
+          ]
+        }
       })
     });
   } catch (err) {
-    console.error("Failed to send Messenger reply:", err.message);
+    console.error("Failed to send Messenger quick replies:", err.message);
   }
 }
 
@@ -48,15 +52,14 @@ export default async function handler(req, res) {
 
             await logSystemEvent('INFO', `Messenger Event from PSID ${psid}: ${messageText || '[Attachment/Action]'}`);
 
-            // Automated Bot Flow Router
             if (lowerText.includes('get started') || lowerText === 'start') {
-              await sendMessengerReply(psid, "✨ Welcome to Timeless Creations Rewards Program (TCRP)! We are honored to support missionaries across the Philippines. Type 'Dashboard' to check points or 'FAQs' for assistance.");
+              await sendMessengerQuickReplies(psid, "✨ Welcome to Timeless Creations Rewards Program (TCRP)! We support missionaries across the Philippines.");
             } else if (lowerText.includes('faq') || lowerText.includes('help')) {
-              await sendMessengerReply(psid, "📖 FAQs: We offer 'Gawa muna bago bayad' (Work, Confirm, Pay) for first-time customers. For order status or custom nametags, message our support team anytime!");
+              await sendMessengerQuickReplies(psid, "📖 FAQs: We offer 'Gawa muna bago bayad' (Work, Confirm, Pay) for first-time customers.");
             } else if (lowerText.includes('dashboard') || lowerText.includes('points')) {
-              await sendMessengerReply(psid, "🎁 To check your rewards balance and monthly drip progress, please log in with your missionary email on our secure platform link.");
-            } else if (messageText) {
-              await sendMessengerReply(psid, `👋 Thanks for reaching out to Timeless Creations! We received your message: "${messageText}". An admin will review your request shortly.`);
+              await sendMessengerQuickReplies(psid, "🎁 Please log in with your missionary email on our secure platform link to check your rewards balance.");
+            } else {
+              await sendMessengerQuickReplies(psid, `👋 Thanks for messaging Timeless Creations! How can we assist you today?`);
             }
           }
         }

@@ -7,7 +7,6 @@
     { "source": "/highlight.html", "destination": "/views/highlight.html" },
     { "source": "/settings.html", "destination": "/views/settings.html" },
     { "source": "/logs.html", "destination": "/views/logs.html" },
-    { "source": "/rewards.html", "destination": "/views/rewards.html" },
     { "source": "/messengerbot.html", "destination": "/views/messengerbot.html" },
     { "source": "/Messengerbot.html", "destination": "/views/messengerbot.html" },
     

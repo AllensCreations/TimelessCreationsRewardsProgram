@@ -1,4 +1,3 @@
-// Shared Layout Injector (JSX-like dynamic layout)
 function initAppLayout(activeKey, pageTitle) {
   const sidebarHtml = `
     <aside class="sidebar" id="sidebar">
@@ -14,10 +13,9 @@ function initAppLayout(activeKey, pageTitle) {
         <a href="/" class="nav-item ${activeKey === 'overview' ? 'active' : ''}"><span class="icon">📊</span> Overview</a>
         
         <div class="nav-label">Modules</div>
+        <a href="/messengerbot.html" class="nav-item ${activeKey === 'messengerbot' ? 'active' : ''}"><span class="icon">🤖</span> Bot Rewards Catalog</a>
         <a href="/pusher.html" class="nav-item ${activeKey === 'pusher' ? 'active' : ''}"><span class="icon">➕</span> Add Missionaries</a>
         <a href="/invoicing.html" class="nav-item ${activeKey === 'invoicing' ? 'active' : ''}"><span class="icon">🧾</span> Invoicing &amp; Billing</a>
-        <a href="/rewards.html" class="nav-item ${activeKey === 'rewards' ? 'active' : ''}"><span class="icon">🎁</span> Rewards &amp; Claims</a>
-        <a href="/messengerbot.html" class="nav-item ${activeKey === 'messengerbot' ? 'active' : ''}"><span class="icon">🤖</span> Bot Rewards Catalog</a>
         <a href="/highlight.html" class="nav-item ${activeKey === 'highlight' ? 'active' : ''}"><span class="icon">🌟</span> Media &amp; Messages</a>
         
         <div class="nav-label">Operations</div>
@@ -51,7 +49,6 @@ function toggleSidebar(open) {
   if (sb) sb.classList.toggle('open', open);
 }
 
-// Local In-Memory Storage Helper
 const LocalStore = {
   get(key, fallback = null) {
     try {

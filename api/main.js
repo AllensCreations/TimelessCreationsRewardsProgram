@@ -45,6 +45,42 @@ export default async function handler(req, res) {
     }
 
     // ----------------------------------------------------
+    // PRODUCT CATALOG SYNC & MANAGEMENT
+    // ----------------------------------------------------
+    if (action === "get_products") {
+      const typeFilter = req.query?.type || bodyData.type;
+      let query = "SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog";
+      let params = [];
+      if (typeFilter) {
+        query += " WHERE type = ? ORDER BY price ASC";
+        params.push(typeFilter);
+      } else {
+        query += " ORDER BY type ASC, price ASC";
+      }
+      const products = await runSql(query, params);
+      return res.status(200).json({ ok: true, products: products || [] });
+    }
+
+    if (action === "sync_catalog" || action === "synch catalog" || action === "save_products") {
+      const products = bodyData.products || req.body?.products || [];
+      const catalogType = bodyData.type || req.body?.type || "reward";
+
+      await runSql("DELETE FROM product_catalog WHERE type = ?", [catalogType]);
+
+      for (const item of products) {
+        if (!item.name) continue;
+        const cost = parseFloat(item.price) || 0;
+        const img = item.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
+
+        await runSql(
+          "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url, type = excluded.type",
+          [item.name.trim(), cost, img, catalogType]
+        );
+      }
+      return res.status(200).json({ ok: true, message: `${catalogType} catalog synchronized successfully` });
+    }
+
+    // ----------------------------------------------------
     // TEST EMAIL ROUTE (AUTHENTIC TEMPLATES & BATCH DISPATCH)
     // ----------------------------------------------------
     if (action === "test_email") {
@@ -83,7 +119,7 @@ export default async function handler(req, res) {
           recipients: targets
         });
       }
-      return res.status(500).json({ ok: false, error: "Brevo SMTP accepted request but delivery failed." });
+      return res.status(500).json({ ok: false, error: "Brevo SMTP delivery failed." });
     }
 
     // ----------------------------------------------------
@@ -147,7 +183,7 @@ export default async function handler(req, res) {
     }
 
     // ----------------------------------------------------
-    // GET DASHBOARD STATS
+    // DASHBOARD STATS
     // ----------------------------------------------------
     if (action === "get_stats" || !action) {
       const [totalM, activeM, totalO, pendingO, totalDrips, pts] = await Promise.all([
@@ -180,9 +216,27 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, missionaries: rows || [] });
     }
 
+    if (action === "update_missionary_points") {
+      const { email, delta } = bodyData;
+      await runSql("UPDATE missionaries SET points = MAX(0, points + ?) WHERE email = ?", [delta, email]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === "toggle_missionary_status") {
+      const { email, status } = bodyData;
+      await runSql("UPDATE missionaries SET status = ? WHERE email = ?", [status, email]);
+      return res.status(200).json({ ok: true });
+    }
+
     if (action === "get_orders") {
       const orders = await runSql("SELECT * FROM orders ORDER BY created_at DESC");
       return res.status(200).json({ ok: true, orders: orders || [] });
+    }
+
+    if (action === "update_order_status") {
+      const { order_id, status } = bodyData;
+      await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
+      return res.status(200).json({ ok: true });
     }
 
     if (action === "get_drips") {
@@ -190,9 +244,33 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, drips: drips || [] });
     }
 
-    if (action === "get_products") {
-      const products = await runSql("SELECT * FROM product_catalog ORDER BY price ASC");
-      return res.status(200).json({ ok: true, products: products || [] });
+    if (action === "save_drip") {
+      const { month, theme, scripture, message, highlight_img, highlight_label } = bodyData;
+      await runSql(`
+        INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(month) DO UPDATE SET
+          theme = excluded.theme,
+          scripture = excluded.scripture,
+          message = excluded.message,
+          highlight_img = excluded.highlight_img,
+          highlight_label = excluded.highlight_label
+      `, [month, theme, scripture, message, highlight_img || '', highlight_label || '']);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === "get_invoices") {
+      const invoices = await runSql("SELECT * FROM cash_invoices ORDER BY created_at DESC LIMIT 50");
+      return res.status(200).json({ ok: true, invoices: invoices || [] });
+    }
+
+    if (action === "create_invoice") {
+      const { invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount } = bodyData;
+      await runSql(`
+        INSERT INTO cash_invoices (invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)
+      `, [invoice_id, email, name, JSON.stringify(items_json || []), subtotal, discount_type, discount_val, discount_amount, total_amount]);
+      return res.status(200).json({ ok: true });
     }
 
     return res.status(404).json({ ok: false, error: `Unknown action '${action}'` });

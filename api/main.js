@@ -1,33 +1,8 @@
-import { queryTurso, unwrap } from '../lib/db.js';
-
-async function runSql(sql, args = []) {
-  const formattedArgs = args.map(val => {
-    if (val === null || val === undefined) return { type: "null" };
-    if (typeof val === "number") return { type: "integer", value: String(val) };
-    return { type: "text", value: String(val) };
-  });
-  const data = await queryTurso([{ type: "execute", stmt: { sql, args: formattedArgs } }]);
-  const results = data.results || [];
-  let targetResult = null;
-  for (const r of results) {
-    if (r && r.response && r.response.result && r.response.result.cols) {
-      targetResult = r.response.result;
-      break;
-    }
-  }
-  if (!targetResult && results.length > 0) targetResult = results[0]?.response?.result;
-  if (!targetResult || !targetResult.cols) return [];
-
-  const cols = targetResult.cols.map(c => (typeof c === 'object' ? c.name : c));
-  return (targetResult.rows || []).map(row => {
-    const obj = {};
-    row.forEach((cell, idx) => { obj[cols[idx]] = unwrap(cell); });
-    return obj;
-  });
-}
+import 'dotenv/config';
+import { runSql } from '../lib/db.js';
 
 export default async function handler(req, res) {
-  // Enable CORS & Preflight Handling
+  // CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -36,291 +11,182 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-    let action = req.query?.action;
+  let action = req.query?.action;
   let bodyData = {};
 
   if (req.body) {
     if (typeof req.body === "string") {
-      try { bodyData = JSON.parse(req.body); } catch(e) {}
+      try { bodyData = JSON.parse(req.body); } catch (e) {}
     } else {
       bodyData = req.body;
     }
     if (bodyData.action) action = bodyData.action;
-
-    // ----------------------------------------------------
-    // TYPE-AWARE PRODUCT CATALOG (REWARD vs CASH)
-    // ----------------------------------------------------
-    if (action === "get_products") {
-      try {
-        const typeFilter = req.query?.type || bodyData.type;
-        let query = "SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog";
-        let params = [];
-        if (typeFilter) {
-          query += " WHERE type = ? ORDER BY price ASC";
-          params.push(typeFilter);
-        } else {
-          query += " ORDER BY type ASC, price ASC";
-        }
-        const products = await runSql(query, params);
-        return res.status(200).json({ ok: true, products: products || [] });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-    if (action === "sync_catalog") {
-      try {
-        const products = bodyData.products || req.body?.products || [];
-        const catalogType = bodyData.type || req.body?.type || "reward";
-        
-        // Atomically wipe only items of the specific target type
-        await runSql("DELETE FROM product_catalog WHERE type = ?", [catalogType]);
-        
-        for (const item of products) {
-          if (!item.name) continue;
-          const cost = parseFloat(item.price) || 0;
-          const img = item.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
-          
-          await runSql(
-            "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url, type = excluded.type",
-            [item.name.trim(), cost, img, catalogType]
-          );
-        }
-        return res.status(200).json({ ok: true, message: `${catalogType} catalog synchronized successfully` });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-
-
-    // ----------------------------------------------------
-    // PRODUCT CATALOG & MESSENGER REWARDS SYNC
-    // ----------------------------------------------------
-    );
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-            return res.status(200).json({ ok: true, message: "Catalog synchronized successfully" });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-
   }
 
-  res.setHeader('Content-Type', 'application/json');
-
-  if (req.method === 'GET') {
-    
-    
-    if (action === "get_highlight" || action === "get_drips") {
-      try {
-        const rows = await runSql("SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages ORDER BY month ASC");
-        return res.status(200).json({ ok: true, drips: rows });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-    if (action === "save_drip") {
-      const { month, theme, scripture, message, highlight_img, highlight_label } = req.body;
-      try {
-        await runSql(`
-          INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
-          VALUES (?, ?, ?, ?, ?, ?)
-          ON CONFLICT(month) DO UPDATE SET
-            theme = excluded.theme,
-            scripture = excluded.scripture,
-            message = excluded.message,
-            highlight_img = excluded.highlight_img,
-            highlight_label = excluded.highlight_label
-        `, [
-          Number(month),
-          theme || "",
-          scripture || "",
-          message || "",
-          highlight_img || "",
-          highlight_label || ""
-        ]);
-        return res.status(200).json({ ok: true, message: "Month " + month + " saved to database." });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-    );
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-    if (action === 'health_check') {
-      try {
-        const configRows = await runSql("SELECT value FROM system_config WHERE key = 'master_power'");
-        const isOnline = configRows.length === 0 || configRows[0].value === 'online';
-        return res.status(200).json({ ok: true, status: isOnline ? 'ONLINE' : 'OFFLINE', timestamp: new Date().toISOString() });
-      } catch (err) {
-        return res.status(500).json({ ok: false, status: 'OFFLINE', error: err.message });
-      }
-    }
-
-    if (action === 'get_highlight' || req.query.month || req.url?.includes('highlight')) {
-      const currentMonth = new Date().getMonth() + 1;
-      const month = req.query.month ? parseInt(req.query.month, 10) : currentMonth;
-      try {
-        const rows = await runSql("SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages WHERE month = ?", [month]);
-        return res.status(200).json({ ok: true, data: rows[0] || { month, theme: '', scripture: '', message: '', highlight_img: '', highlight_label: '' } });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
-    }
-
-    try {
-      const [missionaries, orders, logs, dripMessages, systemConfig] = await Promise.all([
-        runSql(`SELECT email, name, last_name as lastName, cohort, batch_month as batchMonth, points, referral_code as referralCode, status, months_sent as monthsSent, max_months as maxMonths, next_send_date as nextSendDate FROM missionaries ORDER BY name ASC`),
-        runSql(`SELECT order_id as orderId, psid, email, name, item, points_cost as cost, status, created_at as date FROM orders ORDER BY ROWID DESC`),
-        runSql(`SELECT id, level, message, created_at as createdAt FROM system_logs ORDER BY id DESC LIMIT 100`),
-        runSql(`SELECT month, theme, scripture, message, highlight_img, highlight_label FROM drip_messages ORDER BY month ASC`),
-        runSql(`SELECT key, value FROM system_config`)
+  try {
+    // ----------------------------------------------------
+    // DASHBOARD & STATS
+    // ----------------------------------------------------
+    if (action === "get_stats" || action === "get_dashboard" || !action) {
+      const [
+        totalMissionaries,
+        activeMissionaries,
+        totalOrders,
+        pendingOrders,
+        totalDrips,
+        recentOrders,
+        recentLogs
+      ] = await Promise.all([
+        runSql("SELECT COUNT(*) as count FROM missionaries"),
+        runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'"),
+        runSql("SELECT COUNT(*) as count FROM orders"),
+        runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'"),
+        runSql("SELECT COUNT(*) as count FROM drip_messages"),
+        runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
+        runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 6")
       ]);
 
-      return res.status(200).json({ 
-        ok: true, 
-        missionaries, 
-        orders, 
-        logs, 
-        dripMessages,
-        systemConfig: systemConfig.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {})
+      const totalPts = await runSql("SELECT SUM(points) as pts FROM missionaries");
+
+      return res.status(200).json({
+        ok: true,
+        stats: {
+          total_missionaries: totalMissionaries[0]?.count || 0,
+          active_missionaries: activeMissionaries[0]?.count || 0,
+          total_orders: totalOrders[0]?.count || 0,
+          pending_orders: pendingOrders[0]?.count || 0,
+          total_drips: totalDrips[0]?.count || 0,
+          circulating_points: totalPts[0]?.pts || 0
+        },
+        recent_orders: recentOrders || [],
+        recent_logs: recentLogs || []
       });
-    } catch (err) {
-      console.error("Dashboard API Error:", err.message);
-      return res.status(500).json({ ok: false, error: err.message, missionaries: [], logs: [] });
-    }
-  }
-
-  if (req.method === 'POST') {
-    
-    
-    
-    
-    if (action === "save_highlight") {
-      const { month, theme, message, scripture, highlight_img, highlight_label } = req.body;
-      try {
-        await runSql(`
-          INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
-          VALUES (?, ?, ?, ?, ?, ?)
-          ON CONFLICT(month) DO UPDATE SET 
-            theme = excluded.theme,
-            scripture = excluded.scripture,
-            message = excluded.message,
-            highlight_img = excluded.highlight_img,
-            highlight_label = excluded.highlight_label
-        `, [
-          Number(month) || 1, 
-          theme || "", 
-          scripture || "", 
-          message || "", 
-          highlight_img || "", 
-          highlight_label || ""
-        ]);
-        return res.status(200).json({ ok: true, message: "Month " + month + " saved to Turso." });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
     }
 
-    if (action === "save_product") {
-      const { id, name, price, image_url } = req.body;
-      try {
-        if (id) {
-          await runSql("UPDATE product_catalog SET name = ?, price = ?, image_url = ? WHERE id = ?", [name, price, image_url, id]);
-        } else {
-          await runSql("INSERT INTO product_catalog (name, price, image_url) VALUES (?, ?, ?)", [name, price, image_url]);
-        }
-        return res.status(200).json({ ok: true, message: "Product saved successfully." });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
+    // ----------------------------------------------------
+    // MISSIONARIES DIRECTORY
+    // ----------------------------------------------------
+    if (action === "get_missionaries") {
+      const rows = await runSql("SELECT email, name, cohort, psid, points, referral_code, status, months_sent, max_months FROM missionaries ORDER BY name ASC");
+      return res.status(200).json({ ok: true, missionaries: rows || [] });
     }
 
-    if (action === 'delete_missionary') {
-      const { email } = req.body;
-      await runSql("DELETE FROM missionaries WHERE email = ?", [email]);
+    if (action === "update_missionary_points") {
+      const { email, delta } = bodyData;
+      if (!email || typeof delta !== 'number') return res.status(400).json({ ok: false, error: "Missing email or delta" });
+      await runSql("UPDATE missionaries SET points = MAX(0, points + ?) WHERE email = ?", [delta, email]);
       return res.status(200).json({ ok: true });
     }
 
-    if (action === 'update_order_status') {
-      const { order_id, status } = req.body;
+    if (action === "toggle_missionary_status") {
+      const { email, status } = bodyData;
+      await runSql("UPDATE missionaries SET status = ? WHERE email = ?", [status, email]);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ----------------------------------------------------
+    // PRODUCT CATALOG (REWARD VS CASH ISOLATION)
+    // ----------------------------------------------------
+    if (action === "get_products") {
+      const typeFilter = req.query?.type || bodyData.type;
+      let query = "SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog";
+      let params = [];
+      if (typeFilter) {
+        query += " WHERE type = ? ORDER BY price ASC";
+        params.push(typeFilter);
+      } else {
+        query += " ORDER BY type ASC, price ASC";
+      }
+      const products = await runSql(query, params);
+      return res.status(200).json({ ok: true, products: products || [] });
+    }
+
+    if (action === "sync_catalog") {
+      const products = bodyData.products || req.body?.products || [];
+      const catalogType = bodyData.type || req.body?.type || "reward";
+
+      await runSql("DELETE FROM product_catalog WHERE type = ?", [catalogType]);
+
+      for (const item of products) {
+        if (!item.name) continue;
+        const cost = parseFloat(item.price) || 0;
+        const img = item.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
+
+        await runSql(
+          "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url, type = excluded.type",
+          [item.name.trim(), cost, img, catalogType]
+        );
+      }
+      return res.status(200).json({ ok: true, message: `${catalogType} catalog synchronized successfully` });
+    }
+
+    // ----------------------------------------------------
+    // CLAIMS & ORDERS
+    // ----------------------------------------------------
+    if (action === "get_orders") {
+      const orders = await runSql("SELECT * FROM orders ORDER BY created_at DESC");
+      return res.status(200).json({ ok: true, orders: orders || [] });
+    }
+
+    if (action === "update_order_status") {
+      const { order_id, status } = bodyData;
       await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
       return res.status(200).json({ ok: true });
     }
 
-    if (action === 'toggle_power') {
-      const { state } = req.body;
-      try {
-        await runSql(`INSERT OR REPLACE INTO system_config (key, value) VALUES ('master_power', ?)`, [state]);
-        return res.status(200).json({ ok: true, state });
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
+    // ----------------------------------------------------
+    // DRIP MESSAGES
+    // ----------------------------------------------------
+    if (action === "get_drips") {
+      const drips = await runSql("SELECT * FROM drip_messages ORDER BY month ASC");
+      return res.status(200).json({ ok: true, drips: drips || [] });
     }
 
-    if (action === 'force_cron') {
-      return res.status(200).json({ ok: true, message: "Cron job executed successfully." });
+    if (action === "save_drip") {
+      const { month, theme, scripture, message, highlight_img, highlight_label } = bodyData;
+      await runSql(`
+        INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(month) DO UPDATE SET
+          theme = excluded.theme,
+          scripture = excluded.scripture,
+          message = excluded.message,
+          highlight_img = excluded.highlight_img,
+          highlight_label = excluded.highlight_label
+      `, [month, theme, scripture, message, highlight_img || '', highlight_label || '']);
+      return res.status(200).json({ ok: true });
     }
 
-    if (action === 'test_email') {
-      const { email } = req.body;
-      const targetEmail = (email || "").trim() || "test.missionary@missionary.org";
-      
-      const brevoKey = (process.env.BREVO_API_KEY || "").trim();
-      if (!brevoKey) {
-        return res.status(200).json({ 
-          ok: false, 
-          error: "BREVO_API_KEY environment variable is missing in Vercel settings.",
-          targetEmail 
-        });
-      }
-
-      try {
-        const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
-          method: "POST",
-          headers: {
-            "api-key": brevoKey,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({
-            sender: { name: "Timeless Creations", email: "noreply.timelesscreations.ph@gmail.com" },
-            to: [{ email: targetEmail }],
-            subject: "🧪 TCRP Test Dispatch — Live System Check",
-            htmlContent: `<div style="font-family:Georgia,serif;padding:20px;border:1px solid #c9a84c;max-width:400px;margin:0 auto;background:#fdfaf3;"><h2 style="color:#8b1a1a;margin-top:0;">Test Dispatch Success</h2><p>This is a live test email sent to <strong>${targetEmail}</strong> from your Timeless Creations Rewards Program Control Room.</p><p style="font-size:11px;color:#78716c;">Timestamp: ${new Date().toISOString()}</p></div>`
-          })
-        });
-
-        const respData = await emailRes.json();
-        if (emailRes.ok) {
-          return res.status(200).json({ 
-            ok: true, 
-            message: `Live test email successfully dispatched to ${targetEmail}!`,
-            response: respData 
-          });
-        } else {
-          return res.status(200).json({ 
-            ok: false, 
-            error: "Brevo API rejected request",
-            details: respData 
-          });
-        }
-      } catch (err) {
-        return res.status(500).json({ ok: false, error: err.message });
-      }
+    // ----------------------------------------------------
+    // CASH INVOICING / POS
+    // ----------------------------------------------------
+    if (action === "get_invoices") {
+      const invoices = await runSql("SELECT * FROM cash_invoices ORDER BY created_at DESC LIMIT 50");
+      return res.status(200).json({ ok: true, invoices: invoices || [] });
     }
+
+    if (action === "create_invoice") {
+      const { invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount } = bodyData;
+      await runSql(`
+        INSERT INTO cash_invoices (invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)
+      `, [invoice_id, email, name, JSON.stringify(items_json || []), subtotal, discount_type, discount_val, discount_amount, total_amount]);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ----------------------------------------------------
+    // SYSTEM SETTINGS
+    // ----------------------------------------------------
+    if (action === "get_settings") {
+      const settings = await runSql("SELECT key, value FROM system_settings");
+      const map = {};
+      settings.forEach(s => { map[s.key] = s.value; });
+      return res.status(200).json({ ok: true, settings: map });
+    }
+
+    return res.status(404).json({ ok: false, error: `Unknown action '${action}'` });
+  } catch (err) {
+    console.error("API Router Error:", err);
+    return res.status(500).json({ ok: false, error: err.message });
   }
-
-  return res.status(405).json({ ok: false, error: "Method not allowed" });
 }

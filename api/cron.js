@@ -14,19 +14,38 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "System is in sleep mode. No drips sent." });
     }
 
-    // STRICT ORDER: Oldest / Longest waiting missionaries dispatched first
-    const dueMissionaries = await runSql(`
+    // 1. Fetch up to 140 due Elders (Oldest waiting first)
+    const dueElders = await runSql(`
       SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
       WHERE status = 'active'
+        AND cohort = 'elder'
         AND months_sent < max_months
         AND (next_send_date <= date('now') OR next_send_date IS NULL OR last_sent_at IS NULL)
       ORDER BY 
         CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
         last_sent_at ASC,
         ROWID ASC
-      LIMIT 100
+      LIMIT 140
     `);
+
+    // 2. Fetch up to 140 due Sisters (Oldest waiting first)
+    const dueSisters = await runSql(`
+      SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
+      FROM missionaries 
+      WHERE status = 'active'
+        AND cohort = 'sister'
+        AND months_sent < max_months
+        AND (next_send_date <= date('now') OR next_send_date IS NULL OR last_sent_at IS NULL)
+      ORDER BY 
+        CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
+        last_sent_at ASC,
+        ROWID ASC
+      LIMIT 140
+    `);
+
+    // Combine queues (Total max 280 emails, safe for Brevo 300/day free limit)
+    const dueMissionaries = [...(dueElders || []), ...(dueSisters || [])];
 
     if (!dueMissionaries || dueMissionaries.length === 0) {
       return res.status(200).json({ ok: true, sentCount: 0, message: "All missionaries are up-to-date." });
@@ -68,7 +87,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       sentCount,
-      totalDue: dueMissionaries.length,
+      eldersProcessed: dueElders?.length || 0,
+      sistersProcessed: dueSisters?.length || 0,
       errors: errors.length > 0 ? errors : undefined
     });
   } catch (err) {

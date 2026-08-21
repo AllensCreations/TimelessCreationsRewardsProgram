@@ -4,7 +4,8 @@
   "description": "Messenger Bot Rewards Program for Missionaries (@missionary.org) using Firebase",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node tester.js"
   },
   "dependencies": {
     "csv-parse": "^7.0.2",

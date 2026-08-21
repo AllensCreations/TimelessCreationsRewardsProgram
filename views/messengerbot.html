@@ -119,7 +119,7 @@ async function loadInitialData(forceFetch = false) {
   }
 
   try {
-    const res = await fetch("/api/main?action=get_products");
+    const res = await fetch("/api/main?action=get_products&type=reward");
     const data = await res.json();
     if (data.ok) {
       localItems = data.products || [];
@@ -220,6 +220,7 @@ async function saveAllToTurso() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         action: "sync_catalog", 
+        type: "reward", 
         products: localItems 
       })
     });

@@ -48,11 +48,20 @@ export default async function handler(req, res) {
     if (bodyData.action) action = bodyData.action;
 
     // ----------------------------------------------------
-    // PRODUCT CATALOG & MESSENGER REWARDS SYNC
+    // TYPE-AWARE PRODUCT CATALOG (REWARD vs CASH)
     // ----------------------------------------------------
     if (action === "get_products") {
       try {
-        const products = await runSql("SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog ORDER BY price ASC");
+        const typeFilter = req.query?.type || bodyData.type;
+        let query = "SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog";
+        let params = [];
+        if (typeFilter) {
+          query += " WHERE type = ? ORDER BY price ASC";
+          params.push(typeFilter);
+        } else {
+          query += " ORDER BY type ASC, price ASC";
+        }
+        const products = await runSql(query, params);
         return res.status(200).json({ ok: true, products: products || [] });
       } catch (err) {
         return res.status(500).json({ ok: false, error: err.message });
@@ -62,21 +71,39 @@ export default async function handler(req, res) {
     if (action === "sync_catalog") {
       try {
         const products = bodyData.products || req.body?.products || [];
+        const catalogType = bodyData.type || req.body?.type || "reward";
         
-        // Clear old reward entries and re-insert atomically
-        await runSql("DELETE FROM product_catalog WHERE type = 'reward' OR type IS NULL");
+        // Atomically wipe only items of the specific target type
+        await runSql("DELETE FROM product_catalog WHERE type = ?", [catalogType]);
         
         for (const item of products) {
           if (!item.name) continue;
-          const cost = parseInt(item.price, 10) || 0;
+          const cost = parseFloat(item.price) || 0;
           const img = item.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
           
           await runSql(
-            "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, 'reward') ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url",
-            [item.name.trim(), cost, img]
+            "INSERT INTO product_catalog (name, price, image_url, type) VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET price = excluded.price, image_url = excluded.image_url, type = excluded.type",
+            [item.name.trim(), cost, img, catalogType]
           );
         }
-        return res.status(200).json({ ok: true, message: "Catalog synchronized successfully" });
+        return res.status(200).json({ ok: true, message: `${catalogType} catalog synchronized successfully` });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
+
+
+    // ----------------------------------------------------
+    // PRODUCT CATALOG & MESSENGER REWARDS SYNC
+    // ----------------------------------------------------
+    );
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
+            return res.status(200).json({ ok: true, message: "Catalog synchronized successfully" });
       } catch (err) {
         return res.status(500).json({ ok: false, error: err.message });
       }
@@ -125,11 +152,7 @@ export default async function handler(req, res) {
       }
     }
 
-    if (action === "get_products") {
-      try {
-        const typeFilter = req.query.type || "reward";
-        const products = await runSql("SELECT id, name, price, image_url, type FROM product_catalog WHERE type = ? ORDER BY id ASC", [typeFilter]);
-        return res.status(200).json({ ok: true, products });
+    );
       } catch (err) {
         return res.status(500).json({ ok: false, error: err.message });
       }

@@ -14,8 +14,44 @@
         color: var(--green); margin-top: 14px; white-space: pre-wrap; display: none;
         max-height: 280px; overflow-y: auto;
       }
-      .modal-overlay { position: fixed; inset: 0; background: rgba(5,5,8,0.85); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-      .modal-box { background: var(--surface); border: 1px solid var(--gold); padding: 26px; border-radius: 10px; max-width: 420px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.7); text-align: center; }
+      .modal-overlay { 
+        position: fixed; inset: 0; background: rgba(5,5,8,0.85); 
+        backdrop-filter: blur(8px); display: none; justify-content: center; 
+        align-items: center; z-index: 1000; padding: 20px; 
+      }
+      .modal-box { 
+        background: var(--surface); border: 1px solid var(--gold); 
+        padding: 26px; border-radius: 12px; max-width: 440px; width: 100%; 
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8); text-align: center; 
+        position: relative; animation: popIn 0.2s ease-out;
+      }
+      .captcha-grid {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+        margin: 18px 0;
+      }
+      .captcha-card {
+        aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden;
+        border: 2px solid var(--border); cursor: pointer; transition: all 0.2s;
+        background: var(--surface2); position: relative;
+      }
+      .captcha-card:hover {
+        transform: translateY(-3px) scale(1.03);
+        border-color: var(--gold);
+        box-shadow: 0 6px 15px rgba(201,168,76,0.3);
+      }
+      .captcha-card img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+      }
+      @keyframes popIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+      }
+      .shake-box { animation: shake 0.35s ease; border-color: #e05c5c !important; }
     </style>
 </head>
 <body>
@@ -23,9 +59,10 @@
 <div class="card" style="border-color: rgba(201,168,76,0.3);">
     <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">⚡ Master System Power Switch</div>
     <div style="font-size:0.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
-        Controls background automated drip dispatches and passive cron jobs in Turso.
+        Controls background automated drip dispatches and passive cron jobs in Turso.<br>
+        <span style="color:var(--gold);">🔒 Protected by Handsome Face Verification CAPTCHA mini-game.</span>
     </div>
-    <button id="power-toggle-btn" class="btn btn-dark" onclick="togglePowerState()">⏳ Loading Status...</button>
+    <button id="power-toggle-btn" class="btn btn-dark" onclick="startPowerCaptcha()">⏳ Loading Status...</button>
 </div>
 
 <div class="card">
@@ -52,7 +89,24 @@
     <button class="btn btn-dark" onclick="openCronModal()">Force Cron Run Now</button>
 </div>
 
-<!-- Security Confirmation Modal -->
+<!-- CAPTCHA Mini-Game Modal for Master Power Switch -->
+<div id="captcha-modal" class="modal-overlay">
+    <div class="modal-box" id="captcha-box">
+        <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">😎 Security Face CAPTCHA</div>
+        <div style="font-size:0.75rem; color:var(--text); margin-bottom:6px;">Tap the real <strong>Handsome Face</strong> to confirm switch:</div>
+        <div style="font-size:0.68rem; color:var(--muted); margin-bottom:12px;">Prove you have administrator authority before changing system power.</div>
+        
+        <div class="captcha-grid" id="captcha-cards-container">
+            <!-- Rendered dynamically in JS -->
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:10px;">
+            <button class="btn btn-dark" onclick="closeCaptchaModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Security Confirmation Modal for Cron -->
 <div id="custom-modal" class="modal-overlay">
     <div class="modal-box">
         <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold); margin-bottom:10px;">Security Verification</div>
@@ -67,6 +121,12 @@
 
 <script>
 let currentPowerState = "offline";
+
+const CAPTCHA_IMAGES = [
+  { id: "correct", src: "https://i.postimg.cc/mgjRv9Dy/IMG-7154.jpg", isHandsome: true },
+  { id: "wrong1", src: "https://i.postimg.cc/9X92WK05/images.webp", isHandsome: false },
+  { id: "wrong2", src: "https://i.postimg.cc/s21Fb0qk/images-(1).webp", isHandsome: false }
+];
 
 async function loadSettings() {
   const btn = document.getElementById("power-toggle-btn");
@@ -87,7 +147,46 @@ async function loadSettings() {
   }
 }
 
-async function togglePowerState() {
+function startPowerCaptcha() {
+  renderCaptchaCards();
+  document.getElementById("captcha-modal").style.display = "flex";
+}
+
+function closeCaptchaModal() {
+  document.getElementById("captcha-modal").style.display = "none";
+}
+
+function renderCaptchaCards() {
+  const container = document.getElementById("captcha-cards-container");
+  // Shuffle array randomly
+  const shuffled = [...CAPTCHA_IMAGES].sort(() => Math.random() - 0.5);
+  
+  container.innerHTML = shuffled.map(item => `
+    <div class="captcha-card" onclick="handleCaptchaPick(${item.isHandsome})">
+      <img src="${item.src}" alt="Candidate">
+    </div>
+  `).join('');
+}
+
+async function handleCaptchaPick(isHandsome) {
+  const box = document.getElementById("captcha-box");
+  
+  if (!isHandsome) {
+    box.classList.remove("shake-box");
+    void box.offsetWidth; // Trigger reflow
+    box.classList.add("shake-box");
+    showToast("Wrong face selected! Try again.", "error");
+    renderCaptchaCards();
+    return;
+  }
+
+  // Correct pick! Proceed with toggling state
+  closeCaptchaModal();
+  showToast("Verified Handsome! Changing power state...");
+  await executePowerToggle();
+}
+
+async function executePowerToggle() {
   const nextState = currentPowerState === "online" ? "offline" : "online";
   const btn = document.getElementById("power-toggle-btn");
   btn.textContent = "⏳ Saving to Turso...";

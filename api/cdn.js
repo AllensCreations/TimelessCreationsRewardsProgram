@@ -18,8 +18,8 @@ export default async function handler(req, res) {
         filename TEXT,
         direct_url TEXT,
         size_label TEXT,
-        original_kb REAL DEFAULT 0,
-        compressed_kb REAL DEFAULT 0,
+        original_kb INTEGER DEFAULT 0,
+        compressed_kb INTEGER DEFAULT 0,
         delete_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -72,14 +72,17 @@ export default async function handler(req, res) {
       const deleteUrl = imgbbData.data.delete_url || '';
       const displayFileName = `${uniqueFileName}.webp`;
 
-      // Persist directly into Turso database
+      // Convert KB strings to clean rounded integers for Turso compatibility
+      const origKbInt = Math.round(Number(originalKb) || 0);
+      const compKbInt = Math.round(Number(compressedKb) || 0);
+
       await runSql(
         'INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb, delete_url) VALUES (?, ?, ?, ?, ?, ?)',
-        [displayFileName, directUrl, targetSize || 'WebP 85%', Number(originalKb) || 0, Number(compressedKb) || 0, deleteUrl]
+        [displayFileName, directUrl, targetSize || 'WebP 85%', origKbInt, compKbInt, deleteUrl]
       );
 
       const rows = await runSql('SELECT * FROM cdn_gallery WHERE filename = ? ORDER BY id DESC LIMIT 1', [displayFileName]);
-      const itemRecord = rows && rows[0] ? rows[0] : {
+      const itemRecord = (rows && rows[0]) ? rows[0] : {
         filename: displayFileName,
         direct_url: directUrl,
         size_label: targetSize || 'WebP 85%'
@@ -103,7 +106,6 @@ export default async function handler(req, res) {
   if (action === 'list' || action === 'get_cdn_gallery') {
     try {
       const rows = await runSql('SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 200');
-      // Normalize array structure
       const gallery = Array.isArray(rows) ? rows : (rows?.rows || []);
       return res.status(200).json({ ok: true, gallery });
     } catch (err) {
@@ -119,7 +121,7 @@ export default async function handler(req, res) {
       const { id } = req.body || {};
       if (!id) return res.status(400).json({ ok: false, error: 'Missing image ID to delete.' });
 
-      await runSql('DELETE FROM cdn_gallery WHERE id = ?', [Number(id)]);
+      await runSql('DELETE FROM cdn_gallery WHERE id = ?', [Math.round(Number(id))]);
       return res.status(200).json({ ok: true, message: 'Asset removed from Turso gallery store.' });
     } catch (err) {
       return res.status(500).json({ ok: false, error: 'Delete failed: ' + err.message });

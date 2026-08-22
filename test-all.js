@@ -47,7 +47,7 @@ async function runTests() {
   assert(elements[0].buttons[0].title.includes("Claim"), "Affordable item (2 pts) shows 'Claim' button");
   assert(elements[1].buttons[0].title.includes("Need 4 More PTS"), "Window-shopping item (6 pts vs 2 pts balance) shows 'Need 4 More PTS'");
 
-  const testId = "test_run_" + Date.now();
+  const testId = "test_run_" + Math.random().toString(36).slice(2, 9);
   const r1 = await checkDashboardRateLimit(testId);
   const r2 = await checkDashboardRateLimit(testId);
   const r3 = await checkDashboardRateLimit(testId);
@@ -55,7 +55,7 @@ async function runTests() {
   assert(r1.allowed === true, "Rate limiter allows 1st view");
   assert(r2.allowed === true, "Rate limiter allows 2nd view");
   assert(r3.allowed === false, "Rate limiter blocks 3rd view (max 2 views enforced)");
-  assert(r3.message.includes("🛡️ 𝗗𝗔𝗜𝗟𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗 𝗟𝗜𝗠𝗜𝗧 𝗥𝗘𝗔𝗖𝗛𝗘𝗗"), "Blocked view responds with Unicode warning and midnight reset info");
+  assert(typeof r3.message === 'string' && r3.message.includes("🛡️ 𝗗𝗔𝗜𝗟𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗 𝗟𝗜𝗠𝗜𝗧 𝗥𝗘𝗔𝗖𝗛𝗘𝗗"), "Blocked view responds with Unicode warning and midnight reset info");
 
   try {
     await runSql("PRAGMA optimize");

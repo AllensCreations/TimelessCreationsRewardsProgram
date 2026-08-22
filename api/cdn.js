@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
   const action = req.query.action || req.body?.action || (req.method === 'POST' ? 'upload' : 'list');
 
-  // Ensure cdn_gallery table exists
+  // Initialize Turso cdn_gallery table
   try {
     await runSql(`
       CREATE TABLE IF NOT EXISTS cdn_gallery (
@@ -25,11 +25,11 @@ export default async function handler(req, res) {
       )
     `);
   } catch (err) {
-    console.error('CDN table init error:', err);
+    console.error('Turso CDN table init error:', err);
   }
 
   // ----------------------------------------------------
-  // ACTION: UPLOAD & STORE IN CDN GALLERY
+  // ACTION: UPLOAD TO IMGBB & PERSIST IN TURSO
   // ----------------------------------------------------
   if (action === 'upload' || action === 'upload_cdn_image') {
     try {
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       if (!imgbbKey) {
         return res.status(500).json({ 
           ok: false, 
-          error: 'IMGBB_API_KEY is not set in your environment (.env / Vercel).' 
+          error: 'IMGBB_API_KEY is not configured in environment variables (.env / Vercel).' 
         });
       }
 
@@ -50,7 +50,6 @@ export default async function handler(req, res) {
       const hash = crypto.createHash('sha256').update((filename || 'img') + Date.now() + Math.random()).digest('hex').slice(0, 16);
       const uniqueFileName = `tcrp_${hash}`;
 
-      // Upload to ImgBB
       const formData = new URLSearchParams();
       formData.append('image', cleanBase64);
       formData.append('name', uniqueFileName);
@@ -73,13 +72,18 @@ export default async function handler(req, res) {
       const deleteUrl = imgbbData.data.delete_url || '';
       const displayFileName = `${uniqueFileName}.webp`;
 
-      // Insert directly into the database store
+      // Persist directly into Turso database
       await runSql(
         'INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb, delete_url) VALUES (?, ?, ?, ?, ?, ?)',
-        [displayFileName, directUrl, targetSize || 'WebP 85%', originalKb || 0, compressedKb || 0, deleteUrl]
+        [displayFileName, directUrl, targetSize || 'WebP 85%', Number(originalKb) || 0, Number(compressedKb) || 0, deleteUrl]
       );
 
-      const itemRecord = (await runSql('SELECT * FROM cdn_gallery WHERE filename = ? ORDER BY id DESC LIMIT 1', [displayFileName]))[0];
+      const rows = await runSql('SELECT * FROM cdn_gallery WHERE filename = ? ORDER BY id DESC LIMIT 1', [displayFileName]);
+      const itemRecord = rows && rows[0] ? rows[0] : {
+        filename: displayFileName,
+        direct_url: directUrl,
+        size_label: targetSize || 'WebP 85%'
+      };
 
       return res.status(200).json({
         ok: true,
@@ -94,31 +98,33 @@ export default async function handler(req, res) {
   }
 
   // ----------------------------------------------------
-  // ACTION: LIST ALL STORED GALLERY ASSETS
+  // ACTION: RETRIEVE STORED GALLERY FROM TURSO
   // ----------------------------------------------------
   if (action === 'list' || action === 'get_cdn_gallery') {
     try {
-      const gallery = await runSql('SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 150');
+      const rows = await runSql('SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 200');
+      // Normalize array structure
+      const gallery = Array.isArray(rows) ? rows : (rows?.rows || []);
       return res.status(200).json({ ok: true, gallery });
     } catch (err) {
-      return res.status(500).json({ ok: false, error: 'Failed to fetch gallery: ' + err.message });
+      return res.status(500).json({ ok: false, error: 'Failed to fetch gallery from Turso: ' + err.message });
     }
   }
 
   // ----------------------------------------------------
-  // ACTION: DELETE / PURGE IMAGE FROM STORE
+  // ACTION: PURGE ASSET FROM TURSO
   // ----------------------------------------------------
   if (action === 'delete' || action === 'delete_cdn_image') {
     try {
       const { id } = req.body || {};
-      if (!id) return res.status(400).json({ ok: false, error: 'Missing image ID.' });
+      if (!id) return res.status(400).json({ ok: false, error: 'Missing image ID to delete.' });
 
-      await runSql('DELETE FROM cdn_gallery WHERE id = ?', [id]);
-      return res.status(200).json({ ok: true, message: 'Asset removed from gallery.' });
+      await runSql('DELETE FROM cdn_gallery WHERE id = ?', [Number(id)]);
+      return res.status(200).json({ ok: true, message: 'Asset removed from Turso gallery store.' });
     } catch (err) {
       return res.status(500).json({ ok: false, error: 'Delete failed: ' + err.message });
     }
   }
 
-  return res.status(400).json({ ok: false, error: 'Invalid action.' });
+  return res.status(400).json({ ok: false, error: `Invalid action '${action}'.` });
 }

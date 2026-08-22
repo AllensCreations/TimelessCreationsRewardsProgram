@@ -19,7 +19,6 @@ function assert(condition, message) {
 }
 
 async function runTests() {
-  // Test 1: Database connection
   try {
     const res = await runSql("SELECT 1 as alive");
     const isAlive = (res && res[0]?.alive == 1) || (Array.isArray(res) && res.length >= 0);
@@ -28,17 +27,15 @@ async function runTests() {
     assert(false, `Database connection: ${e.message}`);
   }
 
-  // Test 2: Bot Unicode Header
   const mockUser = { name: "Elder Smith", email: "smith@missionary.org", points: 4 };
   const mockLink = "https://m.me/TimelessCreationsRP?ref=ABC123";
   const dashPayload = buildDashboardPayload(mockUser, mockLink);
 
-  assert(dashPayload.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"), "Bot Dashboard uses Unicode bold header");
-  assert(!dashPayload.dashboardText.includes("**"), "Bot Dashboard contains no raw markdown asterisks (*** or **)");
-  assert(dashPayload.dashboardText.includes("👤 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:"), "Bot uses Unicode for info section");
-  assert(dashPayload.invitePromoText.includes("🔗 𝟭-𝗧𝗮𝗽 𝗜𝗻𝘃𝗶𝘁𝗲 𝗟𝗶𝗻𝗸:"), "Bot invite text uses Unicode bold link header");
+  assert(dashPayload.text.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"), "Bot Dashboard uses Unicode bold header");
+  assert(!dashPayload.text.includes("**"), "Bot Dashboard contains no raw markdown asterisks (*** or **)");
+  assert(dashPayload.text.includes("👤 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:"), "Bot uses Unicode for info section");
+  assert(dashPayload.text.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱 & 𝗘𝗮𝗿𝗻 +𝟭 𝗣𝗧"), "Bot includes copy-and-send invite text");
 
-  // Test 3: Carousel Generator
   const mockProducts = [
     { id: 1, name: "Affordable Tag", price: 2 },
     { id: 2, name: "Goal Item", price: 6 }
@@ -48,9 +45,8 @@ async function runTests() {
 
   assert(elements && elements.length === 2, "Bot Carousel elements generated");
   assert(elements[0].buttons[0].title.includes("Claim"), "Affordable item (2 pts) shows 'Claim' button");
-  assert(elements[1].buttons[0].title.includes("Need 4 More PTS"), "Window-shopping item shows 1 Need PTS button");
+  assert(elements[1].buttons[0].title.includes("Need 4 More PTS"), "Window-shopping item (6 pts vs 2 pts balance) shows 'Need 4 More PTS'");
 
-  // Test 4: Rate Limiter
   const testId = "test_run_" + Date.now();
   const r1 = await checkDashboardRateLimit(testId);
   const r2 = await checkDashboardRateLimit(testId);
@@ -61,7 +57,6 @@ async function runTests() {
   assert(r3.allowed === false, "Rate limiter blocks 3rd view (max 2 views enforced)");
   assert(r3.message.includes("🛡️ 𝗗𝗔𝗜𝗟𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗 𝗟𝗜𝗠𝗜𝗧 𝗥𝗘𝗔𝗖𝗛𝗘𝗗"), "Blocked view responds with Unicode warning and midnight reset info");
 
-  // Test 5: Database Maintenance Query
   try {
     await runSql("PRAGMA optimize");
     assert(true, "Database maintenance & PRAGMA execution");
@@ -69,7 +64,6 @@ async function runTests() {
     assert(true, "Database maintenance fallback");
   }
 
-  // Test 6: Mailer Module
   assert(typeof sendDripEmail === 'function', "Brevo Drip mailer responds cleanly");
 
   console.log("\n================================");

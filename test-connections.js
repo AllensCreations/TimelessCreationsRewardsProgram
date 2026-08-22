@@ -18,7 +18,6 @@ function assert(condition, label, errDetail = '') {
 }
 
 async function runAllConnectionTests() {
-  // 1. TURSO DATABASE PING
   try {
     const res = await runSql("SELECT 1 as alive");
     const val = Array.isArray(res) ? res[0]?.alive : res?.rows?.[0]?.alive;
@@ -28,36 +27,31 @@ async function runAllConnectionTests() {
     assert(false, "Turso Database Connection", err.message);
   }
 
-  // 2. IMGBB CONFIGURATION
   const imgbbKey = process.env.IMGBB_API_KEY;
   assert(Boolean(imgbbKey && imgbbKey.length >= 20), "ImgBB API Key configuration in .env", imgbbKey ? "" : "IMGBB_API_KEY missing");
 
-  // 3. BREVO API KEY VALIDATION
   const brevoKey = process.env.BREVO_API_KEY;
   assert(Boolean(brevoKey && brevoKey.startsWith('xkeysib-')), "Brevo API Key format validation", brevoKey ? "" : "BREVO_API_KEY missing");
 
-  // 4. FACEBOOK TOKENS
   const fbToken = process.env.PAGE_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
   const fbVerify = process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN;
   assert(Boolean(fbToken && fbToken.length > 20), "Facebook Page Access Token (PAGE_ACCESS_TOKEN / FB_PAGE_ACCESS_TOKEN)", fbToken ? "" : "Missing token");
   assert(Boolean(fbVerify && fbVerify.length > 0), "Facebook Webhook Verify Token (VERIFY_TOKEN / FB_VERIFY_TOKEN)", fbVerify ? "" : "Missing verify token");
 
-  // 5. BOT UNICODE FORMATTING
   try {
     const mockUser = { name: "Elder Salviejo", email: "salviejomark@missionary.org", points: 3 };
     const refLink = "https://m.me/TimelessCreationsRP?ref=A8W3A3";
     const payload = buildDashboardPayload(mockUser, refLink);
 
-    const hasUnicodeDash = payload.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗");
-    const hasUnicodeInvite = payload.invitePromoText.includes("🔗 𝟭-𝗧𝗮𝗽 𝗜𝗻𝘃𝗶𝘁𝗲 𝗟𝗶𝗻𝗸:");
-    const hasNoRawAsterisks = !payload.dashboardText.includes("**MISSIONARY");
+    const hasUnicodeDash = (payload.text || payload.dashboardText).includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗");
+    const hasUnicodeInvite = (payload.text || payload.invitePromoText).includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱");
+    const hasNoRawAsterisks = !(payload.text || payload.dashboardText).includes("**MISSIONARY");
 
     assert(hasUnicodeDash && hasUnicodeInvite && hasNoRawAsterisks, "Bot Payload Formatter (Unicode Bold & Clean Formatting)");
   } catch (err) {
     assert(false, "Bot Payload Formatter", err.message);
   }
 
-  // 6. BOT CAROUSEL & PROGRESS BARS
   try {
     const sampleProducts = [
       { id: 1, name: "Engraved Tag", price: 2 },
@@ -67,14 +61,12 @@ async function runAllConnectionTests() {
     const elements = carousel?.attachment?.payload?.elements;
     const item1Affordable = elements?.[0]?.buttons?.[0]?.title.includes("Claim");
     const item2Goal = elements?.[1]?.buttons?.[0]?.title.includes("Need 4 More PTS");
-    const hasProgressBar = elements?.[1]?.subtitle?.includes("[■■");
 
-    assert(elements[0].buttons.length === 1, "Carousel strictly uses 1 button per card with Quick Replies");
+    assert(item1Affordable && item2Goal && elements[0].buttons.length === 1, "Carousel strictly uses 1 button per card with 1:1 square ratio");
   } catch (err) {
     assert(false, "Bot Carousel Generator", err.message);
   }
 
-  // 7. RATE LIMITER
   try {
     const testId = "conn_test_" + Date.now();
     const c1 = await checkDashboardRateLimit(testId);

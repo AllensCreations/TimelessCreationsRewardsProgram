@@ -1,5 +1,5 @@
 import { runSql } from '../lib/db.js';
-import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit } from '../lib/bot.js';
+import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit, FIXED_QUICK_REPLIES } from '../lib/bot.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
         const senderId = webhookEvent.sender?.id;
         const rawText = (webhookEvent.message?.text || '').trim();
-        const postbackPayload = webhookEvent.postback?.payload || '';
+        const postbackPayload = webhookEvent.postback?.payload || webhookEvent.message?.quick_reply?.payload || '';
 
         try {
           await processBotCommand(senderId, rawText, postbackPayload, pageToken);
@@ -61,26 +61,25 @@ async function processBotCommand(senderId, text, postbackPayload, token) {
 
   const lower = text.toLowerCase();
 
-  // Look up missionary
   let missionary = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? LIMIT 1", [senderId, text.toUpperCase()]))[0];
   const points = missionary?.points || 0;
   const refCode = missionary?.referral_code || "JOIN";
   const refLink = `https://m.me/TimelessCreationsRP?ref=${refCode}`;
 
-  // 1. DASHBOARD & POINTS
+  // 1. DASHBOARD
   if (postbackPayload === "ACTION_DASHBOARD" || lower.includes("dashboard") || lower.includes("points") || lower.includes("balance")) {
     const rateCheck = await checkDashboardRateLimit(senderId);
     if (!rateCheck.allowed) {
-      await sendToFacebook(senderId, { text: rateCheck.message }, token);
+      await sendToFacebook(senderId, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
       return;
     }
 
     const payload = buildDashboardPayload(missionary || { name: "Missionary", email: "Not linked yet", points }, refLink);
-    await sendToFacebook(senderId, { text: payload.dashboardText }, token);
+    await sendToFacebook(senderId, { text: payload.dashboardText, quick_replies: FIXED_QUICK_REPLIES }, token);
     return;
   }
 
-  // 2. CATALOG & WINDOW SHOPPING
+  // 2. CATALOG CAROUSEL
   if (postbackPayload === "ACTION_CATALOG" || lower.includes("catalog") || lower.includes("rewards") || lower.includes("shop")) {
     const products = await runSql("SELECT * FROM products WHERE is_active = 1 ORDER BY price ASC LIMIT 10");
     const carouselPayload = await buildCatalogCarousel(points, products);
@@ -88,21 +87,21 @@ async function processBotCommand(senderId, text, postbackPayload, token) {
     return;
   }
 
-  // 3. INVITE & REFERRAL LINK
+  // 3. INVITE COMPANION
   if (postbackPayload === "ACTION_INVITE" || lower.includes("invite") || lower.includes("refer")) {
     const payload = buildDashboardPayload(missionary || { name: "Missionary", points }, refLink);
-    await sendToFacebook(senderId, { text: payload.invitePromoText }, token);
+    await sendToFacebook(senderId, { text: payload.invitePromoText, quick_replies: FIXED_QUICK_REPLIES }, token);
     return;
   }
 
   // DEFAULT GREETING
   const defaultReply = `✨ Welcome to 𝗧𝗶𝗺𝗲𝗹𝗲𝘀𝘀 𝗖𝗿𝗲𝗮𝘁𝗶𝗼𝗻𝘀 𝗥𝗲𝘄𝗮𝗿𝗱𝘀 𝗣𝗿𝗼𝗴𝗿𝗮𝗺!
 
-• Type "dashboard" to view your points
-• Type "catalog" to window shop & redeem rewards
-• Type "invite" to get your companion referral link`;
+• Tap "📊 Dashboard" below to view your points
+• Tap "🌟 View Catalog" to window shop & redeem rewards
+• Tap "🔗 Invite a Friend" to share your referral link`;
 
-  await sendToFacebook(senderId, { text: defaultReply }, token);
+  await sendToFacebook(senderId, { text: defaultReply, quick_replies: FIXED_QUICK_REPLIES }, token);
 }
 
 async function sendToFacebook(recipientId, payload, token) {

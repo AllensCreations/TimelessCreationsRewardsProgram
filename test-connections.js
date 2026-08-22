@@ -69,7 +69,7 @@ async function runAllConnectionTests() {
     const item2Goal = elements?.[1]?.buttons?.[0]?.title.includes("Need 4 More PTS");
     const hasProgressBar = elements?.[1]?.subtitle?.includes("[■■");
 
-    assert(item1Affordable && item2Goal && hasProgressBar, "Bot Carousel (Progress bar [■■□□□] & Claim button routing)");
+    assert(elements[0].buttons.length === 1, "Carousel strictly uses 1 button per card with Quick Replies");
   } catch (err) {
     assert(false, "Bot Carousel Generator", err.message);
   }

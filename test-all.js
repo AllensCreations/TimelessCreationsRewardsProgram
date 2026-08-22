@@ -48,7 +48,7 @@ async function runTests() {
 
   assert(elements && elements.length === 2, "Bot Carousel elements generated");
   assert(elements[0].buttons[0].title.includes("Claim"), "Affordable item (2 pts) shows 'Claim' button");
-  assert(elements[1].buttons[0].title.includes("Need 4 More PTS"), "Window-shopping item (6 pts vs 2 pts balance) shows 'Need 4 More PTS'");
+  assert(elements[1].buttons[0].title.includes("Need 4 More PTS"), "Window-shopping item shows 1 Need PTS button");
 
   // Test 4: Rate Limiter
   const testId = "test_run_" + Date.now();

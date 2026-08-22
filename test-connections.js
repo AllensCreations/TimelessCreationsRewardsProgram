@@ -43,9 +43,9 @@ async function runAllConnectionTests() {
     const refLink = "https://m.me/TimelessCreationsRP?ref=A8W3A3";
     const payload = buildDashboardPayload(mockUser, refLink);
 
-    const hasUnicodeDash = (payload.text || payload.dashboardText).includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗");
-    const hasUnicodeInvite = (payload.text || payload.invitePromoText).includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱");
-    const hasNoRawAsterisks = !(payload.text || payload.dashboardText).includes("**MISSIONARY");
+    const hasUnicodeDash = payload.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗");
+    const hasUnicodeInvite = payload.invitePromoText.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱");
+    const hasNoRawAsterisks = !payload.dashboardText.includes("**") && !payload.invitePromoText.includes("**");
 
     assert(hasUnicodeDash && hasUnicodeInvite && hasNoRawAsterisks, "Bot Payload Formatter (Unicode Bold & Clean Formatting)");
   } catch (err) {
@@ -68,7 +68,7 @@ async function runAllConnectionTests() {
   }
 
   try {
-    const testId = "conn_test_" + Date.now();
+    const testId = "conn_test_" + Math.random().toString(36).slice(2, 9);
     const c1 = await checkDashboardRateLimit(testId);
     const c2 = await checkDashboardRateLimit(testId);
     const c3 = await checkDashboardRateLimit(testId);

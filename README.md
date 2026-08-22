@@ -96,3 +96,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 - Separated Dashboard Stats and Copyable Companion Invite into two distinct sequential messages.
 - Simplified carousel subtitles to show strictly `⭐ Cost: <pts> PTS` without verbose helper text.
 - Retained 1:1 square image aspect ratio and single sticky `[ 📊 Dashboard ]` Quick Reply.
+
+### [2026-08-23] - Test Suite Assertion Alignment for Separated Payloads
+- Updated test-all.js and test-connections.js to inspect dashboardText and invitePromoText independently.
+- Confirmed full test coverage across all test runners.

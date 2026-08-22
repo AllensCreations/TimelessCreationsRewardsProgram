@@ -31,10 +31,10 @@ async function runTests() {
   const mockLink = "https://m.me/TimelessCreationsRP?ref=ABC123";
   const dashPayload = buildDashboardPayload(mockUser, mockLink);
 
-  assert(dashPayload.text.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"), "Bot Dashboard uses Unicode bold header");
-  assert(!dashPayload.text.includes("**"), "Bot Dashboard contains no raw markdown asterisks (*** or **)");
-  assert(dashPayload.text.includes("👤 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:"), "Bot uses Unicode for info section");
-  assert(dashPayload.text.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱 & 𝗘𝗮𝗿𝗻 +𝟭 𝗣𝗧"), "Bot includes copy-and-send invite text");
+  assert(dashPayload.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"), "Bot Dashboard uses Unicode bold header");
+  assert(!dashPayload.dashboardText.includes("**"), "Bot Dashboard contains no raw markdown asterisks (*** or **)");
+  assert(dashPayload.dashboardText.includes("👤 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:"), "Bot uses Unicode for info section");
+  assert(dashPayload.invitePromoText.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱 & 𝗘𝗮𝗿𝗻 +𝟭 𝗣𝗧"), "Bot includes copy-and-send invite text");
 
   const mockProducts = [
     { id: 1, name: "Affordable Tag", price: 2 },

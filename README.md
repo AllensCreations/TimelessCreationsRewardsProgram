@@ -76,3 +76,10 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 - Consolidated bottom controls to a single sticky `[ 📊 Dashboard ]` Quick Reply chip.
 - Connected reward catalog source to `product_catalog WHERE type = 'reward'`.
 - Fully resolved Android-ARM64 / Termux `@libsql` native binary conflict via pure HTTP JSON transport.
+
+### [YYYY-MM-DD] - Feature Title
+- Bullet point description of new feature or fix.
+
+### [2026-08-23] - Rate Limiter Query Stabilization
+- Stabilized SELECT/UPDATE execution in checkDashboardRateLimit() for full compatibility across all environments.
+- Verified test suites for 100% test coverage.

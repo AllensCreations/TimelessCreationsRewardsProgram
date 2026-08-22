@@ -61,13 +61,13 @@ export default async function handler(req, res) {
 export async function executeBotAction(senderId, text, postbackPayload, referralCode, token) {
   const cleanRef = (referralCode || '').trim().toUpperCase();
 
-  // Ensure table exists
+  // Ensure table exists and all required columns are present
   try {
     await runSql(`
       CREATE TABLE IF NOT EXISTS missionaries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
-        email TEXT,
+        email TEXT DEFAULT '',
         points INTEGER DEFAULT 0,
         referral_code TEXT UNIQUE,
         fb_sender_id TEXT,
@@ -75,27 +75,34 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    // Safe column migrations in case table existed previously without these columns
+    await runSql("ALTER TABLE missionaries ADD COLUMN fb_sender_id TEXT").catch(() => {});
+    await runSql("ALTER TABLE missionaries ADD COLUMN referral_code TEXT").catch(() => {});
+    await runSql("ALTER TABLE missionaries ADD COLUMN points INTEGER DEFAULT 0").catch(() => {});
+    await runSql("ALTER TABLE missionaries ADD COLUMN is_active INTEGER DEFAULT 1").catch(() => {});
   } catch (_) {}
 
-  // 1. Deep Link Referral Credit
+  // 1. Deep Link Referral Credit (messaging_referrals)
   if (cleanRef) {
     try {
-      const inviterRows = await runSql("SELECT * FROM missionaries WHERE referral_code = ? LIMIT 1", [cleanRef]);
+      const inviterRows = await runSql("SELECT * FROM missionaries WHERE UPPER(referral_code) = ? LIMIT 1", [cleanRef]);
       const inviter = inviterRows?.[0];
 
       if (inviter) {
-        const existingRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [senderId]);
+        const existingRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [String(senderId)]);
         const existing = existingRows?.[0];
 
         if (!existing) {
           // Award +1 point to inviter
-          await runSql("UPDATE missionaries SET points = points + 1 WHERE id = ?", [inviter.id]);
+          const currentInviterPoints = Number(inviter.points || 0);
+          await runSql("UPDATE missionaries SET points = ? WHERE id = ?", [currentInviterPoints + 1, Number(inviter.id)]);
           
-          // Create new missionary profile
+          // Create new missionary record with +1 point and unique code
           const newCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
+          const fallbackEmail = `user_${String(senderId).slice(-6)}@missionary.org`;
           await runSql(
-            "INSERT INTO missionaries (name, fb_sender_id, points, referral_code, is_active) VALUES (?, ?, 1, ?, 1)",
-            [`Missionary (${String(senderId).slice(-4)})`, senderId, newCode]
+            "INSERT INTO missionaries (name, email, fb_sender_id, points, referral_code, is_active) VALUES (?, ?, ?, 1, ?, 1)",
+            [`Elder Missionary`, fallbackEmail, String(senderId), newCode]
           );
 
           if (token && !token.startsWith("EAA_MOCK")) {
@@ -111,7 +118,7 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
   }
 
   // Missionary lookup
-  let missionaryRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? LIMIT 1", [senderId, (text || '').toUpperCase()]);
+  let missionaryRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR UPPER(referral_code) = ? LIMIT 1", [String(senderId), (text || '').toUpperCase()]);
   let missionary = missionaryRows?.[0];
   const points = Number(missionary?.points || 0);
   const refCode = missionary?.referral_code || "JOIN";

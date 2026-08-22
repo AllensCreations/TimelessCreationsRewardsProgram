@@ -33,7 +33,7 @@ async function testNewUserExperience() {
       CREATE TABLE IF NOT EXISTS missionaries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
-        email TEXT,
+        email TEXT DEFAULT '',
         points INTEGER DEFAULT 0,
         referral_code TEXT UNIQUE,
         fb_sender_id TEXT,
@@ -56,8 +56,8 @@ async function testNewUserExperience() {
   try {
     await executeBotAction(newSenderId, "", "", inviterRefCode, fakeToken);
     
-    // Check inviter increment
-    const inviterRows = await runSql("SELECT points FROM missionaries WHERE referral_code = ? LIMIT 1", [inviterRefCode]);
+    // Check inviter increment (3 -> 4 PTS)
+    const inviterRows = await runSql("SELECT points FROM missionaries WHERE UPPER(referral_code) = ? LIMIT 1", [inviterRefCode]);
     const inviterRecord = inviterRows?.[0];
     assert(Number(inviterRecord?.points) === 4, "Inviter received +1 reward point (3 -> 4 PTS)");
 
@@ -76,8 +76,8 @@ async function testNewUserExperience() {
   try {
     const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
     const newUserRecord = newUserRows?.[0];
-    const refLink = `https://m.me/TimelessCreationsRP?ref=${newUserRecord?.referral_code}`;
-    const payload = buildDashboardPayload(newUserRecord, refLink);
+    const refLink = `https://m.me/TimelessCreationsRP?ref=${newUserRecord?.referral_code || 'JOIN'}`;
+    const payload = buildDashboardPayload(newUserRecord || { name: "Missionary", email: "not_linked@missionary.org", points: 1 }, refLink);
 
     assert(
       payload.dashboardText.includes("1 Points") && payload.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"),

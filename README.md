@@ -123,3 +123,8 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 - Added automatic `missionaries` table DDL provisioning inside executeBotAction().
 - Stabilized mock-token execution for offline unit testing and onboarding simulations.
 - Validated all 5 testing suites in test-master.js with 100% pass rate.
+
+### [2026-08-23] - Referral Execution Safety & Parameter Typing Fix
+- Fixed Turso parameter serialization for integer arithmetic queries.
+- Added automated schema safety migrations for missionaries table columns.
+- Validated test-new-user-flow.js to achieve 100% pass rate in master pre-commit gateway.

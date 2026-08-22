@@ -64,7 +64,8 @@
       "ACTION_INVITE",
       "CLAIM_ITEM_<id>",
       "VIEW_GOAL_<id>",
-      "RATE_LIMIT_CHECK"
+      "RATE_LIMIT_CHECK",
+      "messaging_referrals (Deep-link referral tracking: user signups + inviter reward credit)"
     ],
     "api/webhook.js (Brevo Event Ingestion)": [
       "brevo_delivery_webhook",
@@ -164,5 +165,10 @@
       "script": "test-all-replies.js",
       "description": "Automated simulator and compliance test for all Messenger replies, 1-button carousels, and quick reply payloads"
     }
-  ]
+  ],
+  "maintenance_policy": {
+    "auto_blueprint_sync": "Every commit minimally patches blueprint.json in-place preserving structure",
+    "zero_markdown_leak": true,
+    "pure_http_libsql": true
+  }
 }

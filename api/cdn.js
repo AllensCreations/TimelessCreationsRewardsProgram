@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
   const action = req.query.action || req.body?.action || (req.method === 'POST' ? 'upload' : 'list');
 
-  // Initialize CDN gallery index table
+  // Ensure cdn_gallery table exists
   try {
     await runSql(`
       CREATE TABLE IF NOT EXISTS cdn_gallery (
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   }
 
   // ----------------------------------------------------
-  // ACTION: UPLOAD & HOST VIA FREE IMGBB API
+  // ACTION: UPLOAD & STORE IN CDN GALLERY
   // ----------------------------------------------------
   if (action === 'upload' || action === 'upload_cdn_image') {
     try {
@@ -38,23 +38,19 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: 'Missing base64 image data.' });
       }
 
-      // Default to process.env.IMGBB_API_KEY or fallback
       const imgbbKey = process.env.IMGBB_API_KEY;
       if (!imgbbKey) {
         return res.status(500).json({ 
           ok: false, 
-          error: 'IMGBB_API_KEY is not set in your environment variables (.env / Vercel).' 
+          error: 'IMGBB_API_KEY is not set in your environment (.env / Vercel).' 
         });
       }
 
-      // Clean raw base64 string
       const cleanBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
-
-      // Generate encrypted random display name
       const hash = crypto.createHash('sha256').update((filename || 'img') + Date.now() + Math.random()).digest('hex').slice(0, 16);
       const uniqueFileName = `tcrp_${hash}`;
 
-      // Upload to ImgBB REST API
+      // Upload to ImgBB
       const formData = new URLSearchParams();
       formData.append('image', cleanBase64);
       formData.append('name', uniqueFileName);
@@ -73,19 +69,22 @@ export default async function handler(req, res) {
         });
       }
 
-      // Extract permanent direct public URL
       const directUrl = imgbbData.data.url;
       const deleteUrl = imgbbData.data.delete_url || '';
+      const displayFileName = `${uniqueFileName}.webp`;
 
-      const insertRes = await runSql(
-        'INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb, delete_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-        [uniqueFileName + '.webp', directUrl, targetSize || 'WebP 85%', originalKb || 0, compressedKb || 0, deleteUrl]
+      // Insert directly into the database store
+      await runSql(
+        'INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb, delete_url) VALUES (?, ?, ?, ?, ?, ?)',
+        [displayFileName, directUrl, targetSize || 'WebP 85%', originalKb || 0, compressedKb || 0, deleteUrl]
       );
+
+      const itemRecord = (await runSql('SELECT * FROM cdn_gallery WHERE filename = ? ORDER BY id DESC LIMIT 1', [displayFileName]))[0];
 
       return res.status(200).json({
         ok: true,
-        id: insertRes[0]?.id,
-        filename: uniqueFileName + '.webp',
+        item: itemRecord,
+        filename: displayFileName,
         direct_url: directUrl,
         size_label: targetSize || 'WebP 85%'
       });
@@ -95,11 +94,11 @@ export default async function handler(req, res) {
   }
 
   // ----------------------------------------------------
-  // ACTION: LIST STORED MEDIA GALLERY
+  // ACTION: LIST ALL STORED GALLERY ASSETS
   // ----------------------------------------------------
   if (action === 'list' || action === 'get_cdn_gallery') {
     try {
-      const gallery = await runSql('SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 100');
+      const gallery = await runSql('SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 150');
       return res.status(200).json({ ok: true, gallery });
     } catch (err) {
       return res.status(500).json({ ok: false, error: 'Failed to fetch gallery: ' + err.message });
@@ -107,19 +106,19 @@ export default async function handler(req, res) {
   }
 
   // ----------------------------------------------------
-  // ACTION: REMOVE ASSET FROM GALLERY
+  // ACTION: DELETE / PURGE IMAGE FROM STORE
   // ----------------------------------------------------
   if (action === 'delete' || action === 'delete_cdn_image') {
     try {
       const { id } = req.body || {};
-      if (!id) return res.status(400).json({ ok: false, error: 'Missing image ID to purge.' });
+      if (!id) return res.status(400).json({ ok: false, error: 'Missing image ID.' });
 
       await runSql('DELETE FROM cdn_gallery WHERE id = ?', [id]);
-      return res.status(200).json({ ok: true, message: 'Asset removed from gallery index.' });
+      return res.status(200).json({ ok: true, message: 'Asset removed from gallery.' });
     } catch (err) {
       return res.status(500).json({ ok: false, error: 'Delete failed: ' + err.message });
     }
   }
 
-  return res.status(400).json({ ok: false, error: `Invalid action on CDN handler.` });
+  return res.status(400).json({ ok: false, error: 'Invalid action.' });
 }

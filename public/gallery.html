@@ -85,7 +85,7 @@
   
   <div style="margin-bottom:24px;">
     <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin:0 0 4px 0;">Direct Link Maker &amp; CDN Gallery</h1>
-    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Drag-and-drop, select, or paste (Ctrl+V) images to host on ImgBB and generate fast direct URLs.</p>
+    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Upload images to store in your permanent gallery, convert to WebP, and get 1-tap direct links.</p>
   </div>
 
   <!-- Upload Studio -->
@@ -95,7 +95,7 @@
         <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
           <div style="font-size:2rem; margin-bottom:8px;">📷</div>
           <div style="font-weight:bold; color:#fff; font-size:0.9rem;">Click, Drag &amp; Drop, or Paste (Ctrl+V)</div>
-          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Auto-encodes to ultra-compact WebP via ImgBB Cloud</div>
+          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Encodes to WebP and stores in your gallery automatically</div>
           <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
         </div>
         <div id="savings-meter" style="font-size:0.75rem; color:#4caf82; margin-top:8px; font-family:'DM Mono',monospace; display:none;"></div>
@@ -113,23 +113,23 @@
         </div>
 
         <button id="upload-btn" onclick="processAndUploadWebP()" style="background:#c9a84c; color:#0d0e15; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; font-size:0.85rem; cursor:pointer; margin-top:14px;">
-          ⚡ Convert, Encrypt &amp; Generate Link
+          ⚡ Convert, Store &amp; Generate Link
         </button>
       </div>
     </div>
   </div>
 
-  <!-- CDN Gallery Library -->
+  <!-- CDN Gallery Store -->
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:#c9a84c;">🖼️ Stored CDN Media Library</div>
       <div style="display:flex; gap:10px;">
-        <input type="text" id="gallery-search" placeholder="🔍 Search media..." oninput="filterGallery()" style="background:#181b2a; border:1px solid rgba(255,255,255,0.08); color:#fff; padding:6px 12px; border-radius:6px; font-size:0.75rem; width:180px;">
+        <input type="text" id="gallery-search" placeholder="🔍 Search stored media..." oninput="filterGallery()" style="background:#181b2a; border:1px solid rgba(255,255,255,0.08); color:#fff; padding:6px 12px; border-radius:6px; font-size:0.75rem; width:180px;">
         <button onclick="loadGallery()" style="background:#181b2a; color:#c9a84c; border:1px solid rgba(201,168,76,0.3); padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:bold; cursor:pointer;">↻ Refresh</button>
       </div>
     </div>
     <div class="gallery-grid" id="gallery-container">
-      <div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">Loading gallery...</div>
+      <div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">Loading gallery store...</div>
     </div>
   </div>
 
@@ -144,7 +144,6 @@
 let selectedImageFile = null;
 let cachedGalleryItems = [];
 
-// Drag & Drop and Paste Handlers
 const dropZone = document.getElementById("drop-zone");
 ['dragenter', 'dragover'].forEach(eName => {
   dropZone.addEventListener(eName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -187,7 +186,7 @@ async function processAndUploadWebP() {
 
   const btn = document.getElementById("upload-btn");
   btn.disabled = true;
-  btn.textContent = "⏳ Uploading to ImgBB...";
+  btn.textContent = "⏳ Uploading & Storing in Gallery...";
 
   const preset = document.getElementById("size-preset-select").value;
   const reader = new FileReader();
@@ -230,10 +229,17 @@ async function processAndUploadWebP() {
 
         const data = await res.json();
         if (data.ok) {
-          document.getElementById("savings-meter").textContent = `⚡ Compressed: ${originalKb}KB → ${compressedKb}KB (${savedPct}% saved!)`;
-          if (typeof showToast === 'function') showToast("ImgBB direct link created and copied!");
+          document.getElementById("savings-meter").textContent = `⚡ Stored in Gallery: ${originalKb}KB → ${compressedKb}KB (${savedPct}% saved!)`;
+          if (typeof showToast === 'function') showToast("✓ Uploaded & stored in Gallery! Direct link copied.");
           navigator.clipboard.writeText(data.direct_url).catch(() => {});
-          loadGallery();
+          
+          // Prepend newly uploaded item to current gallery
+          if (data.item) {
+            cachedGalleryItems.unshift(data.item);
+            renderGalleryItems(cachedGalleryItems);
+          } else {
+            loadGallery();
+          }
         } else {
           if (typeof showToast === 'function') showToast(`Upload issue: ${data.error}`, "error");
         }
@@ -241,7 +247,7 @@ async function processAndUploadWebP() {
         if (typeof showToast === 'function') showToast("Error connecting to CDN API.", "error");
       } finally {
         btn.disabled = false;
-        btn.textContent = "⚡ Convert, Encrypt & Generate Link";
+        btn.textContent = "⚡ Convert, Store & Generate Link";
       }
     };
     img.src = event.target.result;
@@ -266,7 +272,7 @@ async function loadGallery() {
 function renderGalleryItems(items) {
   const container = document.getElementById("gallery-container");
   if (!items || items.length === 0) {
-    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">No images stored yet.</div>';
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">No images stored yet. Upload one above!</div>';
     return;
   }
 
@@ -294,7 +300,7 @@ function filterGallery() {
 
 function copyUrl(url) {
   navigator.clipboard.writeText(url).then(() => {
-    if (typeof showToast === 'function') showToast("📋 ImgBB direct link copied to clipboard!");
+    if (typeof showToast === 'function') showToast("📋 Direct link copied to clipboard!");
   });
 }
 
@@ -314,7 +320,7 @@ function closeLightbox() {
 }
 
 async function deleteImage(id) {
-  if (!confirm("Remove this asset from the gallery index?")) return;
+  if (!confirm("Remove this asset from the gallery store?")) return;
   try {
     const res = await fetch("/api/cdn?action=delete", {
       method: "POST",
@@ -323,7 +329,7 @@ async function deleteImage(id) {
     });
     const data = await res.json();
     if (data.ok) {
-      if (typeof showToast === 'function') showToast("Asset purged.");
+      if (typeof showToast === 'function') showToast("Asset purged from gallery store.");
       loadGallery();
     }
   } catch(e) {

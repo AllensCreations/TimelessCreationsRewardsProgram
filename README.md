@@ -100,3 +100,8 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 ### [2026-08-23] - Test Suite Assertion Alignment for Separated Payloads
 - Updated test-all.js and test-connections.js to inspect dashboardText and invitePromoText independently.
 - Confirmed full test coverage across all test runners.
+
+### [2026-08-23] - Dashboard Heat Map, Compact Brevo Logs & Master Pre-Commit Gate
+- Activated dynamic monthly activity calendar heat map in index.html.
+- Upgraded logs.html with compact row formatting and lifetime Brevo aggregates (Total Sent, Sent Today, Open %, Delivery %, Spam %).
+- Added test-master.js enforcing a strict zero-failure pre-commit gate.

@@ -59,71 +59,73 @@ export default async function handler(req, res) {
 }
 
 export async function executeBotAction(senderId, text, postbackPayload, referralCode, token) {
-  if (!token) return console.error('❌ Missing PAGE_ACCESS_TOKEN');
-
+  const sid = String(senderId);
   const cleanRef = (referralCode || '').trim().toUpperCase();
 
-  // 1. Deep Link Referral Credit
+  // 1. Deep Link Referral Credit for New Users
   if (cleanRef) {
     try {
       const inviter = (await runSql("SELECT * FROM missionaries WHERE referral_code = ? LIMIT 1", [cleanRef]))[0];
       if (inviter) {
-        const existing = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [senderId]))[0];
+        const existing = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [sid]))[0];
         if (!existing) {
           await runSql("UPDATE missionaries SET points = points + 1 WHERE id = ?", [inviter.id]);
           const newCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
           await runSql(
-            "INSERT INTO missionaries (name, fb_sender_id, points, referral_code) VALUES (?, ?, 1, ?)",
-            [`Missionary (${senderId.slice(-4)})`, senderId, newCode]
+            "INSERT INTO missionaries (name, fb_sender_id, points, referral_code, is_active) VALUES (?, ?, 1, ?, 1)",
+            [`Missionary (${sid.slice(-4)})`, sid, newCode]
           );
 
           const welcomeMsg = `🎉 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗧𝗖𝗥𝗣!\n\nYou joined using ${inviter.name}'s referral link!\n\n🎁 You both received +1 Free Reward Point!\n\nTap "📊 Dashboard" below to view your points and explore rewards.`;
-          await sendFbMessage(senderId, { text: welcomeMsg, quick_replies: FIXED_QUICK_REPLIES }, token);
+          await sendFbMessage(sid, { text: welcomeMsg, quick_replies: FIXED_QUICK_REPLIES }, token);
           return;
         }
       }
     } catch (e) {
-      console.error('Referral error:', e);
+      console.error('Referral onboarding error:', e.message);
     }
   }
 
   // Missionary lookup
-  let missionary = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? LIMIT 1", [senderId, (text || '').toUpperCase()]))[0];
-  const points = missionary?.points || 0;
+  let missionary = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? LIMIT 1", [sid, (text || '').toUpperCase()]))[0];
+  const points = Number(missionary?.points || 0);
   const refCode = missionary?.referral_code || "JOIN";
   const refLink = `https://m.me/TimelessCreationsRP?ref=${refCode}`;
 
-  // Query product_catalog table strictly for reward items
   let rewardProducts = [];
   try {
     rewardProducts = await runSql("SELECT id, name, price, image_url, type FROM product_catalog WHERE type = 'reward' ORDER BY price ASC LIMIT 10");
   } catch (err) {
-    console.warn("product_catalog table query fallback:", err.message);
+    console.warn("product_catalog query fallback:", err.message);
   }
 
-  // 2. DASHBOARD TRIGGER SEQUENCE
-  const rateCheck = await checkDashboardRateLimit(senderId);
+  // 2. DASHBOARD SEQUENCE
+  const rateCheck = await checkDashboardRateLimit(sid);
   if (!rateCheck.allowed) {
     if (!rateCheck.shouldMute && rateCheck.message) {
-      await sendFbMessage(senderId, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
+      await sendFbMessage(sid, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
     }
     return;
   }
 
   const payload = buildDashboardPayload(missionary || { name: "Missionary", email: "Not linked yet", points }, refLink);
 
-  // Message 1: Separate Dashboard Stats Message
-  await sendFbMessage(senderId, { text: payload.dashboardText }, token);
+  // Message 1: Separate Dashboard Stats
+  await sendFbMessage(sid, { text: payload.dashboardText }, token);
 
-  // Message 2: Separate Copy-and-Send Companion Invite Message
-  await sendFbMessage(senderId, { text: payload.invitePromoText }, token);
+  // Message 2: Separate Copy-and-Send Companion Invite
+  await sendFbMessage(sid, { text: payload.invitePromoText }, token);
 
-  // Message 3: 1:1 Square Catalog Carousel with Name & Cost Only + Fixed Quick Reply
+  // Message 3: 1:1 Square Catalog Carousel + Fixed Quick Reply
   const carouselPayload = await buildCatalogCarousel(points, rewardProducts);
-  await sendFbMessage(senderId, carouselPayload, token);
+  await sendFbMessage(sid, carouselPayload, token);
 }
 
 async function sendFbMessage(recipientId, messagePayload, token) {
+  if (!token || token.startsWith("EAA_MOCK_TOKEN")) {
+    return; // Bypass network call for local test runs
+  }
+
   const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${token}`;
   try {
     const res = await fetch(url, {

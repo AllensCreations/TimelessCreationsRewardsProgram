@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { runSql } from './lib/db.js';
 import { executeBotAction } from './api/bot.js';
-import { buildDashboardPayload, buildCatalogCarousel, FIXED_QUICK_REPLIES } from './lib/bot.js';
+import { buildDashboardPayload, buildCatalogCarousel } from './lib/bot.js';
 
 console.log("\n=======================================================");
 console.log("👤 STARTING NEW USER MESSENGER ONBOARDING FLOW TESTER");
@@ -26,7 +26,7 @@ async function testNewUserExperience() {
   const inviterRefCode = `INV${uniqueTag}`;
   const newSenderId = `fb_new_user_${Date.now()}`;
 
-  // STEP 1: Seed Inviting Missionary in Turso
+  // STEP 1: Seed Inviting Missionary
   console.log("--- Step 1: Seeding Inviting Missionary in Database ---");
   try {
     await runSql(
@@ -38,18 +38,17 @@ async function testNewUserExperience() {
     assert(false, "Seeding inviter failed", err.message);
   }
 
-  // STEP 2: Simulate New User Clicking Deep-Link (messaging_referrals)
+  // STEP 2: Process Referral Deep-Link Join
   console.log("\n--- Step 2: Simulating New User Deep-Link Referral Join ---");
   try {
-    // Process referral execution
     await executeBotAction(newSenderId, "", "", inviterRefCode, fakeToken);
     
-    // Verify Turso updated inviter (+1 pt -> 4 pts)
-    const inviterRecord = (await runSql("SELECT points FROM missionaries WHERE referral_code = ? LIMIT 1", [inviterRefCode]))[0];
-    assert(Number(inviterRecord?.points) === 4, "Inviter received +1 reward point (3 -> 4 PTS)");
+    const inviterRows = await runSql("SELECT points FROM missionaries WHERE referral_code = ? LIMIT 1", [inviterRefCode]);
+    assert(Number(inviterRows?.[0]?.points) === 4, "Inviter received +1 reward point (3 -> 4 PTS)");
 
-    // Verify new user was created in Turso with +1 welcome point
-    const newUserRecord = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]))[0];
+    const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
+    const newUserRecord = newUserRows?.[0];
+
     assert(Boolean(newUserRecord), "New missionary profile auto-created from referral link");
     assert(Number(newUserRecord?.points) === 1, "New missionary received +1 welcome reward point");
     assert(Boolean(newUserRecord?.referral_code), `New missionary assigned unique referral code: ${newUserRecord?.referral_code}`);
@@ -57,10 +56,11 @@ async function testNewUserExperience() {
     assert(false, "Referral join sequence failed", err.message);
   }
 
-  // STEP 3: Verify New User Dashboard Payload Separation
+  // STEP 3: Verify Dashboard & Invite Separation
   console.log("\n--- Step 3: Verifying New User Dashboard & Invite Payload ---");
   try {
-    const newUserRecord = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]))[0];
+    const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
+    const newUserRecord = newUserRows?.[0];
     const refLink = `https://m.me/TimelessCreationsRP?ref=${newUserRecord?.referral_code}`;
     const payload = buildDashboardPayload(newUserRecord, refLink);
 
@@ -76,7 +76,7 @@ async function testNewUserExperience() {
     assert(false, "Dashboard formatting verification failed", err.message);
   }
 
-  // STEP 4: Verify 1:1 Square Reward Carousel for 1 Point Balance
+  // STEP 4: 1:1 Square Catalog Carousel Verification
   console.log("\n--- Step 4: Verifying 1:1 Square Catalog Carousel (1 PTS Balance) ---");
   try {
     const sampleCatalog = [
@@ -91,21 +91,18 @@ async function testNewUserExperience() {
     assert(ratio === "square", "Catalog strictly enforces 1:1 square aspect ratio");
     assert(elements.length === 2, "Catalog displays reward items correctly");
 
-    // Card 1: Affordable with 1 PT
     assert(
       elements[0].buttons.length === 1 && elements[0].buttons[0].title.includes("Claim (1 PTS)"),
       "Card 1: 1 PT item shows active [ 🎁 Claim (1 PTS) ] button"
     );
     assert(elements[0].subtitle === "⭐ Cost: 1 PTS", "Card 1 subtitle displays Name and Cost only");
 
-    // Card 2: Locked Goal Item (5 PTS vs 1 PT balance)
     assert(
       elements[1].buttons.length === 1 && elements[1].buttons[0].title.includes("Need 4 More PTS"),
       "Card 2: 5 PT item displays dynamic [ ⭐ Need 4 More PTS ] button"
     );
     assert(elements[1].subtitle === "⭐ Cost: 5 PTS", "Card 2 subtitle displays Name and Cost only");
 
-    // Sticky Quick Reply
     assert(
       Array.isArray(carousel.quick_replies) && carousel.quick_replies.length === 1 && carousel.quick_replies[0].title === "📊 Dashboard",
       "Attached single fixed [ 📊 Dashboard ] Quick Reply"

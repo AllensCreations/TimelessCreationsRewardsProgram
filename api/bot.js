@@ -8,7 +8,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const verifyToken = process.env.PAGE_ACCESS_TOKEN ? (process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN) : (process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN);
+  const verifyToken = process.env.PAGE_ACCESS_TOKEN 
+    ? (process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN) 
+    : (process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN);
   const pageToken = process.env.PAGE_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
 
   // 1. Meta Webhook Verification (GET)
@@ -18,13 +20,13 @@ export default async function handler(req, res) {
     const challenge = req.query['hub.challenge'];
 
     if (mode === 'subscribe' && (token === verifyToken || token === process.env.VERIFY_TOKEN || token === process.env.FB_VERIFY_TOKEN)) {
-      console.log('✅ Meta Webhook successfully verified via GET /api/bot');
+      console.log('✅ Meta Webhook verified');
       return res.status(200).send(challenge);
     }
     return res.status(403).send('Forbidden: Token mismatch.');
   }
 
-  // 2. Incoming Messages & Postbacks (POST)
+  // 2. Incoming Messages, Postbacks & Referrals (POST)
   if (req.method === 'POST') {
     const body = req.body;
 
@@ -39,12 +41,18 @@ export default async function handler(req, res) {
           const rawText = (webhookEvent.message?.text || '').trim();
           const postbackPayload = webhookEvent.postback?.payload || webhookEvent.message?.quick_reply?.payload || '';
 
-          console.log(`📩 [INCOMING BOT EVENT] Sender: ${senderId} | Text: "${rawText}" | Payload: "${postbackPayload}"`);
+          // Extract referral code across all possible Meta payload structures
+          const referralCode = webhookEvent.referral?.ref || 
+                               webhookEvent.postback?.referral?.ref || 
+                               webhookEvent.message?.referral?.ref || 
+                               '';
+
+          console.log(`📩 [INCOMING EVENT] Sender: ${senderId} | Text: "${rawText}" | Ref: "${referralCode}" | Payload: "${postbackPayload}"`);
 
           try {
-            await executeBotAction(senderId, rawText, postbackPayload, pageToken);
+            await executeBotAction(senderId, rawText, postbackPayload, referralCode, pageToken);
           } catch (err) {
-            console.error('❌ Error in executeBotAction:', err);
+            console.error('❌ Error executing bot action:', err);
           }
         }
       }
@@ -56,21 +64,53 @@ export default async function handler(req, res) {
   return res.status(405).send('Method Not Allowed');
 }
 
-export async function executeBotAction(senderId, text, postbackPayload, token) {
+export async function executeBotAction(senderId, text, postbackPayload, referralCode, token) {
   if (!token) {
     console.error('❌ Missing PAGE_ACCESS_TOKEN in environment variables.');
     return;
   }
 
+  const cleanRef = (referralCode || '').trim().toUpperCase();
   const lower = (text || '').toLowerCase();
 
-  // Missionary lookup
+  // 1. HANDLE INCOMING REFERRALS (Credit Points to Inviter + New User)
+  if (cleanRef) {
+    console.log(`🎯 Processing referral link with code: ${cleanRef} for user: ${senderId}`);
+    try {
+      const inviter = (await runSql("SELECT * FROM missionaries WHERE referral_code = ? LIMIT 1", [cleanRef]))[0];
+      
+      if (inviter) {
+        // Check if current user is already registered
+        const existing = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [senderId]))[0];
+        
+        if (!existing) {
+          // Award +1 point to the inviter
+          await runSql("UPDATE missionaries SET points = points + 1 WHERE id = ?", [inviter.id]);
+          
+          // Generate unique code for the new companion
+          const newCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
+          await runSql(
+            "INSERT INTO missionaries (name, fb_sender_id, points, referral_code) VALUES (?, ?, 1, ?)",
+            [`Missionary (${senderId.slice(-4)})`, senderId, newCode]
+          );
+
+          const welcomeMsg = `🎉 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗧𝗖𝗥𝗣!\n\nYou joined using ${inviter.name}'s referral link!\n\n🎁 You both received +1 Free Reward Point!\n\nTap "📊 Dashboard" below to see your balance or "🌟 View Catalog" to browse missionary rewards.`;
+          await sendFbMessage(senderId, { text: welcomeMsg, quick_replies: FIXED_QUICK_REPLIES }, token);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Referral processing error:', e);
+    }
+  }
+
+  // Look up missionary record
   let missionary = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? LIMIT 1", [senderId, (text || '').toUpperCase()]))[0];
   const points = missionary?.points || 0;
   const refCode = missionary?.referral_code || "JOIN";
   const refLink = `https://m.me/TimelessCreationsRP?ref=${refCode}`;
 
-  // 1. DASHBOARD
+  // 2. DASHBOARD
   if (postbackPayload === "ACTION_DASHBOARD" || lower.includes("dashboard") || lower.includes("points") || lower.includes("balance")) {
     const rateCheck = await checkDashboardRateLimit(senderId);
     if (!rateCheck.allowed) {
@@ -83,7 +123,7 @@ export async function executeBotAction(senderId, text, postbackPayload, token) {
     return;
   }
 
-  // 2. REWARD CATALOG CAROUSEL
+  // 3. CATALOG
   if (postbackPayload === "ACTION_CATALOG" || lower.includes("catalog") || lower.includes("rewards") || lower.includes("shop")) {
     let products = await runSql("SELECT * FROM products WHERE is_active = 1 ORDER BY price ASC LIMIT 10");
     if (!products || products.length === 0) {
@@ -97,27 +137,26 @@ export async function executeBotAction(senderId, text, postbackPayload, token) {
     return;
   }
 
-  // 3. INVITE COMPANION
+  // 4. INVITE
   if (postbackPayload === "ACTION_INVITE" || lower.includes("invite") || lower.includes("refer")) {
     const payload = buildDashboardPayload(missionary || { name: "Missionary", points }, refLink);
     await sendFbMessage(senderId, { text: payload.invitePromoText, quick_replies: FIXED_QUICK_REPLIES }, token);
     return;
   }
 
-  // 4. ITEM GOAL VIEW
+  // 5. GOAL DETAILS
   if (postbackPayload.startsWith("VIEW_GOAL_")) {
-    const itemId = postbackPayload.replace("VIEW_GOAL_", "");
-    const goalText = `⭐ 𝗥𝗘𝗪𝗔𝗥𝗗 𝗚𝗢𝗔𝗟 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n\nYou need a few more points to unlock this reward item!\n\n💡 Share your referral link with a companion or fellow missionary. When they verify, you BOTH get +1 Point instantly!\n\n• 🔗 𝗬𝗼𝘂𝗿 𝗟𝗶𝗻𝗸: ${refLink}`;
+    const goalText = `⭐ 𝗥𝗘𝗪𝗔𝗥𝗗 𝗚𝗢𝗔𝗟 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n\nYou need more points to redeem this item.\n\n💡 Share your 1-tap invite link with a companion or friend. When they join, you BOTH earn +1 Point instantly!\n\n• 🔗 𝗬𝗼𝘂𝗿 𝗟𝗶𝗻𝗸:\n${refLink}`;
     await sendFbMessage(senderId, { text: goalText, quick_replies: FIXED_QUICK_REPLIES }, token);
     return;
   }
 
-  // DEFAULT FALLBACK MENU
+  // DEFAULT FALLBACK
   const defaultReply = `✨ Welcome to 𝗧𝗶𝗺𝗲𝗹𝗲𝘀𝘀 𝗖𝗿𝗲𝗮𝘁𝗶𝗼𝗻𝘀 𝗥𝗲𝘄𝗮𝗿𝗱𝘀 𝗣𝗿𝗼𝗴𝗿𝗮𝗺!
 
-• Tap "📊 Dashboard" below to view your balance
-• Tap "🌟 View Catalog" to window shop & redeem rewards
-• Tap "🔗 Invite a Friend" to share your referral link`;
+• Tap "📊 Dashboard" to check your balance
+• Tap "🌟 View Catalog" to browse & claim rewards
+• Tap "🔗 Invite a Friend" to get your referral link`;
 
   await sendFbMessage(senderId, { text: defaultReply, quick_replies: FIXED_QUICK_REPLIES }, token);
 }
@@ -135,9 +174,9 @@ async function sendFbMessage(recipientId, messagePayload, token) {
     });
     const result = await res.json();
     if (result.error) {
-      console.error('❌ Facebook Graph API Rejected Message:', JSON.stringify(result.error));
+      console.error('❌ Facebook API Error:', JSON.stringify(result.error));
     } else {
-      console.log(`✅ [FB MESSAGE DELIVERED] Recipient: ${recipientId} | MessageID: ${result.message_id}`);
+      console.log(`✅ [MESSAGE DELIVERED] To: ${recipientId}`);
     }
   } catch (err) {
     console.error('❌ Network error sending to Facebook:', err.message);

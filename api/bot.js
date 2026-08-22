@@ -26,37 +26,33 @@ export default async function handler(req, res) {
     return res.status(403).send('Forbidden: Token mismatch.');
   }
 
-  // 2. Incoming Messages, Postbacks & Referrals (POST)
+  // 2. Incoming Messages & Postbacks (POST)
   if (req.method === 'POST') {
     const body = req.body;
 
     if (body?.object === 'page') {
-      res.status(200).send('EVENT_RECEIVED');
+      try {
+        for (const entry of body.entry || []) {
+          for (const webhookEvent of entry.messaging || []) {
+            const senderId = webhookEvent.sender?.id;
+            if (!senderId) continue;
 
-      for (const entry of body.entry || []) {
-        for (const webhookEvent of entry.messaging || []) {
-          const senderId = webhookEvent.sender?.id;
-          if (!senderId) continue;
+            const rawText = (webhookEvent.message?.text || '').trim();
+            const postbackPayload = webhookEvent.postback?.payload || webhookEvent.message?.quick_reply?.payload || '';
+            const referralCode = webhookEvent.referral?.ref || 
+                                 webhookEvent.postback?.referral?.ref || 
+                                 webhookEvent.message?.referral?.ref || 
+                                 '';
 
-          const rawText = (webhookEvent.message?.text || '').trim();
-          const postbackPayload = webhookEvent.postback?.payload || webhookEvent.message?.quick_reply?.payload || '';
-
-          // Extract referral code across all possible Meta payload structures
-          const referralCode = webhookEvent.referral?.ref || 
-                               webhookEvent.postback?.referral?.ref || 
-                               webhookEvent.message?.referral?.ref || 
-                               '';
-
-          console.log(`📩 [INCOMING EVENT] Sender: ${senderId} | Text: "${rawText}" | Ref: "${referralCode}" | Payload: "${postbackPayload}"`);
-
-          try {
+            // Must AWAIT execution in serverless so Vercel does not terminate before Graph API send finishes
             await executeBotAction(senderId, rawText, postbackPayload, referralCode, pageToken);
-          } catch (err) {
-            console.error('❌ Error executing bot action:', err);
           }
         }
+      } catch (err) {
+        console.error('Error handling webhook events:', err);
       }
-      return;
+
+      return res.status(200).send('EVENT_RECEIVED');
     }
     return res.status(404).send('Not Found');
   }
@@ -66,28 +62,21 @@ export default async function handler(req, res) {
 
 export async function executeBotAction(senderId, text, postbackPayload, referralCode, token) {
   if (!token) {
-    console.error('❌ Missing PAGE_ACCESS_TOKEN in environment variables.');
+    console.error('❌ Missing PAGE_ACCESS_TOKEN');
     return;
   }
 
   const cleanRef = (referralCode || '').trim().toUpperCase();
   const lower = (text || '').toLowerCase();
 
-  // 1. HANDLE INCOMING REFERRALS (Credit Points to Inviter + New User)
+  // 1. Referral Link Handling
   if (cleanRef) {
-    console.log(`🎯 Processing referral link with code: ${cleanRef} for user: ${senderId}`);
     try {
       const inviter = (await runSql("SELECT * FROM missionaries WHERE referral_code = ? LIMIT 1", [cleanRef]))[0];
-      
       if (inviter) {
-        // Check if current user is already registered
         const existing = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [senderId]))[0];
-        
         if (!existing) {
-          // Award +1 point to the inviter
           await runSql("UPDATE missionaries SET points = points + 1 WHERE id = ?", [inviter.id]);
-          
-          // Generate unique code for the new companion
           const newCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
           await runSql(
             "INSERT INTO missionaries (name, fb_sender_id, points, referral_code) VALUES (?, ?, 1, ?)",
@@ -104,7 +93,7 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
     }
   }
 
-  // Look up missionary record
+  // Missionary lookup
   let missionary = (await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? LIMIT 1", [senderId, (text || '').toUpperCase()]))[0];
   const points = missionary?.points || 0;
   const refCode = missionary?.referral_code || "JOIN";
@@ -144,7 +133,7 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
     return;
   }
 
-  // 5. GOAL DETAILS
+  // 5. GOAL VIEW
   if (postbackPayload.startsWith("VIEW_GOAL_")) {
     const goalText = `⭐ 𝗥𝗘𝗪𝗔𝗥𝗗 𝗚𝗢𝗔𝗟 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n\nYou need more points to redeem this item.\n\n💡 Share your 1-tap invite link with a companion or friend. When they join, you BOTH earn +1 Point instantly!\n\n• 🔗 𝗬𝗼𝘂𝗿 𝗟𝗶𝗻𝗸:\n${refLink}`;
     await sendFbMessage(senderId, { text: goalText, quick_replies: FIXED_QUICK_REPLIES }, token);
@@ -163,20 +152,23 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
 
 async function sendFbMessage(recipientId, messagePayload, token) {
   const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${token}`;
+  const body = {
+    messaging_type: "RESPONSE",
+    recipient: { id: recipientId },
+    message: messagePayload
+  };
+
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipient: { id: recipientId },
-        message: messagePayload
-      })
+      body: JSON.stringify(body)
     });
     const result = await res.json();
     if (result.error) {
       console.error('❌ Facebook API Error:', JSON.stringify(result.error));
     } else {
-      console.log(`✅ [MESSAGE DELIVERED] To: ${recipientId}`);
+      console.log(`✅ [MESSAGE DELIVERED] Recipient: ${recipientId}`);
     }
   } catch (err) {
     console.error('❌ Network error sending to Facebook:', err.message);

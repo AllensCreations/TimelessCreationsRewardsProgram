@@ -170,5 +170,9 @@
     "auto_blueprint_sync": "Every commit minimally patches blueprint.json in-place preserving structure",
     "zero_markdown_leak": true,
     "pure_http_libsql": true
+  },
+  "webhook_delivery_mode": {
+    "serverless_execution": "Strictly awaits Graph API message delivery before returning HTTP 200 to prevent Vercel runtime freezing",
+    "messaging_type": "RESPONSE"
   }
 }

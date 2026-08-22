@@ -26,42 +26,31 @@ async function testNewUserExperience() {
   const inviterRefCode = `INV${uniqueTag}`;
   const newSenderId = `fb_new_user_${Date.now()}`;
 
-  // STEP 1: Seed Inviter
+  // STEP 1: Provision and Seed Inviting Missionary
   console.log("--- Step 1: Seeding Inviting Missionary in Database ---");
   try {
-    await runSql(`
-      CREATE TABLE IF NOT EXISTS missionaries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT DEFAULT '',
-        points INTEGER DEFAULT 0,
-        referral_code TEXT UNIQUE,
-        fb_sender_id TEXT,
-        is_active INTEGER DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
     await runSql(
       "INSERT INTO missionaries (name, email, points, referral_code, is_active) VALUES (?, ?, 3, ?, 1)",
       [`Elder Inviter ${uniqueTag}`, `inviter_${uniqueTag.toLowerCase()}@missionary.org`, inviterRefCode]
     );
-    assert(true, "Seeded inviting missionary with initial 3 points");
+
+    const checkSeed = await runSql("SELECT * FROM missionaries WHERE referral_code = ? COLLATE NOCASE LIMIT 1", [inviterRefCode]);
+    assert(checkSeed && checkSeed.length > 0, "Seeded inviting missionary with initial 3 points");
   } catch (err) {
     assert(false, "Seeding inviter failed", err.message);
   }
 
-  // STEP 2: Simulate Referral Join
+  // STEP 2: Simulate Referral Execution
   console.log("\n--- Step 2: Simulating New User Deep-Link Referral Join ---");
   try {
     await executeBotAction(newSenderId, "", "", inviterRefCode, fakeToken);
     
-    // 1. Inviter points should be 4
-    const inviterRows = await runSql("SELECT points FROM missionaries WHERE UPPER(referral_code) = ? LIMIT 1", [inviterRefCode]);
+    // Check inviter points increment (3 -> 4 PTS)
+    const inviterRows = await runSql("SELECT points FROM missionaries WHERE referral_code = ? COLLATE NOCASE LIMIT 1", [inviterRefCode]);
     const inviterRecord = inviterRows?.[0];
     assert(Number(inviterRecord?.points) === 4, "Inviter received +1 reward point (3 -> 4 PTS)");
 
-    // 2. New missionary created with 1 PT
+    // Check new user record
     const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
     const newUserRecord = newUserRows?.[0];
     assert(Boolean(newUserRecord), "New missionary profile auto-created from referral link");

@@ -60,35 +60,30 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
   const cleanRef = (referralCode || '').trim().toUpperCase();
   const sid = String(senderId);
 
-  // 1. Ensure Table and Columns Exist
-  try {
-    await runSql(`
-      CREATE TABLE IF NOT EXISTS missionaries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT DEFAULT '',
-        points INTEGER DEFAULT 0,
-        referral_code TEXT UNIQUE,
-        fb_sender_id TEXT,
-        is_active INTEGER DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-  } catch (_) {}
-
-  // 2. Handle Referral Deep Links
+  // 1. Handle Deep Link Referral
   if (cleanRef) {
     try {
-      const inviterRows = await runSql("SELECT id, name, points FROM missionaries WHERE UPPER(referral_code) = ? LIMIT 1", [cleanRef]);
+      const inviterRows = await runSql(
+        "SELECT rowid as id, name, points, referral_code FROM missionaries WHERE referral_code = ? COLLATE NOCASE LIMIT 1",
+        [cleanRef]
+      );
       const inviter = inviterRows?.[0];
 
       if (inviter) {
-        const existingRows = await runSql("SELECT id FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [sid]);
+        const existingRows = await runSql(
+          "SELECT rowid as id, fb_sender_id FROM missionaries WHERE fb_sender_id = ? LIMIT 1",
+          [sid]
+        );
         const existing = existingRows?.[0];
 
         if (!existing) {
           const inviterPoints = Number(inviter.points || 0);
-          await runSql("UPDATE missionaries SET points = ? WHERE id = ?", [inviterPoints + 1, Number(inviter.id)]);
+          
+          // Credit inviter by referral_code directly
+          await runSql(
+            "UPDATE missionaries SET points = ? WHERE referral_code = ? COLLATE NOCASE",
+            [inviterPoints + 1, cleanRef]
+          );
 
           const newCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
           const fallbackEmail = `user_${sid.slice(-6)}@missionary.org`;
@@ -110,8 +105,11 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
     }
   }
 
-  // Missionary lookup
-  let missionaryRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? OR UPPER(referral_code) = ? LIMIT 1", [sid, (text || '').toUpperCase()]);
+  // Regular Lookup & Dashboard Flow
+  let missionaryRows = await runSql(
+    "SELECT rowid as id, * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? COLLATE NOCASE LIMIT 1",
+    [sid, (text || '').toUpperCase()]
+  );
   let missionary = missionaryRows?.[0];
   const points = Number(missionary?.points || 0);
   const refCode = missionary?.referral_code || "JOIN";

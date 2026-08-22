@@ -132,3 +132,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 ### [2026-08-23] - Referral Deep-Link Execution & Verification Gate Pass
 - Direct query normalization in executeBotAction() for inviter credit and new missionary profile persistence.
 - Verified test-new-user-flow.js to achieve 100% pass across all 5 pre-commit suites.
+
+### [2026-08-23] - Case-Insensitive Referral Matching & rowid Normalization
+- Switched referral queries to `referral_code = ? COLLATE NOCASE` to ensure 100% case-insensitive matching in Turso SQLite.
+- Updated inviter updates to match directly on referral_code, bypassing missing primary key dependencies.

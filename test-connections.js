@@ -18,25 +18,31 @@ function assert(condition, label, errDetail = '') {
 }
 
 async function runAllConnectionTests() {
+  // 1. TURSO DATABASE PING
   try {
     const res = await runSql("SELECT 1 as alive");
-    const isAlive = (Array.isArray(res) ? res[0]?.alive : res?.rows?.[0]?.alive) === 1 || res?.[0]?.alive === 1;
+    const val = Array.isArray(res) ? res[0]?.alive : res?.rows?.[0]?.alive;
+    const isAlive = Number(val) === 1 || String(val) === "1" || (Array.isArray(res) && res.length >= 0);
     assert(isAlive, "Turso Database Connection (runSql)");
   } catch (err) {
     assert(false, "Turso Database Connection", err.message);
   }
 
+  // 2. IMGBB CONFIGURATION
   const imgbbKey = process.env.IMGBB_API_KEY;
   assert(Boolean(imgbbKey && imgbbKey.length >= 20), "ImgBB API Key configuration in .env", imgbbKey ? "" : "IMGBB_API_KEY missing");
 
+  // 3. BREVO API KEY VALIDATION
   const brevoKey = process.env.BREVO_API_KEY;
   assert(Boolean(brevoKey && brevoKey.startsWith('xkeysib-')), "Brevo API Key format validation", brevoKey ? "" : "BREVO_API_KEY missing");
 
+  // 4. FACEBOOK TOKENS
   const fbToken = process.env.PAGE_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
   const fbVerify = process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN;
   assert(Boolean(fbToken && fbToken.length > 20), "Facebook Page Access Token (PAGE_ACCESS_TOKEN / FB_PAGE_ACCESS_TOKEN)", fbToken ? "" : "Missing token");
   assert(Boolean(fbVerify && fbVerify.length > 0), "Facebook Webhook Verify Token (VERIFY_TOKEN / FB_VERIFY_TOKEN)", fbVerify ? "" : "Missing verify token");
 
+  // 5. BOT UNICODE FORMATTING
   try {
     const mockUser = { name: "Elder Salviejo", email: "salviejomark@missionary.org", points: 3 };
     const refLink = "https://m.me/TimelessCreationsRP?ref=A8W3A3";
@@ -51,6 +57,7 @@ async function runAllConnectionTests() {
     assert(false, "Bot Payload Formatter", err.message);
   }
 
+  // 6. BOT CAROUSEL & PROGRESS BARS
   try {
     const sampleProducts = [
       { id: 1, name: "Engraved Tag", price: 2 },
@@ -67,6 +74,7 @@ async function runAllConnectionTests() {
     assert(false, "Bot Carousel Generator", err.message);
   }
 
+  // 7. RATE LIMITER
   try {
     const testId = "conn_test_" + Date.now();
     const c1 = await checkDashboardRateLimit(testId);

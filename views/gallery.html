@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direct Link Maker & Gallery | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e6f0; margin: 0; }
+    .card {
+      background: #11131d;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .upload-zone {
+      border: 2px dashed rgba(201,168,76,0.4);
+      background: rgba(201,168,76,0.03);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upload-zone:hover {
+      border-color: #c9a84c;
+      background: rgba(201,168,76,0.07);
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .gallery-item {
+      background: #151824;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+    .gallery-item:hover { transform: translateY(-3px); border-color: rgba(201,168,76,0.4); }
+    .gallery-thumb {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      background: #08080d;
+    }
+    .copy-btn {
+      background: #c9a84c;
+      color: #0d0e15;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.75rem;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .copy-btn:hover { background: #dfbc5a; }
+  </style>
+</head>
+<body>
+
+<div style="max-width:1200px; margin:24px auto; padding:0 20px 40px;">
+  
+  <div style="margin-bottom:24px;">
+    <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin:0 0 4px 0;">Direct Link Maker &amp; CDN Gallery</h1>
+    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Upload images, auto-resize to email/catalog standards, and generate fast direct CDN URLs.</p>
+  </div>
+
+  <!-- Upload & Resize Studio -->
+  <div class="card">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+      
+      <div>
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+          <div style="font-size:2rem; margin-bottom:8px;">📷</div>
+          <div style="font-weight:bold; color:#fff; font-size:0.9rem;">Click or Tap to Select Image</div>
+          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Supports PNG, JPG, WebP</div>
+          <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
+        </div>
+        <div id="file-preview-info" style="font-size:0.75rem; color:#4caf82; margin-top:8px; display:none;"></div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <label class="form-label" style="display:block; font-size:0.8rem; font-weight:bold; color:#c9a84c; margin-bottom:6px;">Select Preset Size / Aspect Ratio</label>
+          <select id="size-preset-select" class="form-select" style="width:100%; background:#181b2a; color:#fff; border:1px solid rgba(255,255,255,0.08); padding:10px; border-radius:8px;">
+            <option value="square_600">🔲 1:1 Square (600x600) — Best for Rewards &amp; Nametags</option>
+            <option value="banner_1200">🖼️ Banner (1200x630) — Best for Email Headers</option>
+            <option value="thumb_300">📱 Compact Thumbnail (300x300)</option>
+            <option value="original">✨ Original Dimensions (Optimized Compression)</option>
+          </select>
+        </div>
+
+        <button id="upload-btn" onclick="processAndUpload()" style="background:#c9a84c; color:#0d0e15; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; font-size:0.85rem; cursor:pointer; margin-top:14px;">
+          ⚡ Convert &amp; Generate Direct Link
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Live CDN Media Gallery -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:#c9a84c;">🖼️ Stored CDN Media Library</div>
+      <button onclick="loadGallery()" style="background:#181b2a; color:#c9a84c; border:1px solid rgba(201,168,76,0.3); padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:bold; cursor:pointer;">
+        ↻ Refresh
+      </button>
+    </div>
+    
+    <div class="gallery-grid" id="gallery-container">
+      <div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">Loading gallery...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let selectedImageFile = null;
+
+function handleFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  selectedImageFile = file;
+  const info = document.getElementById("file-preview-info");
+  info.style.display = "block";
+  info.textContent = `✓ Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+}
+
+async function processAndUpload() {
+  if (!selectedImageFile) {
+    if (typeof showToast === 'function') showToast("Please select an image file first.", "error");
+    return;
+  }
+
+  const btn = document.getElementById("upload-btn");
+  btn.disabled = true;
+  btn.textContent = "⏳ Resizing & Uploading...";
+
+  const preset = document.getElementById("size-preset-select").value;
+  const reader = new FileReader();
+
+  reader.onload = function(event) {
+    const img = new Image();
+    img.onload = async function() {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      let width = img.width;
+      let height = img.height;
+
+      if (preset === "square_600") {
+        width = 600;
+        height = 600;
+      } else if (preset === "banner_1200") {
+        width = 1200;
+        height = 630;
+      } else if (preset === "thumb_300") {
+        width = 300;
+        height = 300;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64Data = canvas.toDataURL("image/png", 0.9);
+
+      try {
+        const res = await fetch("/api/main", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "upload_cdn_image",
+            filename: selectedImageFile.name,
+            base64Data,
+            targetSize: preset
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          if (typeof showToast === 'function') showToast("Direct link generated and copied to clipboard!");
+          navigator.clipboard.writeText(data.direct_url).catch(() => {});
+          loadGallery();
+        } else {
+          if (typeof showToast === 'function') showToast(`Upload issue: ${data.error}`, "error");
+        }
+      } catch (err) {
+        if (typeof showToast === 'function') showToast("Network error uploading image.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Convert & Generate Direct Link";
+      }
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(selectedImageFile);
+}
+
+async function loadGallery() {
+  const container = document.getElementById("gallery-container");
+  try {
+    const res = await fetch("/api/main?action=get_cdn_gallery");
+    const data = await res.json();
+
+    if (data.ok && data.gallery && data.gallery.length > 0) {
+      container.innerHTML = data.gallery.map(item => `
+        <div class="gallery-item">
+          <img src="${item.direct_url}" class="gallery-thumb" alt="${item.filename}" loading="lazy">
+          <div style="padding:10px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:0.72rem; color:#e8e6f0; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.filename}</div>
+            <div style="font-size:0.65rem; color:#8c90a4;">Size: ${item.size_label || 'Default'}</div>
+            <button class="copy-btn" onclick="copyUrl('${item.direct_url}')">📋 Copy Direct Link</button>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">No images uploaded to CDN gallery yet.</div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">Failed to load CDN gallery.</div>';
+  }
+}
+
+function copyUrl(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    if (typeof showToast === 'function') showToast("Direct link copied!");
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (typeof initAppLayout === 'function') {
+    initAppLayout('gallery', 'CDN Media Gallery');
+  }
+  loadGallery();
+});
+</script>
+</body>
+</html>

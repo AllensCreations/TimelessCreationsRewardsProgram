@@ -93,7 +93,7 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
   const refCode = missionary?.referral_code || "JOIN";
   const refLink = `https://m.me/TimelessCreationsRP?ref=${refCode}`;
 
-  // Query product_catalog table where type = 'reward'
+  // Query product_catalog table strictly for reward items
   let rewardProducts = [];
   try {
     rewardProducts = await runSql("SELECT id, name, price, image_url, type FROM product_catalog WHERE type = 'reward' ORDER BY price ASC LIMIT 10");
@@ -101,7 +101,7 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
     console.warn("product_catalog table query fallback:", err.message);
   }
 
-  // 2. DASHBOARD TRIGGER (Sends Dashboard + Invite, then Reward Catalog Carousel)
+  // 2. DASHBOARD TRIGGER SEQUENCE
   const rateCheck = await checkDashboardRateLimit(senderId);
   if (!rateCheck.allowed) {
     if (!rateCheck.shouldMute && rateCheck.message) {
@@ -110,11 +110,15 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
     return;
   }
 
-  // Part 1: Text message containing Dashboard Stats + Copy-and-Send Invite
-  const dashPayload = buildDashboardPayload(missionary || { name: "Missionary", email: "Not linked yet", points }, refLink);
-  await sendFbMessage(senderId, { text: dashPayload.text }, token);
+  const payload = buildDashboardPayload(missionary || { name: "Missionary", email: "Not linked yet", points }, refLink);
 
-  // Part 2: 1:1 Square Catalog Carousel with 1 Action Button per card
+  // Message 1: Separate Dashboard Stats Message
+  await sendFbMessage(senderId, { text: payload.dashboardText }, token);
+
+  // Message 2: Separate Copy-and-Send Companion Invite Message
+  await sendFbMessage(senderId, { text: payload.invitePromoText }, token);
+
+  // Message 3: 1:1 Square Catalog Carousel with Name & Cost Only + Fixed Quick Reply
   const carouselPayload = await buildCatalogCarousel(points, rewardProducts);
   await sendFbMessage(senderId, carouselPayload, token);
 }

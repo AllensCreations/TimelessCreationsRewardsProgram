@@ -18,7 +18,7 @@ function assert(condition, label, errDetail = '') {
 }
 
 async function runRepliesTest() {
-  const mockSenderId = "fb_sim_user_" + Date.now();
+  const mockSenderId = "fb_sim_user_" + Math.random().toString(36).slice(2, 9);
   const mockMissionary = {
     name: "Elder Allen Mark Salviejo",
     email: "salviejomark@missionary.org",
@@ -27,33 +27,25 @@ async function runRepliesTest() {
   };
   const refLink = `https://m.me/TimelessCreationsRP?ref=${mockMissionary.referral_code}`;
 
-  // 1. Dashboard + Invite Unified Payload Test
-  console.log("--- 1. Testing Unified Dashboard & Copyable Invite Payload ---");
-  const dashPayload = buildDashboardPayload(mockMissionary, refLink);
+  // 1. Separate Dashboard and Invite Messages Test
+  console.log("--- 1. Testing Separate Dashboard & Invite Messages ---");
+  const payloads = buildDashboardPayload(mockMissionary, refLink);
   
   assert(
-    dashPayload.text.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"),
-    "Dashboard contains Unicode bold header"
+    payloads.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗") && payloads.dashboardText.includes("4 Points"),
+    "Message 1: Dashboard contains Unicode header and points balance"
   );
   assert(
-    dashPayload.text.includes("Elder Allen Mark Salviejo") && dashPayload.text.includes("4 Points"),
-    "Dashboard correctly binds missionary name and points"
+    payloads.invitePromoText.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱 & 𝗘𝗮𝗿𝗻 +𝟭 𝗣𝗧") && payloads.invitePromoText.includes(refLink),
+    "Message 2: Invite contains copy-and-send companion template"
   );
   assert(
-    dashPayload.text.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱 & 𝗘𝗮𝗿𝗻 +𝟭 𝗣𝗧") && dashPayload.text.includes(refLink),
-    "Dashboard includes the integrated copy-and-send companion invite"
-  );
-  assert(
-    !dashPayload.text.includes("**") && !dashPayload.text.includes("###"),
-    "Dashboard text has zero raw markdown artifacts"
-  );
-  assert(
-    Array.isArray(dashPayload.quick_replies) && dashPayload.quick_replies.length === 1 && dashPayload.quick_replies[0].title === "📊 Dashboard",
-    "Dashboard attaches exactly 1 single fixed Quick Reply: [ 📊 Dashboard ]"
+    !payloads.dashboardText.includes("**") && !payloads.invitePromoText.includes("**"),
+    "Both messages have zero raw markdown artifacts"
   );
 
-  // 2. 1:1 Square Catalog Carousel Test
-  console.log("\n--- 2. Testing 1:1 Square Catalog Carousel (1 Button Rule) ---");
+  // 2. 1:1 Square Catalog Carousel Test (Name & Cost Only)
+  console.log("\n--- 2. Testing 1:1 Square Catalog Carousel (Name & Cost Only) ---");
   const sampleProducts = [
     { id: 101, name: "Engraved Nametag", price: 2, image_url: "https://i.ibb.co/tag.webp" },
     { id: 102, name: "POS Standard Drip Kit", price: 8, image_url: "https://i.ibb.co/kit.webp" }
@@ -69,25 +61,27 @@ async function runRepliesTest() {
   );
   assert(
     elements && elements.length === 2,
-    "Carousel generates correct number of product cards"
-  );
-
-  // Card 1: Affordable Item (4 pts vs 2 pts cost)
-  const card1 = elements[0];
-  assert(
-    card1.buttons.length === 1 && card1.buttons[0].title.includes("Claim (2 PTS)"),
-    "Affordable item contains exactly 1 Claim button"
-  );
-
-  // Card 2: Locked Goal Item (4 pts vs 8 pts cost)
-  const card2 = elements[1];
-  assert(
-    card2.buttons.length === 1 && card2.buttons[0].title.includes("Need 4 More PTS"),
-    "Locked item contains exactly 1 Need PTS button"
+    "Carousel generates product cards"
   );
   assert(
-    !card2.subtitle.includes("■") && !card2.subtitle.includes("□"),
-    "Subtitle excludes raw progress bar block characters"
+    elements[0].subtitle === "⭐ Cost: 2 PTS",
+    "Card 1 subtitle strictly displays Name and Cost only"
+  );
+  assert(
+    elements[1].subtitle === "⭐ Cost: 8 PTS",
+    "Card 2 subtitle strictly displays Name and Cost only"
+  );
+  assert(
+    elements[0].buttons.length === 1 && elements[0].buttons[0].title.includes("Claim (2 PTS)"),
+    "Affordable card contains 1 Claim button"
+  );
+  assert(
+    elements[1].buttons.length === 1 && elements[1].buttons[0].title.includes("Need 4 More PTS"),
+    "Locked card contains 1 Need PTS button"
+  );
+  assert(
+    Array.isArray(carouselResult.quick_replies) && carouselResult.quick_replies.length === 1 && carouselResult.quick_replies[0].title === "📊 Dashboard",
+    "Carousel attaches single fixed [ 📊 Dashboard ] Quick Reply"
   );
 
   // 3. Daily Rate Limiter Test

@@ -91,3 +91,8 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 ### [2026-08-23] - Rate Limiter Parameter Serialization & Dual Tier Sync
 - Fixed Turso HTTP pipeline parameter type casting for string/date queries.
 - Added fast in-memory rate-limit cache with Turso SQL sync to prevent race conditions.
+
+### [2026-08-23] - Split Messages (Dashboard, Invite) & Name/Cost-Only 1:1 Carousel
+- Separated Dashboard Stats and Copyable Companion Invite into two distinct sequential messages.
+- Simplified carousel subtitles to show strictly `⭐ Cost: <pts> PTS` without verbose helper text.
+- Retained 1:1 square image aspect ratio and single sticky `[ 📊 Dashboard ]` Quick Reply.

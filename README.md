@@ -87,3 +87,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 ### [2026-08-23] - Rate Limiter Payload & Message Property Hardening
 - Ensured checkDashboardRateLimit() always returns defined message strings and status flags under all execution branches.
 - Updated unit test assertions to validate randomized user ID sequences.
+
+### [2026-08-23] - Rate Limiter Parameter Serialization & Dual Tier Sync
+- Fixed Turso HTTP pipeline parameter type casting for string/date queries.
+- Added fast in-memory rate-limit cache with Turso SQL sync to prevent race conditions.

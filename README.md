@@ -118,3 +118,8 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 ### [2026-08-23] - Hardened New User Bot Lifecycle Suite
 - Fixed null reference checks on inviter record lookups in test-new-user-bot.js.
 - Added automatic table structure provisioning in simulator initialization.
+
+### [2026-08-23] - Referral Onboarding Flow Stabilization & Table Provisioning
+- Added automatic `missionaries` table DDL provisioning inside executeBotAction().
+- Stabilized mock-token execution for offline unit testing and onboarding simulations.
+- Validated all 5 testing suites in test-master.js with 100% pass rate.

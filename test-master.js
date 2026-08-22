@@ -16,20 +16,20 @@ let totalPassedSuites = 0;
 let failedSuites = [];
 
 for (const suite of suites) {
-  console.log(`▶ Running: ${suite.name}...`);
+  process.stdout.write(`▶ Running: ${suite.name}... `);
   try {
     execSync(suite.cmd, { stdio: 'pipe' });
-    console.log(`✅ PASS: ${suite.name}\n`);
+    console.log(`✅ PASS`);
     totalPassedSuites++;
   } catch (err) {
-    console.error(`❌ FAILED: ${suite.name}`);
+    console.log(`❌ FAILED`);
     if (err.stdout) console.error(err.stdout.toString());
     if (err.stderr) console.error(err.stderr.toString());
     failedSuites.push(suite.name);
   }
 }
 
-console.log("=========================================================");
+console.log("\n=========================================================");
 console.log("📊 OVERALL VERIFICATION REPORT");
 console.log("=========================================================");
 console.log(`Suites Passed: ${totalPassedSuites} / ${suites.length}`);
@@ -37,9 +37,8 @@ console.log(`Suites Failed: ${failedSuites.length}`);
 
 if (failedSuites.length > 0) {
   console.error("\n❌ PRE-COMMIT GATEWAY FAILED! DO NOT COMMIT.");
-  failedSuites.forEach(s => console.error(` - ${s}`));
   process.exit(1);
 } else {
-  console.log("\n🏆 100% PASS RATE ACHIEVED ACROSS ALL 5 SUITES! Safe to commit.");
+  console.log("\n🏆 100% PASS RATE ACHIEVED! Safe to commit and deploy.");
   process.exit(0);
 }

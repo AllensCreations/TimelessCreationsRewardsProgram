@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { runSql } from './lib/db.js';
 import { executeBotAction } from './api/bot.js';
-import { buildDashboardPayload, buildCatalogCarousel } from './lib/bot.js';
+import { buildDashboardPayload, buildCatalogCarousel, FIXED_QUICK_REPLIES } from './lib/bot.js';
 
 console.log("\n=======================================================");
 console.log("👤 STARTING NEW USER MESSENGER ONBOARDING FLOW TESTER");
@@ -26,9 +26,22 @@ async function testNewUserExperience() {
   const inviterRefCode = `INV${uniqueTag}`;
   const newSenderId = `fb_new_user_${Date.now()}`;
 
-  // STEP 1: Seed Inviting Missionary
+  // STEP 1: Provision Table and Seed Inviting Missionary
   console.log("--- Step 1: Seeding Inviting Missionary in Database ---");
   try {
+    await runSql(`
+      CREATE TABLE IF NOT EXISTS missionaries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT,
+        points INTEGER DEFAULT 0,
+        referral_code TEXT UNIQUE,
+        fb_sender_id TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     await runSql(
       "INSERT INTO missionaries (name, email, points, referral_code, is_active) VALUES (?, ?, 3, ?, 1)",
       [`Elder Inviter ${uniqueTag}`, `inviter_${uniqueTag.toLowerCase()}@missionary.org`, inviterRefCode]
@@ -38,17 +51,19 @@ async function testNewUserExperience() {
     assert(false, "Seeding inviter failed", err.message);
   }
 
-  // STEP 2: Process Referral Deep-Link Join
+  // STEP 2: Simulate New User Clicking Deep-Link
   console.log("\n--- Step 2: Simulating New User Deep-Link Referral Join ---");
   try {
     await executeBotAction(newSenderId, "", "", inviterRefCode, fakeToken);
     
+    // Check inviter increment
     const inviterRows = await runSql("SELECT points FROM missionaries WHERE referral_code = ? LIMIT 1", [inviterRefCode]);
-    assert(Number(inviterRows?.[0]?.points) === 4, "Inviter received +1 reward point (3 -> 4 PTS)");
+    const inviterRecord = inviterRows?.[0];
+    assert(Number(inviterRecord?.points) === 4, "Inviter received +1 reward point (3 -> 4 PTS)");
 
+    // Check new user record
     const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
     const newUserRecord = newUserRows?.[0];
-
     assert(Boolean(newUserRecord), "New missionary profile auto-created from referral link");
     assert(Number(newUserRecord?.points) === 1, "New missionary received +1 welcome reward point");
     assert(Boolean(newUserRecord?.referral_code), `New missionary assigned unique referral code: ${newUserRecord?.referral_code}`);
@@ -56,7 +71,7 @@ async function testNewUserExperience() {
     assert(false, "Referral join sequence failed", err.message);
   }
 
-  // STEP 3: Verify Dashboard & Invite Separation
+  // STEP 3: Verify New User Dashboard Payload Separation
   console.log("\n--- Step 3: Verifying New User Dashboard & Invite Payload ---");
   try {
     const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
@@ -76,7 +91,7 @@ async function testNewUserExperience() {
     assert(false, "Dashboard formatting verification failed", err.message);
   }
 
-  // STEP 4: 1:1 Square Catalog Carousel Verification
+  // STEP 4: Verify 1:1 Square Reward Carousel for 1 Point Balance
   console.log("\n--- Step 4: Verifying 1:1 Square Catalog Carousel (1 PTS Balance) ---");
   try {
     const sampleCatalog = [

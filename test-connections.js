@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { runSql } from './lib/db.js';
 import { checkDashboardRateLimit, buildCatalogCarousel, buildDashboardPayload } from './lib/bot.js';
-import { sendDripEmail } from './lib/mailer.js';
 
 console.log("\n📡 STARTING END-TO-END TCRP CONNECTIONS TESTER...\n");
 
@@ -19,7 +18,6 @@ function assert(condition, label, errDetail = '') {
 }
 
 async function runAllConnectionTests() {
-  // 1. TEST TURSO DATABASE CONNECTION
   try {
     const res = await runSql("SELECT 1 as alive");
     const isAlive = (Array.isArray(res) ? res[0]?.alive : res?.rows?.[0]?.alive) === 1 || res?.[0]?.alive === 1;
@@ -28,21 +26,17 @@ async function runAllConnectionTests() {
     assert(false, "Turso Database Connection", err.message);
   }
 
-  // 2. TEST IMGBB API KEY CONFIGURATION
   const imgbbKey = process.env.IMGBB_API_KEY;
   assert(Boolean(imgbbKey && imgbbKey.length >= 20), "ImgBB API Key configuration in .env", imgbbKey ? "" : "IMGBB_API_KEY missing");
 
-  // 3. TEST BREVO EMAIL CONFIGURATION
   const brevoKey = process.env.BREVO_API_KEY;
   assert(Boolean(brevoKey && brevoKey.startsWith('xkeysib-')), "Brevo API Key format validation", brevoKey ? "" : "BREVO_API_KEY missing");
 
-  // 4. TEST FACEBOOK MESSENGER ENVIRONMENT CONFIGURATION
-  const fbToken = process.env.FB_PAGE_ACCESS_TOKEN;
-  const fbVerify = process.env.FB_VERIFY_TOKEN;
-  assert(Boolean(fbToken && fbToken.length > 20), "Facebook Page Access Token (FB_PAGE_ACCESS_TOKEN)", fbToken ? "" : "Missing token");
-  assert(Boolean(fbVerify && fbVerify.length > 0), "Facebook Webhook Verify Token (FB_VERIFY_TOKEN)", fbVerify ? "" : "Missing verify token");
+  const fbToken = process.env.PAGE_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+  const fbVerify = process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN;
+  assert(Boolean(fbToken && fbToken.length > 20), "Facebook Page Access Token (PAGE_ACCESS_TOKEN / FB_PAGE_ACCESS_TOKEN)", fbToken ? "" : "Missing token");
+  assert(Boolean(fbVerify && fbVerify.length > 0), "Facebook Webhook Verify Token (VERIFY_TOKEN / FB_VERIFY_TOKEN)", fbVerify ? "" : "Missing verify token");
 
-  // 5. TEST BOT MODULE: UNICODE DASHBOARD & INVITE PAYLOAD GENERATION
   try {
     const mockUser = { name: "Elder Salviejo", email: "salviejomark@missionary.org", points: 3 };
     const refLink = "https://m.me/TimelessCreationsRP?ref=A8W3A3";
@@ -57,7 +51,6 @@ async function runAllConnectionTests() {
     assert(false, "Bot Payload Formatter", err.message);
   }
 
-  // 6. TEST BOT MODULE: CAROUSEL WITH DYNAMIC PROGRESS BARS
   try {
     const sampleProducts = [
       { id: 1, name: "Engraved Tag", price: 2 },
@@ -74,7 +67,6 @@ async function runAllConnectionTests() {
     assert(false, "Bot Carousel Generator", err.message);
   }
 
-  // 7. TEST BOT MODULE: DAILY VIEW LIMITER
   try {
     const testId = "conn_test_" + Date.now();
     const c1 = await checkDashboardRateLimit(testId);

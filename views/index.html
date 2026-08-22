@@ -1,194 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Command Center | Timeless Creations</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/assets/app.css">
-  <script src="/assets/app.js"></script>
-  <style>
-    body { font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e6f0; }
-    .hero-banner {
-      background: linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(28,31,46,0.8) 100%);
-      border: 1px solid rgba(201,168,76,0.25);
-      border-radius: 16px;
-      padding: 28px 32px;
-      margin-bottom: 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .stat-card {
-      background: #151824;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-    .stat-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-3px); }
-    .stat-card.gold { border-left: 4px solid #c9a84c; }
-    .stat-card.green { border-left: 4px solid #4caf82; }
-    .stat-card.blue { border-left: 4px solid #5c8de0; }
-    .stat-val { font-size: 2rem; font-weight: 800; font-family: 'Syne', sans-serif; color: #fff; }
-    .stat-label { font-size: 0.75rem; color: #8c90a4; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-    .card {
-      background: #11131d;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 16px; }
-    .cal-day-header { font-size: 0.65rem; text-align: center; color: #8c90a4; text-transform: uppercase; font-weight: 700; padding: 6px 0; }
-    .cal-cell {
-      background: #181b2a;
-      border: 1px solid rgba(255,255,255,0.04);
-      border-radius: 8px;
-      min-height: 60px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .cal-cell.today { border-color: #c9a84c; box-shadow: 0 0 12px rgba(201,168,76,0.25) inset; }
-    .cal-cell.has-activity { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); }
-    .cal-num { font-size: 0.75rem; color: #8c90a4; font-weight: 700; }
-    .cal-count { font-size: 0.65rem; font-weight: 700; color: #c9a84c; align-self: flex-end; background: rgba(201,168,76,0.2); padding: 2px 6px; border-radius: 4px; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Center | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e6f0; margin: 0; }
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(28,31,46,0.8) 100%);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .stat-card {
+      background: #151824;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .stat-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-3px); }
+    .stat-card.gold { border-left: 4px solid #c9a84c; }
+    .stat-card.green { border-left: 4px solid #4caf82; }
+    .stat-card.blue { border-left: 4px solid #5c8de0; }
+    .stat-val { font-size: 2rem; font-weight: 800; font-family: 'Syne', sans-serif; color: #fff; }
+    .stat-label { font-size: 0.75rem; color: #8c90a4; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .card {
+      background: #11131d;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 16px; }
+    .cal-day-header { font-size: 0.65rem; text-align: center; color: #8c90a4; text-transform: uppercase; font-weight: 700; padding: 6px 0; }
+    .cal-cell {
+      background: #181b2a;
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 8px;
+      min-height: 60px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cal-cell.today { border-color: #c9a84c; box-shadow: 0 0 12px rgba(201,168,76,0.25) inset; }
+    .cal-cell.has-activity { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); }
+    .cal-num { font-size: 0.75rem; color: #8c90a4; font-weight: 700; }
+    .cal-count { font-size: 0.65rem; font-weight: 700; color: #c9a84c; align-self: flex-end; background: rgba(201,168,76,0.2); padding: 2px 6px; border-radius: 4px; }
+  </style>
 </head>
 <body>
 
 <div style="max-width:1200px; margin:24px auto; padding:0 20px 40px;">
-  <!-- Hero Banner -->
-  <div class="hero-banner">
-    <div>
-      <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin-bottom:4px;">Welcome back, Administrator ✨</h1>
-      <p style="font-size:0.85rem; color:#a0a3b8; margin:0;">Missionary encouragement and reward dispatch overview.</p>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <a href="/logs.html" style="background:#181b2a; color:#c9a84c; border:1px solid rgba(201,168,76,0.3); padding:10px 16px; border-radius:8px; font-weight:bold; font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center;">
-        📜 View Audit Logs
-      </a>
-      <button onclick="triggerGlobalRefresh()" style="background:#c9a84c; color:#0d0e15; border:none; padding:10px 18px; border-radius:8px; font-weight:bold; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 14px rgba(201,168,76,0.3);">
-        ↻ Refresh Live Data
-      </button>
-    </div>
-  </div>
+  <!-- Hero Banner -->
+  <div class="hero-banner">
+    <div>
+      <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin:0 0 4px 0;">Welcome back, Administrator ✨</h1>
+      <p style="font-size:0.85rem; color:#a0a3b8; margin:0;">Missionary encouragement and reward dispatch overview.</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/logs.html" style="background:#181b2a; color:#c9a84c; border:1px solid rgba(201,168,76,0.3); padding:10px 16px; border-radius:8px; font-weight:bold; font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center;">
+        📜 View Audit Logs
+      </a>
+      <button onclick="triggerGlobalRefresh()" style="background:#c9a84c; color:#0d0e15; border:none; padding:10px 18px; border-radius:8px; font-weight:bold; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 14px rgba(201,168,76,0.3);">
+        ↻ Refresh Live Data
+      </button>
+    </div>
+  </div>
 
-  <!-- Primary Stat Cards -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
-    <div class="stat-card gold">
-      <div class="stat-label">Total Missionaries</div>
-      <div class="stat-val" id="stat-missionaries" style="color:#c9a84c;">--</div>
-    </div>
-    <div class="stat-card green">
-      <div class="stat-label">Dispatched Today</div>
-      <div class="stat-val" id="stat-sent-today" style="color:#4caf82;">0</div>
-    </div>
-    <div class="stat-card blue">
-      <div class="stat-label">Sent This Month</div>
-      <div class="stat-val" id="stat-sent-month" style="color:#5c8de0;">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Circulating Points</div>
-      <div class="stat-val" id="stat-points">--</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Pending Claims</div>
-      <div class="stat-val" id="stat-pending">--</div>
-    </div>
-  </div>
+  <!-- Primary Stat Cards -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
+    <div class="stat-card gold">
+      <div class="stat-label">Total Missionaries</div>
+      <div class="stat-val" id="stat-missionaries" style="color:#c9a84c;">--</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Dispatched Today</div>
+      <div class="stat-val" id="stat-sent-today" style="color:#4caf82;">0</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Sent This Month</div>
+      <div class="stat-val" id="stat-sent-month" style="color:#5c8de0;">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Circulating Points</div>
+      <div class="stat-val" id="stat-points">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Claims</div>
+      <div class="stat-val" id="stat-pending">--</div>
+    </div>
+  </div>
 
-  <!-- Calendar Heatmap Section -->
-  <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px;">
-      <div>
-        <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:#c9a84c;">Monthly Drip Dispatch Heatmap</div>
-        <div style="font-size:0.75rem; color:#8c90a4;">Visual distribution of letters sent out to elders and sisters.</div>
-      </div>
-      <span id="cal-month-name" style="font-size:0.8rem; color:#fff; font-weight:bold; text-transform:uppercase; letter-spacing:1px; background:#181b2a; padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);"></span>
-    </div>
-    <div class="calendar-grid" id="calendar-grid"></div>
-  </div>
+  <!-- Calendar Heatmap Section -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:#c9a84c;">Monthly Drip Dispatch Heatmap</div>
+        <div style="font-size:0.75rem; color:#8c90a4;">Visual distribution of letters sent out to elders and sisters.</div>
+      </div>
+      <span id="cal-month-name" style="font-size:0.8rem; color:#fff; font-weight:bold; text-transform:uppercase; letter-spacing:1px; background:#181b2a; padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);"></span>
+    </div>
+    <div class="calendar-grid" id="calendar-grid"></div>
+  </div>
 </div>
 
 <script>
 let dashboardState = { dailyStats: {} };
 
 function renderFromCache() {
-  const cachedPayload = LocalStore.get('stats_payload', null);
-  if (!cachedPayload) {
-    triggerGlobalRefresh();
-    return;
-  }
+  const cachedPayload = LocalStore.get('stats_payload', null);
+  if (!cachedPayload) {
+    if (typeof triggerGlobalRefresh === 'function') {
+      triggerGlobalRefresh();
+    }
+    return;
+  }
 
-  const s = cachedPayload.stats || {};
-  document.getElementById("stat-missionaries").textContent = (s.total_missionaries || 0).toLocaleString();
-  document.getElementById("stat-points").textContent = (s.circulating_points || 0).toLocaleString();
-  document.getElementById("stat-pending").textContent = (s.pending_orders || 0).toLocaleString();
-  document.getElementById("stat-sent-today").textContent = (s.emails_today || 0).toLocaleString();
-  document.getElementById("stat-sent-month").textContent = (s.emails_month || 0).toLocaleString();
+  const s = cachedPayload.stats || {};
+  document.getElementById("stat-missionaries").textContent = (s.total_missionaries || 0).toLocaleString();
+  document.getElementById("stat-points").textContent = (s.circulating_points || 0).toLocaleString();
+  document.getElementById("stat-pending").textContent = (s.pending_orders || 0).toLocaleString();
+  document.getElementById("stat-sent-today").textContent = (s.emails_today || 0).toLocaleString();
+  document.getElementById("stat-sent-month").textContent = (s.emails_month || 0).toLocaleString();
 
-  dashboardState.dailyStats = cachedPayload.daily_stats || {};
-  renderCalendar();
+  dashboardState.dailyStats = cachedPayload.daily_stats || {};
+  renderCalendar();
 }
 
 function renderCalendar() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  
-  document.getElementById('cal-month-name').textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const container = document.getElementById('calendar-grid');
-  container.innerHTML = '';
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  const monthEl = document.getElementById('cal-month-name');
+  if (monthEl) {
+    monthEl.textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
 
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  daysOfWeek.forEach(d => {
-    const el = document.createElement('div');
-    el.className = 'cal-day-header';
-    el.textContent = d;
-    container.appendChild(el);
-  });
+  const container = document.getElementById('calendar-grid');
+  if (!container) return;
+  container.innerHTML = '';
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const totalDays = new Date(year, month + 1, 0).getDate();
-  const todayDate = now.getDate();
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  daysOfWeek.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-header';
+    el.textContent = d;
+    container.appendChild(el);
+  });
 
-  for (let i = 0; i < firstDay; i++) {
-    const emptyCell = document.createElement('div');
-    emptyCell.style.opacity = '0.04';
-    emptyCell.className = 'cal-cell';
-    container.appendChild(emptyCell);
-  }
+  const firstDay = new Date(year, month, 1).getDay();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const todayDate = now.getDate();
 
-  for (let day = 1; day <= totalDays; day++) {
-    const cell = document.createElement('div');
-    const dayStr = String(day).padStart(2, '0');
-    const monthStr = String(month + 1).padStart(2, '0');
-    const fullDateKey = `${year}-${monthStr}-${dayStr}`;
+  for (let i = 0; i < firstDay; i++) {
+    const emptyCell = document.createElement('div');
+    emptyCell.style.opacity = '0.04';
+    emptyCell.className = 'cal-cell';
+    container.appendChild(emptyCell);
+  }
 
-    const count = dashboardState.dailyStats[fullDateKey] || 0;
-    cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
-    
-    cell.innerHTML = `
-      <div class="cal-num">${day}</div>
-      ${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}
-    `;
-    container.appendChild(cell);
-  }
+  for (let day = 1; day <= totalDays; day++) {
+    const cell = document.createElement('div');
+    const dayStr = String(day).padStart(2, '0');
+    const monthStr = String(month + 1).padStart(2, '0');
+    const fullDateKey = `${year}-${monthStr}-${dayStr}`;
+
+    const count = dashboardState.dailyStats[fullDateKey] || 0;
+    cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
+    
+    cell.innerHTML = `
+      <div class="cal-num">${day}</div>
+      ${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}
+    `;
+    container.appendChild(cell);
+  }
 }
 
 window.addEventListener("tcrp:data-synced", renderFromCache);
 window.addEventListener("DOMContentLoaded", () => {
-  initAppLayout('dashboard', 'Dashboard');
-  renderFromCache();
+  if (typeof initAppLayout === 'function') {
+    initAppLayout('dashboard', 'Dashboard');
+  }
+  renderFromCache();
 });
 </script>
 </body>

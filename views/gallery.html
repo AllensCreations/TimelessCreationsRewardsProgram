@@ -85,7 +85,7 @@
   
   <div style="margin-bottom:24px;">
     <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin:0 0 4px 0;">Direct Link Maker &amp; CDN Gallery</h1>
-    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Drag-and-drop or paste (Ctrl+V) images to convert to encrypted WebP, host on CDN, and generate 1-tap links.</p>
+    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Drag-and-drop, select, or paste (Ctrl+V) images to host on ImgBB and generate fast direct URLs.</p>
   </div>
 
   <!-- Upload Studio -->
@@ -95,7 +95,7 @@
         <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
           <div style="font-size:2rem; margin-bottom:8px;">📷</div>
           <div style="font-weight:bold; color:#fff; font-size:0.9rem;">Click, Drag &amp; Drop, or Paste (Ctrl+V)</div>
-          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Auto-encodes to ultra-compact WebP</div>
+          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Auto-encodes to ultra-compact WebP via ImgBB Cloud</div>
           <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
         </div>
         <div id="savings-meter" style="font-size:0.75rem; color:#4caf82; margin-top:8px; font-family:'DM Mono',monospace; display:none;"></div>
@@ -158,7 +158,8 @@ dropZone.addEventListener('drop', (e) => {
   }
 });
 window.addEventListener('paste', (e) => {
-  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+  const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+  if (!items) return;
   for (let item of items) {
     if (item.kind === 'file' && item.type.includes('image/')) {
       setFile(item.getAsFile());
@@ -186,7 +187,7 @@ async function processAndUploadWebP() {
 
   const btn = document.getElementById("upload-btn");
   btn.disabled = true;
-  btn.textContent = "⏳ Converting to WebP & Encrypting...";
+  btn.textContent = "⏳ Uploading to ImgBB...";
 
   const preset = document.getElementById("size-preset-select").value;
   const reader = new FileReader();
@@ -230,7 +231,7 @@ async function processAndUploadWebP() {
         const data = await res.json();
         if (data.ok) {
           document.getElementById("savings-meter").textContent = `⚡ Compressed: ${originalKb}KB → ${compressedKb}KB (${savedPct}% saved!)`;
-          if (typeof showToast === 'function') showToast("Direct link generated & copied to clipboard!");
+          if (typeof showToast === 'function') showToast("ImgBB direct link created and copied!");
           navigator.clipboard.writeText(data.direct_url).catch(() => {});
           loadGallery();
         } else {
@@ -293,7 +294,7 @@ function filterGallery() {
 
 function copyUrl(url) {
   navigator.clipboard.writeText(url).then(() => {
-    if (typeof showToast === 'function') showToast("📋 Direct CDN link copied to clipboard!");
+    if (typeof showToast === 'function') showToast("📋 ImgBB direct link copied to clipboard!");
   });
 }
 
@@ -313,7 +314,7 @@ function closeLightbox() {
 }
 
 async function deleteImage(id) {
-  if (!confirm("Remove this asset from the CDN gallery index?")) return;
+  if (!confirm("Remove this asset from the gallery index?")) return;
   try {
     const res = await fetch("/api/cdn?action=delete", {
       method: "POST",

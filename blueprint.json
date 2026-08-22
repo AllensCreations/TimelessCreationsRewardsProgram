@@ -82,23 +82,87 @@
     ]
   },
   "client_views_and_routes": [
-    { "file": "views/index.html", "route": "/index.html", "title": "Command Center / Dashboard" },
-    { "file": "views/missionaries.html", "route": "/missionaries.html", "title": "Missionaries Roster" },
-    { "file": "views/pusher.html", "route": "/pusher.html", "title": "Add Missionaries (Single / Batch)" },
-    { "file": "views/invoicing.html", "route": "/invoicing.html", "title": "Invoicing & Cash POS" },
-    { "file": "views/claims.html", "route": "/claims.html", "title": "Reward Claims & Orders" },
-    { "file": "views/drips.html", "route": "/drips.html", "title": "24-Month Drips & Media Hub" },
-    { "file": "views/highlight.html", "route": "/highlight.html", "title": "Media & Monthly Highlights" },
-    { "file": "views/gallery.html", "route": "/gallery.html", "title": "Direct Link Maker & ImgBB Gallery" },
-    { "file": "views/messengerbot.html", "route": "/messengerbot.html", "title": "Bot Rewards Catalog" },
-    { "file": "views/logs.html", "route": "/logs.html", "title": "System Logs & Brevo Delivery" },
-    { "file": "views/settings.html", "route": "/settings.html", "title": "System Settings & Control Room" },
-    { "file": "views/privacy.html", "route": "/privacy.html", "title": "Privacy Policy & Terms of Service" }
+    {
+      "file": "views/index.html",
+      "route": "/index.html",
+      "title": "Command Center / Dashboard"
+    },
+    {
+      "file": "views/missionaries.html",
+      "route": "/missionaries.html",
+      "title": "Missionaries Roster"
+    },
+    {
+      "file": "views/pusher.html",
+      "route": "/pusher.html",
+      "title": "Add Missionaries (Single / Batch)"
+    },
+    {
+      "file": "views/invoicing.html",
+      "route": "/invoicing.html",
+      "title": "Invoicing & Cash POS"
+    },
+    {
+      "file": "views/claims.html",
+      "route": "/claims.html",
+      "title": "Reward Claims & Orders"
+    },
+    {
+      "file": "views/drips.html",
+      "route": "/drips.html",
+      "title": "24-Month Drips & Media Hub"
+    },
+    {
+      "file": "views/highlight.html",
+      "route": "/highlight.html",
+      "title": "Media & Monthly Highlights"
+    },
+    {
+      "file": "views/gallery.html",
+      "route": "/gallery.html",
+      "title": "Direct Link Maker & ImgBB Gallery"
+    },
+    {
+      "file": "views/messengerbot.html",
+      "route": "/messengerbot.html",
+      "title": "Bot Rewards Catalog"
+    },
+    {
+      "file": "views/logs.html",
+      "route": "/logs.html",
+      "title": "System Logs & Brevo Delivery"
+    },
+    {
+      "file": "views/settings.html",
+      "route": "/settings.html",
+      "title": "System Settings & Control Room"
+    },
+    {
+      "file": "views/privacy.html",
+      "route": "/privacy.html",
+      "title": "Privacy Policy & Terms of Service"
+    }
   ],
   "verification_suites": [
-    { "script": "test-all.js", "description": "Core unit test suite (DB, bot formatting, rate limiting, mailer module)" },
-    { "script": "test-connections.js", "description": "Live ping test for Turso DB, Brevo API, ImgBB API, and Meta tokens" },
-    { "script": "test-html.js", "description": "DOM structure, viewport, titles, and script assertions across 24 files" },
-    { "script": "audit-all-endpoints.js", "description": "Deep vulnerability audit for race conditions, schema locks, and Meta limits" }
+    {
+      "script": "test-all.js",
+      "description": "Core unit test suite (DB, bot formatting, rate limiting, mailer module)"
+    },
+    {
+      "script": "test-connections.js",
+      "description": "Live ping test for Turso DB, Brevo API, ImgBB API, and Meta tokens"
+    },
+    {
+      "script": "test-html.js",
+      "description": "DOM structure, viewport, titles, and script assertions across 24 files"
+    },
+    {
+      "script": "audit-all-endpoints.js",
+      "description": "Deep vulnerability audit for race conditions, schema locks, and Meta limits"
+    },
+    {
+      "script": "test-all-replies.js",
+      "description": "Automated simulator and compliance test for all Messenger replies, 1-button carousels, and quick reply payloads"
+    }
   ]
 }

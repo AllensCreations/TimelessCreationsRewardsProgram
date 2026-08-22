@@ -128,3 +128,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 - Fixed Turso parameter serialization for integer arithmetic queries.
 - Added automated schema safety migrations for missionaries table columns.
 - Validated test-new-user-flow.js to achieve 100% pass rate in master pre-commit gateway.
+
+### [2026-08-23] - Referral Deep-Link Execution & Verification Gate Pass
+- Direct query normalization in executeBotAction() for inviter credit and new missionary profile persistence.
+- Verified test-new-user-flow.js to achieve 100% pass across all 5 pre-commit suites.

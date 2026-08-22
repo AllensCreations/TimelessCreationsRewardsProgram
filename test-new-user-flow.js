@@ -26,7 +26,7 @@ async function testNewUserExperience() {
   const inviterRefCode = `INV${uniqueTag}`;
   const newSenderId = `fb_new_user_${Date.now()}`;
 
-  // STEP 1: Provision Table and Seed Inviting Missionary
+  // STEP 1: Seed Inviter
   console.log("--- Step 1: Seeding Inviting Missionary in Database ---");
   try {
     await runSql(`
@@ -51,17 +51,17 @@ async function testNewUserExperience() {
     assert(false, "Seeding inviter failed", err.message);
   }
 
-  // STEP 2: Simulate New User Clicking Deep-Link
+  // STEP 2: Simulate Referral Join
   console.log("\n--- Step 2: Simulating New User Deep-Link Referral Join ---");
   try {
     await executeBotAction(newSenderId, "", "", inviterRefCode, fakeToken);
     
-    // Check inviter increment (3 -> 4 PTS)
+    // 1. Inviter points should be 4
     const inviterRows = await runSql("SELECT points FROM missionaries WHERE UPPER(referral_code) = ? LIMIT 1", [inviterRefCode]);
     const inviterRecord = inviterRows?.[0];
     assert(Number(inviterRecord?.points) === 4, "Inviter received +1 reward point (3 -> 4 PTS)");
 
-    // Check new user record
+    // 2. New missionary created with 1 PT
     const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
     const newUserRecord = newUserRows?.[0];
     assert(Boolean(newUserRecord), "New missionary profile auto-created from referral link");
@@ -71,13 +71,13 @@ async function testNewUserExperience() {
     assert(false, "Referral join sequence failed", err.message);
   }
 
-  // STEP 3: Verify New User Dashboard Payload Separation
+  // STEP 3: Verify Separated Messages
   console.log("\n--- Step 3: Verifying New User Dashboard & Invite Payload ---");
   try {
     const newUserRows = await runSql("SELECT * FROM missionaries WHERE fb_sender_id = ? LIMIT 1", [newSenderId]);
     const newUserRecord = newUserRows?.[0];
     const refLink = `https://m.me/TimelessCreationsRP?ref=${newUserRecord?.referral_code || 'JOIN'}`;
-    const payload = buildDashboardPayload(newUserRecord || { name: "Missionary", email: "not_linked@missionary.org", points: 1 }, refLink);
+    const payload = buildDashboardPayload(newUserRecord || { name: "Elder Missionary", email: "not_linked@missionary.org", points: 1 }, refLink);
 
     assert(
       payload.dashboardText.includes("1 Points") && payload.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"),
@@ -91,7 +91,7 @@ async function testNewUserExperience() {
     assert(false, "Dashboard formatting verification failed", err.message);
   }
 
-  // STEP 4: Verify 1:1 Square Reward Carousel for 1 Point Balance
+  // STEP 4: Verify 1:1 Square Reward Carousel
   console.log("\n--- Step 4: Verifying 1:1 Square Catalog Carousel (1 PTS Balance) ---");
   try {
     const sampleCatalog = [

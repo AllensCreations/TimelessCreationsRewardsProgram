@@ -114,3 +114,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 - Added immediate early return after processing deep-link referral signups in api/bot.js.
 - Added mock token bypass to prevent OAuth error noise during local CI test executions.
 - Fixed syntax formatting in test-master.js and verified 100% 5/5 suite pass rate.
+
+### [2026-08-23] - Hardened New User Bot Lifecycle Suite
+- Fixed null reference checks on inviter record lookups in test-new-user-bot.js.
+- Added automatic table structure provisioning in simulator initialization.

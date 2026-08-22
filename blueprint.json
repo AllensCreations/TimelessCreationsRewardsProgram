@@ -1,14 +1,13 @@
 {
   "project": {
     "name": "Timeless Creations Rewards Program (TCRP)",
-    "description": "Full-stack missionary encouragement & rewards dispatch platform with Facebook Messenger bot integration, Brevo 24-month email drips, and ImgBB CDN media gallery.",
+    "description": "Full-stack missionary encouragement, rewards dispatch, and POS redemption engine with Facebook Messenger Bot, Brevo Transactional Drips, and ImgBB CDN Storage.",
     "runtime_environment": "Node.js (ES Modules / ESM) on Vercel Serverless & Termux (Android arm64)",
-    "primary_branch": "main",
-    "architecture_pattern": "Pure JS HTTP micro-endpoints + Static HTML/JS public views"
+    "primary_branch": "main"
   },
   "database": {
     "provider": "Turso (libSQL)",
-    "driver_protocol": "Pure HTTPS JSON pipeline (/v2/pipeline) without native C++ binary dependencies",
+    "driver_protocol": "Pure HTTPS JSON Pipeline (/v2/pipeline) without C++ native binaries",
     "handler_file": "lib/db.js",
     "exported_interfaces": [
       "runSql(query, params)",
@@ -16,107 +15,90 @@
       "query(query, params)",
       "execute(query, params)"
     ],
-    "core_tables": {
-      "missionaries": {
-        "columns": "id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT UNIQUE, points INTEGER DEFAULT 0, referral_code TEXT UNIQUE, fb_sender_id TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
-      },
-      "bot_daily_views": {
-        "columns": "sender_id TEXT, view_date TEXT, view_count INTEGER DEFAULT 0, PRIMARY KEY (sender_id, view_date)",
-        "rate_limit_policy": "Atomic conditional upsert, max 2 views per sender_id per day resetting at 00:00 UTC"
-      },
-      "cdn_gallery": {
-        "columns": "id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT, direct_url TEXT, size_label TEXT, original_kb INTEGER DEFAULT 0, compressed_kb INTEGER DEFAULT 0, delete_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
-      },
-      "products": {
-        "columns": "id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, price INTEGER, image_url TEXT, is_active INTEGER DEFAULT 1"
-      }
+    "tables": {
+      "missionaries": "id, name, email, mission, start_date, points, referral_code, fb_sender_id, is_active, created_at",
+      "bot_daily_views": "sender_id, view_date, view_count (Atomic upsert, max 2 views/day)",
+      "cdn_gallery": "id, filename, direct_url, size_label, original_kb, compressed_kb, delete_url, created_at",
+      "products": "id, name, description, price, image_url, category, is_active, created_at",
+      "claims": "id, missionary_id, product_id, claim_code, status (pending/fulfilled/cancelled), created_at",
+      "invoices": "id, invoice_number, missionary_id, total_amount, points_deducted, cash_paid, cashier, created_at",
+      "drip_templates": "month_number (1-24), title, subject, highlight_image_url, body_html, quote, scriptural_ref",
+      "drip_dispatch_logs": "id, missionary_id, month_dispatched, email_to, brevo_message_id, status, created_at",
+      "system_logs": "id, log_level (INFO/WARN/ERROR), action_type, message, metadata_json, created_at"
     }
   },
-  "environment_variables": {
-    "database": [
-      "TURSO_DATABASE_URL",
-      "TURSO_AUTH_TOKEN"
+  "handlers_and_action_registry": {
+    "api/main.js (Administrative Core)": [
+      "get_stats",
+      "get_missionaries",
+      "add_missionary",
+      "batch_add_missionaries",
+      "update_missionary",
+      "delete_missionary",
+      "adjust_points",
+      "invoicing_claim",
+      "create_invoice",
+      "get_claims",
+      "update_claim_status",
+      "get_products",
+      "save_product",
+      "delete_product",
+      "send_test_email",
+      "get_drip_templates",
+      "save_drip_template",
+      "force_cron",
+      "toggle_system_power",
+      "get_system_logs",
+      "clear_logs"
     ],
-    "messenger_bot": [
-      "PAGE_ACCESS_TOKEN",
-      "FB_PAGE_ACCESS_TOKEN",
-      "VERIFY_TOKEN",
-      "FB_VERIFY_TOKEN"
+    "api/cdn.js (Media & Asset Storage)": [
+      "upload / upload_cdn_image",
+      "list / get_cdn_gallery",
+      "delete / delete_cdn_image"
     ],
-    "email_and_cdn": [
-      "BREVO_API_KEY",
-      "IMGBB_API_KEY"
+    "api/bot.js (Messenger Meta Webhook)": [
+      "GET /api/bot (Verification)",
+      "POST /api/bot (Event router)",
+      "ACTION_DASHBOARD",
+      "ACTION_CATALOG",
+      "ACTION_INVITE",
+      "CLAIM_ITEM_<id>",
+      "VIEW_GOAL_<id>",
+      "RATE_LIMIT_CHECK"
+    ],
+    "api/webhook.js (Brevo Event Ingestion)": [
+      "brevo_delivery_webhook",
+      "brevo_otp_callback"
+    ],
+    "lib/mailer.js (Brevo Email Engine)": [
+      "sendDripEmail",
+      "sendOtpEmail",
+      "sendReceiptEmail"
+    ],
+    "lib/logger.js (Centralized Event Logger)": [
+      "logInfo",
+      "logWarn",
+      "logError"
     ]
   },
-  "handler_registry": {
-    "api/main.js": {
-      "type": "Central Administration Router",
-      "actions": [
-        "get_stats",
-        "sync_missionaries",
-        "add_missionary",
-        "invoicing_claim",
-        "send_test_email",
-        "force_cron"
-      ]
-    },
-    "api/cdn.js": {
-      "type": "Media & Asset Storage Handler",
-      "actions": [
-        "upload / upload_cdn_image (ImgBB API upload + SHA-256 encrypted .webp filename + Turso catalog persistence)",
-        "list / get_cdn_gallery (Retrieve stored media assets)",
-        "delete / delete_cdn_image (Purge media from index)"
-      ]
-    },
-    "api/bot.js": {
-      "type": "Meta Messenger Webhook Endpoint",
-      "get_handling": "Hub challenge verification (hub.verify_token against VERIFY_TOKEN / FB_VERIFY_TOKEN)",
-      "post_handling": "Webhook message & postback dispatcher (ACTION_DASHBOARD, ACTION_CATALOG, ACTION_INVITE)"
-    },
-    "lib/bot.js": {
-      "type": "Bot Formatting & Logic Engine",
-      "features": [
-        "Mathematical Unicode bold typography (zero raw asterisks/markdown leaks)",
-        "Unicode progress bars for rewards window-shopping (e.g. [■■□□□] 2/5 PTS)",
-        "Generic template carousel builder (strictly max 3 buttons per element)",
-        "Atomic concurrency-safe checkDashboardRateLimit()"
-      ]
-    },
-    "lib/mailer.js": {
-      "type": "Transactional & Drip Email Engine",
-      "provider": "Brevo REST API",
-      "templates": [
-        "24-Month Missionary Drips (Editorial 9-Grid)",
-        "OTP Verification Emails",
-        "POS Cash & Reward Redemption Receipts"
-      ]
-    },
-    "assets/app.js": {
-      "type": "Master Frontend Controller",
-      "features": [
-        "Responsive sidebar & mobile app shell",
-        "Global toast notification system (showToast)",
-        "Client cache store (LocalStore)"
-      ]
-    }
-  },
-  "frontend_routes": [
+  "client_views_and_routes": [
     { "file": "views/index.html", "route": "/index.html", "title": "Command Center / Dashboard" },
-    { "file": "views/missionaries.html", "route": "/missionaries.html", "title": "Missionary Roster" },
-    { "file": "views/pusher.html", "route": "/pusher.html", "title": "Add Missionaries & Batch Upload" },
-    { "file": "views/invoicing.html", "route": "/invoicing.html", "title": "Invoicing & POS Cash Redemption" },
+    { "file": "views/missionaries.html", "route": "/missionaries.html", "title": "Missionaries Roster" },
+    { "file": "views/pusher.html", "route": "/pusher.html", "title": "Add Missionaries (Single / Batch)" },
+    { "file": "views/invoicing.html", "route": "/invoicing.html", "title": "Invoicing & Cash POS" },
     { "file": "views/claims.html", "route": "/claims.html", "title": "Reward Claims & Orders" },
-    { "file": "views/drips.html", "route": "/drips.html", "title": "24-Month Drips Engine" },
-    { "file": "views/highlight.html", "route": "/highlight.html", "title": "Monthly Media Highlights" },
+    { "file": "views/drips.html", "route": "/drips.html", "title": "24-Month Drips & Media Hub" },
+    { "file": "views/highlight.html", "route": "/highlight.html", "title": "Media & Monthly Highlights" },
     { "file": "views/gallery.html", "route": "/gallery.html", "title": "Direct Link Maker & ImgBB Gallery" },
-    { "file": "views/messengerbot.html", "route": "/messengerbot.html", "title": "Bot Catalog Config" },
-    { "file": "views/logs.html", "route": "/logs.html", "title": "Audit Logs & Brevo Delivery" },
-    { "file": "views/settings.html", "route": "/settings.html", "title": "System Settings" }
+    { "file": "views/messengerbot.html", "route": "/messengerbot.html", "title": "Bot Rewards Catalog" },
+    { "file": "views/logs.html", "route": "/logs.html", "title": "System Logs & Brevo Delivery" },
+    { "file": "views/settings.html", "route": "/settings.html", "title": "System Settings & Control Room" },
+    { "file": "views/privacy.html", "route": "/privacy.html", "title": "Privacy Policy & Terms of Service" }
   ],
-  "testing_and_verification": {
-    "test-all.js": "Unit test suite covering database execution, bot payload generation, rate limiter, and mailer interfaces",
-    "test-connections.js": "Live ping test verifying Turso DB, Brevo API, ImgBB API, and Meta tokens",
-    "test-html.js": "DOM, meta viewport, and script linkage test across all views and public assets",
-    "audit-all-endpoints.js": "Deep vulnerability and compliance checker for Meta Graph limits and API rate races"
-  }
+  "verification_suites": [
+    { "script": "test-all.js", "description": "Core unit test suite (DB, bot formatting, rate limiting, mailer module)" },
+    { "script": "test-connections.js", "description": "Live ping test for Turso DB, Brevo API, ImgBB API, and Meta tokens" },
+    { "script": "test-html.js", "description": "DOM structure, viewport, titles, and script assertions across 24 files" },
+    { "script": "audit-all-endpoints.js", "description": "Deep vulnerability audit for race conditions, schema locks, and Meta limits" }
+  ]
 }

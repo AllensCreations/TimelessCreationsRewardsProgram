@@ -26,9 +26,10 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .upload-zone:hover {
+    .upload-zone.dragover, .upload-zone:hover {
       border-color: #c9a84c;
-      background: rgba(201,168,76,0.07);
+      background: rgba(201,168,76,0.08);
+      transform: scale(1.01);
     }
     .gallery-grid {
       display: grid;
@@ -51,6 +52,7 @@
       height: 140px;
       object-fit: cover;
       background: #08080d;
+      cursor: pointer;
     }
     .btn-action {
       border: none;
@@ -70,6 +72,11 @@
     .btn-drip-action:hover { background: rgba(92,141,224,0.15); }
     .btn-del-action { background: rgba(224,92,92,0.15); color: #e05c5c; border: 1px solid rgba(224,92,92,0.25); }
     .btn-del-action:hover { background: rgba(224,92,92,0.25); }
+    .lightbox-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
+    }
+    .lightbox-img { max-width: 90vw; max-height: 80vh; border-radius: 8px; border: 1px solid #c9a84c; }
   </style>
 </head>
 <body>
@@ -78,55 +85,49 @@
   
   <div style="margin-bottom:24px;">
     <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin:0 0 4px 0;">Direct Link Maker &amp; CDN Gallery</h1>
-    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Encrypted high-speed WebP compression, direct CDN URLs, and 1-tap Drip Template insertion.</p>
+    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Drag-and-drop or paste (Ctrl+V) images to convert to encrypted WebP, host on CDN, and generate 1-tap links.</p>
   </div>
 
-  <!-- Upload & Auto-WebP Studio -->
+  <!-- Upload Studio -->
   <div class="card">
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
-      
       <div>
-        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
           <div style="font-size:2rem; margin-bottom:8px;">📷</div>
-          <div style="font-weight:bold; color:#fff; font-size:0.9rem;">Click or Tap to Select Image</div>
-          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Auto-converts to optimized <strong>.webp</strong></div>
+          <div style="font-weight:bold; color:#fff; font-size:0.9rem;">Click, Drag &amp; Drop, or Paste (Ctrl+V)</div>
+          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Auto-encodes to ultra-compact WebP</div>
           <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
         </div>
-        <div id="file-preview-info" style="font-size:0.75rem; color:#4caf82; margin-top:8px; display:none;"></div>
+        <div id="savings-meter" style="font-size:0.75rem; color:#4caf82; margin-top:8px; font-family:'DM Mono',monospace; display:none;"></div>
       </div>
 
       <div style="display:flex; flex-direction:column; justify-content:space-between;">
         <div>
-          <label class="form-label" style="display:block; font-size:0.8rem; font-weight:bold; color:#c9a84c; margin-bottom:6px;">Target Aspect Ratio / Preset</label>
+          <label class="form-label" style="display:block; font-size:0.8rem; font-weight:bold; color:#c9a84c; margin-bottom:6px;">Target Preset / Dimensions</label>
           <select id="size-preset-select" class="form-select" style="width:100%; background:#181b2a; color:#fff; border:1px solid rgba(255,255,255,0.08); padding:10px; border-radius:8px;">
             <option value="square_600">🔲 1:1 Square (600x600) — Best for Rewards &amp; Nametags</option>
             <option value="banner_1200">🖼️ Email Banner (1200x630)</option>
-            <option value="thumb_300">📱 Compact Thumbnail (300x300)</option>
-            <option value="original">✨ Original Dimensions (Auto-WebP 85% Quality)</option>
+            <option value="thumb_300">📱 Thumbnail (300x300)</option>
+            <option value="original">✨ Original Aspect Ratio (WebP 85%)</option>
           </select>
         </div>
 
         <button id="upload-btn" onclick="processAndUploadWebP()" style="background:#c9a84c; color:#0d0e15; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; font-size:0.85rem; cursor:pointer; margin-top:14px;">
-          ⚡ Convert to WebP &amp; Generate Link
+          ⚡ Convert, Encrypt &amp; Generate Link
         </button>
       </div>
-
     </div>
   </div>
 
-  <!-- CDN Gallery Library with Search -->
+  <!-- CDN Gallery Library -->
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:#c9a84c;">🖼️ Stored CDN Media Library</div>
-      
       <div style="display:flex; gap:10px;">
         <input type="text" id="gallery-search" placeholder="🔍 Search media..." oninput="filterGallery()" style="background:#181b2a; border:1px solid rgba(255,255,255,0.08); color:#fff; padding:6px 12px; border-radius:6px; font-size:0.75rem; width:180px;">
-        <button onclick="loadGallery()" style="background:#181b2a; color:#c9a84c; border:1px solid rgba(201,168,76,0.3); padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:bold; cursor:pointer;">
-          ↻ Refresh
-        </button>
+        <button onclick="loadGallery()" style="background:#181b2a; color:#c9a84c; border:1px solid rgba(201,168,76,0.3); padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:bold; cursor:pointer;">↻ Refresh</button>
       </div>
     </div>
-    
     <div class="gallery-grid" id="gallery-container">
       <div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">Loading gallery...</div>
     </div>
@@ -134,22 +135,52 @@
 
 </div>
 
+<!-- Lightbox Modal -->
+<div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox()">
+  <img id="lightbox-img" class="lightbox-img" src="" alt="Full Preview">
+</div>
+
 <script>
 let selectedImageFile = null;
 let cachedGalleryItems = [];
 
+// Drag & Drop and Paste Handlers
+const dropZone = document.getElementById("drop-zone");
+['dragenter', 'dragover'].forEach(eName => {
+  dropZone.addEventListener(eName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+});
+['dragleave', 'drop'].forEach(eName => {
+  dropZone.addEventListener(eName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+});
+dropZone.addEventListener('drop', (e) => {
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    setFile(e.dataTransfer.files[0]);
+  }
+});
+window.addEventListener('paste', (e) => {
+  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+  for (let item of items) {
+    if (item.kind === 'file' && item.type.includes('image/')) {
+      setFile(item.getAsFile());
+      break;
+    }
+  }
+});
+
 function handleFileSelected(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+}
+
+function setFile(file) {
   selectedImageFile = file;
-  const info = document.getElementById("file-preview-info");
-  info.style.display = "block";
-  info.textContent = `✓ Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+  const meter = document.getElementById("savings-meter");
+  meter.style.display = "block";
+  meter.textContent = `✓ Selected: ${file.name || 'Pasted Image'} (${(file.size / 1024).toFixed(1)} KB)`;
 }
 
 async function processAndUploadWebP() {
   if (!selectedImageFile) {
-    if (typeof showToast === 'function') showToast("Please select an image file first.", "error");
+    if (typeof showToast === 'function') showToast("Please select or paste an image first.", "error");
     return;
   }
 
@@ -169,49 +200,47 @@ async function processAndUploadWebP() {
       let width = img.width;
       let height = img.height;
 
-      if (preset === "square_600") {
-        width = 600;
-        height = 600;
-      } else if (preset === "banner_1200") {
-        width = 1200;
-        height = 630;
-      } else if (preset === "thumb_300") {
-        width = 300;
-        height = 300;
-      }
+      if (preset === "square_600") { width = 600; height = 600; }
+      else if (preset === "banner_1200") { width = 1200; height = 630; }
+      else if (preset === "thumb_300") { width = 300; height = 300; }
 
       canvas.width = width;
       canvas.height = height;
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Client-side WebP compression (0.85 quality)
       const base64Data = canvas.toDataURL("image/webp", 0.85);
+      const originalKb = (selectedImageFile.size / 1024).toFixed(1);
+      const compressedKb = (Math.round((base64Data.length * 3 / 4)) / 1024).toFixed(1);
+      const savedPct = Math.max(0, Math.round((1 - (compressedKb / originalKb)) * 100));
 
       try {
-        const res = await fetch("/api/main", {
+        const res = await fetch("/api/cdn?action=upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            action: "upload_cdn_image",
-            filename: selectedImageFile.name,
+            action: "upload",
+            filename: selectedImageFile.name || "image.png",
             base64Data,
-            targetSize: preset
+            targetSize: preset,
+            originalKb,
+            compressedKb
           })
         });
 
         const data = await res.json();
         if (data.ok) {
-          if (typeof showToast === 'function') showToast("Encrypted WebP created! Direct URL copied to clipboard.");
+          document.getElementById("savings-meter").textContent = `⚡ Compressed: ${originalKb}KB → ${compressedKb}KB (${savedPct}% saved!)`;
+          if (typeof showToast === 'function') showToast("Direct link generated & copied to clipboard!");
           navigator.clipboard.writeText(data.direct_url).catch(() => {});
           loadGallery();
         } else {
           if (typeof showToast === 'function') showToast(`Upload issue: ${data.error}`, "error");
         }
       } catch (err) {
-        if (typeof showToast === 'function') showToast("Network error uploading image.", "error");
+        if (typeof showToast === 'function') showToast("Error connecting to CDN API.", "error");
       } finally {
         btn.disabled = false;
-        btn.textContent = "⚡ Convert to WebP & Generate Link";
+        btn.textContent = "⚡ Convert, Encrypt & Generate Link";
       }
     };
     img.src = event.target.result;
@@ -222,9 +251,8 @@ async function processAndUploadWebP() {
 async function loadGallery() {
   const container = document.getElementById("gallery-container");
   try {
-    const res = await fetch("/api/main?action=get_cdn_gallery");
+    const res = await fetch("/api/cdn?action=list");
     const data = await res.json();
-
     if (data.ok && data.gallery) {
       cachedGalleryItems = data.gallery;
       renderGalleryItems(cachedGalleryItems);
@@ -237,19 +265,18 @@ async function loadGallery() {
 function renderGalleryItems(items) {
   const container = document.getElementById("gallery-container");
   if (!items || items.length === 0) {
-    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">No images found in gallery.</div>';
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">No images stored yet.</div>';
     return;
   }
 
   container.innerHTML = items.map(item => `
     <div class="gallery-item">
-      <img src="${item.direct_url}" class="gallery-thumb" alt="${item.filename}" loading="lazy">
+      <img src="${item.direct_url}" class="gallery-thumb" alt="${item.filename}" onclick="openLightbox('${item.direct_url}')" loading="lazy">
       <div style="padding:10px; display:flex; flex-direction:column; gap:6px;">
         <div style="font-family:'DM Mono',monospace; font-size:0.68rem; color:#e8e6f0; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.filename}">
           🔒 ${item.filename}
         </div>
-        <div style="font-size:0.65rem; color:#8c90a4;">Preset: ${item.size_label || 'Optimized'}</div>
-        
+        <div style="font-size:0.65rem; color:#8c90a4;">Preset: ${item.size_label || 'WebP 85%'}</div>
         <button class="btn-action btn-gold-action" onclick="copyUrl('${item.direct_url}')">📋 Copy Direct Link</button>
         <button class="btn-action btn-drip-action" onclick="insertIntoDrips('${item.direct_url}')">💌 Insert into Drips</button>
         <button class="btn-action btn-del-action" onclick="deleteImage(${item.id})">🗑️ Remove</button>
@@ -260,10 +287,7 @@ function renderGalleryItems(items) {
 
 function filterGallery() {
   const q = document.getElementById("gallery-search").value.toLowerCase();
-  const filtered = cachedGalleryItems.filter(i => 
-    (i.filename || '').toLowerCase().includes(q) || 
-    (i.size_label || '').toLowerCase().includes(q)
-  );
+  const filtered = cachedGalleryItems.filter(i => (i.filename || '').toLowerCase().includes(q) || (i.size_label || '').toLowerCase().includes(q));
   renderGalleryItems(filtered);
 }
 
@@ -276,33 +300,38 @@ function copyUrl(url) {
 function insertIntoDrips(url) {
   sessionStorage.setItem("tcrp_inserted_image_url", url);
   if (typeof showToast === 'function') showToast("✓ Direct link saved! Opening Drip Editor...");
-  setTimeout(() => {
-    window.location.href = "/drips.html";
-  }, 600);
+  setTimeout(() => { window.location.href = "/drips.html"; }, 600);
+}
+
+function openLightbox(url) {
+  document.getElementById("lightbox-img").src = url;
+  document.getElementById("lightbox-modal").style.display = "flex";
+}
+
+function closeLightbox() {
+  document.getElementById("lightbox-modal").style.display = "none";
 }
 
 async function deleteImage(id) {
-  if (!confirm("Are you sure you want to remove this asset from the gallery index?")) return;
+  if (!confirm("Remove this asset from the CDN gallery index?")) return;
   try {
-    const res = await fetch("/api/main", {
+    const res = await fetch("/api/cdn?action=delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete_cdn_image", id })
+      body: JSON.stringify({ action: "delete", id })
     });
     const data = await res.json();
     if (data.ok) {
-      if (typeof showToast === 'function') showToast("Asset purged from gallery index.");
+      if (typeof showToast === 'function') showToast("Asset purged.");
       loadGallery();
     }
   } catch(e) {
-    if (typeof showToast === 'function') showToast("Failed to delete asset.", "error");
+    if (typeof showToast === 'function') showToast("Failed to delete.", "error");
   }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  if (typeof initAppLayout === 'function') {
-    initAppLayout('gallery', 'CDN Media Gallery');
-  }
+  if (typeof initAppLayout === 'function') initAppLayout('gallery', 'CDN Media Gallery');
   loadGallery();
 });
 </script>

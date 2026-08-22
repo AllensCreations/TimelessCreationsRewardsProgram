@@ -8,40 +8,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // If a file is requested via GET /api/cdn?file=tcrp_xxx.webp
-  if (req.method === 'GET' && req.query.file) {
-    const filename = req.query.file.replace(/[^a-zA-Z0-9_.-]/g, '');
-    try {
-      const repoOwner = process.env.GITHUB_OWNER || 'salviejo';
-      const repoName = process.env.GITHUB_REPO || 'TimelessCreationsRewardsProgram';
-
-      const ghUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/public/cdn/${filename}`;
-      const ghRes = await fetch(ghUrl, {
-        headers: {
-          'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'TCRP-Media-Hub'
-        }
-      });
-
-      if (!ghRes.ok) {
-        return res.status(404).json({ ok: false, error: 'Image not found or GitHub token invalid.' });
-      }
-
-      const fileData = await ghRes.json();
-      const imgBuffer = Buffer.from(fileData.content, 'base64');
-
-      res.setHeader('Content-Type', 'image/webp');
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      return res.send(imgBuffer);
-    } catch (err) {
-      return res.status(500).json({ ok: false, error: err.message });
-    }
-  }
-
   const action = req.query.action || req.body?.action || (req.method === 'POST' ? 'upload' : 'list');
 
-  // Ensure DB table exists
+  // Initialize CDN gallery index table
   try {
     await runSql(`
       CREATE TABLE IF NOT EXISTS cdn_gallery (
@@ -51,6 +20,7 @@ export default async function handler(req, res) {
         size_label TEXT,
         original_kb REAL DEFAULT 0,
         compressed_kb REAL DEFAULT 0,
+        delete_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -58,7 +28,9 @@ export default async function handler(req, res) {
     console.error('CDN table init error:', err);
   }
 
-  // Upload action
+  // ----------------------------------------------------
+  // ACTION: UPLOAD & HOST VIA FREE IMGBB API
+  // ----------------------------------------------------
   if (action === 'upload' || action === 'upload_cdn_image') {
     try {
       const { filename, base64Data, targetSize, originalKb, compressedKb } = req.body || {};
@@ -66,46 +38,54 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: 'Missing base64 image data.' });
       }
 
-      const hash = crypto.createHash('sha256').update((filename || 'img') + Date.now() + Math.random()).digest('hex').slice(0, 16);
-      const uniqueFileName = `tcrp_${hash}.webp`;
-
-      const repoOwner = process.env.GITHUB_OWNER || 'salviejo';
-      const repoName = process.env.GITHUB_REPO || 'TimelessCreationsRewardsProgram';
-      const branch = 'main';
-
-      if (process.env.GITHUB_TOKEN) {
-        const ghUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/public/cdn/${uniqueFileName}`;
-        const base64Content = base64Data.replace(/^data:image\/\w+;base64,/, '');
-
-        await fetch(ghUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'TCRP-Media-Hub'
-          },
-          body: JSON.stringify({
-            message: `cdn: upload encrypted ${uniqueFileName}`,
-            content: base64Content,
-            branch
-          })
+      // Default to process.env.IMGBB_API_KEY or fallback
+      const imgbbKey = process.env.IMGBB_API_KEY;
+      if (!imgbbKey) {
+        return res.status(500).json({ 
+          ok: false, 
+          error: 'IMGBB_API_KEY is not set in your environment variables (.env / Vercel).' 
         });
       }
 
-      // Generate direct private-compatible URL via your own API route
-      const protocol = req.headers['x-forwarded-proto'] || 'https';
-      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
-      const directUrl = `${protocol}://${host}/api/cdn?file=${uniqueFileName}`;
+      // Clean raw base64 string
+      const cleanBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+
+      // Generate encrypted random display name
+      const hash = crypto.createHash('sha256').update((filename || 'img') + Date.now() + Math.random()).digest('hex').slice(0, 16);
+      const uniqueFileName = `tcrp_${hash}`;
+
+      // Upload to ImgBB REST API
+      const formData = new URLSearchParams();
+      formData.append('image', cleanBase64);
+      formData.append('name', uniqueFileName);
+
+      const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const imgbbData = await imgbbRes.json();
+
+      if (!imgbbData.success) {
+        return res.status(500).json({ 
+          ok: false, 
+          error: imgbbData.error?.message || 'ImgBB upload rejected.' 
+        });
+      }
+
+      // Extract permanent direct public URL
+      const directUrl = imgbbData.data.url;
+      const deleteUrl = imgbbData.data.delete_url || '';
 
       const insertRes = await runSql(
-        'INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb) VALUES (?, ?, ?, ?, ?) RETURNING id',
-        [uniqueFileName, directUrl, targetSize || 'WebP 85%', originalKb || 0, compressedKb || 0]
+        'INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb, delete_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+        [uniqueFileName + '.webp', directUrl, targetSize || 'WebP 85%', originalKb || 0, compressedKb || 0, deleteUrl]
       );
 
       return res.status(200).json({
         ok: true,
         id: insertRes[0]?.id,
-        filename: uniqueFileName,
+        filename: uniqueFileName + '.webp',
         direct_url: directUrl,
         size_label: targetSize || 'WebP 85%'
       });
@@ -114,7 +94,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // List action
+  // ----------------------------------------------------
+  // ACTION: LIST STORED MEDIA GALLERY
+  // ----------------------------------------------------
   if (action === 'list' || action === 'get_cdn_gallery') {
     try {
       const gallery = await runSql('SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 100');
@@ -124,7 +106,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // Delete action
+  // ----------------------------------------------------
+  // ACTION: REMOVE ASSET FROM GALLERY
+  // ----------------------------------------------------
   if (action === 'delete' || action === 'delete_cdn_image') {
     try {
       const { id } = req.body || {};

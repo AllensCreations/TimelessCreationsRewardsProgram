@@ -28,9 +28,7 @@ export default async function handler(req, res) {
     console.error('Turso CDN table init error:', err);
   }
 
-  // ----------------------------------------------------
-  // ACTION: UPLOAD TO IMGBB & PERSIST IN TURSO
-  // ----------------------------------------------------
+  // ACTION: UPLOAD
   if (action === 'upload' || action === 'upload_cdn_image') {
     try {
       const { filename, base64Data, targetSize, originalKb, compressedKb } = req.body || {};
@@ -42,7 +40,7 @@ export default async function handler(req, res) {
       if (!imgbbKey) {
         return res.status(500).json({ 
           ok: false, 
-          error: 'IMGBB_API_KEY is not configured in environment variables (.env / Vercel).' 
+          error: 'IMGBB_API_KEY is not configured in .env / Vercel.' 
         });
       }
 
@@ -56,6 +54,10 @@ export default async function handler(req, res) {
 
       const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
         method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json'
+        },
         body: formData
       });
 
@@ -72,7 +74,6 @@ export default async function handler(req, res) {
       const deleteUrl = imgbbData.data.delete_url || '';
       const displayFileName = `${uniqueFileName}.webp`;
 
-      // Convert KB strings to clean rounded integers for Turso compatibility
       const origKbInt = Math.round(Number(originalKb) || 0);
       const compKbInt = Math.round(Number(compressedKb) || 0);
 
@@ -100,33 +101,29 @@ export default async function handler(req, res) {
     }
   }
 
-  // ----------------------------------------------------
-  // ACTION: RETRIEVE STORED GALLERY FROM TURSO
-  // ----------------------------------------------------
+  // ACTION: LIST
   if (action === 'list' || action === 'get_cdn_gallery') {
     try {
       const rows = await runSql('SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 200');
       const gallery = Array.isArray(rows) ? rows : (rows?.rows || []);
       return res.status(200).json({ ok: true, gallery });
     } catch (err) {
-      return res.status(500).json({ ok: false, error: 'Failed to fetch gallery from Turso: ' + err.message });
+      return res.status(500).json({ ok: false, error: 'Failed to fetch gallery: ' + err.message });
     }
   }
 
-  // ----------------------------------------------------
-  // ACTION: PURGE ASSET FROM TURSO
-  // ----------------------------------------------------
+  // ACTION: DELETE
   if (action === 'delete' || action === 'delete_cdn_image') {
     try {
       const { id } = req.body || {};
-      if (!id) return res.status(400).json({ ok: false, error: 'Missing image ID to delete.' });
+      if (!id) return res.status(400).json({ ok: false, error: 'Missing image ID.' });
 
       await runSql('DELETE FROM cdn_gallery WHERE id = ?', [Math.round(Number(id))]);
-      return res.status(200).json({ ok: true, message: 'Asset removed from Turso gallery store.' });
+      return res.status(200).json({ ok: true, message: 'Asset removed from gallery.' });
     } catch (err) {
       return res.status(500).json({ ok: false, error: 'Delete failed: ' + err.message });
     }
   }
 
-  return res.status(400).json({ ok: false, error: `Invalid action '${action}'.` });
+  return res.status(400).json({ ok: false, error: 'Invalid action.' });
 }

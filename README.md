@@ -64,6 +64,10 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 ---
 
 ## 📝 Changelog
+### [2026-08-23] - Rate Limit Anti-Spam Mute Gate & Cooldown Countdown
+- Added exact UTC midnight cooldown time calculation to rate limit notifications.
+- Added `warned` flag in `bot_daily_views` table.
+- Added automated silence gate to ignore repetitive dashboard requests after initial warning dispatch.
 
 ### [2026-08-22] - Unified Single-Button Carousel & README Foundation
 - Migrated primary architecture blueprint to `README.md`.

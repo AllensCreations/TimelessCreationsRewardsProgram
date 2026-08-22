@@ -104,7 +104,9 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
   // 2. DASHBOARD TRIGGER (Sends Dashboard + Invite, then Reward Catalog Carousel)
   const rateCheck = await checkDashboardRateLimit(senderId);
   if (!rateCheck.allowed) {
-    await sendFbMessage(senderId, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
+    if (!rateCheck.shouldMute && rateCheck.message) {
+      await sendFbMessage(senderId, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
+    }
     return;
   }
 

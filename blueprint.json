@@ -24,7 +24,8 @@
       "invoices": "id, invoice_number, missionary_id, total_amount, points_deducted, cash_paid, cashier, created_at",
       "drip_templates": "month_number (1-24), title, subject, highlight_image_url, body_html, quote, scriptural_ref",
       "drip_dispatch_logs": "id, missionary_id, month_dispatched, email_to, brevo_message_id, status, created_at",
-      "system_logs": "id, log_level (INFO/WARN/ERROR), action_type, message, metadata_json, created_at"
+      "system_logs": "id, log_level (INFO/WARN/ERROR), action_type, message, metadata_json, created_at",
+      "product_catalog": "id integer PRIMARY KEY AUTOINCREMENT, name text UNIQUE, price real DEFAULT 0, image_url text, type text DEFAULT 'reward'"
     }
   },
   "handlers_and_action_registry": {
@@ -174,5 +175,10 @@
   "webhook_delivery_mode": {
     "serverless_execution": "Strictly awaits Graph API message delivery before returning HTTP 200 to prevent Vercel runtime freezing",
     "messaging_type": "RESPONSE"
+  },
+  "messenger_bot_experience": {
+    "quick_reply": "Single sticky 📊 Dashboard quick reply chip",
+    "dashboard_flow": "1. Sends unified Dashboard Stats + Copyable Companion Pitch; 2. Sends 1:1 Square Image Product Carousel",
+    "catalog_source": "SELECT * FROM product_catalog WHERE type = 'reward' ORDER BY price ASC LIMIT 10"
   }
 }

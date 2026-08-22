@@ -44,14 +44,12 @@ export default async function handler(req, res) {
                                  webhookEvent.message?.referral?.ref || 
                                  '';
 
-            // Must AWAIT execution in serverless so Vercel does not terminate before Graph API send finishes
             await executeBotAction(senderId, rawText, postbackPayload, referralCode, pageToken);
           }
         }
       } catch (err) {
-        console.error('Error handling webhook events:', err);
+        console.error('Webhook execution error:', err);
       }
-
       return res.status(200).send('EVENT_RECEIVED');
     }
     return res.status(404).send('Not Found');
@@ -61,15 +59,11 @@ export default async function handler(req, res) {
 }
 
 export async function executeBotAction(senderId, text, postbackPayload, referralCode, token) {
-  if (!token) {
-    console.error('❌ Missing PAGE_ACCESS_TOKEN');
-    return;
-  }
+  if (!token) return console.error('❌ Missing PAGE_ACCESS_TOKEN');
 
   const cleanRef = (referralCode || '').trim().toUpperCase();
-  const lower = (text || '').toLowerCase();
 
-  // 1. Referral Link Handling
+  // 1. Deep Link Referral Credit
   if (cleanRef) {
     try {
       const inviter = (await runSql("SELECT * FROM missionaries WHERE referral_code = ? LIMIT 1", [cleanRef]))[0];
@@ -83,13 +77,13 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
             [`Missionary (${senderId.slice(-4)})`, senderId, newCode]
           );
 
-          const welcomeMsg = `🎉 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗧𝗖𝗥𝗣!\n\nYou joined using ${inviter.name}'s referral link!\n\n🎁 You both received +1 Free Reward Point!\n\nTap "📊 Dashboard" below to see your balance or "🌟 View Catalog" to browse missionary rewards.`;
+          const welcomeMsg = `🎉 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗧𝗖𝗥𝗣!\n\nYou joined using ${inviter.name}'s referral link!\n\n🎁 You both received +1 Free Reward Point!\n\nTap "📊 Dashboard" below to view your points and explore rewards.`;
           await sendFbMessage(senderId, { text: welcomeMsg, quick_replies: FIXED_QUICK_REPLIES }, token);
           return;
         }
       }
     } catch (e) {
-      console.error('Referral processing error:', e);
+      console.error('Referral error:', e);
     }
   }
 
@@ -99,78 +93,45 @@ export async function executeBotAction(senderId, text, postbackPayload, referral
   const refCode = missionary?.referral_code || "JOIN";
   const refLink = `https://m.me/TimelessCreationsRP?ref=${refCode}`;
 
-  // 2. DASHBOARD
-  if (postbackPayload === "ACTION_DASHBOARD" || lower.includes("dashboard") || lower.includes("points") || lower.includes("balance")) {
-    const rateCheck = await checkDashboardRateLimit(senderId);
-    if (!rateCheck.allowed) {
-      await sendFbMessage(senderId, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
-      return;
-    }
+  // Query product_catalog table where type = 'reward'
+  let rewardProducts = [];
+  try {
+    rewardProducts = await runSql("SELECT id, name, price, image_url, type FROM product_catalog WHERE type = 'reward' ORDER BY price ASC LIMIT 10");
+  } catch (err) {
+    console.warn("product_catalog table query fallback:", err.message);
+  }
 
-    const payload = buildDashboardPayload(missionary || { name: "Missionary", email: "Not linked yet", points }, refLink);
-    await sendFbMessage(senderId, { text: payload.dashboardText, quick_replies: FIXED_QUICK_REPLIES }, token);
+  // 2. DASHBOARD TRIGGER (Sends Dashboard + Invite, then Reward Catalog Carousel)
+  const rateCheck = await checkDashboardRateLimit(senderId);
+  if (!rateCheck.allowed) {
+    await sendFbMessage(senderId, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
     return;
   }
 
-  // 3. CATALOG
-  if (postbackPayload === "ACTION_CATALOG" || lower.includes("catalog") || lower.includes("rewards") || lower.includes("shop")) {
-    let products = await runSql("SELECT * FROM products WHERE is_active = 1 ORDER BY price ASC LIMIT 10");
-    if (!products || products.length === 0) {
-      products = [
-        { id: 1, name: "Engraved Nametag", price: 2, image_url: "https://i.ibb.co/68vN0kC/tcrp-default.webp" },
-        { id: 2, name: "Standard POS Missionary Kit", price: 5, image_url: "https://i.ibb.co/68vN0kC/tcrp-default.webp" }
-      ];
-    }
-    const carouselPayload = await buildCatalogCarousel(points, products);
-    await sendFbMessage(senderId, carouselPayload, token);
-    return;
-  }
+  // Part 1: Text message containing Dashboard Stats + Copy-and-Send Invite
+  const dashPayload = buildDashboardPayload(missionary || { name: "Missionary", email: "Not linked yet", points }, refLink);
+  await sendFbMessage(senderId, { text: dashPayload.text }, token);
 
-  // 4. INVITE
-  if (postbackPayload === "ACTION_INVITE" || lower.includes("invite") || lower.includes("refer")) {
-    const payload = buildDashboardPayload(missionary || { name: "Missionary", points }, refLink);
-    await sendFbMessage(senderId, { text: payload.invitePromoText, quick_replies: FIXED_QUICK_REPLIES }, token);
-    return;
-  }
-
-  // 5. GOAL VIEW
-  if (postbackPayload.startsWith("VIEW_GOAL_")) {
-    const goalText = `⭐ 𝗥𝗘𝗪𝗔𝗥𝗗 𝗚𝗢𝗔𝗟 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n\nYou need more points to redeem this item.\n\n💡 Share your 1-tap invite link with a companion or friend. When they join, you BOTH earn +1 Point instantly!\n\n• 🔗 𝗬𝗼𝘂𝗿 𝗟𝗶𝗻𝗸:\n${refLink}`;
-    await sendFbMessage(senderId, { text: goalText, quick_replies: FIXED_QUICK_REPLIES }, token);
-    return;
-  }
-
-  // DEFAULT FALLBACK
-  const defaultReply = `✨ Welcome to 𝗧𝗶𝗺𝗲𝗹𝗲𝘀𝘀 𝗖𝗿𝗲𝗮𝘁𝗶𝗼𝗻𝘀 𝗥𝗲𝘄𝗮𝗿𝗱𝘀 𝗣𝗿𝗼𝗴𝗿𝗮𝗺!
-
-• Tap "📊 Dashboard" to check your balance
-• Tap "🌟 View Catalog" to browse & claim rewards
-• Tap "🔗 Invite a Friend" to get your referral link`;
-
-  await sendFbMessage(senderId, { text: defaultReply, quick_replies: FIXED_QUICK_REPLIES }, token);
+  // Part 2: 1:1 Square Catalog Carousel with 1 Action Button per card
+  const carouselPayload = await buildCatalogCarousel(points, rewardProducts);
+  await sendFbMessage(senderId, carouselPayload, token);
 }
 
 async function sendFbMessage(recipientId, messagePayload, token) {
   const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${token}`;
-  const body = {
-    messaging_type: "RESPONSE",
-    recipient: { id: recipientId },
-    message: messagePayload
-  };
-
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        messaging_type: "RESPONSE",
+        recipient: { id: recipientId },
+        message: messagePayload
+      })
     });
     const result = await res.json();
-    if (result.error) {
-      console.error('❌ Facebook API Error:', JSON.stringify(result.error));
-    } else {
-      console.log(`✅ [MESSAGE DELIVERED] Recipient: ${recipientId}`);
-    }
+    if (result.error) console.error('Facebook Send API Error:', result.error);
   } catch (err) {
-    console.error('❌ Network error sending to Facebook:', err.message);
+    console.error('Facebook network failure:', err.message);
   }
 }

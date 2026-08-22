@@ -10,6 +10,7 @@ const suites = [
   { name: "Messenger Conversation & Reply Suite", cmd: "node test-all-replies.js" },
   { name: "Live Network & Connection Ping Suite", cmd: "node test-connections.js" },
   { name: "HTML Views & DOM Integrity Suite", cmd: "node test-html.js" }
+  { name: "New User Onboarding & Flow Suite", cmd: "node test-new-user-flow.js" }
 ];
 
 let totalPassedSuites = 0;

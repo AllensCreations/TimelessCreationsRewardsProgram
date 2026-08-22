@@ -105,3 +105,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 - Activated dynamic monthly activity calendar heat map in index.html.
 - Upgraded logs.html with compact row formatting and lifetime Brevo aggregates (Total Sent, Sent Today, Open %, Delivery %, Spam %).
 - Added test-master.js enforcing a strict zero-failure pre-commit gate.
+
+### [2026-08-23] - New User Onboarding & End-to-End Referral Flow Tester
+- Created test-new-user-flow.js to simulate cold joins, deep-link referral credit, and separate message dispatches.
+- Integrated new user flow test suite into test-master.js zero-failure pre-commit gate.

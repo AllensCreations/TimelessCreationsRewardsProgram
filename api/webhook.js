@@ -1,4 +1,5 @@
 import { handleBotMessage } from '../lib/botHandler.js';
+import { buildDashboardPayload, checkDashboardRateLimit, buildCatalogCarousel } from "../lib/bot.js";
 
 export default async function handler(req, res) {
   // Meta Webhook Verification Handshake

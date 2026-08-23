@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Settings & Control Room | Timeless Creations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
   <style>
     body { font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e6f0; margin: 0; }
@@ -17,6 +17,37 @@
       margin-bottom: 24px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.72rem; color: #c9a84c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold; }
+    .form-input, .form-select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 14px;
+      background: #181b2a;
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+    }
+    .form-input:focus, .form-select:focus { outline: none; border-color: #c9a84c; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-gold { background: #c9a84c; color: #0d0e15; }
+    .btn-dark { background: #1c1f2e; color: #e8e6f0; border: 1px solid rgba(201,168,76,0.3); }
+    .btn:hover { opacity: 0.9; }
+
     .console-box {
       background: #0d0d14;
       border: 1px solid rgba(255,255,255,0.08);
@@ -93,7 +124,7 @@
       pointer-events: none;
     }
 
-    /* Moving Animations: Round 2 (Medium) */
+    /* Moving Animations */
     .move-float-1 { animation: floatAround1 2.2s infinite ease-in-out alternate; }
     .move-float-2 { animation: floatAround2 2.6s infinite ease-in-out alternate; }
     .move-float-3 { animation: floatAround3 2.4s infinite ease-in-out alternate; }
@@ -111,7 +142,6 @@
       100% { transform: translateY(25px) translateX(-12px); }
     }
 
-    /* Moving Animations: Round 3 (Hard) */
     .move-fast-1 { animation: fastBounce1 1.2s infinite ease-in-out alternate; }
     .move-fast-2 { animation: fastBounce2 0.9s infinite ease-in-out alternate; }
     .move-fast-3 { animation: fastBounce3 1.1s infinite ease-in-out alternate; }
@@ -132,26 +162,9 @@
       100% { transform: translateY(35px) translateX(-25px); }
     }
 
-    /* Progress Badges */
-    .progress-bar-wrap {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .progress-dot {
-      width: 32px;
-      height: 6px;
-      border-radius: 99px;
-      background: #181b2a;
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: all 0.3s;
-    }
-    .progress-dot.active {
-      background: #c9a84c;
-      border-color: #c9a84c;
-      box-shadow: 0 0 8px rgba(201,168,76,0.6);
-    }
+    .progress-bar-wrap { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    .progress-dot { width: 32px; height: 6px; border-radius: 99px; background: #181b2a; border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s; }
+    .progress-dot.active { background: #c9a84c; border-color: #c9a84c; box-shadow: 0 0 8px rgba(201,168,76,0.6); }
 
     @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     @keyframes shake {
@@ -174,6 +187,40 @@
       <span style="color:#c9a84c;">🔒 Protected by 3-Round Moving Face CAPTCHA (Easy → Hard).</span>
     </div>
     <button id="power-toggle-btn" class="btn btn-dark" onclick="startPowerCaptcha()">⏳ Loading Status...</button>
+  </div>
+
+  <!-- Dedicated jsDelivr & GitHub CDN Storage Configuration Card -->
+  <div class="card" style="border-color: rgba(201,168,76,0.3);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <div>
+        <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:#c9a84c;">⚡ jsDelivr & GitHub CDN Setup</div>
+        <div style="font-size:0.75rem; color:#8c90a4; margin-top:2px;">Images uploaded in Gallery are compressed to 1:1 WebP and served via jsDelivr.</div>
+      </div>
+      <button class="btn btn-gold" onclick="saveCdnSettings()">💾 Save CDN Variables</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+      <div class="form-group">
+        <label class="form-label">GitHub Owner / Org</label>
+        <input id="set-cdn-owner" class="form-input" placeholder="e.g. AllensCreations">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Repository</label>
+        <input id="set-cdn-repo" class="form-input" placeholder="e.g. CDN-Assets">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Branch</label>
+        <input id="set-cdn-branch" class="form-input" value="main" placeholder="main">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Upload Path Directory</label>
+        <input id="set-cdn-path" class="form-input" value="assets/rewards" placeholder="assets/rewards">
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label class="form-label">GitHub Personal Access Token (repo scope)</label>
+        <input id="set-cdn-token" type="password" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      </div>
+    </div>
   </div>
 
   <!-- Live Brevo Email Tester Card -->
@@ -200,9 +247,7 @@
       </div>
       <div class="form-group" id="month-picker-wrap">
         <label class="form-label">Select Drip Month</label>
-        <select id="test-drip-month" class="form-select">
-          <!-- Populated dynamically 1-24 -->
-        </select>
+        <select id="test-drip-month" class="form-select"></select>
       </div>
     </div>
     
@@ -303,6 +348,49 @@ async function loadSettings() {
   } catch(e) {
     btn.className = "btn btn-dark";
     btn.textContent = "⚠️ Disconnected";
+  }
+
+  // Load CDN Settings from system_config
+  loadCdnSettings();
+}
+
+async function loadCdnSettings() {
+  try {
+    const res = await fetch("/api/main?action=get_cdn_config");
+    const d = await res.json();
+    if (d.ok && d.config) {
+      if (document.getElementById("set-cdn-owner")) document.getElementById("set-cdn-owner").value = d.config.cdn_github_owner || "";
+      if (document.getElementById("set-cdn-repo")) document.getElementById("set-cdn-repo").value = d.config.cdn_github_repo || "";
+      if (document.getElementById("set-cdn-branch")) document.getElementById("set-cdn-branch").value = d.config.cdn_github_branch || "main";
+      if (document.getElementById("set-cdn-path")) document.getElementById("set-cdn-path").value = d.config.cdn_upload_path || "assets/rewards";
+      if (document.getElementById("set-cdn-token")) document.getElementById("set-cdn-token").value = d.config.cdn_github_token || "";
+    }
+  } catch (_) {}
+}
+
+async function saveCdnSettings() {
+  const payload = {
+    cdn_github_owner: document.getElementById("set-cdn-owner").value.trim(),
+    cdn_github_repo: document.getElementById("set-cdn-repo").value.trim(),
+    cdn_github_branch: document.getElementById("set-cdn-branch").value.trim() || "main",
+    cdn_upload_path: document.getElementById("set-cdn-path").value.trim() || "assets/rewards",
+    cdn_github_token: document.getElementById("set-cdn-token").value.trim()
+  };
+
+  try {
+    const res = await fetch("/api/main?action=save_cdn_config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (d.ok) {
+      if (typeof showToast === 'function') showToast("jsDelivr & GitHub variables saved!");
+    } else {
+      if (typeof showToast === 'function') showToast("Failed to save CDN variables", "error");
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast("Error saving: " + err.message, "error");
   }
 }
 

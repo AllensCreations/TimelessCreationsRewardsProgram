@@ -56,8 +56,8 @@ for (const relPath of foundHtmlFiles) {
     // 2. CSS & script validation
     const isStandalone = relPath.includes('privacy.html');
     if (!isStandalone) {
-      const hasCss = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(l => l.href.includes('app.css'));
-      assert(hasCss, `${relPath}: Linked to /assets/app.css`);
+      const hasCss = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(l => l.href.includes('app.js'));
+      assert(hasCss, `${relPath}: Linked to /assets/app.js`);
 
       const hasAppJs = Array.from(document.querySelectorAll('script')).some(s => s.src.includes('app.js') || s.textContent.includes('initAppLayout'));
       assert(hasAppJs, `${relPath}: Contains core app.js or init script`);

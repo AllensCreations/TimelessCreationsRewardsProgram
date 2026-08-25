@@ -1,7 +1,9 @@
 import { executeBotAction } from "./bot.js";
 import 'dotenv/config';
 import { runSql } from '../lib/db.js';
-import { sendDripEmail, sendOTPEmail, sendReceiptEmail } from '../lib/mailer.js';
+import { sendDripEmail, sendOTPEmail, sendReceiptEmail, renderMonthlyDripTemplate } from '../lib/mailer.js';
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,12 +26,13 @@ export default async function handler(req, res) {
 
   try {
     // ----------------------------------------------------
-    // SYSTEM HEALTH & POWER STATE
+    // SYSTEM HEALTH & MASTER POWER SWITCH
     // ----------------------------------------------------
-    if (action === "health_check") {
+    if (action === "health_check" || action === "ping") {
       const setting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
       const status = (setting?.value || "ONLINE").toUpperCase();
-      return res.status(200).json({ ok: true, status });
+      const isOnline = status === "ONLINE";
+      return res.status(200).json({ ok: isOnline, status, power_state: status });
     }
 
     if (action === "toggle_power") {
@@ -43,6 +46,47 @@ export default async function handler(req, res) {
 
     if (action === "force_cron") {
       return res.status(200).json({ ok: true, message: "Scheduled drip check executed." });
+    }
+
+    // ----------------------------------------------------
+    // JSDELIVR & CDN CONFIGURATION (Turso system_config)
+    // ----------------------------------------------------
+    if (action === "get_cdn_config") {
+      const rows = await runSql("SELECT key, value FROM system_config WHERE key IN ('cdn_github_owner', 'cdn_github_repo', 'cdn_github_branch', 'cdn_github_token', 'cdn_upload_path')");
+      const config = {};
+      (rows || []).forEach(r => { config[r.key] = r.value; });
+      return res.status(200).json({ ok: true, config });
+    }
+
+    if (action === "save_cdn_config") {
+      const { cdn_github_owner, cdn_github_repo, cdn_github_branch, cdn_github_token, cdn_upload_path } = bodyData;
+      const pairs = [
+        ["cdn_github_owner", cdn_github_owner || ""],
+        ["cdn_github_repo", cdn_github_repo || ""],
+        ["cdn_github_branch", cdn_github_branch || "main"],
+        ["cdn_upload_path", cdn_upload_path || "assets/rewards"]
+      ];
+      if (cdn_github_token && cdn_github_token.trim() !== "") {
+        pairs.push(["cdn_github_token", cdn_github_token.trim()]);
+      }
+      for (const [k, v] of pairs) {
+        await runSql("INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", [k, v]);
+      }
+      return res.status(200).json({ ok: true, message: "CDN configuration saved successfully" });
+    }
+
+    if (action === "get_gallery_items") {
+      const rows = await runSql("SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 50");
+      return res.status(200).json({ ok: true, items: rows || [] });
+    }
+
+    if (action === "save_gallery_item") {
+      const { filename, direct_url, size_label, original_kb, compressed_kb } = bodyData;
+      await runSql(
+        "INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb) VALUES (?, ?, ?, ?, ?)",
+        [filename, direct_url, size_label || "1:1 WebP", original_kb || 0, compressed_kb || 0]
+      );
+      return res.status(200).json({ ok: true });
     }
 
     // ----------------------------------------------------
@@ -89,7 +133,7 @@ export default async function handler(req, res) {
     }
 
     // ----------------------------------------------------
-    // ROSTER & DATA MUTATIONS (DELETE / UPDATE / FETCH)
+    // ROSTER & DATA MUTATIONS
     // ----------------------------------------------------
     if (action === "get_missionaries") {
       const rows = await runSql("SELECT * FROM missionaries ORDER BY is_prelisted DESC, name ASC");
@@ -250,7 +294,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, products: products || [] });
     }
 
-    if (action === "sync_catalog" || action === "synch catalog" || action === "save_products") {
+    if (action === "sync_catalog" || action === "save_products") {
       const products = bodyData.products || req.body?.products || [];
       const catalogType = bodyData.type || req.body?.type || "reward";
 
@@ -282,11 +326,27 @@ export default async function handler(req, res) {
 
     if (action === "get_drips") {
       const drips = await runSql("SELECT * FROM drip_messages ORDER BY month ASC");
-      return res.status(200).json({ ok: true, drips: drips || [] });
+      // Merge 2nd product if saved in system_config
+      const configRows = await runSql("SELECT key, value FROM system_config WHERE key LIKE 'drip_%_highlight_2'");
+      const highlight2Map = {};
+      (configRows || []).forEach(r => {
+        try { highlight2Map[r.key] = JSON.parse(r.value); } catch(_) {}
+      });
+
+      const mergedDrips = (drips || []).map(d => {
+        const extra = highlight2Map[`drip_${d.month}_highlight_2`];
+        return {
+          ...d,
+          highlight_label_2: extra?.label || "",
+          highlight_img_2: extra?.img || ""
+        };
+      });
+
+      return res.status(200).json({ ok: true, drips: mergedDrips });
     }
 
     if (action === "save_drip") {
-      const { month, theme, scripture, message, highlight_img, highlight_label } = bodyData;
+      const { month, theme, scripture, message, highlight_img, highlight_label, highlight_img_2, highlight_label_2 } = bodyData;
       await runSql(`
         INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -297,6 +357,15 @@ export default async function handler(req, res) {
           highlight_img = excluded.highlight_img,
           highlight_label = excluded.highlight_label
       `, [month, theme, scripture, message, highlight_img || '', highlight_label || '']);
+
+      // Persist 2nd Highlight into system_config without touching schema
+      if (highlight_label_2) {
+        const val = JSON.stringify({ label: highlight_label_2, img: highlight_img_2 || "" });
+        await runSql("INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", [`drip_${month}_highlight_2`, val]);
+      } else {
+        await runSql("DELETE FROM system_config WHERE key = ?", [`drip_${month}_highlight_2`]);
+      }
+
       return res.status(200).json({ ok: true });
     }
 

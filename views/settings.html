@@ -334,7 +334,7 @@ async function loadSettings() {
   if (!btn) return;
 
   try {
-    const res = await fetch("/api/main?action=ping");
+    const res = await fetch("/api/main?action=health_check");
     const data = await res.json();
     if (data.ok) {
       currentPowerState = "online";

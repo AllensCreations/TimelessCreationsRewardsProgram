@@ -228,7 +228,7 @@
     <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:#c9a84c; margin-bottom:6px;">✉️ Live Brevo Email Tester (Authentic Production Templates)</div>
     <div style="font-size:0.75rem; color:#8c90a4; margin-bottom:14px; line-height:1.5;">
       Sender Address: <strong>noreply.timelesscreations.ph@gmail.com</strong><br>
-      Dispatches live production-ready HTML templates with full asset styling.
+      Strictly uses your production files from <strong>templates/monthly-drip.html</strong>, <strong>templates/otp-email.html</strong>, and <strong>templates/receipt-email.html</strong>.
     </div>
     
     <div class="form-group">
@@ -240,9 +240,9 @@
       <div class="form-group">
         <label class="form-label">Select Production Template</label>
         <select id="test-template-select" class="form-select" onchange="toggleMonthPicker(this.value)">
-          <option value="drip">💌 24-Month Drip Email (Full Editorial &amp; Essentials)</option>
-          <option value="otp">🔐 6-Digit OTP Security Code Template</option>
-          <option value="receipt">🧾 TCRP POS Redemption Receipt Card</option>
+          <option value="drip">💌 24-Month Drip Email (templates/monthly-drip.html)</option>
+          <option value="otp">🔐 6-Digit OTP Code (templates/otp-email.html)</option>
+          <option value="receipt">🧾 TCRP POS Receipt Card (templates/receipt-email.html)</option>
         </select>
       </div>
       <div class="form-group" id="month-picker-wrap">
@@ -334,7 +334,7 @@ async function loadSettings() {
   if (!btn) return;
 
   try {
-    const res = await fetch("/api/main?action=ping");
+    const res = await fetch("/api/main?action=health_check");
     const data = await res.json();
     if (data.ok) {
       currentPowerState = "online";
@@ -350,7 +350,6 @@ async function loadSettings() {
     btn.textContent = "⚠️ Disconnected";
   }
 
-  // Load CDN Settings from system_config
   loadCdnSettings();
 }
 
@@ -504,7 +503,7 @@ async function sendTestEmail() {
   }
 
   consoleBox.style.display = "block";
-  consoleBox.textContent = `⏳ Dispatching authentic [${templateType.toUpperCase()}] template...\nSender: noreply.timelesscreations.ph@gmail.com\nTarget(s): ${input}\n\n`;
+  consoleBox.textContent = `⏳ Dispatching authentic [${templateType.toUpperCase()}] template from templates directory...\nSender: noreply.timelesscreations.ph@gmail.com\nTarget(s): ${input}\n\n`;
   btn.textContent = "⏳ Sending...";
   btn.disabled = true;
 
@@ -524,7 +523,7 @@ async function sendTestEmail() {
 
     if (data.ok) {
       if (typeof showToast === 'function') showToast(`Test dispatch successful! Delivered ${data.totalSent || 1} email(s).`);
-      consoleBox.textContent += "\n\n✅ ALL DISPATCHES DELIVERED SUCCESSFULLY!";
+      consoleBox.textContent += "\n\n✅ ALL DISPATCHES DELIVERED SUCCESSFULLY USING TEMPLATE FILE!";
     } else {
       if (typeof showToast === 'function') showToast(`Dispatch issue: ${data.error || "Review details below"}`, "error");
       consoleBox.textContent += "\n\n❌ ERROR: See diagnostic response details above.";

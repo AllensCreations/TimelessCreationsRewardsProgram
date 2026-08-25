@@ -147,6 +147,19 @@
                     <input type="url" id="inp-highlight-img" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="onLiveEdit()">
                 </div>
 
+                <div style="margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px;">
+                    <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Secondary Product (Optional)</div>
+                    <div class="form-group">
+                        <label class="form-label">Product 2 Name (highlight_label_2)</label>
+                        <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="e.g. Leather Nametag Strap" oninput="onLiveEdit()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Product 2 Image URL (1:1) (highlight_img_2)</label>
+                        <input type="url" id="inp-highlight-img-2" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="onLiveEdit()">
+                    </div>
+                </div>
+
+
                 <div style="margin-top: 14px; text-align: right;">
                     <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset Tab to Defaults</button>
                 </div>
@@ -360,6 +373,8 @@ function onSelectMonth(m) {
     document.getElementById("inp-highlight-toggle").checked = true;
     document.getElementById("inp-highlight-name").value = data.highlight_label;
     document.getElementById("inp-highlight-img").value = data.highlight_img || "";
+    document.getElementById("inp-highlight-name-2").value = data.highlight_label_2 || "";
+    document.getElementById("inp-highlight-img-2").value = data.highlight_img_2 || "";
   } else {
     document.getElementById("inp-highlight-toggle").checked = false;
     document.getElementById("inp-highlight-name").value = "";
@@ -523,7 +538,9 @@ async function saveActiveMonth() {
         scripture: data.scripture,
         message: data.message,
         highlight_img: data.highlight_img,
-        highlight_label: data.highlight_label
+        highlight_label: data.highlight_label,
+        highlight_label_2: data.highlight_label_2,
+        highlight_img_2: data.highlight_img_2
       })
     });
     const resData = await res.json();

@@ -14,12 +14,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "System is in sleep mode. No drips sent." });
     }
 
-    // 28 Elders per hourly trigger (5 runs = 140 total daily)
+    // 28 Elders per hourly trigger (Case-Insensitive cohort check)
     const dueElders = await runSql(`
       SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
       WHERE status = 'active'
-        AND cohort = 'elder'
+        AND LOWER(cohort) = 'elder'
         AND months_sent < max_months
         AND (next_send_date <= date('now') OR next_send_date IS NULL OR last_sent_at IS NULL)
       ORDER BY 
@@ -29,12 +29,12 @@ export default async function handler(req, res) {
       LIMIT 28
     `);
 
-    // 28 Sisters per hourly trigger (5 runs = 140 total daily)
+    // 28 Sisters per hourly trigger (Case-Insensitive cohort check)
     const dueSisters = await runSql(`
       SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
       WHERE status = 'active'
-        AND cohort = 'sister'
+        AND LOWER(cohort) = 'sister'
         AND months_sent < max_months
         AND (next_send_date <= date('now') OR next_send_date IS NULL OR last_sent_at IS NULL)
       ORDER BY 
@@ -55,7 +55,8 @@ export default async function handler(req, res) {
 
     for (const m of dueMissionaries) {
       const nextMonth = (Number(m.months_sent) || 0) + 1;
-      const recipientName = m.name || (m.cohort === 'sister' ? 'Sister' : 'Elder');
+      const isSister = (m.cohort || '').toLowerCase().includes('sister');
+      const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
 
       try {
         const result = await sendDripEmail(m.email, nextMonth, recipientName);
@@ -65,7 +66,7 @@ export default async function handler(req, res) {
             UPDATE missionaries 
             SET months_sent = months_sent + 1,
                 last_sent_at = CURRENT_TIMESTAMP,
-                next_send_date = date('now', '+30 days')
+                next_send_date = date('now', '+1 month')
             WHERE LOWER(email) = LOWER(?)
           `, [m.email]);
 

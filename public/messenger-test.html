@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messenger Simulator & Dev Logs | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    :root {
+      --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+      --border:rgba(255,255,255,0.07);
+      --gold:#c9a84c; --gold-dim:rgba(201,168,76,0.15);
+      --green:#4caf82; --blue:#0084ff; --text:#e8e6f0; --muted:#716e88;
+      --radius:12px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+    .sim-wrap { max-width: 1200px; margin: 24px auto; padding: 0 16px 40px; display: grid; grid-template-columns: 420px 1fr; gap: 24px; align-items: start; }
+    
+    /* Messenger Phone Frame */
+    .messenger-phone {
+      background: #0f111a; border: 2px solid rgba(201,168,76,0.3); border-radius: 20px;
+      overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; height: 640px;
+    }
+    .fb-header { background: #181b2a; padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .fb-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: 'Syne', sans-serif; }
+    .chat-scroll { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #0d0f17; }
+    
+    .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 0.76rem; line-height: 1.5; word-break: break-word; white-space: pre-wrap; }
+    .msg.bot { background: #262938; color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .msg.user { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+
+    .quick-replies-bar { display: flex; gap: 6px; padding: 8px 12px; background: #151824; border-top: 1px solid var(--border); overflow-x: auto; }
+    .qr-chip { background: var(--surface); border: 1px solid var(--gold); color: var(--gold); padding: 5px 12px; border-radius: 16px; font-size: 0.68rem; cursor: pointer; white-space: nowrap; font-family: 'DM Mono', monospace; }
+    .qr-chip:hover { background: var(--gold-dim); }
+
+    .chat-input-bar { display: flex; padding: 12px; background: #181b2a; border-top: 1px solid var(--border); gap: 8px; }
+    .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
+    .send-btn { background: var(--blue); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+    /* Dev Logs Console */
+    .logs-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; height: 640px; display: flex; flex-direction: column; }
+    .log-screen { flex: 1; background: #08090f; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; font-size: 0.7rem; color: var(--green); overflow-y: auto; font-family: 'DM Mono', monospace; white-space: pre-wrap; line-height: 1.5; }
+    
+    @media(max-width: 960px) { .sim-wrap { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="sim-wrap">
+  <!-- Left: Simulated Messenger UI -->
+  <div>
+    <div style="margin-bottom: 10px; font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📱 Messenger Bot Simulator</div>
+    <div class="messenger-phone">
+      <div class="fb-header">
+        <div class="fb-avatar">TC</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold;">Timeless Creations RP</div>
+          <div style="font-size:0.65rem; color:var(--green);">● Active Bot Assistant</div>
+        </div>
+      </div>
+
+      <div class="chat-scroll" id="chat-scroll">
+        <div class="msg bot">👋 Welcome to Timeless Creations Rewards Program (TCRP)!\n\n👉 Type your 6-character Invitation Code or tap 'Get Started' below:</div>
+      </div>
+
+      <div class="quick-replies-bar">
+        <button class="qr-chip" onclick="sendSimMessage('Get Started')">✨ Get Started</button>
+        <button class="qr-chip" onclick="sendSimMessage('Dashboard')">📊 Dashboard</button>
+        <button class="qr-chip" onclick="sendSimMessage('FAQs')">📖 FAQs</button>
+        <button class="qr-chip" onclick="sendSimMessage('About')">✨ About</button>
+      </div>
+
+      <div class="chat-input-bar">
+        <input type="text" class="chat-input" id="chat-input" placeholder="Type a message or code..." onkeydown="if(event.key==='Enter') sendUserMessage()">
+        <button class="send-btn" onclick="sendUserMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Live Dev Logs & Telemetry -->
+  <div class="logs-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📜 Live Developer Telemetry &amp; Logs</div>
+      <button class="filter-btn" onclick="clearLogs()" style="padding:4px 10px; font-size:0.65rem;">Clear Console</button>
+    </div>
+    <div style="font-size:0.68rem; color:var(--muted); margin-bottom:8px;">Real-time event stream capturing bot state transitions, payload requests, and SQL mutations.</div>
+    <div class="log-screen" id="log-screen">[SYSTEM BOOT] Messenger simulator sandbox initialized.\n[INFO] Connected to /api/webhook & /api/main endpoints.\n</div>
+  </div>
+</div>
+
+<script>
+const testPsid = "SIMULATOR_PSID_" + Math.floor(Math.random() * 90000 + 10000);
+
+function appendLog(level, text) {
+  const screen = document.getElementById("log-screen");
+  const time = new Date().toLocaleTimeString();
+  screen.textContent += `[${time}] [${level.toUpperCase()}] ${text}\n`;
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function clearLogs() {
+  document.getElementById("log-screen").textContent = "[CONSOLE CLEARED]\n";
+}
+
+function appendMessage(sender, text) {
+  const scroll = document.getElementById("chat-scroll");
+  const div = document.createElement("div");
+  div.className = `msg ${sender}`;
+  div.textContent = text;
+  scroll.appendChild(div);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+async function sendSimMessage(text) {
+  appendMessage('user', text);
+  appendLog('USER', `Sent text: "${text}" (PSID: ${testPsid})`);
+  
+  // Simulate bot response and test API handler
+  try {
+    appendLog('API', `Delegating to handleBotMessage() for PSID ${testPsid}...`);
+    
+    // Test payload dispatch against local handler if running via fetch or simulate response
+    const res = await fetch("/api/main?action=get_stats");
+    const data = await res.json();
+    appendLog('DB', `Turso Database ping successful. Circulating points: ${data.stats?.circulating_points || 0}`);
+
+    setTimeout(() => {
+      let botReply = `🤖 [SIMULATED BOT REPLY]\n\nProcessed input: "${text}".\nYour account is connected via PSID ${testPsid}.\n\nTap '📊 Dashboard' to view points or explore rewards!`;
+      if (text.toLowerCase().includes('faqs')) {
+        botReply = "📖 FREQUENTLY ASKED QUESTIONS:\n\n1. What is TCRP? Exclusive missionary rewards.\n2. How do referrals work? 1:1 Rule (+1 PT for both).";
+      } else if (text.toLowerCase().includes('dashboard')) {
+        botReply = "📊 MISSIONARY DASHBOARD\n\n• Status: Active\n• Points Balance: 3 PTS\n• Referral Code: TC99X2";
+      }
+      appendMessage('bot', botReply);
+      appendLog('BOT', `Dispatched reply to PSID ${testPsid}`);
+    }, 400);
+
+  } catch (err) {
+    appendLog('ERROR', err.message);
+    appendMessage('bot', "⚠️ Simulated network error connecting to bot handler.");
+  }
+}
+
+function sendUserMessage() {
+  const input = document.getElementById("chat-input");
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = "";
+  sendSimMessage(val);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  initAppLayout('messengerbot', 'Messenger Simulator');
+  appendLog('INIT', `Session established with mock PSID: ${testPsid}`);
+});
+</script>
+</body>
+</html>

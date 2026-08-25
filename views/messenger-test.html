@@ -94,7 +94,7 @@
   <!-- Right: Dev Logs & Turso SQL Query Inspector -->
   <div class="inspect-panel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">🔍 Turso SQL Query Telemetry &amp; State</div>
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">🔍 Turso SQL Query Telemetry &amp; OTP Logs</div>
       <button class="filter-btn" onclick="inspectSessionState()" style="padding:4px 10px; font-size:0.65rem;">Refresh State</button>
     </div>
 
@@ -108,7 +108,7 @@
     </div>
 
     <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Live Turso SQL Mutations &amp; Bot Execution Stream</div>
-    <div class="log-screen" id="log-screen">[BOOT] Live Turso bridge active. Unverified users attempting to access the dashboard are blocked and redirected to verification.\n</div>
+    <div class="log-screen" id="log-screen">[BOOT] Live Turso bridge active. OTP passcodes generated during test sessions will stream here automatically.\n</div>
   </div>
 </div>
 
@@ -119,7 +119,11 @@ document.getElementById('psid-badge').textContent = `PSID: ${currentPsid.slice(-
 function appendLog(level, text) {
   const screen = document.getElementById("log-screen");
   const time = new Date().toLocaleTimeString();
-  screen.textContent += `[${time}] [${level.toUpperCase()}] ${text}\n`;
+  let prefix = `[${time}] [${level.toUpperCase()}]`;
+  if (level.toUpperCase() === 'OTP_DEBUG') {
+    prefix = `\n🔥 [${time}] [OTP PASSCODE FOUND]`;
+  }
+  screen.textContent += `${prefix} ${text}\n`;
   screen.scrollTop = screen.scrollHeight;
 }
 
@@ -164,10 +168,9 @@ async function sendToBot(displayText, payload = null, rawText = null) {
     });
     const data = await res.json();
     if (data.ok) {
-      // Append real Turso query logs returned from backend
       if (data.turso_logs && data.turso_logs.length > 0) {
         data.turso_logs.forEach(l => {
-          appendLog('TURSO_SQL', l.message);
+          appendLog(l.level || 'TURSO_SQL', l.message);
         });
       }
 
@@ -177,12 +180,13 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         appendLog('BOT_REPLY', latest.message);
       }
       
-      if (data.session_state === 'AWAITING_TERMS') {
+      const st = data.session_data?.state || data.session_state;
+      if (st === 'AWAITING_TERMS') {
         renderQuickResponses([
           { title: "✅ Agree & Continue", payload: "TERMS_AGREE" },
           { title: "❌ Decline", payload: "TERMS_DECLINE" }
         ]);
-      } else if (data.session_state === 'AWAITING_OTP') {
+      } else if (st === 'AWAITING_OTP') {
         renderQuickResponses([
           { title: "🔄 Resend Code", payload: "RESEND_OTP" },
           { title: "✏️ Change Name/Email", payload: "REENTER_INFO" }
@@ -191,7 +195,7 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         renderQuickResponses([]);
       }
 
-      updateStateDisplay(data.session_state, data.missionary_profile);
+      updateStateDisplay(st, data.missionary_profile);
     } else {
       appendLog('ERROR', data.error || "Failed to process message");
     }
@@ -221,7 +225,7 @@ async function inspectSessionState() {
       appendLog('TURSO_INSPECT', `State: ${data.session?.state || 'START'} | Missionary Linked: ${data.missionary ? 'YES' : 'NO'}`);
       
       if (data.recent_logs && data.recent_logs.length > 0) {
-        data.recent_logs.slice(0, 2).forEach(l => appendLog('TURSO_LOG', l.message));
+        data.recent_logs.slice(0, 3).forEach(l => appendLog(l.level || 'LOG', l.message));
       }
     }
   } catch (e) {
@@ -247,7 +251,7 @@ async function resetSimulatorSession() {
 }
 
 function updateStateDisplay(stateName, missionary) {
-  document.getElementById('st-state').textContent = stateName;
+  document.getElementById('st-state').textContent = stateName || 'START';
   if (missionary) {
     document.getElementById('st-status').textContent = "VERIFIED & ACTIVE ✅";
     document.getElementById('st-status').style.color = "var(--green)";

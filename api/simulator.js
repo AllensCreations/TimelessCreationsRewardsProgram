@@ -35,18 +35,18 @@ export default async function handler(req, res) {
       const text = bodyData.text || "";
       const payload = bodyData.payload || null;
 
-      // Delegate to bot handler
       await handleBotMessage(psid, text, payload);
 
       const botMessages = await runSql("SELECT message, created_at FROM chat_messages WHERE psid = ? ORDER BY id DESC LIMIT 5", [psid]);
       const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0] || null;
       const missionary = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0] || null;
-      const recentTursoQueries = await runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 4");
+      const recentTursoQueries = await runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 5");
 
       return res.status(200).json({
         ok: true,
         bot_responses: botMessages || [],
         session_state: session?.state || "START",
+        session_data: session || null,
         missionary_profile: missionary,
         turso_logs: recentTursoQueries || []
       });

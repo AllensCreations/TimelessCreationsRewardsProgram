@@ -1,5 +1,4 @@
 import { handleBotMessage } from '../lib/botHandler.js';
-import { buildDashboardPayload, checkDashboardRateLimit, buildCatalogCarousel } from "../lib/bot.js";
 
 export default async function handler(req, res) {
   // Meta Webhook Verification Handshake
@@ -21,14 +20,15 @@ export default async function handler(req, res) {
       const body = req.body;
       if (body.object === 'page') {
         for (const entry of body.entry || []) {
-          const webhookEvent = entry.messaging?.[0] || entry.standby?.[0];
-          if (webhookEvent && webhookEvent.sender) {
-            const psid = webhookEvent.sender.id;
-            const messageText = webhookEvent.message?.text || '';
-            const quickReplyPayload = webhookEvent.message?.quick_reply?.payload || webhookEvent.postback?.payload || null;
+          for (const webhookEvent of entry.messaging || entry.standby || []) {
+            if (webhookEvent && webhookEvent.sender) {
+              const psid = webhookEvent.sender.id;
+              const messageText = webhookEvent.message?.text || '';
+              const quickReplyPayload = webhookEvent.message?.quick_reply?.payload || webhookEvent.postback?.payload || null;
 
-            // Delegate to the dedicated bot handler
-            await handleBotMessage(psid, messageText, quickReplyPayload);
+              // Delegate to the shared robust bot handler
+              await handleBotMessage(psid, messageText, quickReplyPayload);
+            }
           }
         }
       }

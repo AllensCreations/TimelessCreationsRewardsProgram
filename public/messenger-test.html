@@ -31,7 +31,12 @@
     .msg.bot { background: #262938; color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .msg.user { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
 
-    .quick-replies-bar { display: flex; gap: 6px; padding: 8px 12px; background: #151824; border-top: 1px solid var(--border); overflow-x: auto; }
+    /* Dynamic Quick Response Chips Container inside chat flow */
+    .quick-responses-container { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; margin-bottom: 4px; align-self: flex-start; }
+    .quick-response-btn { background: rgba(0,132,255,0.15); border: 1px solid var(--blue); color: var(--blue); padding: 6px 12px; border-radius: 16px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; font-weight: bold; transition: all 0.2s; }
+    .quick-response-btn:hover { background: var(--blue); color: #fff; }
+
+    .static-replies-bar { display: flex; gap: 6px; padding: 8px 12px; background: #151824; border-top: 1px solid var(--border); overflow-x: auto; }
     .qr-chip { background: var(--surface); border: 1px solid var(--gold); color: var(--gold); padding: 5px 12px; border-radius: 16px; font-size: 0.68rem; cursor: pointer; white-space: nowrap; font-family: 'DM Mono', monospace; }
     .qr-chip:hover { background: var(--gold-dim); }
 
@@ -71,7 +76,10 @@
         <div class="msg bot">👋 Welcome to Timeless Creations Rewards Program (TCRP)!\n\nTap '✨ Get Started' or type your referral code below:</div>
       </div>
 
-      <div class="quick-replies-bar">
+      <!-- Dynamic Quick Responses Container (rendered from bot replies) -->
+      <div id="dynamic-qr-container" style="padding: 0 16px; background: #0d0f17;"></div>
+
+      <div class="static-replies-bar">
         <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">✨ Get Started</button>
         <button class="qr-chip" onclick="sendToBot('Dashboard', 'DISCOVER_PAYLOAD')">📊 Dashboard</button>
         <button class="qr-chip" onclick="sendToBot('FAQs', 'FAQS_PAYLOAD')">📖 FAQs</button>
@@ -125,9 +133,23 @@ function appendMessage(sender, text) {
   scroll.scrollTop = scroll.scrollHeight;
 }
 
+function renderQuickResponses(quickReplies = []) {
+  const container = document.getElementById("dynamic-qr-container");
+  container.innerHTML = "";
+  if (!quickReplies || quickReplies.length === 0) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "quick-responses-container";
+  wrapper.innerHTML = quickReplies.map(qr => `
+    <button class="quick-response-btn" onclick="sendToBot('${qr.title}', '${qr.payload}')">${qr.title}</button>
+  `).join('');
+  container.appendChild(wrapper);
+}
+
 async function sendToBot(displayText, payload = null, rawText = null) {
   const messageText = rawText || displayText;
   appendMessage('user', displayText);
+  document.getElementById("dynamic-qr-container.innerHTML = ''"); // clear quick replies on user action
   appendLog('USER', `Input: "${messageText}" | Payload: ${payload || 'None'}`);
 
   try {
@@ -145,11 +167,26 @@ async function sendToBot(displayText, payload = null, rawText = null) {
     if (data.ok) {
       appendLog('BOT', `Executed handleBotMessage() successfully.`);
       if (data.bot_responses && data.bot_responses.length > 0) {
-        // Render latest bot responses
         const latest = data.bot_responses[0];
         appendMessage('bot', latest.message);
         appendLog('REPLY', latest.message);
       }
+      
+      // If the backend session requests quick replies based on state
+      if (data.session_state === 'AWAITING_TERMS') {
+        renderQuickResponses([
+          { title: "✅ Agree & Continue", payload: "TERMS_AGREE" },
+          { title: "❌ Decline", payload: "TERMS_DECLINE" }
+        ]);
+      } else if (data.session_state === 'AWAITING_OTP') {
+        renderQuickResponses([
+          { title: "🔄 Resend Code", payload: "RESEND_OTP" },
+          { title: "✏️ Change Name/Email", payload: "REENTER_INFO" }
+        ]);
+      } else {
+        renderQuickResponses([]);
+      }
+
       updateStateDisplay(data.session_state, data.missionary_profile);
     } else {
       appendLog('ERROR', data.error || "Failed to process message");
@@ -193,6 +230,7 @@ async function resetSimulatorSession() {
       body: JSON.stringify({ action: "reset_session", psid: currentPsid })
     });
     document.getElementById("chat-scroll").innerHTML = '<div class="msg bot">🔄 Session reset! Tap \'✨ Get Started\' to begin again.</div>';
+    document.getElementById("dynamic-qr-container").innerHTML = "";
     appendLog('RESET', `Session cleared for PSID ${currentPsid}`);
     inspectSessionState();
   } catch (e) {

@@ -17,11 +17,11 @@
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-    .sim-wrap { max-width: 1320px; margin: 20px auto; padding: 0 16px 40px; display: grid; grid-template-columns: 420px 1fr; gap: 24px; align-items: start; }
+    .sim-wrap { max-width: 1320px; margin: 20px auto; padding: 0 16px 40px; display: grid; grid-template-columns: 440px 1fr; gap: 24px; align-items: start; }
     
     .messenger-phone {
       background: #0f111a; border: 2px solid rgba(201,168,76,0.3); border-radius: 20px;
-      overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; height: 720px;
+      overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; height: 760px;
     }
     .fb-header { background: #181b2a; padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .fb-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: 'Syne', sans-serif; }
@@ -30,6 +30,16 @@
     .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.75rem; line-height: 1.5; word-break: break-word; white-space: pre-wrap; }
     .msg.bot { background: #262938; color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .msg.user { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+
+    /* Carousel Card Styling matching Facebook Messenger */
+    .fb-carousel-container { display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px 0; align-self: flex-start; max-width: 100%; scroll-snap-type: x mandatory; }
+    .fb-card { background: #1a1d2d; border: 1px solid var(--border); border-radius: 12px; width: 220px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; scroll-snap-align: start; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+    .fb-card-img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #222534; display: block; }
+    .fb-card-body { padding: 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .fb-card-title { font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700; color: #fff; }
+    .fb-card-subtitle { font-size: 0.68rem; color: var(--gold); }
+    .fb-card-btn { background: #28304a; border-top: 1px solid var(--border); color: var(--blue); text-align: center; padding: 10px; font-size: 0.72rem; font-weight: bold; cursor: pointer; transition: background 0.2s; font-family: 'DM Mono', monospace; border: none; width: 100%; }
+    .fb-card-btn:hover { background: #354166; }
 
     .quick-responses-container { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; margin-bottom: 4px; align-self: flex-start; }
     .quick-response-btn { background: rgba(0,132,255,0.15); border: 1px solid var(--blue); color: var(--blue); padding: 6px 12px; border-radius: 16px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; font-weight: bold; transition: all 0.2s; }
@@ -43,8 +53,7 @@
     .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
     .send-btn { background: var(--blue); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-    /* Right Column: Dev Logs & Turso State Inspector */
-    .inspect-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; height: 720px; display: flex; flex-direction: column; gap: 14px; }
+    .inspect-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; height: 760px; display: flex; flex-direction: column; gap: 14px; }
     .log-screen { flex: 1; background: #08090f; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; font-size: 0.68rem; color: var(--green); overflow-y: auto; font-family: 'DM Mono', monospace; white-space: pre-wrap; line-height: 1.5; }
     .state-box { background: #151824; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.72rem; }
   </style>
@@ -55,7 +64,7 @@
   <!-- Left: Messenger Simulator UI -->
   <div>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📱 Messenger Simulator (Strict Auth)</div>
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📱 Messenger Simulator (Carousel Supported)</div>
       <button class="filter-btn" onclick="resetSimulatorSession()" style="padding:4px 10px; font-size:0.65rem; background:rgba(224,92,92,0.15); color:#e05c5c; border-color:rgba(224,92,92,0.3);">🔄 Reset Session</button>
     </div>
     
@@ -144,6 +153,26 @@ function appendMessage(sender, text) {
   scroll.scrollTop = scroll.scrollHeight;
 }
 
+function appendCarousel(products = []) {
+  const scroll = document.getElementById("chat-scroll");
+  const container = document.createElement("div");
+  container.className = "fb-carousel-container";
+
+  container.innerHTML = products.map(item => `
+    <div class="fb-card">
+      <img class="fb-card-img" src="${item.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" alt="Reward">
+      <div class="fb-card-body">
+        <div class="fb-card-title">${item.name || 'Reward Item'}</div>
+        <div class="fb-card-subtitle">⭐ Cost: ${item.price || 0} PTS</div>
+      </div>
+      <button class="fb-card-btn" onclick="sendToBot('Claim ${item.name}', '${item.payload || 'CLAIM_ITEM_' + (item.id || 1)}')">🎁 Claim (${item.price || 0} PTS)</button>
+    </div>
+  `).join('');
+
+  scroll.appendChild(container);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
 function renderQuickResponses(quickReplies = []) {
   const container = document.getElementById("dynamic-qr-container");
   container.innerHTML = "";
@@ -186,6 +215,17 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         const latest = data.bot_responses[0];
         appendMessage('bot', latest.message);
         appendLog('BOT_REPLY', latest.message);
+
+        // If dashboard rendered, fetch and display reward products carousel automatically
+        if (latest.message.includes("MISSIONARY DASHBOARD")) {
+          try {
+            const prodRes = await fetch("/api/main?action=get_products&type=reward");
+            const prodData = await prodRes.json();
+            if (prodData.ok && prodData.products && prodData.products.length > 0) {
+              appendCarousel(prodData.products);
+            }
+          } catch(e) {}
+        }
       }
       
       const st = data.session_data?.state || data.session_state;

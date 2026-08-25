@@ -22,6 +22,7 @@
     .search-input { flex: 1; min-width: 180px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
     .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
     .filter-btn.active { color: var(--gold); border-color: rgba(201,168,76,0.4); background: var(--gold-dim); font-weight: 700; }
+    .sort-select { background: var(--surface); border: 1px solid var(--border); color: var(--gold); padding: 8px 12px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; outline: none; }
     .roster-list { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-top: none; padding: 12px; min-height: 200px; }
     .missionary-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; display: flex; flex-direction: column; }
     .card-main-row { display: flex; align-items: center; padding: 12px 16px; gap: 12px; }
@@ -73,6 +74,15 @@
     <button class="filter-btn active" onclick="filterType('all', this)">All</button>
     <button class="filter-btn" onclick="filterType('elder', this)">Elders (24M)</button>
     <button class="filter-btn" onclick="filterType('sister', this)">Sisters (18M)</button>
+    
+    <select class="sort-select" id="sort-select" onchange="handleSortChange(this.value)">
+      <option value="name_asc">Sort: Name (A-Z)</option>
+      <option value="name_desc">Sort: Name (Z-A)</option>
+      <option value="points_desc">Sort: Points (High to Low)</option>
+      <option value="points_asc">Sort: Points (Low to High)</option>
+      <option value="oldest">Sort: Oldest Added</option>
+      <option value="newest">Sort: Newest Added</option>
+    </select>
   </div>
 
   <div class="roster-list" id="roster-container">
@@ -105,6 +115,7 @@ let state = {
   missionaries: [],
   filteredList: [],
   currentFilter: 'all',
+  currentSort: 'name_asc',
   searchQuery: '',
   page: 1,
   pageSize: 50,
@@ -200,8 +211,16 @@ function updateSelectedCount() {
 function filterType(type, btn) {
   state.currentFilter = type;
   state.page = 1;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (!b.id.includes('toggle-select-mode')) b.classList.remove('active');
+  });
   btn.classList.add('active');
+  applyFilterAndRender();
+}
+
+function handleSortChange(sortVal) {
+  state.currentSort = sortVal;
+  state.page = 1;
   applyFilterAndRender();
 }
 
@@ -214,14 +233,16 @@ const handleDebouncedSearch = debounce((val) => {
 document.getElementById('search-box').addEventListener('input', (e) => handleDebouncedSearch(e.target.value));
 
 function applyFilterAndRender() {
-  let list = state.missionaries;
+  let list = [...state.missionaries];
 
+  // 1. Filter by Cohort
   if (state.currentFilter === 'elder') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
   } else if (state.currentFilter === 'sister') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister'));
   }
 
+  // 2. Filter by Search Query
   if (state.searchQuery) {
     list = list.filter(m =>
       (m.name || '').toLowerCase().includes(state.searchQuery) ||
@@ -229,6 +250,24 @@ function applyFilterAndRender() {
       (m.referral_code || '').toLowerCase().includes(state.searchQuery)
     );
   }
+
+  // 3. Sort List
+  list.sort((a, b) => {
+    if (state.currentSort === 'name_asc') {
+      return (a.name || '').localeCompare(b.name || '');
+    } else if (state.currentSort === 'name_desc') {
+      return (b.name || '').localeCompare(a.name || '');
+    } else if (state.currentSort === 'points_desc') {
+      return (Number(b.points) || 0) - (Number(a.points) || 0);
+    } else if (state.currentSort === 'points_asc') {
+      return (Number(a.points) || 0) - (Number(b.points) || 0);
+    } else if (state.currentSort === 'oldest') {
+      return (a.rowid || a.id || 0) - (b.rowid || b.id || 0);
+    } else if (state.currentSort === 'newest') {
+      return (b.rowid || b.id || 0) - (a.rowid || a.id || 0);
+    }
+    return 0;
+  });
 
   state.filteredList = list;
   renderPaginatedCards();

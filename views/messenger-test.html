@@ -120,10 +120,18 @@ function appendLog(level, text) {
   const screen = document.getElementById("log-screen");
   const time = new Date().toLocaleTimeString();
   let prefix = `[${time}] [${level.toUpperCase()}]`;
+  let colorStyle = "";
+
   if (level.toUpperCase() === 'OTP_DEBUG') {
-    prefix = `\n🔥 [${time}] [OTP PASSCODE FOUND]`;
+    prefix = `\n🔥 [${time}] [🔑 SIMULATED OTP PASSCODE FOUND]`;
+    colorStyle = "color: #ffcc00; font-weight: bold;";
   }
-  screen.textContent += `${prefix} ${text}\n`;
+
+  if (colorStyle) {
+    screen.innerHTML += `<span style="${colorStyle}">${prefix} ${text}</span>\n`;
+  } else {
+    screen.textContent += `${prefix} ${text}\n`;
+  }
   screen.scrollTop = screen.scrollHeight;
 }
 

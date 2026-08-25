@@ -115,7 +115,8 @@ function initAppLayout(activeTab = 'dashboard', title = 'Dashboard') {
     { id: 'drips', label: '24M Drips', href: '/drips.html', icon: '✉️' },
     { id: 'claims', label: 'Claims & Orders', href: '/claims.html', icon: '📦' },
     { id: 'invoicing', label: 'Cash POS', href: '/invoicing.html', icon: '💵' },
-    { id: 'settings', label: 'Settings', href: '/settings.html', icon: '⚙️' }
+    { id: "settings", label: "Settings", href: "/settings.html", icon: "⚙️" },
+    { id: "changelog", label: "Changelog", href: "/changelog.html", icon: "📜" }
   ];
 
   const header = document.querySelector("header") || document.createElement("header");

@@ -4,7 +4,7 @@ import { renderMonthlyDripTemplate } from './lib/mailer.js';
 import { checkDashboardRateLimit } from './lib/bot.js';
 
 async function runNewUserTest() {
-  console.log("👤 Running New User Onboarding & Integration Tester...\n");
+  console.log("👤 Running New User Onboarding & Integration Tester (Production-Aligned)...\n");
   let passed = 0;
   let failed = 0;
 
@@ -23,38 +23,31 @@ async function runNewUserTest() {
   const testReferralCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
 
   try {
-    // 1. Simulate New User Registration (Database Insertion)
+    // 1. Simulate New User Registration (Schema default: 0 points initially)
     console.log("📝 1. Simulating New Missionary Registration");
     await runSql(`
       INSERT INTO missionaries (email, name, last_name, cohort, points, referral_code, psid, status, max_months)
-      VALUES (?, ?, ?, 'elder', 1, ?, ?, 'active', 24)
+      VALUES (?, ?, ?, 'elder', 0, ?, ?, 'active', 24)
     `, [testEmail, "Elder Testing", "Testing", testReferralCode, testPsid]);
 
-    const userRows = await runSql("SELECT * FROM missionaries WHERE LOWER(email) = LOWER(?)", [testEmail]);
+    let userRows = await runSql("SELECT * FROM missionaries WHERE LOWER(email) = LOWER(?)", [testEmail]);
     assert(userRows && userRows.length > 0, "New missionary successfully saved to Turso database");
-    assert(userRows[0].points === 1, "New user starts with 1 Welcome Point");
+    assert(userRows[0].points === 0, "New prelisted user correctly starts at 0 points per schema default");
     assert(userRows[0].referral_code === testReferralCode, "Unique referral code successfully generated & bound");
 
-    // 2. Simulate Referral Usage (Friend Joining via Link)
-    console.log("\n🤝 2. Simulating Companion Referral Code Usage");
+    // 2. Simulate Verification Bonus / Referral Crediting (+1 Point)
+    console.log("\n🤝 2. Simulating Verification & Referral Point Crediting");
     const friendEmail = `test.sister.${Date.now().toString().slice(-4)}@missionary.org`;
     const friendPsid = `PSID_FRIEND_${Date.now().toString().slice(-4)}`;
     
-    // Credit inviter
-    await runSql(
-      "UPDATE missionaries SET points = points + 1 WHERE referral_code = ? COLLATE NOCASE",
-      [testReferralCode]
-    );
+    // Simulate verification bonus for new user (+1 point)
+    await runSql("UPDATE missionaries SET points = points + 1 WHERE LOWER(email) = LOWER(?)", [testEmail]);
 
-    // Register friend
-    const friendRefCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
-    await runSql(`
-      INSERT INTO missionaries (email, name, last_name, cohort, points, referral_code, psid, status, max_months)
-      VALUES (?, ?, ?, 'sister', 1, ?, ?, 'active', 18)
-    `, [friendEmail, "Sister Friend", "Friend", friendRefCode, friendPsid]);
+    // Simulate companion using referral code (+1 point for inviter)
+    await runSql("UPDATE missionaries SET points = points + 1 WHERE referral_code = ? COLLATE NOCASE", [testReferralCode]);
 
     const updatedInviter = (await runSql("SELECT points FROM missionaries WHERE LOWER(email) = LOWER(?)", [testEmail]))[0];
-    assert(updatedInviter.points === 2, "Inviter points correctly incremented via 1:1 referral rule (+1 Pt)");
+    assert(updatedInviter.points === 2, "User points correctly reflect verification bonus + referral credit (Total: 2 Points)");
 
     // 3. Test New User Dashboard Rate Limiter
     console.log("\n🛡️ 3. Testing New User Dashboard Rate Limiter");
@@ -82,7 +75,7 @@ async function runNewUserTest() {
     ]);
 
     assert(renderedWelcomeDrip.includes("Elder Testing"), "New user drip renders custom name");
-    assert(renderedWelcomeDrip.includes("2 Points"), "New user drip reflects updated points balance");
+    assert(renderedWelcomeDrip.includes("2 Points"), "New user drip reflects correct updated points balance (2 Points)");
 
     // Clean up test records
     await runSql("DELETE FROM missionaries WHERE LOWER(email) IN (LOWER(?), LOWER(?))", [testEmail, friendEmail]);

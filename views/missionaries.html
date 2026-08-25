@@ -17,14 +17,15 @@
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-    .main-wrap { max-width: 1100px; margin: 20px auto; padding: 0 16px 40px; }
+    .main-wrap { max-width: 1100px; margin: 20px auto; padding: 0 16px 60px; }
     .table-controls { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid var(--border); background: var(--surface2); border-radius: var(--radius) var(--radius) 0 0; flex-wrap: wrap; }
     .search-input { flex: 1; min-width: 180px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
     .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
     .filter-btn.active { color: var(--gold); border-color: rgba(201,168,76,0.4); background: var(--gold-dim); font-weight: 700; }
     .roster-list { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-top: none; padding: 12px; min-height: 200px; }
-    .missionary-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
-    .card-summary { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; user-select: none; }
+    .missionary-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; display: flex; flex-direction: column; }
+    .card-main-row { display: flex; align-items: center; padding: 12px 16px; gap: 12px; }
+    .card-summary { flex: 1; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
     .cohort-pill { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .cohort-elder { background: rgba(92,141,224,0.15); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
     .cohort-sister { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
@@ -34,35 +35,37 @@
     .page-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: 'DM Mono', monospace; }
     .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     
+    /* Batch Selection Toolbar */
+    .batch-toolbar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #151824; border-top: 1px solid var(--gold);
+      padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 999;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.8); transform: translateY(100%); transition: transform 0.3s ease;
+    }
+    .batch-toolbar.active { transform: translateY(0); }
+    .select-checkbox { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; display: none; }
+    .select-mode-active .select-checkbox { display: inline-block; }
+
     .btn-delete {
-      background: rgba(224,92,92,0.12);
-      border: 1px solid rgba(224,92,92,0.3);
-      color: var(--red);
-      padding: 5px 12px;
-      border-radius: 4px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      font-family: 'DM Mono', monospace;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      margin-top: 10px;
+      background: rgba(224,92,92,0.12); border: 1px solid rgba(224,92,92,0.3); color: var(--red);
+      padding: 5px 12px; border-radius: 4px; font-size: 0.68rem; font-weight: 700;
+      font-family: 'DM Mono', monospace; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin-top: 10px;
     }
-    .btn-delete:hover {
-      background: var(--red);
-      color: #fff;
-    }
+    .btn-delete:hover { background: var(--red); color: #fff; }
   </style>
 </head>
-<body>
+<body id="body-root">
 
 <div class="main-wrap">
-  <div style="margin-bottom:16px;">
-    <h2 style="font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:800; color:var(--gold);">Missionaries Roster</h2>
-    <p style="font-size:0.7rem; color:var(--muted); margin-top:4px;">
-      Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered missionaries.
-    </p>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h2 style="font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:800; color:var(--gold);">Missionaries Roster</h2>
+      <p style="font-size:0.7rem; color:var(--muted); margin-top:4px;">
+        Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered missionaries.
+      </p>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="filter-btn" id="toggle-select-mode" onclick="toggleSelectMode()">☑️ Select Mode: OFF</button>
+    </div>
   </div>
 
   <div class="table-controls">
@@ -83,6 +86,20 @@
   </div>
 </div>
 
+<!-- Floating Batch Toolbar -->
+<div class="batch-toolbar" id="batch-toolbar">
+  <div style="display:flex; gap:12px; align-items:center;">
+    <span style="font-size:0.78rem; color:var(--gold); font-weight:bold;" id="selected-count-label">0 Selected</span>
+    <button class="filter-btn" onclick="selectAllVisible()">Select All</button>
+    <button class="filter-btn" onclick="selectCurrentCohort()">Select Current Cohort</button>
+    <button class="filter-btn" onclick="deselectAll()">Deselect</button>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button class="filter-btn" style="background:var(--gold-dim); color:var(--gold); border-color:var(--gold);" onclick="promptBulkAddPoints()">⭐ Bulk Add Points</button>
+    <button class="btn-delete" style="margin-top:0;" onclick="promptBulkDelete()">🗑️ Bulk Delete Selected</button>
+  </div>
+</div>
+
 <script>
 let state = {
   missionaries: [],
@@ -90,7 +107,9 @@ let state = {
   currentFilter: 'all',
   searchQuery: '',
   page: 1,
-  pageSize: 50
+  pageSize: 50,
+  selectMode: false,
+  selectedEmails: new Set()
 };
 
 function debounce(func, wait = 250) {
@@ -117,6 +136,66 @@ window.onPageDataRefreshed = () => {
   document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
   applyFilterAndRender();
 };
+
+function toggleSelectMode() {
+  state.selectMode = !state.selectMode;
+  const btn = document.getElementById('toggle-select-mode');
+  const toolbar = document.getElementById('batch-toolbar');
+  const root = document.getElementById('body-root');
+
+  if (state.selectMode) {
+    btn.textContent = "☑️ Select Mode: ON";
+    btn.classList.add("active");
+    root.classList.add("select-mode-active");
+    toolbar.classList.add("active");
+  } else {
+    btn.textContent = "☑️ Select Mode: OFF";
+    btn.classList.remove("active");
+    root.classList.remove("select-mode-active");
+    toolbar.classList.remove("active");
+    state.selectedEmails.clear();
+    updateSelectedCount();
+  }
+  renderPaginatedCards();
+}
+
+function selectAllVisible() {
+  state.filteredList.forEach(m => state.selectedEmails.add(m.email.toLowerCase()));
+  renderPaginatedCards();
+  updateSelectedCount();
+}
+
+function selectCurrentCohort() {
+  state.filteredList.forEach(m => {
+    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+    if (state.currentFilter === 'all' || (state.currentFilter === 'sister' && isSister) || (state.currentFilter === 'elder' && !isSister)) {
+      state.selectedEmails.add(m.email.toLowerCase());
+    }
+  });
+  renderPaginatedCards();
+  updateSelectedCount();
+}
+
+function deselectAll() {
+  state.selectedEmails.clear();
+  renderPaginatedCards();
+  updateSelectedCount();
+}
+
+function toggleCheckbox(email, e) {
+  e.stopPropagation();
+  const cleanEmail = email.toLowerCase();
+  if (state.selectedEmails.has(cleanEmail)) {
+    state.selectedEmails.delete(cleanEmail);
+  } else {
+    state.selectedEmails.add(cleanEmail);
+  }
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  document.getElementById('selected-count-label').textContent = `${state.selectedEmails.size} Selected`;
+}
 
 function filterType(type, btn) {
   state.currentFilter = type;
@@ -184,6 +263,70 @@ async function deleteMissionary(email, name) {
   }
 }
 
+async function promptBulkAddPoints() {
+  if (state.selectedEmails.size === 0) {
+    showToast("No missionaries selected.", "error");
+    return;
+  }
+  const pts = prompt(`Enter points to add (or subtract using negative numbers) for ${state.selectedEmails.size} selected missionaries:`, "5");
+  if (pts === null) return;
+  const delta = parseInt(pts, 10);
+  if (isNaN(delta)) {
+    showToast("Invalid number.", "error");
+    return;
+  }
+
+  let successCount = 0;
+  for (const email of state.selectedEmails) {
+    try {
+      const res = await fetch("/api/main", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_missionary_points", email, delta })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        successCount++;
+        const m = state.missionaries.find(x => x.email.toLowerCase() === email);
+        if (m) m.points = Math.max(0, (Number(m.points) || 0) + delta);
+      }
+    } catch (_) {}
+  }
+
+  LocalStore.set('missionaries', state.missionaries);
+  applyFilterAndRender();
+  showToast(`Successfully updated points for ${successCount} missionaries!`);
+}
+
+async function promptBulkDelete() {
+  if (state.selectedEmails.size === 0) {
+    showToast("No missionaries selected.", "error");
+    return;
+  }
+  if (!confirm(`Permanently delete ${state.selectedEmails.size} selected missionaries from the database?`)) return;
+
+  let successCount = 0;
+  for (const email of state.selectedEmails) {
+    try {
+      const res = await fetch("/api/main", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_missionary", email })
+      });
+      const data = await res.json();
+      if (data.ok) successCount++;
+    } catch (_) {}
+  }
+
+  state.missionaries = state.missionaries.filter(m => !state.selectedEmails.has(m.email.toLowerCase()));
+  state.selectedEmails.clear();
+  LocalStore.set('missionaries', state.missionaries);
+  document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
+  updateSelectedCount();
+  applyFilterAndRender();
+  showToast(`Successfully deleted ${successCount} missionaries.`);
+}
+
 function renderPaginatedCards() {
   const totalItems = state.filteredList.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
@@ -208,17 +351,21 @@ function renderPaginatedCards() {
     const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
     const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
     const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
+    const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
     return `
       <div class="missionary-card">
-        <div class="card-summary" onclick="this.closest('.missionary-card').classList.toggle('open')">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
-            <span style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:700;">${m.name || 'Unnamed'}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="color:var(--gold); font-weight:bold; background:var(--gold-dim); padding:2px 8px; border-radius:4px; font-size:0.7rem;">${m.points || 0} PTS</span>
-            <span style="color:var(--muted); font-size:0.7rem;">▼</span>
+        <div class="card-main-row">
+          <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
+          <div class="card-summary" onclick="this.closest('.missionary-card').classList.toggle('open')">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
+              <span style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:700;">${m.name || 'Unnamed'}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="color:var(--gold); font-weight:bold; background:var(--gold-dim); padding:2px 8px; border-radius:4px; font-size:0.7rem;">${m.points || 0} PTS</span>
+              <span style="color:var(--muted); font-size:0.7rem;">▼</span>
+            </div>
           </div>
         </div>
 

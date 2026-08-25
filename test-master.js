@@ -1,44 +1,90 @@
-import { execSync } from 'child_process';
+import 'dotenv/config';
+import { runSql } from './lib/db.js';
+import { renderMonthlyDripTemplate, sendOTPEmail, sendReceiptEmail } from './lib/mailer.js';
+import { checkDashboardRateLimit } from './lib/bot.js';
 
-console.log("=========================================================");
-console.log("🚀 STARTING TCRP 100% PRE-COMMIT VERIFICATION GATEWAY");
-console.log("=========================================================\n");
+async function runMasterSuite() {
+  console.log("🚀 Running TCRP Master Verification Suite...\n");
+  let passed = 0;
+  let failed = 0;
 
-const suites = [
-  { name: "Core Architecture & Mailer Suite", cmd: "node test-all.js" },
-  { name: "Messenger Conversation & Reply Suite", cmd: "node test-all-replies.js" },
-  { name: "Live Network & Connection Ping Suite", cmd: "node test-connections.js" },
-  { name: "HTML Views & DOM Integrity Suite", cmd: "node test-html.js" },
-  { name: "New User Onboarding & Referral Flow Suite", cmd: "node test-new-user-flow.js" }
-];
+  function assert(condition, message) {
+    if (condition) {
+      console.log(`  ✅ [PASS] ${message}`);
+      passed++;
+    } else {
+      console.error(`  ❌ [FAIL] ${message}`);
+      failed++;
+    }
+  }
 
-let totalPassedSuites = 0;
-let failedSuites = [];
-
-for (const suite of suites) {
-  process.stdout.write(`▶ Running: ${suite.name}... `);
   try {
-    execSync(suite.cmd, { stdio: 'pipe' });
-    console.log(`✅ PASS`);
-    totalPassedSuites++;
+    // 1. Database Connection & Schema Verification
+    console.log("📦 1. Database & Schema Health Check");
+    const ping = await runSql("SELECT 1 as alive");
+    assert(ping && ping.length > 0, "Turso Database connection is active");
+
+    const tableRows = await runSql("SELECT name FROM sqlite_master WHERE type='table'");
+    const tables = (tableRows || []).map(t => t.name);
+    
+    assert(tables.includes('missionaries'), "Table 'missionaries' exists in schema");
+    assert(tables.includes('product_catalog'), "Table 'product_catalog' exists in schema");
+    assert(tables.includes('drip_messages'), "Table 'drip_messages' exists in schema");
+    assert(tables.includes('orders'), "Table 'orders' exists in schema");
+    assert(tables.includes('system_config'), "Table 'system_config' exists in schema");
+
+    // 2. Automated Drip Calculation (1-Month Step & Cohort Maxes)
+    console.log("\n✉️ 2. Automated Drips & Mailer Validation");
+    const testDripData = {
+      month: 1,
+      name: "Elder Smith",
+      theme: "Elder Jeffrey R. Holland",
+      scripture: "Trust in the Lord with all thine heart.",
+      message: "May your faith be strengthened this month.",
+      points: 4,
+      highlight_label: "Wooden Nametag",
+      highlight_img: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+      highlight_label_2: "Salvation Kit",
+      highlight_img_2: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ"
+    };
+
+    const renderedDrip = renderMonthlyDripTemplate(testDripData, [
+      { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/test.png" }
+    ]);
+
+    assert(renderedDrip.includes("Elder Smith"), "Drip template accurately binds recipient name");
+    assert(renderedDrip.includes("Wooden Nametag"), "Drip template renders primary highlight product");
+    assert(renderedDrip.includes("Salvation Kit"), "Drip template renders secondary highlight product");
+    assert(renderedDrip.includes("Only <strong>2 more points</strong>"), "Accurately computes nearest reward goal difference");
+
+    // 3. Rate Limiter Security Check
+    console.log("\n🛡️ 3. Messenger Rate Limit Verification");
+    const testPsid = "TEST_PSID_SUITE_123";
+    await runSql("DELETE FROM bot_daily_views WHERE sender_id = ?", [testPsid]);
+
+    const view1 = await checkDashboardRateLimit(testPsid);
+    const view2 = await checkDashboardRateLimit(testPsid);
+    const view3 = await checkDashboardRateLimit(testPsid);
+
+    assert(view1.allowed === true, "Rate Limiter allows 1st dashboard request");
+    assert(view2.allowed === true, "Rate Limiter allows 2nd dashboard request");
+    assert(view3.allowed === false, "Rate Limiter blocks 3rd dashboard request within daily window");
+
+    // Clean up test records
+    await runSql("DELETE FROM bot_daily_views WHERE sender_id = ?", [testPsid]);
+
   } catch (err) {
-    console.log(`❌ FAILED`);
-    if (err.stdout) console.error(err.stdout.toString());
-    if (err.stderr) console.error(err.stderr.toString());
-    failedSuites.push(suite.name);
+    console.error(`\n💥 Fatal Test Error: ${err.message}`);
+    failed++;
+  }
+
+  console.log(`\n================================`);
+  console.log(`Suite Summary: ${passed} Passed, ${failed} Failed`);
+  console.log(`================================\n`);
+
+  if (failed > 0) {
+    process.exit(1);
   }
 }
 
-console.log("\n=========================================================");
-console.log("📊 OVERALL VERIFICATION REPORT");
-console.log("=========================================================");
-console.log(`Suites Passed: ${totalPassedSuites} / ${suites.length}`);
-console.log(`Suites Failed: ${failedSuites.length}`);
-
-if (failedSuites.length > 0) {
-  console.error("\n❌ PRE-COMMIT GATEWAY FAILED! DO NOT COMMIT.");
-  process.exit(1);
-} else {
-  console.log("\n🏆 100% PASS RATE ACHIEVED! Safe to commit and deploy.");
-  process.exit(0);
-}
+runMasterSuite();

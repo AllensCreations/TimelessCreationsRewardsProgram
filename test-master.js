@@ -19,7 +19,7 @@ async function runMasterSuite() {
   }
 
   try {
-    // 1. Database Connection & Schema Verification
+    // 1. Database Connection & Schema Health Check
     console.log("📦 1. Database & Schema Health Check");
     const ping = await runSql("SELECT 1 as alive");
     assert(ping && ping.length > 0, "Turso Database connection is active");
@@ -33,7 +33,7 @@ async function runMasterSuite() {
     assert(tables.includes('orders'), "Table 'orders' exists in schema");
     assert(tables.includes('system_config'), "Table 'system_config' exists in schema");
 
-    // 2. Automated Drip Calculation (1-Month Step & Cohort Maxes)
+    // 2. Automated Drips & Mailer Validation
     console.log("\n✉️ 2. Automated Drips & Mailer Validation");
     const testDripData = {
       month: 1,
@@ -57,7 +57,7 @@ async function runMasterSuite() {
     assert(renderedDrip.includes("Salvation Kit"), "Drip template renders secondary highlight product");
     assert(renderedDrip.includes("Only <strong>2 more points</strong>"), "Accurately computes nearest reward goal difference");
 
-    // 3. Rate Limiter Security Check
+    // 3. Messenger Rate Limit Verification
     console.log("\n🛡️ 3. Messenger Rate Limit Verification");
     const testPsid = "TEST_PSID_SUITE_123";
     await runSql("DELETE FROM bot_daily_views WHERE sender_id = ?", [testPsid]);
@@ -70,7 +70,6 @@ async function runMasterSuite() {
     assert(view2.allowed === true, "Rate Limiter allows 2nd dashboard request");
     assert(view3.allowed === false, "Rate Limiter blocks 3rd dashboard request within daily window");
 
-    // Clean up test records
     await runSql("DELETE FROM bot_daily_views WHERE sender_id = ?", [testPsid]);
 
   } catch (err) {

@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { JSDOM } from 'jsdom';
+import { JSDOM, VirtualConsole } from 'jsdom';
 
-console.log("🔍 Running Automated HTML & UI Scaffolding Integrity Test...\n");
+console.log("🔍 Running Automated HTML & UI Integrity Verification...\n");
 
 const viewsDir = path.resolve('views');
 const files = fs.existsSync(viewsDir) 
@@ -12,20 +12,27 @@ const files = fs.existsSync(viewsDir)
 let passed = 0;
 let failed = 0;
 
-// Pages that are plain text or standalone policy/legal pages without complex app UI
+// Standalone or plain-text policy documents that do not require full app CSS/JS layout
 const PLAIN_TEXT_EXEMPTIONS = ['privacy.html', 'terms.html', 'about.html', 'sw.js'];
+
+// Virtual console to suppress noisy JSDOM CSS parse notices
+const virtualConsole = new VirtualConsole();
+virtualConsole.on("error", (err) => {
+  if (err.message && err.message.includes("Could not parse CSS stylesheet")) return;
+  console.error("  ⚠️ DOM Warning:", err.message);
+});
 
 files.forEach(file => {
   const filePath = path.join(viewsDir, file);
   const content = fs.readFileSync(filePath, 'utf8');
 
   try {
-    const dom = new JSDOM(content);
+    const dom = new JSDOM(content, { virtualConsole });
     const doc = dom.window.document;
 
     // Check basic valid HTML structure
     if (!doc.head || !doc.body) {
-      throw new Error(`Missing basic <head> or <body> tags.`);
+      throw new Error("Missing required <head> or <body> tags.");
     }
 
     if (PLAIN_TEXT_EXEMPTIONS.includes(file)) {
@@ -34,7 +41,7 @@ files.forEach(file => {
       return;
     }
 
-    // Check for broken legacy routes in href attributes
+    // Check for deprecated legacy routes
     const anchors = Array.from(doc.querySelectorAll('a[href]'));
     const brokenRoutes = anchors
       .map(a => a.getAttribute('href'))

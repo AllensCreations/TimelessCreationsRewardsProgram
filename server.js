@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import 'dotenv/config';
 import mainHandler from './api/main.js';
 import webhookHandler from './api/webhook.js';
+import simulatorHandler from './api/simulator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,7 +25,6 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer(async (req, res) => {
-  // Helper for parsing status and json helpers
   res.status = function(code) {
     res.statusCode = code;
     return res;
@@ -39,7 +39,6 @@ const server = http.createServer(async (req, res) => {
   const pathname = urlObj.pathname;
   req.query = Object.fromEntries(urlObj.searchParams);
 
-  // Parse Body for POST / PUT / PATCH
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     let bodyStr = '';
     req.on('data', chunk => { bodyStr += chunk; });
@@ -51,15 +50,16 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 1. API Route Handlers
   if (pathname.startsWith('/api/webhook')) {
     return webhookHandler(req, res);
+  }
+  if (pathname.startsWith('/api/simulator')) {
+    return simulatorHandler(req, res);
   }
   if (pathname.startsWith('/api/main') || pathname.startsWith('/api/')) {
     return mainHandler(req, res);
   }
 
-  // 2. Static File Resolution (public, views, root)
   let targetFile = pathname === '/' ? '/views/index.html' : pathname;
   
   if (!path.extname(targetFile)) {
@@ -91,7 +91,6 @@ const server = http.createServer(async (req, res) => {
     return fs.createReadStream(resolvedPath).pipe(res);
   }
 
-  // 404 Fallback
   res.writeHead(404, { 'Content-Type': 'text/plain' });
   res.end('404 Not Found');
 });

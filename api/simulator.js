@@ -20,6 +20,7 @@ export default async function handler(req, res) {
     if (action === "reset_session") {
       await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
       await runSql("DELETE FROM missionaries WHERE psid = ?", [psid]);
+      await runSql("INSERT INTO system_logs (level, message) VALUES ('TURSO', ?)", [`RESET session for PSID ${psid}`]);
       return res.status(200).json({ ok: true, message: "Session and test user reset successfully." });
     }
 
@@ -34,19 +35,20 @@ export default async function handler(req, res) {
       const text = bodyData.text || "";
       const payload = bodyData.payload || null;
 
-      // Capture bot replies dispatched via callSendAPI by overriding fetch or logging table
+      // Delegate to bot handler
       await handleBotMessage(psid, text, payload);
 
-      // Fetch the last logged bot messages from chat_messages or system_logs
       const botMessages = await runSql("SELECT message, created_at FROM chat_messages WHERE psid = ? ORDER BY id DESC LIMIT 5", [psid]);
       const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0] || null;
       const missionary = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0] || null;
+      const recentTursoQueries = await runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 4");
 
       return res.status(200).json({
         ok: true,
         bot_responses: botMessages || [],
         session_state: session?.state || "START",
-        missionary_profile: missionary
+        missionary_profile: missionary,
+        turso_logs: recentTursoQueries || []
       });
     }
 

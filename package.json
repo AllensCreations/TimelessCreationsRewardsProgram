@@ -1,18 +1,15 @@
 {
   "name": "timelesscreationsrewardsprogram",
   "version": "1.0.0",
-  "description": "Messenger Bot Rewards Program for Missionaries (@missionary.org) using Firebase",
+  "description": "TCRP Missionary Rewards & Automated Drip Program",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node tester.js",
-    "test500": "node tester500.js",
-    "test250": "node tester250.js",
-    "testui": "node tester_ui_500.js",
-    "bugfinder": "node master_bug_finder.js",
+    "test": "node test-master.js",
+    "test:html": "node test-html.js",
     "build": "mkdir -p public/assets && cp -r views/* public/ 2>/dev/null || true && cp -r assets/* public/assets/ 2>/dev/null || true",
-    "prune": "node -r dotenv/config -e \"import('./lib/dbPruner.js').then(m => m.runDatabaseMaintenance())\"",
-    "test:deep": "node system_deep_tester.js"
+    "prune": "node -r dotenv/config -e \"import('./lib/dbPruner.js').then(m => m.runDatabaseMaintenance())\""
   },
   "dependencies": {
     "csv-parse": "^7.0.2",
@@ -20,7 +17,6 @@
     "express": "^4.19.2",
     "firebase": "^10.12.0"
   },
-  "type": "module",
   "devDependencies": {
     "jsdom": "^30.0.1",
     "undici": "^8.10.0"

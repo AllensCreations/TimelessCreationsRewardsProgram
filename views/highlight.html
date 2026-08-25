@@ -315,7 +315,7 @@ function initSelector() {
 
 async function fetchFromTurso() {
   try {
-    const res = await fetch("/api/main?action=get_highlight");
+    const res = await fetch("/api/main?action=get_drips");
     const data = await res.json();
     if (data.ok && Array.isArray(data.drips)) {
       data.drips.forEach(d => {

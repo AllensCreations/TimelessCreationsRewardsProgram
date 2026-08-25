@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Messenger Simulator | Timeless Creations</title>
+  <title>Messenger Simulator & Turso Telemetry | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
@@ -17,11 +17,11 @@
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-    .sim-wrap { max-width: 1280px; margin: 20px auto; padding: 0 16px 40px; display: grid; grid-template-columns: 420px 1fr; gap: 24px; align-items: start; }
+    .sim-wrap { max-width: 1300px; margin: 20px auto; padding: 0 16px 40px; display: grid; grid-template-columns: 420px 1fr; gap: 24px; align-items: start; }
     
     .messenger-phone {
       background: #0f111a; border: 2px solid rgba(201,168,76,0.3); border-radius: 20px;
-      overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; height: 680px;
+      overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; height: 700px;
     }
     .fb-header { background: #181b2a; padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .fb-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: 'Syne', sans-serif; }
@@ -31,7 +31,6 @@
     .msg.bot { background: #262938; color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .msg.user { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
 
-    /* Dynamic Quick Response Chips Container inside chat flow */
     .quick-responses-container { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; margin-bottom: 4px; align-self: flex-start; }
     .quick-response-btn { background: rgba(0,132,255,0.15); border: 1px solid var(--blue); color: var(--blue); padding: 6px 12px; border-radius: 16px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; font-weight: bold; transition: all 0.2s; }
     .quick-response-btn:hover { background: var(--blue); color: #fff; }
@@ -44,19 +43,19 @@
     .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
     .send-btn { background: var(--blue); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-    /* Right Column: Dev Logs & DB Inspector */
-    .inspect-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; height: 680px; display: flex; flex-direction: column; gap: 16px; }
-    .log-screen { flex: 1; background: #08090f; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; font-size: 0.7rem; color: var(--green); overflow-y: auto; font-family: 'DM Mono', monospace; white-space: pre-wrap; line-height: 1.5; }
+    /* Right Column: Dev Logs & Turso State Inspector */
+    .inspect-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; height: 700px; display: flex; flex-direction: column; gap: 14px; }
+    .log-screen { flex: 1; background: #08090f; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; font-size: 0.68rem; color: var(--green); overflow-y: auto; font-family: 'DM Mono', monospace; white-space: pre-wrap; line-height: 1.5; }
     .state-box { background: #151824; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.72rem; }
   </style>
 </head>
 <body>
 
 <div class="sim-wrap">
-  <!-- Left: Messenger Phone UI -->
+  <!-- Left: Messenger Simulator UI -->
   <div>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📱 Live Messenger Logic Simulator</div>
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📱 Messenger Simulator (Strict Auth)</div>
       <button class="filter-btn" onclick="resetSimulatorSession()" style="padding:4px 10px; font-size:0.65rem; background:rgba(224,92,92,0.15); color:#e05c5c; border-color:rgba(224,92,92,0.3);">🔄 Reset Session</button>
     </div>
     
@@ -66,17 +65,16 @@
           <div class="fb-avatar">TC</div>
           <div>
             <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold;">Timeless Creations RP</div>
-            <div style="font-size:0.62rem; color:var(--green);">● Connected to botHandler.js</div>
+            <div style="font-size:0.62rem; color:var(--green);">● Live botHandler.js Linked</div>
           </div>
         </div>
         <span style="font-size:0.65rem; color:var(--muted);" id="psid-badge">PSID: --</span>
       </div>
 
       <div class="chat-scroll" id="chat-scroll">
-        <div class="msg bot">👋 Welcome to Timeless Creations Rewards Program (TCRP)!\n\nTap '✨ Get Started' or type your referral code below:</div>
+        <div class="msg bot">👋 Welcome to Timeless Creations Rewards Program (TCRP)!\n\n🔒 Authentication Required: You cannot bypass verification.\n\nTap '✨ Get Started' below to begin:</div>
       </div>
 
-      <!-- Dynamic Quick Responses Container (rendered from bot replies) -->
       <div id="dynamic-qr-container" style="padding: 0 16px; background: #0d0f17;"></div>
 
       <div class="static-replies-bar">
@@ -96,20 +94,21 @@
   <!-- Right: Dev Logs & Turso State Inspector -->
   <div class="inspect-panel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">🔍 State Inspector &amp; Dev Logs</div>
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">🔍 Turso DB State &amp; Dev Logs</div>
       <button class="filter-btn" onclick="inspectSessionState()" style="padding:4px 10px; font-size:0.65rem;">Refresh State</button>
     </div>
 
     <!-- DB Session & Missionary State Card -->
     <div class="state-box" id="state-box">
-      <div><strong>Session State:</strong> <span id="st-state" style="color:var(--gold);">LOADING...</span></div>
-      <div><strong>Linked Missionary:</strong> <span id="st-name" style="color:var(--green);">None (Guest)</span></div>
+      <div><strong>Session State:</strong> <span id="st-state" style="color:var(--gold);">START</span></div>
+      <div><strong>Verification Status:</strong> <span id="st-status" style="color:#e05c5c;">UNREGISTERED / UNVERIFIED</span></div>
+      <div><strong>Missionary Name:</strong> <span id="st-name" style="color:var(--muted);">—</span></div>
+      <div><strong>Email:</strong> <span id="st-email" style="color:var(--muted);">—</span></div>
       <div><strong>Points Balance:</strong> <span id="st-points" style="color:var(--gold);">0 PTS</span></div>
-      <div><strong>Referral Code:</strong> <span id="st-ref">—</span></div>
     </div>
 
-    <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Live Execution Stream</div>
-    <div class="log-screen" id="log-screen">[BOOT] Live botHandler.js bridge active.\n</div>
+    <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Live Turso &amp; Handler Execution Stream</div>
+    <div class="log-screen" id="log-screen">[BOOT] Live Turso bridge active. Unverified users are strictly blocked from bypassing to dashboard.\n</div>
   </div>
 </div>
 
@@ -149,7 +148,7 @@ function renderQuickResponses(quickReplies = []) {
 async function sendToBot(displayText, payload = null, rawText = null) {
   const messageText = rawText || displayText;
   appendMessage('user', displayText);
-  document.getElementById("dynamic-qr-container.innerHTML = ''"); // clear quick replies on user action
+  document.getElementById("dynamic-qr-container").innerHTML = "";
   appendLog('USER', `Input: "${messageText}" | Payload: ${payload || 'None'}`);
 
   try {
@@ -165,14 +164,13 @@ async function sendToBot(displayText, payload = null, rawText = null) {
     });
     const data = await res.json();
     if (data.ok) {
-      appendLog('BOT', `Executed handleBotMessage() successfully.`);
+      appendLog('TURSO', `SQL / Session mutations committed successfully.`);
       if (data.bot_responses && data.bot_responses.length > 0) {
         const latest = data.bot_responses[0];
         appendMessage('bot', latest.message);
-        appendLog('REPLY', latest.message);
+        appendLog('BOT_REPLY', latest.message);
       }
       
-      // If the backend session requests quick replies based on state
       if (data.session_state === 'AWAITING_TERMS') {
         renderQuickResponses([
           { title: "✅ Agree & Continue", payload: "TERMS_AGREE" },
@@ -214,7 +212,7 @@ async function inspectSessionState() {
     const data = await res.json();
     if (data.ok) {
       updateStateDisplay(data.session?.state || 'START', data.missionary);
-      appendLog('INSPECT', `Session state: ${data.session?.state || 'START'} | Missionary: ${data.missionary?.email || 'None'}`);
+      appendLog('TURSO_INSPECT', `State: ${data.session?.state || 'START'} | Missionary Linked: ${data.missionary ? 'YES' : 'NO'}`);
     }
   } catch (e) {
     appendLog('ERROR', "Failed to inspect state: " + e.message);
@@ -231,7 +229,7 @@ async function resetSimulatorSession() {
     });
     document.getElementById("chat-scroll").innerHTML = '<div class="msg bot">🔄 Session reset! Tap \'✨ Get Started\' to begin again.</div>';
     document.getElementById("dynamic-qr-container").innerHTML = "";
-    appendLog('RESET', `Session cleared for PSID ${currentPsid}`);
+    appendLog('TURSO_RESET', `Database sessions and missionary profile cleared for PSID ${currentPsid}`);
     inspectSessionState();
   } catch (e) {
     appendLog('ERROR', "Reset failed");
@@ -241,13 +239,17 @@ async function resetSimulatorSession() {
 function updateStateDisplay(stateName, missionary) {
   document.getElementById('st-state').textContent = stateName;
   if (missionary) {
-    document.getElementById('st-name').textContent = `${missionary.name} (${missionary.email})`;
+    document.getElementById('st-status').textContent = "VERIFIED & ACTIVE ✅";
+    document.getElementById('st-status').style.color = "var(--green)";
+    document.getElementById('st-name').textContent = missionary.name || 'Unnamed';
+    document.getElementById('st-email').textContent = missionary.email || '—';
     document.getElementById('st-points').textContent = `${missionary.points || 0} PTS`;
-    document.getElementById('st-ref').textContent = missionary.referral_code || '—';
   } else {
-    document.getElementById('st-name').textContent = 'None (Guest / Unverified)';
+    document.getElementById('st-status').textContent = "UNREGISTERED / UNVERIFIED 🔒";
+    document.getElementById('st-status').style.color = "var(--red)";
+    document.getElementById('st-name').textContent = '—';
+    document.getElementById('st-email').textContent = '—';
     document.getElementById('st-points').textContent = '0 PTS';
-    document.getElementById('st-ref').textContent = '—';
   }
 }
 

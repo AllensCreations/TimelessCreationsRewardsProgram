@@ -124,7 +124,7 @@ function appendLog(level, text) {
 
   if (level.toUpperCase() === 'OTP_DEBUG') {
     prefix = `\n🔥 [${time}] [🔑 SIMULATED OTP PASSCODE FOUND]`;
-    colorStyle = "color: #ffcc00; font-weight: bold;";
+    colorStyle = "color: #ffcc00; font-weight: bold; display: block; margin: 8px 0; border: 1px dashed #ffcc00; padding: 4px;";
   }
 
   if (colorStyle) {

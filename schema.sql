@@ -20,6 +20,14 @@ CREATE TABLE IF NOT EXISTS `missionaries` (
 	`pending_ref_notices` integer DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS `hashed_audit_identities` (
+	`identity_hash` text PRIMARY KEY,
+	`type` text, -- 'email' or 'psid'
+	`welcome_granted` integer DEFAULT 1,
+	`referral_awarded` integer DEFAULT 1,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS `orders` (
 	`order_id` text PRIMARY KEY,
 	`psid` text,

@@ -25,108 +25,84 @@ export default async function handler(req, res) {
   }
 
   try {
-    if (action === "health_check" || action === "ping") {
-      const setting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
-      const status = (setting?.value || "ONLINE").toUpperCase();
-      const isOnline = status === "ONLINE";
-      return res.status(200).json({ ok: isOnline, status, power_state: status });
-    }
-
-    if (action === "toggle_power") {
-      const state = (bodyData.state || "online").toUpperCase();
-      await runSql(`
-        INSERT INTO system_settings (key, value) VALUES ('power_state', ?)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value
-      `, [state]);
-      return res.status(200).json({ ok: true, state });
-    }
-
-    if (action === "force_cron") {
-      return res.status(200).json({ ok: true, message: "Scheduled drip check executed." });
-    }
-
-    if (action === "get_cdn_config") {
-      const rows = await runSql("SELECT key, value FROM system_config WHERE key IN ('cdn_github_owner', 'cdn_github_repo', 'cdn_github_branch', 'cdn_github_token', 'cdn_upload_path')");
-      const config = {};
-      (rows || []).forEach(r => { config[r.key] = r.value; });
-      return res.status(200).json({ ok: true, config });
-    }
-
-    if (action === "save_cdn_config") {
-      const { cdn_github_owner, cdn_github_repo, cdn_github_branch, cdn_github_token, cdn_upload_path } = bodyData;
-      const pairs = [
-        ["cdn_github_owner", cdn_github_owner || ""],
-        ["cdn_github_repo", cdn_github_repo || ""],
-        ["cdn_github_branch", cdn_github_branch || "main"],
-        ["cdn_upload_path", cdn_upload_path || "assets/rewards"]
-      ];
-      if (cdn_github_token && cdn_github_token.trim() !== "") {
-        pairs.push(["cdn_github_token", cdn_github_token.trim()]);
+    switch (action) {
+      case "health_check":
+      case "ping": {
+        const setting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
+        const status = (setting?.value || "ONLINE").toUpperCase();
+        return res.status(200).json({ ok: status === "ONLINE", status, power_state: status });
       }
-      for (const [k, v] of pairs) {
-        await runSql("INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", [k, v]);
+
+      case "toggle_power": {
+        const state = (bodyData.state || "online").toUpperCase();
+        await runSql(`
+          INSERT INTO system_settings (key, value) VALUES ('power_state', ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        `, [state]);
+        await runSql("INSERT INTO system_logs (level, message) VALUES ('INFO', ?)", [`System power state switched to ${state}`]);
+        return res.status(200).json({ ok: true, state });
       }
-      return res.status(200).json({ ok: true, message: "CDN configuration saved successfully" });
-    }
 
-    if (action === "get_gallery_items") {
-      const rows = await runSql("SELECT * FROM cdn_gallery ORDER BY id DESC LIMIT 50");
-      return res.status(200).json({ ok: true, items: rows || [] });
-    }
+      case "get_system_logs": {
+        const limit = Math.min(Number(req.query?.limit || bodyData.limit) || 150, 500);
+        const rows = await runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT ?", [limit]);
+        return res.status(200).json({ ok: true, logs: rows || [] });
+      }
 
-    if (action === "save_gallery_item") {
-      const { filename, direct_url, size_label, original_kb, compressed_kb } = bodyData;
-      await runSql(
-        "INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb) VALUES (?, ?, ?, ?, ?)",
-        [filename, direct_url, size_label || "1:1 WebP", original_kb || 0, compressed_kb || 0]
-      );
-      return res.status(200).json({ ok: true });
-    }
+      case "update_missionary_points": {
+        const email = (bodyData.email || "").toLowerCase().trim();
+        const delta = Number(bodyData.delta) || 0;
+        if (!email) return res.status(400).json({ ok: false, error: "Missing email address" });
 
-    if (action === "get_system_logs") {
-      const limit = Number(req.query?.limit || bodyData.limit) || 100;
-      const rows = await runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT ?", [limit]);
-      return res.status(200).json({ ok: true, logs: rows || [] });
-    }
+        await runSql("UPDATE missionaries SET points = MAX(0, points + ?) WHERE LOWER(email) = ?", [delta, email]);
+        await runSql("INSERT INTO system_logs (level, message) VALUES ('INFO', ?)", [`Updated points for ${email} by delta ${delta}`]);
+        return res.status(200).json({ ok: true });
+      }
 
-    if (action === "get_stats" || !action) {
-      const todayIso = new Date().toISOString().slice(0, 10);
-      const monthIso = new Date().toISOString().slice(0, 7);
+      case "get_stats":
+      default: {
+        if (action && action !== "get_stats" && action !== undefined) {
+          // Pass through to specific action if handled below
+          break;
+        }
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const monthIso = new Date().toISOString().slice(0, 7);
 
-      const [
-        totalM, activeM, totalO, pendingO, totalDrips, pts,
-        recentOrders, recentLogs, todaySent, monthSent, recentlySent
-      ] = await Promise.all([
-        runSql("SELECT COUNT(*) as count FROM missionaries"),
-        runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'"),
-        runSql("SELECT COUNT(*) as count FROM orders"),
-        runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'"),
-        runSql("SELECT COUNT(*) as count FROM drip_messages"),
-        runSql("SELECT SUM(points) as pts FROM missionaries"),
-        runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
-        runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 50"),
-        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]),
-        runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"]),
-        runSql("SELECT email, name, cohort, months_sent, last_sent_at FROM missionaries WHERE last_sent_at IS NOT NULL ORDER BY last_sent_at DESC LIMIT 8")
-      ]);
+        const [
+          totalM, activeM, totalO, pendingO, totalDrips, pts,
+          recentOrders, recentLogs, todaySent, monthSent, recentlySent
+        ] = await Promise.all([
+          runSql("SELECT COUNT(*) as count FROM missionaries"),
+          runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'"),
+          runSql("SELECT COUNT(*) as count FROM orders"),
+          runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'"),
+          runSql("SELECT COUNT(*) as count FROM drip_messages"),
+          runSql("SELECT SUM(points) as pts FROM missionaries"),
+          runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
+          runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 50"),
+          runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]),
+          runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"]),
+          runSql("SELECT email, name, cohort, months_sent, last_sent_at FROM missionaries WHERE last_sent_at IS NOT NULL ORDER BY last_sent_at DESC LIMIT 8")
+        ]);
 
-      return res.status(200).json({
-        ok: true,
-        stats: {
-          total_missionaries: totalM[0]?.count || 0,
-          active_missionaries: activeM[0]?.count || 0,
-          total_orders: totalO[0]?.count || 0,
-          pending_orders: pendingO[0]?.count || 0,
-          total_drips: totalDrips[0]?.count || 0,
-          circulating_points: pts[0]?.pts || 0,
-          emails_today: todaySent[0]?.count || 0,
-          emails_month: monthSent[0]?.count || 0
-        },
-        recent_orders: recentOrders || [],
-        recent_logs: recentLogs || [],
-        recently_sent_missionaries: recentlySent || [],
-        daily_stats: { [todayIso]: todaySent[0]?.count || 0 }
-      });
+        return res.status(200).json({
+          ok: true,
+          stats: {
+            total_missionaries: totalM[0]?.count || 0,
+            active_missionaries: activeM[0]?.count || 0,
+            total_orders: totalO[0]?.count || 0,
+            pending_orders: pendingO[0]?.count || 0,
+            total_drips: totalDrips[0]?.count || 0,
+            circulating_points: pts[0]?.pts || 0,
+            emails_today: todaySent[0]?.count || 0,
+            emails_month: monthSent[0]?.count || 0
+          },
+          recent_orders: recentOrders || [],
+          recent_logs: recentLogs || [],
+          recently_sent_missionaries: recentlySent || [],
+          daily_stats: { [todayIso]: todaySent[0]?.count || 0 }
+        });
+      }
     }
 
     if (action === "get_missionaries") {
@@ -146,18 +122,6 @@ export default async function handler(req, res) {
       await runSql("INSERT INTO system_logs (level, message) VALUES ('WARN', ?)", [`Removed missionary ${email} from roster`]);
 
       return res.status(200).json({ ok: true, message: `Successfully deleted missionary ${email}` });
-    }
-
-    if (action === "update_missionary_points") {
-      const { email, delta } = bodyData;
-      await runSql("UPDATE missionaries SET points = MAX(0, points + ?) WHERE LOWER(email) = LOWER(?)", [delta, email]);
-      return res.status(200).json({ ok: true });
-    }
-
-    if (action === "toggle_missionary_status") {
-      const { email, status } = bodyData;
-      await runSql("UPDATE missionaries SET status = ? WHERE LOWER(email) = LOWER(?)", [status, email]);
-      return res.status(200).json({ ok: true });
     }
 
     if (action === "push_missionaries") {
@@ -213,6 +177,7 @@ export default async function handler(req, res) {
           added++;
         }
 
+        await runSql("INSERT INTO system_logs (level, message) VALUES ('INFO', ?)", [`Successfully bulk pushed ${added} missionaries`]);
         return res.status(200).json({ ok: true, added });
       }
     }
@@ -252,6 +217,8 @@ export default async function handler(req, res) {
         results.push({ email: target, ...dispatchResult });
         if (dispatchResult?.ok) successCount++;
       }
+
+      await runSql("INSERT INTO system_logs (level, message) VALUES ('INFO', ?)", [`Executed test email dispatch (${templateType}) to ${targets.join(', ')}`]);
 
       if (successCount > 0) {
         return res.status(200).json({
@@ -398,6 +365,8 @@ export default async function handler(req, res) {
 
     return res.status(404).json({ ok: false, error: `Unknown action '${action}'` });
   } catch (err) {
+    console.error(`API Error [${action}]:`, err);
+    await runSql("INSERT INTO system_logs (level, message) VALUES ('ERROR', ?)", [`API Error [${action}]: ${err.message}`]);
     return res.status(500).json({ ok: false, error: err.message });
   }
 }

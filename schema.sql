@@ -92,13 +92,6 @@ CREATE TABLE IF NOT EXISTS `system_logs` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS `bot_daily_views` (
-	`sender_id` text,
-	`view_date` text,
-	`view_count` integer DEFAULT 0,
-	PRIMARY KEY(`sender_id`, `view_date`)
-);
-
 CREATE TABLE IF NOT EXISTS `bot_rate_limits` (
 	`psid` text PRIMARY KEY,
 	`msg_count` integer DEFAULT 1,

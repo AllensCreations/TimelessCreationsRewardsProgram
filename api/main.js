@@ -83,6 +83,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    if (action === "get_system_logs") {
+      const limit = Number(req.query?.limit || bodyData.limit) || 100;
+      const rows = await runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT ?", [limit]);
+      return res.status(200).json({ ok: true, logs: rows || [] });
+    }
+
     if (action === "get_stats" || !action) {
       const todayIso = new Date().toISOString().slice(0, 10);
       const monthIso = new Date().toISOString().slice(0, 7);
@@ -98,7 +104,7 @@ export default async function handler(req, res) {
         runSql("SELECT COUNT(*) as count FROM drip_messages"),
         runSql("SELECT SUM(points) as pts FROM missionaries"),
         runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
-        runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 10"),
+        runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 50"),
         runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]),
         runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"]),
         runSql("SELECT email, name, cohort, months_sent, last_sent_at FROM missionaries WHERE last_sent_at IS NOT NULL ORDER BY last_sent_at DESC LIMIT 8")

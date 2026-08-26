@@ -1,203 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System Logs & Brevo Delivery | Timeless Creations</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/assets/app.css">
-  <script src="/assets/app.js"></script>
-  <style>
-    body { font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e6f0; }
-    .card {
-      background: #11131d;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .two-col-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 20px;
-      width: 100%;
-    }
-    .log-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 14px;
-      background: #181b2a;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.04);
-      font-size: 0.78rem;
-    }
-    .badge {
-      font-size: 0.6rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-    .badge-info { background: rgba(76,175,130,0.2); color: #4caf82; }
-    .badge-warn { background: rgba(201,168,76,0.2); color: #c9a84c; }
-    .badge-error { background: rgba(224,92,92,0.2); color: #e05c5c; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Logs & Telemetry | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    :root {
+      --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
+      --border:rgba(255,255,255,0.08);
+      --gold:#c9a84c; --gold-dim:rgba(201,168,76,0.15);
+      --green:#4caf82; --red:#e05c5c; --blue:#5c8de0;
+      --text:#e8e6f0; --muted:#716e88;
+      --radius:10px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+    .container{max-width:1160px;margin:20px auto;padding:0 16px 40px;}
 
-    <style>
-      .log-table-compact { font-size: 12px !important; line-height: 1.3 !important; }
-      .log-table-compact th, .log-table-compact td { padding: 6px 10px !important; }
-      .logs-scroll-container { max-height: 480px; overflow-y: auto; }
-      .brevo-metric-badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
-    </style>
-    </head>
+    .header-banner{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+    .header-banner h1{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);margin-bottom:4px;}
+    .header-banner p{font-size:0.75rem;color:var(--muted);}
+
+    .filters-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+    .filter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:6px;font-size:0.7rem;cursor:pointer;font-family:'DM Mono',monospace;}
+    .filter-btn.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold);font-weight:700;}
+    .search-box{flex:1;min-width:220px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;}
+    .search-box:focus{border-color:var(--gold);}
+
+    .logs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+    .logs-table{width:100%;border-collapse:collapse;font-size:0.74rem;}
+    .logs-table th{background:var(--surface2);color:var(--muted);text-align:left;padding:12px 16px;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border);}
+    .logs-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+    
+    .badge{font-size:0.6rem;padding:3px 8px;border-radius:4px;font-weight:bold;text-transform:uppercase;display:inline-block;}
+    .badge-info{background:rgba(76,175,130,0.15);color:var(--green);border:1px solid rgba(76,175,130,0.3);}
+    .badge-warn{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
+    .badge-error{background:rgba(224,92,92,0.15);color:var(--red);border:1px solid rgba(224,92,92,0.3);}
+    .badge-turso{background:rgba(92,141,224,0.15);color:var(--blue);border:1px solid rgba(92,141,224,0.3);}
+
+    .btn{background:var(--gold);color:#0a0a0f;border:none;padding:9px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+    .btn:hover{opacity:0.9;}
+  </style>
+</head>
 <body>
 
-<div style="max-width:1200px; margin:24px auto; padding:0 20px 40px;">
-  
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-    <div>
-      <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin:0 0 4px 0;">Audit Logs &amp; Delivery Telemetry</h1>
-      <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Live feeds for backend database logs, Brevo webhooks, and hourly drip triggers.</p>
-    </div>
-    <button onclick="loadLiveLogs()" style="background:#c9a84c; color:#0d0e15; border:none; padding:9px 16px; border-radius:8px; font-weight:bold; font-size:0.8rem; cursor:pointer;">
-      ↻ Refresh Logs
-    </button>
-  </div>
+<div class="container">
+  <div class="header-banner">
+    <div>
+      <h1>📜 Live System Logs &amp; Telemetry</h1>
+      <p>Real-time stream of backend events, database queries, webhook triggers, and email dispatches.</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn" onclick="loadDetailedLogs()">↻ Refresh Live Stream</button>
+    </div>
+  </div>
 
-  <div class="two-col-grid">
-    <!-- System Logs Card -->
-    <div class="card">
-      <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:#c9a84c; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
-        <span>📜 System Logs</span>
-        <span style="font-size:0.65rem; color:#8c90a4; text-transform:uppercase;">Recent 50</span>
-      </div>
-      <div id="logs-container" style="display:flex; flex-direction:column; gap:10px; max-height:600px; overflow-y:auto;">
-        <div style="color:#8c90a4; text-align:center; padding:30px;">Loading logs...</div>
-      </div>
-    </div>
+  <div class="filters-bar">
+    <input type="text" class="search-box" id="log-search" placeholder="Filter log message content..." oninput="renderLogs()"/>
+    <button class="filter-btn active" onclick="setFilter('ALL', this)">All Logs</button>
+    <button class="filter-btn" onclick="setFilter('INFO', this)">Info</button>
+    <button class="filter-btn" onclick="setFilter('WARN', this)">Warnings</button>
+    <button class="filter-btn" onclick="setFilter('ERROR', this)">Errors</button>
+    <button class="filter-btn" onclick="setFilter('TURSO', this)">Turso SQL</button>
+  </div>
 
-    <!-- Brevo Delivery & Webhooks Card -->
-    <div class="card">
-      <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:#c9a84c; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
-        <span>🌐 Brevo Delivery &amp; Webhooks</span>
-        <span style="font-size:0.65rem; color:#5c8de0; text-transform:uppercase; font-weight:bold; background:rgba(92,141,224,0.15); padding:2px 6px; border-radius:4px;">API Events</span>
-      </div>
-      <div id="webhook-logs-list" style="display:flex; flex-direction:column; gap:10px; max-height:600px; overflow-y:auto;">
-        <div style="color:#8c90a4; text-align:center; padding:30px;">No webhook events logged yet.</div>
-      </div>
-    </div>
-  </div>
-
+  <div class="logs-card">
+    <table class="logs-table">
+      <thead>
+        <tr>
+          <th style="width:70px;">ID</th>
+          <th style="width:100px;">Level</th>
+          <th>Message Content / Telemetry Event</th>
+          <th style="width:170px;text-align:right;">Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="logs-tbody">
+        <tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted);">Loading system logs...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-async function loadLiveLogs() {
-  const logsContainer = document.getElementById("logs-container");
-  const webhookContainer = document.getElementById("webhook-logs-list");
+let allLogs = [];
+let currentFilter = 'ALL';
 
-  try {
-    const res = await fetch("/api/main?action=get_stats");
-    const data = await res.json();
-
-    if (data.ok && data.recent_logs) {
-      const logs = data.recent_logs;
-
-      // Render System Logs
-      if (logs.length > 0) {
-        logsContainer.innerHTML = logs.slice(0, 50).map(l => {
-          const lvl = (l.level || 'INFO').toUpperCase();
-          const badgeClass = lvl === 'ERROR' ? 'badge-error' : lvl === 'WARN' ? 'badge-warn' : 'badge-info';
-          return `
-            <div class="log-item">
-              <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-                <span class="badge ${badgeClass}">${lvl}</span>
-                <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:#e8e6f0;">${l.message || ''}</span>
-              </div>
-              <span style="font-size:0.65rem; color:#8c90a4; flex-shrink:0; margin-left:8px;">${l.created_at ? new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span>
-            </div>
-          `;
-        }).join('');
-      } else {
-        logsContainer.innerHTML = '<div style="color:#8c90a4; text-align:center; padding:30px;">No system logs recorded.</div>';
-      }
-
-      // Render Webhook & Drip Logs
-      const webhookLogs = logs.filter(l => (l.message || "").toLowerCase().includes('drip') || (l.message || "").toLowerCase().includes('brevo') || (l.message || "").toLowerCase().includes('webhook'));
-      if (webhookLogs.length > 0) {
-        webhookContainer.innerHTML = webhookLogs.slice(0, 50).map(l => `
-          <div class="log-item">
-            <div style="color:#e8e6f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${l.message}</div>
-            <div style="font-size:0.65rem; color:#8c90a4; margin-left:8px; flex-shrink:0;">${l.created_at ? new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div>
-          </div>
-        `).join('');
-      } else {
-        webhookContainer.innerHTML = '<div style="color:#8c90a4; text-align:center; padding:30px;">No delivery events logged yet.</div>';
-      }
-    }
-  } catch (err) {
-    console.error("Failed to load logs:", err);
-  }
+async function loadDetailedLogs() {
+  try {
+    const res = await fetch('/api/main?action=get_system_logs&limit=150');
+    const data = await res.json();
+    if (data.ok) {
+      allLogs = data.logs || [];
+      renderLogs();
+    }
+  } catch(e) {
+    showToast("Failed to fetch system logs", "error");
+  }
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  initAppLayout('logs', 'Logs');
-  loadLiveLogs();
+function setFilter(level, btn) {
+  currentFilter = level;
+  document.querySelectorAll('.filters-bar .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLogs();
+}
+
+function renderLogs() {
+  const tbody = document.getElementById('logs-tbody');
+  const query = document.getElementById('log-search').value.toLowerCase().trim();
+
+  let filtered = allLogs.filter(l => {
+    const lvl = (l.level || 'INFO').toUpperCase();
+    const matchLevel = currentFilter === 'ALL' || lvl === currentFilter;
+    const matchQuery = !query || (l.message || '').toLowerCase().includes(query);
+    return matchLevel && matchQuery;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted);">No matching log entries found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(l => {
+    const lvl = (l.level || 'INFO').toUpperCase();
+    let badgeCls = 'badge-info';
+    if (lvl === 'WARN') badgeCls = 'badge-warn';
+    else if (lvl === 'ERROR') badgeCls = 'badge-error';
+    else if (lvl === 'TURSO') badgeCls = 'badge-turso';
+
+    const formattedTime = l.created_at ? new Date(l.created_at).toLocaleString() : 'Just now';
+
+    return `
+      <tr>
+        <td style="color:var(--muted);font-family:'DM Mono',monospace;">#${l.id}</td>
+        <td><span class="badge ${badgeCls}">${lvl}</span></td>
+        <td style="word-break:break-all;color:var(--text);">${escapeHtml(l.message)}</td>
+        <td style="text-align:right;color:var(--muted);font-size:0.68rem;">${formattedTime}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  initAppLayout('logs', 'System Logs');
+  loadDetailedLogs();
+  // Auto refresh every 10 seconds for real-time live telemetry
+  setInterval(loadDetailedLogs, 10000);
 });
 </script>
-<script>
-    async function loadBrevoOverallStats() {
-      try {
-        const res = await fetch("/api/main?action=get_system_logs");
-        const logs = await res.json();
-        
-        let totalSent = 0;
-        let sentToday = 0;
-        let delivered = 0;
-        let opened = 0;
-        let spams = 0;
-        let bounces = 0;
-        
-        const todayStr = new Date().toISOString().split("T")[0];
-        
-        (Array.isArray(logs) ? logs : []).forEach(l => {
-          const msg = (l.message || "").toLowerCase();
-          const action = (l.action_type || "").toLowerCase();
-          const date = (l.created_at || "").split("T")[0];
-          
-          if (action.includes("drip") || action.includes("email") || msg.includes("sent email")) {
-            totalSent++;
-            if (date === todayStr) sentToday++;
-            delivered++;
-          }
-          if (msg.includes("open") || action.includes("open")) opened++;
-          if (msg.includes("spam") || action.includes("spam") || msg.includes("complaint")) spams++;
-          if (msg.includes("bounce") || action.includes("bounce")) bounces++;
-        });
-        
-        // Prevent division by zero
-        const effectiveSent = Math.max(totalSent, 1);
-        const openPct = Math.min(100, Math.round((opened / effectiveSent) * 100)) || 84;
-        const delivPct = Math.min(100, Math.round((delivered / effectiveSent) * 100)) || 99;
-        const spamPct = ((spams / effectiveSent) * 100).toFixed(2);
-        
-        const badgeContainer = document.getElementById("brevo-overall-metrics");
-        if (badgeContainer) {
-          badgeContainer.innerHTML = `
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
-              <span class="brevo-metric-badge" style="background:#e0f2fe; color:#0369a1;">📧 Total Sent: <b>${totalSent || 42}</b></span>
-              <span class="brevo-metric-badge" style="background:#f0fdf4; color:#15803d;">📅 Sent Today: <b>${sentToday || 3}</b></span>
-              <span class="brevo-metric-badge" style="background:#ecfdf5; color:#047857;">📈 Open Rate: <b>${openPct}%</b></span>
-              <span class="brevo-metric-badge" style="background:#fef3c7; color:#b45309;">📬 Delivery Rate: <b>${delivPct}%</b></span>
-              <span class="brevo-metric-badge" style="background:#fee2e2; color:#b91c1c;">🚫 Spam / Complaints: <b>${spamPct}%</b></span>
-            </div>
-          `;
-        }
-      } catch(e) {
-        console.warn("Brevo stats load error:", e);
-      }
-    }
-    document.addEventListener("DOMContentLoaded", loadBrevoOverallStats);
-    </script></body>
+</body>
 </html>

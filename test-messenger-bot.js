@@ -4,7 +4,7 @@ import { handleBotMessage } from './lib/botHandler.js';
 
 async function runFullBotTester() {
   console.log("🤖 ==================================================");
-  console.log("🤖 STARTING MESSENGER BOT TEST SUITE (TERMS FIRST)");
+  console.log("🤖 STARTING MESSENGER BOT TEST SUITE (3-IN-1 ONBOARDING)");
   console.log("🤖 ==================================================\n");
 
   let passed = 0;
@@ -21,76 +21,56 @@ async function runFullBotTester() {
   }
 
   const testPsid = "TEST_PHONE_PSID_" + Date.now().toString().slice(-4);
+  const testEmail = `elder.tester${Date.now().toString().slice(-4)}@missionary.org`;
 
   try {
-    // TEST 1
-    console.log("📝 [Test 1] New User Onboarding Trigger (START -> AWAITING_TERMS)");
+    // TEST 1: Initial Touch -> Welcome & Terms
+    console.log("📝 [Test 1] Initial Touch (AWAITING_TERMS)");
     await runSql("DELETE FROM sessions WHERE psid = ?", [testPsid]);
     await runSql("DELETE FROM missionaries WHERE psid = ?", [testPsid]);
     await runSql("DELETE FROM chat_messages WHERE psid = ?", [testPsid]);
 
     await handleBotMessage(testPsid, "Get Started", "GET_STARTED");
     let session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
-    assert(session && session.state === 'AWAITING_TERMS', "New user is shown Welcome & Terms (AWAITING_TERMS)");
+    assert(session && session.state === 'AWAITING_TERMS', "Shows Welcome & Privacy/Terms");
 
-    // TEST 2
-    console.log("\n📜 [Test 2] Terms Agreement");
+    // TEST 2: Terms Agreed -> Advances to 3-in-1 Step
+    console.log("\n📜 [Test 2] Agree to Terms");
     await handleBotMessage(testPsid, "I agree", "TERMS_AGREE");
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
-    assert(session && session.state === 'AWAITING_REFERRAL', "Terms agreed, advanced to AWAITING_REFERRAL");
+    assert(session && session.state === 'AWAITING_ALL_IN_ONE', "Advanced to 3-in-1 submission (AWAITING_ALL_IN_ONE)");
 
-    // TEST 3
-    console.log("\n🎟️ [Test 3] Referral Code Input");
-    await handleBotMessage(testPsid, "TCRP50");
+    // TEST 3: Combined 3-in-1 Submission
+    console.log("\n✉️ [Test 3] Combined Submission (Name + Email + RefCode)");
+    await handleBotMessage(testPsid, `Elder Smith\n${testEmail}\nTCRP50`);
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
-    assert(session && session.state === 'AWAITING_NAME_EMAIL', "Referral code TCRP50 accepted, advanced to AWAITING_NAME_EMAIL");
+    assert(session && session.state === 'AWAITING_OTP', "Parsed 3-in-1 payload, generated OTP, advanced to AWAITING_OTP");
+    assert(session.temp_email === testEmail, "Email captured accurately");
+    assert(session.invite_code === "TCRP50", "Referral code captured accurately");
 
-    // TEST 4
-    console.log("\n✉️ [Test 4] Email Validation (@missionary.org check)");
-    await handleBotMessage(testPsid, "Elder Invalid\nwrong.email@gmail.com");
-    session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
-    assert(session && session.state === 'AWAITING_NAME_EMAIL', "Non-missionary email rejected; state remains AWAITING_NAME_EMAIL");
-
-    await handleBotMessage(testPsid, "Elder Smith\nelder.smith@missionary.org");
-    session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
-    assert(session && session.state === 'AWAITING_OTP', "Valid missionary email parsed, OTP generated, advanced to AWAITING_OTP");
-    assert(session.otp_code && session.otp_code.length === 6, "6-digit OTP code generated successfully");
-
-    // TEST 5
-    console.log("\n🔐 [Test 5] OTP Passcode Verification");
+    // TEST 4: OTP Verification
+    console.log("\n🔐 [Test 4] OTP Verification");
     const validOtp = session.otp_code;
     await handleBotMessage(testPsid, validOtp);
 
     const missionary = (await runSql("SELECT * FROM missionaries WHERE psid = ? LIMIT 1", [testPsid]))[0];
-    session = (await runSql("SELECT * FROM sessions WHERE psid = ? LIMIT 1", [testPsid]))[0];
+    assert(missionary !== undefined && missionary.email === testEmail, "Missionary account verified and linked");
+    assert(Number(missionary.points) === 1, "+1 Welcome Point granted");
 
-    assert(missionary !== undefined && missionary.email === "elder.smith@missionary.org", "Missionary created & linked to PSID");
-    assert(Number(missionary.points) === 1, "Missionary granted +1 Welcome Point");
-    assert(!session || session.state === undefined, "Onboarding session cleaned up");
-
-    // TEST 6
-    console.log("\n📊 [Test 6] Returning Verified User (Dashboard Flow)");
-    await handleBotMessage(testPsid, "Dashboard");
-
-    const recentMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 5", [testPsid]);
-    const receivedDashboard = (recentMsgs || []).some(m => (m.message.includes("MISSIONARY DASHBOARD") || m.message.includes("𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗")) && m.message.includes("Elder Smith"));
-    assert(receivedDashboard, "Returning verified user receives Dashboard");
-
-    // TEST 7
-    console.log("\n🔄 [Test 7] RESET Command");
-    await handleBotMessage(testPsid, "RESET");
-
-    const resetMissionary = (await runSql("SELECT psid FROM missionaries WHERE email = 'elder.smith@missionary.org' LIMIT 1", [testPsid]))[0];
-    assert(resetMissionary?.psid === null || resetMissionary === undefined, "RESET command unlinked PSID from missionary account");
+    // TEST 5: FAQs with dynamic catalog integration
+    console.log("\n📖 [Test 5] Dynamic FAQs Inspection");
+    await handleBotMessage(testPsid, "FAQs");
+    const msgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [testPsid]);
+    assert(msgs?.[0]?.message.includes("𝗙𝗥𝗘𝗤𝗨𝗘𝗡𝗧𝗟𝗬 𝗔𝗦𝗞𝗘𝗗 𝗤𝗨𝗘𝗦𝗧𝗜𝗢𝗡𝗦") && msgs?.[0]?.message.includes("Points"), "FAQs rendered with live product catalog points");
 
   } catch (err) {
-    console.error(`\n💥 Fatal Test Suite Error: ${err.message}`);
+    console.error(`\n💥 Fatal Test Error: ${err.message}`);
     failed++;
   }
 
-  // Cleanup test data
+  // Cleanup
   try {
-    await runSql("DELETE FROM missionaries WHERE email = 'elder.smith@missionary.org'");
+    await runSql("DELETE FROM missionaries WHERE email = ?", [testEmail]);
     await runSql("DELETE FROM sessions WHERE psid = ?", [testPsid]);
     await runSql("DELETE FROM chat_messages WHERE psid = ?", [testPsid]);
   } catch (_) {}

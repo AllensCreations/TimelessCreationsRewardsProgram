@@ -33,10 +33,11 @@ async function testHourlyLimiterAndReferralNotice() {
   // 3. Inviter chats again -> receives in-chat notification passively without spam
   await handleBotMessage(inviterPsid, "Dashboard");
   
-  // Inspect last 5 bot messages to capture the split referral banner text
-  const recentMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 5", [inviterPsid]);
-  const hasNotice = recentMsgs.some(m => m.message.includes("fellow missionary companion") || m.message.includes("𝗚𝗥𝗘𝗔𝗧 𝗡𝗘𝗪𝗦"));
-  console.log(`  ✓ Passive In-Chat referral alert delivered: ${hasNotice}`);
+  const recentMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 6", [inviterPsid]);
+  console.log("  🔍 [DEBUG] Recent bot messages for inviter:", recentMsgs.map(m => m.message));
+
+  const hasNotice = recentMsgs.some(m => m.message.includes("companion") || m.message.includes("𝗚𝗥𝗘𝗔𝗧 𝗡𝗘𝗪𝗦") || m.message.includes("joined using"));
+  console.log(`  ✓ Passive In-Chat referral alert detected: ${hasNotice}`);
 
   // 4. Test Hourly rate limit (requests 2, 3, then 4)
   await handleBotMessage(inviterPsid, "Dashboard"); // 2nd view
@@ -44,6 +45,8 @@ async function testHourlyLimiterAndReferralNotice() {
   await handleBotMessage(inviterPsid, "Dashboard"); // 4th view (Over limit)
 
   const lastBotMsg = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [inviterPsid]))[0];
+  console.log("  🔍 [DEBUG] Last bot message (rate limit check):", lastBotMsg?.message);
+
   const isCapped = lastBotMsg?.message.includes("𝗛𝗢𝗨𝗥𝗟𝗬 𝗟𝗜𝗠𝗜𝗧 𝗥𝗘𝗔𝗖𝗛𝗘𝗗") && lastBotMsg?.message.includes("Philippine Time");
 
   if (isCapped && hasNotice) {

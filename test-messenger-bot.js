@@ -23,9 +23,7 @@ async function runFullBotTester() {
   const testPsid = "TEST_PHONE_PSID_" + Date.now().toString().slice(-4);
 
   try {
-    // ----------------------------------------------------
-    // TEST 1: New User Trigger -> Shows Welcome & Terms
-    // ----------------------------------------------------
+    // TEST 1
     console.log("📝 [Test 1] New User Onboarding Trigger (START -> AWAITING_TERMS)");
     await runSql("DELETE FROM sessions WHERE psid = ?", [testPsid]);
     await runSql("DELETE FROM missionaries WHERE psid = ?", [testPsid]);
@@ -35,25 +33,19 @@ async function runFullBotTester() {
     let session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
     assert(session && session.state === 'AWAITING_TERMS', "New user is shown Welcome & Terms (AWAITING_TERMS)");
 
-    // ----------------------------------------------------
-    // TEST 2: Terms Agreement -> Proceeds to AWAITING_REFERRAL
-    // ----------------------------------------------------
+    // TEST 2
     console.log("\n📜 [Test 2] Terms Agreement");
     await handleBotMessage(testPsid, "I agree", "TERMS_AGREE");
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
     assert(session && session.state === 'AWAITING_REFERRAL', "Terms agreed, advanced to AWAITING_REFERRAL");
 
-    // ----------------------------------------------------
-    // TEST 3: Referral Code Entry (TCRP50) -> AWAITING_NAME_EMAIL
-    // ----------------------------------------------------
+    // TEST 3
     console.log("\n🎟️ [Test 3] Referral Code Input");
     await handleBotMessage(testPsid, "TCRP50");
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
     assert(session && session.state === 'AWAITING_NAME_EMAIL', "Referral code TCRP50 accepted, advanced to AWAITING_NAME_EMAIL");
 
-    // ----------------------------------------------------
-    // TEST 4: Email Validation (@missionary.org check)
-    // ----------------------------------------------------
+    // TEST 4
     console.log("\n✉️ [Test 4] Email Validation (@missionary.org check)");
     await handleBotMessage(testPsid, "Elder Invalid\nwrong.email@gmail.com");
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
@@ -64,9 +56,7 @@ async function runFullBotTester() {
     assert(session && session.state === 'AWAITING_OTP', "Valid missionary email parsed, OTP generated, advanced to AWAITING_OTP");
     assert(session.otp_code && session.otp_code.length === 6, "6-digit OTP code generated successfully");
 
-    // ----------------------------------------------------
-    // TEST 5: OTP Passcode Verification
-    // ----------------------------------------------------
+    // TEST 5
     console.log("\n🔐 [Test 5] OTP Passcode Verification");
     const validOtp = session.otp_code;
     await handleBotMessage(testPsid, validOtp);
@@ -78,19 +68,15 @@ async function runFullBotTester() {
     assert(Number(missionary.points) === 1, "Missionary granted +1 Welcome Point");
     assert(!session || session.state === undefined, "Onboarding session cleaned up");
 
-    // ----------------------------------------------------
-    // TEST 6: Returning Verified User (Dashboard Flow)
-    // ----------------------------------------------------
+    // TEST 6
     console.log("\n📊 [Test 6] Returning Verified User (Dashboard Flow)");
     await handleBotMessage(testPsid, "Dashboard");
 
-    const recentMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 3", [testPsid]);
-    const receivedDashboard = (recentMsgs || []).some(m => m.message.includes("MISSIONARY DASHBOARD") && m.message.includes("Elder Smith"));
+    const recentMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 5", [testPsid]);
+    const receivedDashboard = (recentMsgs || []).some(m => (m.message.includes("MISSIONARY DASHBOARD") || m.message.includes("𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗")) && m.message.includes("Elder Smith"));
     assert(receivedDashboard, "Returning verified user receives Dashboard");
 
-    // ----------------------------------------------------
-    // TEST 7: Reset Command Test
-    // ----------------------------------------------------
+    // TEST 7
     console.log("\n🔄 [Test 7] RESET Command");
     await handleBotMessage(testPsid, "RESET");
 

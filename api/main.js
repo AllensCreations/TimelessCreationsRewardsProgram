@@ -1,9 +1,6 @@
-import { executeBotAction } from "./bot.js";
 import 'dotenv/config';
 import { runSql } from '../lib/db.js';
 import { sendDripEmail, sendOTPEmail, sendReceiptEmail, sendThankYouEmail, renderMonthlyDripTemplate } from '../lib/mailer.js';
-import fs from 'fs';
-import path from 'path';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -28,8 +25,11 @@ export default async function handler(req, res) {
     switch (action) {
       case "health_check":
       case "ping": {
-        const setting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
-        const status = (setting?.value || "ONLINE").toUpperCase();
+        let status = "ONLINE";
+        try {
+          const setting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
+          status = (setting?.value || "ONLINE").toUpperCase();
+        } catch (_) {}
         return res.status(200).json({ ok: status === "ONLINE", status, power_state: status });
       }
 
@@ -62,7 +62,6 @@ export default async function handler(req, res) {
       case "get_stats":
       default: {
         if (action && action !== "get_stats" && action !== undefined) {
-          // Pass through to specific action if handled below
           break;
         }
         const todayIso = new Date().toISOString().slice(0, 10);
@@ -72,17 +71,17 @@ export default async function handler(req, res) {
           totalM, activeM, totalO, pendingO, totalDrips, pts,
           recentOrders, recentLogs, todaySent, monthSent, recentlySent
         ] = await Promise.all([
-          runSql("SELECT COUNT(*) as count FROM missionaries"),
-          runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'"),
-          runSql("SELECT COUNT(*) as count FROM orders"),
-          runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'"),
-          runSql("SELECT COUNT(*) as count FROM drip_messages"),
-          runSql("SELECT SUM(points) as pts FROM missionaries"),
-          runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5"),
-          runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 50"),
-          runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]),
-          runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"]),
-          runSql("SELECT email, name, cohort, months_sent, last_sent_at FROM missionaries WHERE last_sent_at IS NOT NULL ORDER BY last_sent_at DESC LIMIT 8")
+          runSql("SELECT COUNT(*) as count FROM missionaries").catch(() => [{ count: 0 }]),
+          runSql("SELECT COUNT(*) as count FROM missionaries WHERE status = 'active'").catch(() => [{ count: 0 }]),
+          runSql("SELECT COUNT(*) as count FROM orders").catch(() => [{ count: 0 }]),
+          runSql("SELECT COUNT(*) as count FROM orders WHERE UPPER(status) = 'PENDING'").catch(() => [{ count: 0 }]),
+          runSql("SELECT COUNT(*) as count FROM drip_messages").catch(() => [{ count: 0 }]),
+          runSql("SELECT SUM(points) as pts FROM missionaries").catch(() => [{ pts: 0 }]),
+          runSql("SELECT order_id, name, item, points_cost, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5").catch(() => []),
+          runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 50").catch(() => []),
+          runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [todayIso + "%"]).catch(() => [{ count: 0 }]),
+          runSql("SELECT COUNT(*) as count FROM missionaries WHERE last_sent_at LIKE ?", [monthIso + "%"]).catch(() => [{ count: 0 }]),
+          runSql("SELECT email, name, cohort, months_sent, last_sent_at FROM missionaries WHERE last_sent_at IS NOT NULL ORDER BY last_sent_at DESC LIMIT 8").catch(() => [])
         ]);
 
         return res.status(200).json({
@@ -366,7 +365,6 @@ export default async function handler(req, res) {
     return res.status(404).json({ ok: false, error: `Unknown action '${action}'` });
   } catch (err) {
     console.error(`API Error [${action}]:`, err);
-    await runSql("INSERT INTO system_logs (level, message) VALUES ('ERROR', ?)", [`API Error [${action}]: ${err.message}`]);
     return res.status(500).json({ ok: false, error: err.message });
   }
 }

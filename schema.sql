@@ -20,9 +20,16 @@ CREATE TABLE IF NOT EXISTS `missionaries` (
 	`pending_ref_notices` integer DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS `bot_hourly_views` (
+	`psid` text,
+	`hour_key` text, -- Format: YYYY-MM-DD_HH (Philippine Standard Time)
+	`view_count` integer DEFAULT 1,
+	PRIMARY KEY(`psid`, `hour_key`)
+);
+
 CREATE TABLE IF NOT EXISTS `hashed_audit_identities` (
 	`identity_hash` text PRIMARY KEY,
-	`type` text, -- 'email' or 'psid'
+	`type` text,
 	`welcome_granted` integer DEFAULT 1,
 	`referral_awarded` integer DEFAULT 1,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
@@ -120,6 +127,5 @@ CREATE TABLE IF NOT EXISTS `cdn_gallery` (
 CREATE INDEX IF NOT EXISTS `idx_m_email` ON `missionaries` (`email`);
 CREATE INDEX IF NOT EXISTS `idx_m_psid` ON `missionaries` (`psid`);
 CREATE INDEX IF NOT EXISTS `idx_m_ref` ON `missionaries` (`referral_code`);
-CREATE INDEX IF NOT EXISTS `idx_m_status_date` ON `missionaries` (`status`, `next_send_date`, `months_sent`, `max_months`);
 CREATE INDEX IF NOT EXISTS `idx_orders_status` ON `orders` (`status`, `created_at`);
 CREATE INDEX IF NOT EXISTS `idx_catalog_type` ON `product_catalog` (`type`, `price`);

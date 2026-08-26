@@ -1,5 +1,4 @@
-import { runSql } from '../lib/db.js';
-import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit, FIXED_QUICK_REPLIES } from '../lib/bot.js';
+import { handleBotMessage } from '../lib/botHandler.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,45 +7,36 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const verifyToken = process.env.PAGE_ACCESS_TOKEN 
-    ? (process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN) 
-    : (process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN);
-  const pageToken = process.env.PAGE_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+  const VERIFY_TOKEN = process.env.VERIFY_TOKEN || process.env.FB_VERIFY_TOKEN || 'tcrp_token';
 
   if (req.method === 'GET') {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
-    if (mode === 'subscribe' && (token === verifyToken || token === process.env.VERIFY_TOKEN || token === process.env.FB_VERIFY_TOKEN)) {
-      console.log('✅ Meta Webhook verified');
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
       return res.status(200).send(challenge);
     }
-    return res.status(403).send('Forbidden: Token mismatch.');
+    return res.status(403).send('Forbidden');
   }
 
   if (req.method === 'POST') {
     const body = req.body;
-
     if (body?.object === 'page') {
       try {
         for (const entry of body.entry || []) {
-          for (const webhookEvent of entry.messaging || []) {
-            const senderId = webhookEvent.sender?.id;
-            if (!senderId) continue;
-
-            const rawText = (webhookEvent.message?.text || '').trim();
-            const postbackPayload = webhookEvent.postback?.payload || webhookEvent.message?.quick_reply?.payload || '';
-            const referralCode = webhookEvent.referral?.ref || 
-                                 webhookEvent.postback?.referral?.ref || 
-                                 webhookEvent.message?.referral?.ref || 
-                                 '';
-
-            await executeBotAction(senderId, rawText, postbackPayload, referralCode, pageToken);
+          for (const event of entry.messaging || entry.standby || []) {
+            if (event?.sender?.id) {
+              const psid = event.sender.id;
+              const text = event.message?.text || '';
+              const payload = event.postback?.payload || event.message?.quick_reply?.payload || null;
+              const ref = event.referral?.ref || event.postback?.referral?.ref || '';
+              await handleBotMessage(psid, text, payload, ref);
+            }
           }
         }
       } catch (err) {
-        console.error('Webhook execution error:', err);
+        console.error('Bot webhook error:', err.message);
       }
       return res.status(200).send('EVENT_RECEIVED');
     }
@@ -54,108 +44,4 @@ export default async function handler(req, res) {
   }
 
   return res.status(405).send('Method Not Allowed');
-}
-
-export async function executeBotAction(senderId, text, postbackPayload, referralCode, token) {
-  const cleanRef = (referralCode || '').trim().toUpperCase();
-  const sid = String(senderId);
-
-  // 1. Handle Deep Link Referral
-  if (cleanRef) {
-    try {
-      const inviterRows = await runSql(
-        "SELECT rowid as id, name, points, referral_code FROM missionaries WHERE referral_code = ? COLLATE NOCASE LIMIT 1",
-        [cleanRef]
-      );
-      const inviter = inviterRows?.[0];
-
-      if (inviter) {
-        const existingRows = await runSql(
-          "SELECT rowid as id, fb_sender_id FROM missionaries WHERE fb_sender_id = ? LIMIT 1",
-          [sid]
-        );
-        const existing = existingRows?.[0];
-
-        if (!existing) {
-          const inviterPoints = Number(inviter.points || 0);
-          
-          // Credit inviter by referral_code directly
-          await runSql(
-            "UPDATE missionaries SET points = ? WHERE referral_code = ? COLLATE NOCASE",
-            [inviterPoints + 1, cleanRef]
-          );
-
-          const newCode = 'TC' + Math.random().toString(36).substring(2, 7).toUpperCase();
-          const fallbackEmail = `user_${sid.slice(-6)}@missionary.org`;
-          
-          await runSql(
-            "INSERT INTO missionaries (name, email, fb_sender_id, points, referral_code, is_active) VALUES (?, ?, ?, 1, ?, 1)",
-            [`Elder Missionary`, fallbackEmail, sid, newCode]
-          );
-
-          if (token && !token.startsWith("EAA_MOCK")) {
-            const welcomeMsg = `🎉 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗧𝗖𝗥𝗣!\n\nYou joined using ${inviter.name}'s referral link!\n\n🎁 You both received +1 Free Reward Point!\n\nTap "📊 Dashboard" below to view your points and explore rewards.`;
-            await sendFbMessage(sid, { text: welcomeMsg, quick_replies: FIXED_QUICK_REPLIES }, token);
-          }
-          return;
-        }
-      }
-    } catch (e) {
-      console.error('Referral handling error:', e);
-    }
-  }
-
-  // Regular Lookup & Dashboard Flow
-  let missionaryRows = await runSql(
-    "SELECT rowid as id, * FROM missionaries WHERE fb_sender_id = ? OR referral_code = ? COLLATE NOCASE LIMIT 1",
-    [sid, (text || '').toUpperCase()]
-  );
-  let missionary = missionaryRows?.[0];
-  const points = Number(missionary?.points || 0);
-  const refCode = missionary?.referral_code || "JOIN";
-  const refLink = `https://m.me/TimelessCreationsRP?ref=${refCode}`;
-
-  let rewardProducts = [];
-  try {
-    rewardProducts = await runSql("SELECT id, name, price, image_url, type FROM product_catalog WHERE type = 'reward' ORDER BY price ASC LIMIT 10");
-  } catch (err) {
-    console.warn("product_catalog fallback:", err.message);
-  }
-
-  const rateCheck = await checkDashboardRateLimit(sid);
-  if (!rateCheck.allowed) {
-    if (!rateCheck.shouldMute && rateCheck.message && token && !token.startsWith("EAA_MOCK")) {
-      await sendFbMessage(sid, { text: rateCheck.message, quick_replies: FIXED_QUICK_REPLIES }, token);
-    }
-    return;
-  }
-
-  if (!token || token.startsWith("EAA_MOCK")) return;
-
-  const payload = buildDashboardPayload(missionary || { name: "Missionary", email: "Not linked yet", points }, refLink);
-
-  await sendFbMessage(sid, { text: payload.dashboardText }, token);
-  await sendFbMessage(sid, { text: payload.invitePromoText }, token);
-
-  const carouselPayload = await buildCatalogCarousel(points, rewardProducts);
-  await sendFbMessage(sid, carouselPayload, token);
-}
-
-async function sendFbMessage(recipientId, messagePayload, token) {
-  const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${token}`;
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messaging_type: "RESPONSE",
-        recipient: { id: recipientId },
-        message: messagePayload
-      })
-    });
-    const result = await res.json();
-    if (result.error) console.error('Facebook Send API Error:', result.error);
-  } catch (err) {
-    console.error('Facebook network failure:', err.message);
-  }
 }

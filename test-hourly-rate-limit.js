@@ -32,7 +32,9 @@ async function testHourlyLimiterAndReferralNotice() {
 
   // 3. Inviter chats again -> receives in-chat notification passively without spam
   await handleBotMessage(inviterPsid, "Dashboard");
-  const recentMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 2", [inviterPsid]);
+  
+  // Inspect last 5 bot messages to capture the split referral banner text
+  const recentMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 5", [inviterPsid]);
   const hasNotice = recentMsgs.some(m => m.message.includes("fellow missionary companion") || m.message.includes("𝗚𝗥𝗘𝗔𝗧 𝗡𝗘𝗪𝗦"));
   console.log(`  ✓ Passive In-Chat referral alert delivered: ${hasNotice}`);
 

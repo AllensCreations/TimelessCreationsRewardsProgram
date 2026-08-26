@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Invoicing & Cash POS | Timeless Creations</title>
+<title>Invoicing, POS & Pending Claims | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/app.css">
 <script src="/assets/app.js"></script>
@@ -84,78 +84,24 @@
   .status-select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.66rem;outline:none;}
   .status-select.pending{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
   .status-select.completed{border-color:var(--green);color:var(--green);background:var(--green-dim);}
-
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;visibility:hidden;transition:all 0.3s;}
-  .modal-overlay.active{opacity:1;visibility:visible;}
-  .dialog-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:440px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,0.8);text-align:center;}
-  .dialog-box h3{font-family:'Syne',sans-serif;color:var(--gold);font-size:1.1rem;margin-bottom:8px;}
-  .dialog-box p{font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:20px;}
-
-  .receipt-card-node{
-    background:linear-gradient(135deg, #fffcf5 0%, #f7f1e3 100%); color:#2c221e; padding:32px; border-radius:18px; width:420px;
-    box-shadow:0 25px 60px rgba(0,0,0,0.8); border:3px solid var(--gold); text-align:center;
-    font-family:Georgia,serif; position:relative; overflow:hidden;
-  }
-  .receipt-card-node h2{color:#8b1a1a; margin-bottom:4px; font-size:1.4rem; font-family:'Syne',sans-serif;}
-  .receipt-card-node .shop-brand{font-size:0.8rem; color:#b8955a; font-style:italic; letter-spacing:0.05em; margin-bottom:14px;}
-  .receipt-card-node .receipt-inner{
-    background:#ffffff; padding:18px; border-radius:12px; border:2px dashed #e2c286;
-    text-align:left; font-family:'DM Mono',monospace; font-size:0.75rem; margin:16px 0; line-height:1.7; color:#3a322c;
-  }
-  .receipt-footer-msg{font-size:0.78rem; color:#8b1a1a; font-weight:700; margin-top:12px; font-family:'Syne',sans-serif;}
-  .red-stamp{
-    position:absolute; top:48%; right:24px; transform:translateY(-50%) rotate(-12deg);
-    border:4px solid rgba(210, 40, 40, 0.85); color:rgba(210, 40, 40, 0.85);
-    font-family:'Syne',sans-serif; font-weight:800; font-size:1.35rem; padding:6px 14px;
-    letter-spacing:0.12em; text-transform:uppercase; border-radius:8px; pointer-events:none;
-    box-shadow:0 0 0 2px rgba(210, 40, 40, 0.2) inset; background:rgba(255,230,230,0.18);
-  }
 </style>
 </head>
 <body>
-
-<div class="modal-overlay" id="confirm-modal">
-  <div class="dialog-box">
-    <h3 id="confirm-title">Confirm Action</h3>
-    <p id="confirm-desc">Are you sure you want to proceed?</p>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button class="btn" id="confirm-yes-btn">Confirm</button>
-      <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="receipt-modal">
-  <div>
-    <div class="receipt-card-node" id="receipt-card-node">
-      <h2>✨ Timeless Creations ✨</h2>
-      <div class="shop-brand">Rewards Program (TCRP)</div>
-      <div class="receipt-inner" id="receipt-preview-text"></div>
-      <div class="receipt-footer-msg">💖 Thank you! Please shop again! 🌸</div>
-      <div class="red-stamp">COMPLETED</div>
-    </div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
-      <button class="btn" onclick="downloadReceiptImage()">📥 Download Image</button>
-      <button class="btn" onclick="copyReceiptText()" style="background:var(--blue);color:#fff;">📋 Copy Text</button>
-      <button class="btn btn-secondary" onclick="closeReceiptModal()">Close</button>
-    </div>
-  </div>
-</div>
 
 <div class="container">
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Generate Invoice</button>
     <button class="tab-btn" onclick="switchNavTab('history-tab', this)">📜 Invoice History <span id="history-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
-    <button class="tab-btn" onclick="switchNavTab('pos-tab', this)">📦 Rewards Claims Logbook <span id="pos-badge" style="background:var(--blue-dim);color:var(--blue);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
+    <button class="tab-btn" onclick="switchNavTab('pending-claims-tab', this)" style="border-color:var(--gold);color:var(--gold);">⏳ Pending Claims (Rewards) <span id="pending-claims-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
     <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash Product Catalog</button>
   </div>
 
+  <!-- Generate Invoice Tab -->
   <div class="tab-pane active" id="create-tab">
     <div class="grid-layout">
       <div>
         <div class="card">
           <h3>1. Customer &amp; Recipient Information</h3>
-          
           <div class="mode-switch-row">
             <button class="mode-switch-btn active" id="mode-db-btn" onclick="switchRecipientMode('db')">🔍 Search Registered</button>
             <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom / Non-Listed</button>
@@ -181,7 +127,7 @@
               <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Sister Maria Santos or John Doe" oninput="handleCustomInput()"/>
             </div>
             <div class="form-group">
-              <label>Email Address (Optional for e-Receipt)</label>
+              <label>Email Address</label>
               <input type="email" class="form-input" id="custom-email-input" placeholder="customer@example.com" oninput="handleCustomInput()"/>
             </div>
             <div class="form-group">
@@ -247,8 +193,6 @@
       <div class="preview-wrapper">
         <div class="card" style="padding:16px;">
           <h3 style="margin-bottom:8px;">Live Invoice Preview</h3>
-          <p style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;">Formatted for instant client export.</p>
-
           <div class="invoice-preview-card" id="invoice-node">
             <div>
               <div class="inv-header">
@@ -312,76 +256,64 @@
     </div>
   </div>
 
+  <!-- History Tab -->
   <div class="tab-pane" id="history-tab">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div>
-          <h3>Invoice Records</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">All issued cash invoices in Turso.</p>
-        </div>
-        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
-      </div>
-
-      <div style="overflow-x:auto;">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Invoice ID</th>
-              <th>Customer</th>
-              <th>Email</th>
-              <th>Total (₱)</th>
-              <th>Date</th>
-              <th style="text-align:center;">Status</th>
-            </tr>
-          </thead>
-          <tbody id="invoices-tbody">
-            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading invoices...</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <h3>Invoice Records</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice ID</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Total (₱)</th>
+            <th>Date</th>
+            <th style="text-align:center;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="invoices-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading invoices...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <div class="tab-pane" id="pos-tab">
+  <!-- Pending Claims (Rewards) Tab -->
+  <div class="tab-pane" id="pending-claims-tab">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <div>
-          <h3>Rewards Claims Logbook (Messenger Orders)</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Track points-based rewards claimed by missionaries.</p>
+          <h3>Pending Rewards Claims &amp; Hybrid Bundling</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Review claimed items, bundle extra cash products, and mark complete to auto-send Thank You emails.</p>
         </div>
-        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="loadOrders()">🔄 Refresh Orders</button>
+        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="loadOrders()">🔄 Refresh Claims</button>
       </div>
 
-      <div style="overflow-x:auto;">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Recipient</th>
-              <th>Email</th>
-              <th>Item Claimed</th>
-              <th>Points Cost</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="pos-tbody">
-            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading orders...</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Recipient</th>
+            <th>Email</th>
+            <th>Claimed Reward</th>
+            <th>Points</th>
+            <th style="text-align:center;">Status / Action</th>
+          </tr>
+        </thead>
+        <tbody id="pending-claims-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading pending claims...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
+  <!-- Cash Product Catalog Tab -->
   <div class="tab-pane" id="products-tab">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div>
-          <h3>Cash POS Catalog (PHP Pricing)</h3>
-          <p style="font-size:0.68rem;color:var(--muted);">Cash inventory items are stored with <code>type = 'cash'</code>.</p>
-        </div>
+        <h3>Cash POS Catalog (PHP Pricing)</h3>
         <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addNewProductSetting()">+ Add Product</button>
       </div>
-
       <table class="data-table">
         <thead>
           <tr>
@@ -392,7 +324,6 @@
         </thead>
         <tbody id="products-settings-tbody"></tbody>
       </table>
-
       <div style="margin-top:16px;">
         <button class="btn" id="save-products-btn" onclick="saveProductSettings()">💾 Save Cash Products to Turso</button>
       </div>
@@ -441,6 +372,7 @@ async function loadData() {
     populateMissionarySelect(missionaries);
     renderInvoicesTable();
     renderProductSettings();
+    loadOrders();
 
     if (document.querySelectorAll('#items-tbody tr').length === 0 && productCatalog.length > 0) {
       addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
@@ -456,10 +388,62 @@ async function loadOrders() {
     const data = await res.json();
     if (data.ok) {
       orders = data.orders || [];
-      renderOrdersTable();
+      renderPendingClaimsTable();
     }
   } catch (e) {
     showToast("Failed to load orders", "error");
+  }
+}
+
+function renderPendingClaimsTable() {
+  const tbody = document.getElementById('pending-claims-tbody');
+  const badge = document.getElementById('pending-claims-badge');
+  const pending = orders.filter(o => (o.status || 'PENDING').toUpperCase() === 'PENDING');
+  badge.textContent = pending.length;
+
+  if (pending.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No pending rewards claims found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = pending.map(o => `
+    <tr>
+      <td style="font-weight:bold;color:var(--gold);">${o.order_id}</td>
+      <td style="font-weight:600;">${o.name || 'Anonymous'}</td>
+      <td style="color:var(--muted);">${o.email || '—'}</td>
+      <td><strong>🎁 ${o.item}</strong> (Claimed Free)</td>
+      <td><span style="color:var(--gold);font-weight:bold;">${o.points_cost} PTS</span></td>
+      <td style="text-align:center;">
+        <select class="status-select pending" onchange="updateClaimStatus('${o.order_id}', this.value)">
+          <option value="PENDING" selected>PENDING</option>
+          <option value="COMPLETED">MARK COMPLETE &amp; SEND THANKS</option>
+        </select>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function updateClaimStatus(orderId, newStatus) {
+  if (newStatus === 'COMPLETED' && !confirm(`Mark order ${orderId} as COMPLETED and automatically dispatch Thank You email to recipient?`)) {
+    loadOrders();
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_order_status', order_id: orderId, status: newStatus })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Order ${orderId} updated to ${newStatus}!`);
+      loadOrders();
+    } else {
+      showToast("Failed to update status", "error");
+    }
+  } catch(e) {
+    showToast("Network error updating order", "error");
   }
 }
 
@@ -469,24 +453,18 @@ function switchRecipientMode(mode) {
   document.getElementById('mode-custom-btn').classList.toggle('active', mode === 'custom');
   document.getElementById('recipient-db-box').style.display = mode === 'db' ? 'block' : 'none';
   document.getElementById('recipient-custom-box').style.display = mode === 'custom' ? 'block' : 'none';
-
   if (mode === 'db') handleMissionarySelect();
   else handleCustomInput();
 }
 
 function handleDbPhoneInput() {
-  const phone = document.getElementById('db-phone-input').value.trim();
-  document.getElementById('prev-phone').textContent = phone || '—';
+  document.getElementById('prev-phone').textContent = document.getElementById('db-phone-input').value.trim() || '—';
 }
 
 function handleCustomInput() {
-  const name = document.getElementById('custom-name-input').value.trim() || 'Customer [Name]';
-  const email = document.getElementById('custom-email-input').value.trim() || 'Walk-in / Cash';
-  const phone = document.getElementById('custom-phone-input').value.trim() || '—';
-
-  document.getElementById('prev-name').textContent = name;
-  document.getElementById('prev-email').textContent = email;
-  document.getElementById('prev-phone').textContent = phone;
+  document.getElementById('prev-name').textContent = document.getElementById('custom-name-input').value.trim() || 'Customer [Name]';
+  document.getElementById('prev-email').textContent = document.getElementById('custom-email-input').value.trim() || 'customer@example.com';
+  document.getElementById('prev-phone').textContent = document.getElementById('custom-phone-input').value.trim() || '—';
 }
 
 function populateMissionarySelect(list) {
@@ -497,19 +475,15 @@ function populateMissionarySelect(list) {
 
 function filterMissionaryDropdown(query) {
   const q = query.toLowerCase();
-  const filtered = missionaries.filter(m => (m.name || '').toLowerCase().includes(q) || (m.email || '').toLowerCase().includes(q));
-  populateMissionarySelect(filtered);
+  populateMissionarySelect(missionaries.filter(m => (m.name || '').toLowerCase().includes(q) || (m.email || '').toLowerCase().includes(q)));
 }
 
 function handleMissionarySelect() {
-  const email = document.getElementById('missionary-select').value;
-  const m = missionaries.find(x => x.email === email);
-  const phone = document.getElementById('db-phone-input').value.trim();
-
+  const m = missionaries.find(x => x.email === document.getElementById('missionary-select').value);
   if (m) {
     document.getElementById('prev-name').textContent = m.name;
     document.getElementById('prev-email').textContent = m.email;
-    document.getElementById('prev-phone').textContent = phone || '—';
+    document.getElementById('prev-phone').textContent = document.getElementById('db-phone-input').value.trim() || '—';
   } else {
     document.getElementById('prev-name').textContent = "Elder / Sister [Name]";
     document.getElementById('prev-email').textContent = "customer@example.com";
@@ -523,7 +497,6 @@ function addItemRow(defaultName = "", defaultPrice = 0, defaultQty = 1) {
     defaultName = productCatalog[0].name;
     defaultPrice = productCatalog[0].price;
   }
-
   const tbody = document.getElementById('items-tbody');
   const tr = document.createElement('tr');
   tr.className = 'item-row';
@@ -544,24 +517,19 @@ function addItemRow(defaultName = "", defaultPrice = 0, defaultQty = 1) {
 
 function handleProductChange(selectEl) {
   const opt = selectEl.options[selectEl.selectedIndex];
-  const price = opt.getAttribute('data-price') || 0;
-  const row = selectEl.closest('tr');
-  row.querySelector('.item-price').value = price;
+  selectEl.closest('tr').querySelector('.item-price').value = opt.getAttribute('data-price') || 0;
   recalculateTotal();
 }
 
 function recalculateTotal() {
-  const rows = document.querySelectorAll('.item-row');
   let subtotal = 0;
   const previewItems = [];
-
-  rows.forEach(r => {
+  document.querySelectorAll('.item-row').forEach(r => {
     const name = r.querySelector('.item-select').value;
     const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
     const price = parseFloat(r.querySelector('.item-price').value) || 0;
     const rowSubtotal = qty * price;
     r.querySelector('.item-subtotal').textContent = `₱${rowSubtotal.toFixed(2)}`;
-
     subtotal += rowSubtotal;
     previewItems.push({ name, qty, price, subtotal: rowSubtotal });
   });
@@ -572,7 +540,6 @@ function recalculateTotal() {
   if (discountDeducted > subtotal) discountDeducted = subtotal;
 
   const grandTotal = subtotal - discountDeducted;
-
   document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
   document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
   document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
@@ -597,32 +564,17 @@ function recalculateTotal() {
 }
 
 async function submitInvoice() {
-  let customerName = "";
-  let customerEmail = "";
+  let customerName = recipientMode === 'db' ? missionaries.find(x => x.email === document.getElementById('missionary-select').value)?.name || 'Missionary' : document.getElementById('custom-name-input').value.trim();
+  let customerEmail = recipientMode === 'db' ? document.getElementById('missionary-select').value : document.getElementById('custom-email-input').value.trim();
 
-  if (recipientMode === 'db') {
-    const email = document.getElementById('missionary-select').value;
-    if (!email) {
-      showToast("Please select a missionary first.", "error");
-      return;
-    }
-    const m = missionaries.find(x => x.email === email);
-    customerName = m ? m.name : 'Missionary';
-    customerEmail = email;
-  } else {
-    customerName = document.getElementById('custom-name-input').value.trim();
-    customerEmail = document.getElementById('custom-email-input').value.trim();
-    if (!customerName) {
-      showToast("Please enter customer name.", "error");
-      return;
-    }
+  if (!customerName) {
+    showToast("Please provide customer name.", "error");
+    return;
   }
 
-  const rows = document.querySelectorAll('.item-row');
   const items = [];
   let subtotal = 0;
-
-  rows.forEach(r => {
+  document.querySelectorAll('.item-row').forEach(r => {
     const name = r.querySelector('.item-select').value;
     const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
     const price = parseFloat(r.querySelector('.item-price').value) || 0;
@@ -632,21 +584,16 @@ async function submitInvoice() {
   });
 
   if (items.length === 0) {
-    showToast("Please add at least one item.", "error");
+    showToast("Please add items.", "error");
     return;
   }
 
   const discountType = document.getElementById('discount-type').value;
   const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
   let discountAmount = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
-  if (discountAmount > subtotal) discountAmount = subtotal;
   const totalAmount = subtotal - discountAmount;
 
   const invId = `INV-${Date.now().toString().slice(-6)}`;
-  const btn = document.getElementById('generate-btn');
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
-
   try {
     const res = await fetch('/api/main', {
       method: 'POST',
@@ -666,58 +613,29 @@ async function submitInvoice() {
     });
     const data = await res.json();
     if (data.ok) {
-      document.getElementById('prev-inv-id').textContent = invId;
-      showToast(`Invoice ${invId} saved to Turso!`);
-      await loadData();
-    } else {
-      showToast(data.error || "Failed to save invoice", "error");
+      showToast(`Invoice ${invId} saved!`);
+      loadData();
     }
-  } catch (err) {
-    showToast("Network error generating invoice", "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🧾 Finalize & Save Invoice';
+  } catch(e) {
+    showToast("Error saving invoice", "error");
   }
 }
 
 function renderInvoicesTable() {
   const tbody = document.getElementById('invoices-tbody');
   document.getElementById('history-badge').textContent = cashInvoices.length;
-
-  if (cashInvoices.length === 0) {
+  if (!cashInvoices.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No invoices recorded yet.</td></tr>';
     return;
   }
-
   tbody.innerHTML = cashInvoices.map(inv => `
     <tr>
       <td style="font-weight:bold;color:var(--gold);">${inv.invoice_id}</td>
       <td style="font-weight:600;">${inv.name}</td>
       <td style="color:var(--muted);">${inv.email || '—'}</td>
       <td style="font-weight:bold;">₱${Number(inv.total_amount).toFixed(2)}</td>
-      <td style="color:var(--muted);font-size:0.65rem;">${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-      <td style="text-align:center;"><span style="color:var(--green);font-size:0.65rem;font-weight:bold;">${inv.status || 'PENDING'}</span></td>
-    </tr>
-  `).join('');
-}
-
-function renderOrdersTable() {
-  const tbody = document.getElementById('pos-tbody');
-  document.getElementById('pos-badge').textContent = orders.length;
-
-  if (!orders || !orders.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No rewards orders recorded yet.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = orders.map(o => `
-    <tr>
-      <td style="font-weight:bold;color:var(--gold)">${o.order_id}</td>
-      <td style="font-weight:600">${o.name || 'Anonymous'}</td>
-      <td style="color:var(--muted)">${o.email || '—'}</td>
-      <td>${o.item}</td>
-      <td><span style="font-weight:bold;color:var(--gold);">${o.points_cost} PTS</span></td>
-      <td><span style="font-size:0.65rem;color:${o.status === 'COMPLETED' ? 'var(--green)' : 'var(--gold)'};font-weight:bold;">${o.status}</span></td>
+      <td style="color:var(--muted);font-size:0.65rem;">${new Date(inv.created_at).toLocaleDateString()}</td>
+      <td style="text-align:center;"><span style="color:var(--green);font-weight:bold;">${inv.status}</span></td>
     </tr>
   `).join('');
 }
@@ -753,10 +671,6 @@ async function saveProductSettings() {
     if (name) updated.push({ name, price, type: 'cash' });
   });
 
-  const btn = document.getElementById('save-products-btn');
-  btn.disabled = true;
-  btn.textContent = 'Saving to Turso...';
-
   try {
     const res = await fetch('/api/main', {
       method: 'POST',
@@ -767,50 +681,31 @@ async function saveProductSettings() {
     if (data.ok) {
       showToast("Cash products saved to Turso!");
       productCatalog = updated;
-      document.getElementById('items-tbody').innerHTML = '';
-      if (productCatalog.length > 0) addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
-    } else {
-      showToast(data.error || "Failed to save products", "error");
     }
-  } catch (err) {
-    showToast("Network error saving products", "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '💾 Save Cash Products to Turso';
+  } catch(e) {
+    showToast("Error saving products", "error");
   }
 }
 
 function downloadInvoiceImage() {
-  const node = document.getElementById('invoice-node');
-  html2canvas(node, { scale: 2 }).then(canvas => {
+  html2canvas(document.getElementById('invoice-node'), { scale: 2 }).then(canvas => {
     const link = document.createElement('a');
-    link.download = `TCRP-Invoice-${Date.now()}.png`;
+    link.download = `Invoice-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-    showToast("Invoice saved as PNG!");
+    showToast("Invoice downloaded!");
   });
 }
 
 function copyInvoiceText() {
-  const invId = document.getElementById('prev-inv-id').textContent;
-  const name = document.getElementById('prev-name').textContent;
-  const total = document.getElementById('prev-total').textContent;
-  const rows = Array.from(document.querySelectorAll('.item-row')).map(r => {
-    return `• ${r.querySelector('.item-qty').value}x ${r.querySelector('.item-select').value} (${r.querySelector('.item-subtotal').textContent})`;
-  }).join('\n');
-
-  const text = `🧾 TIMELESS CREATIONS INVOICE\n\nInvoice Ref: ${invId}\nRecipient: ${name}\nDate: ${document.getElementById('prev-date').textContent}\n\nItems:\n${rows}\n\nSubtotal: ${document.getElementById('prev-subtotal').textContent}\nDiscount: ${document.getElementById('prev-discount').textContent}\nTotal: ${total}\n\nThank you for supporting Timeless Creations! 🌸`;
-
-  navigator.clipboard.writeText(text).then(() => {
-    showToast("Invoice text copied to clipboard!");
-  });
+  const text = `🧾 TIMELESS CREATIONS INVOICE\nID: ${document.getElementById('prev-inv-id').textContent}\nBill To: ${document.getElementById('prev-name').textContent}\nTotal: ${document.getElementById('prev-total').textContent}`;
+  navigator.clipboard.writeText(text).then(() => showToast("Invoice text copied!"));
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  initAppLayout('invoicing', 'Invoicing & Cash POS');
+  initAppLayout('invoicing', 'Invoicing & POS');
   document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   loadData();
-  loadOrders();
 });
 </script>
 </body>

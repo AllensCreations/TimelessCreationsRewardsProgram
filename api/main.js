@@ -1,7 +1,7 @@
 import { executeBotAction } from "./bot.js";
 import 'dotenv/config';
 import { runSql } from '../lib/db.js';
-import { sendDripEmail, sendOTPEmail, sendReceiptEmail, renderMonthlyDripTemplate } from '../lib/mailer.js';
+import { sendDripEmail, sendOTPEmail, sendReceiptEmail, sendThankYouEmail, renderMonthlyDripTemplate } from '../lib/mailer.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -25,9 +25,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ----------------------------------------------------
-    // SYSTEM HEALTH & MASTER POWER SWITCH
-    // ----------------------------------------------------
     if (action === "health_check" || action === "ping") {
       const setting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
       const status = (setting?.value || "ONLINE").toUpperCase();
@@ -48,9 +45,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "Scheduled drip check executed." });
     }
 
-    // ----------------------------------------------------
-    // JSDELIVR & CDN CONFIGURATION (Turso system_config)
-    // ----------------------------------------------------
     if (action === "get_cdn_config") {
       const rows = await runSql("SELECT key, value FROM system_config WHERE key IN ('cdn_github_owner', 'cdn_github_repo', 'cdn_github_branch', 'cdn_github_token', 'cdn_upload_path')");
       const config = {};
@@ -89,9 +83,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // ----------------------------------------------------
-    // DASHBOARD STATS & RECENT DISPATCHES FEED
-    // ----------------------------------------------------
     if (action === "get_stats" || !action) {
       const todayIso = new Date().toISOString().slice(0, 10);
       const monthIso = new Date().toISOString().slice(0, 7);
@@ -132,9 +123,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // ----------------------------------------------------
-    // ROSTER & DATA MUTATIONS
-    // ----------------------------------------------------
     if (action === "get_missionaries") {
       const rows = await runSql("SELECT * FROM missionaries ORDER BY is_prelisted DESC, name ASC");
       return res.status(200).json({ ok: true, missionaries: rows || [] });
@@ -166,9 +154,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // ----------------------------------------------------
-    // BATCH PUSHER
-    // ----------------------------------------------------
     if (action === "push_missionaries") {
       if (req.method === "GET") {
         const logs = await runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50");
@@ -226,9 +211,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // ----------------------------------------------------
-    // TEST EMAIL ROUTE (BREVO REST API)
-    // ----------------------------------------------------
     if (action === "test_email") {
       const rawEmails = (bodyData.email || req.query?.email || "").trim();
       const templateType = bodyData.template_type || req.query?.template_type || "drip";
@@ -250,6 +232,12 @@ export default async function handler(req, res) {
             order_id: "TCRP-" + Date.now().toString().slice(-4),
             item: "Wooden Missionary Nametag",
             points_cost: 6
+          });
+        } else if (templateType === "thankyou") {
+          dispatchResult = await sendThankYouEmail(target, {
+            name: "Elder / Sister Diagnostic",
+            order_id: "TCRP-" + Date.now().toString().slice(-4),
+            item: "Wooden Missionary Nametag"
           });
         } else {
           dispatchResult = await sendDripEmail(target, month, "Elder / Sister");
@@ -277,9 +265,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // ----------------------------------------------------
-    // PRODUCT CATALOG & DRIPS
-    // ----------------------------------------------------
     if (action === "get_products") {
       const typeFilter = req.query?.type || bodyData.type;
       let query = "SELECT id, name, CAST(price AS INTEGER) as price, image_url, type FROM product_catalog";
@@ -321,12 +306,18 @@ export default async function handler(req, res) {
     if (action === "update_order_status") {
       const { order_id, status } = bodyData;
       await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
+      
+      if (status && status.toUpperCase() === 'COMPLETED') {
+        const order = (await runSql("SELECT * FROM orders WHERE order_id = ?", [order_id]))[0];
+        if (order && order.email) {
+          await sendThankYouEmail(order.email, { name: order.name, order_id: order.order_id, item: order.item });
+        }
+      }
       return res.status(200).json({ ok: true });
     }
 
     if (action === "get_drips") {
       const drips = await runSql("SELECT * FROM drip_messages ORDER BY month ASC");
-      // Merge 2nd product if saved in system_config
       const configRows = await runSql("SELECT key, value FROM system_config WHERE key LIKE 'drip_%_highlight_2'");
       const highlight2Map = {};
       (configRows || []).forEach(r => {
@@ -358,7 +349,6 @@ export default async function handler(req, res) {
           highlight_label = excluded.highlight_label
       `, [month, theme, scripture, message, highlight_img || '', highlight_label || '']);
 
-      // Persist 2nd Highlight into system_config without touching schema
       if (highlight_label_2) {
         const val = JSON.stringify({ label: highlight_label_2, img: highlight_img_2 || "" });
         await runSql("INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", [`drip_${month}_highlight_2`, val]);
@@ -372,6 +362,23 @@ export default async function handler(req, res) {
     if (action === "get_invoices") {
       const invoices = await runSql("SELECT * FROM cash_invoices ORDER BY created_at DESC LIMIT 50");
       return res.status(200).json({ ok: true, invoices: invoices || [] });
+    }
+
+    if (action === "update_invoice_status") {
+      const { invoice_id, status } = bodyData;
+      await runSql("UPDATE cash_invoices SET status = ? WHERE invoice_id = ?", [status, invoice_id]);
+      if (status && status.toUpperCase() === 'COMPLETED') {
+        const inv = (await runSql("SELECT * FROM cash_invoices WHERE invoice_id = ?", [invoice_id]))[0];
+        if (inv && inv.email) {
+          let itemsList = "Custom Order";
+          try {
+            const parsed = JSON.parse(inv.items_json);
+            itemsList = parsed.map(i => `${i.qty}x ${i.name}`).join(', ');
+          } catch(_) {}
+          await sendThankYouEmail(inv.email, { name: inv.name, order_id: inv.invoice_id, item: itemsList });
+        }
+      }
+      return res.status(200).json({ ok: true });
     }
 
     if (action === "create_invoice") {

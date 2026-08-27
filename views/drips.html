@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js"></script>
     <style>
-      .main-wrap { max-width: 1200px; margin: 20px auto; padding: 0 16px 40px; }
-      .editor-grid { display: grid; grid-template-columns: 1fr 470px; gap: 24px; align-items: start; }
+      .main-wrap { max-width: 1240px; margin: 20px auto; padding: 0 16px 40px; }
+      .editor-grid { display: grid; grid-template-columns: 1fr 480px; gap: 24px; align-items: start; }
       .tab-bar { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; overflow-x: auto; }
-      .tab-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 16px; border-radius: 6px; font-family: inherit; font-size: 0.72rem; font-weight: bold; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+      .tab-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; font-family: inherit; font-size: 0.72rem; font-weight: bold; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
       .tab-btn:hover { color: var(--text); border-color: var(--gold); }
       .tab-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); }
       .tab-content { display: none; }
@@ -26,13 +26,16 @@
       input:checked + .slider { background-color: var(--gold-dim); border-color: var(--gold); }
       input:checked + .slider:before { transform: translateX(20px); background-color: var(--gold); }
 
-      .save-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+      .tab-save-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }
       .save-banner { position: sticky; bottom: 20px; background: var(--surface2); border: 1px solid var(--gold); padding: 14px 22px; border-radius: var(--radius); display: none; justify-content: space-between; align-items: center; margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 80; }
       
       .preview-wrapper { background: #12121a; border: 1px solid var(--border); border-radius: 12px; padding: 16px; max-height: calc(100vh - 120px); overflow-y: auto; position: sticky; top: 20px; }
-      .preview-frame { width: 100%; max-width: 440px; margin: 0 auto; background: #ffffff; color: #1a1a1a; font-family: 'Garamond', 'Georgia', serif; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.5); overflow: hidden; }
+      .preview-frame { width: 100%; max-width: 450px; margin: 0 auto; background: #ffffff; color: #1a1a1a; font-family: 'Garamond', 'Georgia', serif; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.5); overflow: hidden; }
 
-      @media(max-width: 1080px) {
+      .var-badge { display: inline-block; font-family: 'DM Mono', monospace; font-size: 0.68rem; background: rgba(201,168,76,0.15); color: var(--gold); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(201,168,76,0.25); margin: 2px; }
+      .code-view { background: #0b0c12; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 0.68rem; color: #716e88; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+
+      @media(max-width: 1100px) {
         .editor-grid { grid-template-columns: 1fr; }
         .preview-wrapper { position: static; max-height: 80vh; overflow-y: auto; margin-top: 20px; padding: 10px; }
         .preview-frame { max-width: 100%; }
@@ -42,42 +45,48 @@
 <body>
 
 <div class="main-wrap">
+  <!-- Month Cycle Selector Banner -->
+  <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-color:rgba(201,168,76,0.3);">
+    <div>
+      <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Active Month Cycle Selector</div>
+      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Select which calendar month and year cycle you are configuring:</div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <select id="month-selector" class="form-input" style="width:190px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)"></select>
+      <span id="badge-template-status" style="font-size:0.68rem; font-weight:bold; padding:6px 10px; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--muted);">Checking template...</span>
+    </div>
+  </div>
+
   <div class="editor-grid">
     <div>
         <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab('tab-messages', this)">📝 Content</button>
             <button class="tab-btn" onclick="switchTab('tab-images', this)">🖼️ Essentials &amp; Grid</button>
-            <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Products</button>
+            <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Products of Month</button>
             <button class="tab-btn" onclick="switchTab('tab-html', this)">💻 Monthly HTML Template</button>
+            <button class="tab-btn" onclick="switchTab('tab-guide', this)" style="border-color:var(--gold); color:var(--gold);">💡 AI Prompt &amp; Guide</button>
         </div>
 
         <!-- TAB 1: Content -->
         <div id="tab-messages" class="tab-content active">
             <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                    <div>
-                        <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Drip Month Selector</div>
-                        <div style="font-size:0.68rem; color:var(--muted);">Select the target calendar month cycle.</div>
-                    </div>
-                    <select id="month-selector" class="form-input" style="width:170px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)">
-                    </select>
-                </div>
-                
+                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">Monthly Message &amp; Conference Scripture</div>
                 <div class="form-group">
-                    <label class="form-label">Speaker Name / Author Citation (theme)</label>
+                    <label class="form-label">Speaker Name / Author Citation ({{THEME}})</label>
                     <input type="text" id="inp-theme" class="form-input" placeholder="e.g. Elder Jeffrey R. Holland" oninput="onLiveEdit()">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Monthly Encouragement Letter (message)</label>
+                    <label class="form-label">Monthly Encouragement Letter ({{MESSAGE}})</label>
                     <textarea id="inp-msg" class="form-input" rows="4" style="resize:vertical;" oninput="onLiveEdit()"></textarea>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Conference Quote / Scripture (scripture)</label>
+                    <label class="form-label">Conference Quote / Scripture ({{SCRIPTURE}})</label>
                     <textarea id="inp-quote" class="form-input" rows="2" style="resize:vertical;" oninput="onLiveEdit()"></textarea>
                 </div>
 
-                <div style="margin-top: 14px; text-align: right;">
-                    <button class="btn btn-dark" onclick="resetTab1Defaults()">↺ Reset Tab to Defaults</button>
+                <div class="tab-save-bar">
+                    <button class="btn btn-dark" onclick="resetTab1Defaults()">↺ Reset Content</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('content')">💾 Save Content</button>
                 </div>
             </div>
         </div>
@@ -85,53 +94,54 @@
         <!-- TAB 2: Essentials & Grid -->
         <div id="tab-images" class="tab-content">
             <div class="card">
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">2 Missionary Essentials (Names &amp; 1:1 Images)</div>
+                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">2 Missionary Essentials (1:1 Ratio)</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
                     <div style="background:var(--surface2); padding:10px; border-radius:6px; border:1px solid var(--border);">
                         <label class="form-label">Essential 1 Name</label>
-                        <input type="text" id="inp-ess1-name" class="form-input" value="Wooden Nametag" oninput="renderPreview()">
+                        <input type="text" id="inp-ess1-name" class="form-input" value="Wooden Nametag" oninput="onLiveEdit()">
                         <label class="form-label" style="margin-top:6px;">Essential 1 Image (1:1)</label>
-                        <input type="url" id="inp-img-ess1" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" oninput="renderPreview()">
+                        <input type="url" id="inp-img-ess1" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" oninput="onLiveEdit()">
                     </div>
                     <div style="background:var(--surface2); padding:10px; border-radius:6px; border:1px solid var(--border);">
                         <label class="form-label">Essential 2 Name</label>
-                        <input type="text" id="inp-ess2-name" class="form-input" value="POS Kit" oninput="renderPreview()">
+                        <input type="text" id="inp-ess2-name" class="form-input" value="POS Kit" oninput="onLiveEdit()">
                         <label class="form-label" style="margin-top:6px;">Essential 2 Image (1:1)</label>
-                        <input type="url" id="inp-img-ess2" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" oninput="renderPreview()">
+                        <input type="url" id="inp-img-ess2" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" oninput="onLiveEdit()">
                     </div>
                 </div>
 
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">9 Community Archive Photos (1:1)</div>
+                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">9 Community Archive Photos (1:1 Ratio)</div>
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:16px;">
-                    <div><label class="form-label">Photo 1</label><input type="url" id="inp-grid-1" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 2</label><input type="url" id="inp-grid-2" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 3</label><input type="url" id="inp-grid-3" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 4</label><input type="url" id="inp-grid-4" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 5</label><input type="url" id="inp-grid-5" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 6</label><input type="url" id="inp-grid-6" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 7</label><input type="url" id="inp-grid-7" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1ClRvFGc7yUwM03ydd1fb8XwGE1NXWKvY" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 8</label><input type="url" id="inp-grid-8" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/15fj9X-Epr_MFvgHuf5PFl0d1Syu4HYJI" oninput="renderPreview()"></div>
-                    <div><label class="form-label">Photo 9</label><input type="url" id="inp-grid-9" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1gGDswVZRyCMnzmdRMWg_Ue4HW7Msi1qC" oninput="renderPreview()"></div>
+                    <div><label class="form-label">Photo 1</label><input type="url" id="inp-grid-1" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 2</label><input type="url" id="inp-grid-2" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 3</label><input type="url" id="inp-grid-3" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 4</label><input type="url" id="inp-grid-4" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 5</label><input type="url" id="inp-grid-5" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 6</label><input type="url" id="inp-grid-6" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 7</label><input type="url" id="inp-grid-7" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1ClRvFGc7yUwM03ydd1fb8XwGE1NXWKvY" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 8</label><input type="url" id="inp-grid-8" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/15fj9X-Epr_MFvgHuf5PFl0d1Syu4HYJI" oninput="onLiveEdit()"></div>
+                    <div><label class="form-label">Photo 9</label><input type="url" id="inp-grid-9" class="form-input" value="https://lh3.googleusercontent.com/u/0/d/1gGDswVZRyCMnzmdRMWg_Ue4HW7Msi1qC" oninput="onLiveEdit()"></div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Gallery Button Link</label>
-                    <input type="url" id="inp-gallery-url" class="form-input" value="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" oninput="renderPreview()">
+                    <label class="form-label">Gallery Button Link ({{GALLERY_URL}})</label>
+                    <input type="url" id="inp-gallery-url" class="form-input" value="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" oninput="onLiveEdit()">
                 </div>
 
-                <div style="margin-top: 14px; text-align: right;">
-                    <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset Tab to Defaults</button>
+                <div class="tab-save-bar">
+                    <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset Essentials &amp; Grid</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save Essentials &amp; Grid</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: Products -->
+        <!-- TAB 3: Products of Month (Dual) -->
         <div id="tab-products" class="tab-content">
             <div class="card">
                 <div class="toggle-wrap">
                     <div>
                         <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Enable Products of the Month</div>
-                        <div style="font-size:0.68rem; color:var(--muted);">Showcase 1 or 2 special highlighted items in the email.</div>
+                        <div style="font-size:0.68rem; color:var(--muted);">Showcase 1 or 2 special highlighted items in the email newsletter.</div>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="inp-highlight-toggle" onchange="onLiveEdit()">
@@ -147,7 +157,7 @@
                         <input type="text" id="inp-highlight-name" class="form-input" placeholder="e.g. Handcrafted Olive Scripture Case" oninput="onLiveEdit()">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Product 1 Image URL (1:1) (highlight_img)</label>
+                        <label class="form-label">Product 1 Image URL (1:1 Ratio)</label>
                         <input type="url" id="inp-highlight-img" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="onLiveEdit()">
                     </div>
                 </div>
@@ -160,151 +170,95 @@
                         <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="e.g. Leather Nametag Strap" oninput="onLiveEdit()">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Product 2 Image URL (1:1) (highlight_img_2)</label>
+                        <label class="form-label">Product 2 Image URL (1:1 Ratio)</label>
                         <input type="url" id="inp-highlight-img-2" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="onLiveEdit()">
                     </div>
                 </div>
 
-                <div style="margin-top: 14px; text-align: right;">
-                    <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset Tab to Defaults</button>
+                <div class="tab-save-bar">
+                    <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset Products</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('products')">💾 Save Products</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 4: Custom Monthly HTML Template -->
+        <!-- TAB 4: Monthly HTML Template Override -->
         <div id="tab-html" class="tab-content">
             <div class="card">
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">Custom HTML Template for Active Month</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                    <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Custom HTML Template Override</div>
+                    <button class="btn btn-dark" style="padding:4px 10px; font-size:0.68rem;" onclick="loadMasterTemplateIntoEditor()">📋 Load Master Template Code</button>
+                </div>
                 <div style="font-size:0.7rem; color:var(--muted); margin-bottom:12px; line-height:1.5;">
-                    If left blank, this month uses the master template (father reference). Use placeholders: <code>{{MONTH}}</code>, <code>{{NAME}}</code>, <code>{{MESSAGE}}</code>, <code>{{SCRIPTURE}}</code>, <code>{{THEME}}</code>, <code>{{POINTS}}</code>, <code>{{REWARD_SECTION_HTML}}</code>.
+                    Each month can have a unique HTML structure! If left blank, this month will automatically render the <strong>Master (Father) Template</strong>.
                 </div>
                 <div class="form-group">
-                    <textarea id="inp-custom-html" class="form-input" rows="12" style="font-family:'DM Mono',monospace; font-size:0.7rem; resize:vertical;" placeholder="Leave empty to use master template..." oninput="onLiveEdit()"></textarea>
+                    <textarea id="inp-custom-html" class="form-input" rows="13" style="font-family:'DM Mono',monospace; font-size:0.7rem; resize:vertical;" placeholder="Leave empty to use Master Father Template..." oninput="onLiveEdit()"></textarea>
                 </div>
-                <div style="margin-top: 14px; text-align: right;">
-                    <button class="btn btn-dark" onclick="document.getElementById('inp-custom-html').value=''; onLiveEdit();">↺ Clear (Use Master Template)</button>
+                <div class="tab-save-bar">
+                    <button class="btn btn-dark" onclick="clearCustomHtml()">↺ Clear (Use Master Template)</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('html')">💾 Save Custom HTML</button>
                 </div>
             </div>
         </div>
 
-        <!-- Save Actions -->
-        <div class="save-actions">
-            <button class="btn btn-gold" id="btn-main-save" style="flex:1; justify-content:center; padding:12px;" onclick="saveActiveMonth()">💾 Save Month to Database</button>
-            <button class="btn btn-dark" onclick="window.syncData ? window.syncData() : location.reload()">↻ Re-Sync</button>
+        <!-- TAB 5: AI Prompt Generator & Dynamic Variables Guide -->
+        <div id="tab-guide" class="tab-content">
+            <div class="card">
+                <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">✨ AI Template Creator &amp; Prompt Generator</div>
+                <div style="font-size:0.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
+                    Want to generate a completely new layout for this month? Just enter your theme/topic below and copy the ready-to-use prompt for ChatGPT, Claude, or Gemini.
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Enter Theme or Focus for This Month</label>
+                    <input type="text" id="inp-guide-theme" class="form-input" value="Faith, Overcoming Challenges, and Temple Dedication" oninput="updateGeneratedPrompt()">
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin:14px 0 6px;">
+                    <label class="form-label" style="margin:0;">Generated AI Copy-Paste Prompt</label>
+                    <button class="btn btn-gold" style="padding:4px 10px; font-size:0.68rem;" onclick="copyAiPrompt()">📋 Copy Prompt</button>
+                </div>
+                <div class="code-view" id="prompt-output-box"></div>
+
+                <div style="margin-top:16px;">
+                    <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Supported Dynamic Placeholders</div>
+                    <div style="line-height:1.8;">
+                        <span class="var-badge">{{MONTH}}</span>
+                        <span class="var-badge">{{NAME}}</span>
+                        <span class="var-badge">{{MESSAGE}}</span>
+                        <span class="var-badge">{{SCRIPTURE}}</span>
+                        <span class="var-badge">{{THEME}}</span>
+                        <span class="var-badge">{{POINTS}}</span>
+                        <span class="var-badge">{{ESS1_NAME}}</span>
+                        <span class="var-badge">{{ESS1_IMG}}</span>
+                        <span class="var-badge">{{ESS2_NAME}}</span>
+                        <span class="var-badge">{{ESS2_IMG}}</span>
+                        <span class="var-badge">{{HIGHLIGHT_DISPLAY}}</span>
+                        <span class="var-badge">{{HIGHLIGHT_ITEMS_HTML}}</span>
+                        <span class="var-badge">{{REWARD_SECTION_HTML}}</span>
+                        <span class="var-badge">{{GRID1}} ... {{GRID9}}</span>
+                        <span class="var-badge">{{GALLERY_URL}}</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Floating Sync Bar -->
         <div class="save-banner" id="save-banner">
             <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ Unsaved edits for <span id="unsaved-month-label">January (Odd)</span></span>
-            <button class="btn btn-gold" id="btn-save-turso" onclick="saveActiveMonth()">💾 Save Month to Turso</button>
+            <button class="btn btn-gold" id="btn-save-turso" onclick="saveActiveMonth('global')">💾 Save Month to Turso</button>
         </div>
     </div>
 
-    <!-- Right Column: Live Email Preview -->
+    <!-- Right Column: Live Email Preview (1:1 Ratio Sandboxing) -->
     <div class="preview-wrapper">
         <div style="font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; text-align:center;">
             ✦ Live 1:1 Email Template Sandbox
         </div>
         
         <div class="preview-frame" id="live-email-frame">
-            <div style="padding: 35px 20px 15px 20px; text-align: center; background-color: #ffffff;">
-                <span id="prev-date" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px; display: block;">January (Odd) • Dedicated Service</span>
-                <h1 style="font-size: 24px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a;">Timeless Creations</h1>
-                <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 8px; text-transform: uppercase; line-height: 1.4;">Most Trusted Online LDS Store by Members and Missionaries Across the Philippines</div>
-            </div>
-
-            <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" style="width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0;">
-
-            <div style="padding: 22px 18px; text-align: center; line-height: 1.6;">
-                <div style="font-size: 19px; font-style: italic; margin-bottom: 12px; color: #1a1a1a;">Hello Elder Smith,</div>
-                <div id="prev-msg" style="font-size: 13.5px; color: #333; margin-bottom: 18px;">May your faith be strengthened as you serve and invite others to come unto Christ this month.</div>
-
-                <div style="margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197;">
-                    <span id="prev-quote" style="font-size: 14px; font-style: italic; display: block; color: #1a1a1a; line-height: 1.5; margin-bottom: 8px;"></span>
-                    <div id="prev-speaker" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;"></div>
-                </div>
-
-                <div style="margin: 20px 0; padding: 12px 8px; font-style: italic; color: #8c7e5d; font-size: 12.5px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc;">
-                    As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
-                </div>
-
-                <!-- Essentials -->
-                <div style="padding: 20px 12px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 18px;">
-                    <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; margin-bottom: 16px; color: #1a1a1a;">Missionary Essentials</h2>
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                        <tr>
-                            <td align="center" width="48%" valign="top">
-                                <img id="prev-ess1-img" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 1">
-                                <div id="prev-ess1-name" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">Wooden Nametag</div>
-                            </td>
-                            <td width="4%"></td>
-                            <td align="center" width="48%" valign="top">
-                                <img id="prev-ess2-img" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 2">
-                                <div id="prev-ess2-name" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">POS Kit</div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <p style="font-size: 12px; margin-top: 20px; color: #555; line-height: 1.4;">
-                        If you have doubts with us as scams, we offer our first time customers with a <strong>"Gawa muna bago bayad"</strong> assurance.
-                    </p>
-                    <div style="background-color: #1a1a1a; color: #d4c197; padding: 10px; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; margin: 16px 0; font-weight: bold;">Work, Confirm, Pay</div>
-                    <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold;">Order Yours Now</a>
-                </div>
-
-                <!-- Products of the Month Preview -->
-                <div id="prev-highlight-container" style="display:none; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;"></div>
-
-                <!-- 9-Grid Gallery -->
-                <div style="margin: 30px auto; text-align: center;">
-                    <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
-                    <p style="font-size: 12.5px; color: #555; line-height: 1.5; margin-bottom: 16px; font-style: italic;">
-                        Your service is a story that deserves to be told. We are archiving the moments that define a mission.
-                    </p>
-                    
-                    <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
-                        <tr>
-                            <td><img id="prev-grid-1" src="https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex" class="strict-1-1" alt="Grid 1"></td>
-                            <td><img id="prev-grid-2" src="https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky" class="strict-1-1" alt="Grid 2"></td>
-                            <td><img id="prev-grid-3" src="https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv" class="strict-1-1" alt="Grid 3"></td>
-                        </tr>
-                        <tr>
-                            <td><img id="prev-grid-4" src="https://lh3.googleusercontent.com/u/0/d/1dRn6RIZd1Glv0kj3gduyO7TPJ3gbboeR" class="strict-1-1" alt="Grid 4"></td>
-                            <td><img id="prev-grid-5" src="https://lh3.googleusercontent.com/u/0/d/1PceqCmTOvYosSGb9h_tWiqk_qSIIZb4m" class="strict-1-1" alt="Grid 5"></td>
-                            <td><img id="prev-grid-6" src="https://lh3.googleusercontent.com/u/0/d/1FZ1hppzB5QWAAJRx5mdHUfFAwx9nMVqV" class="strict-1-1" alt="Grid 6"></td>
-                        </tr>
-                        <tr>
-                            <td><img id="prev-grid-7" src="https://lh3.googleusercontent.com/u/0/d/1ClRvFGc7yUwM03ydd1fb8XwGE1NXWKvY" class="strict-1-1" alt="Grid 7"></td>
-                            <td><img id="prev-grid-8" src="https://lh3.googleusercontent.com/u/0/d/15fj9X-Epr_MFvgHuf5PFl0d1Syu4HYJI" class="strict-1-1" alt="Grid 8"></td>
-                            <td><img id="prev-grid-9" src="https://lh3.googleusercontent.com/u/0/d/1gGDswVZRyCMnzmdRMWg_Ue4HW7Msi1qC" class="strict-1-1" alt="Grid 9"></td>
-                        </tr>
-                    </table>
-
-                    <div style="margin-bottom: 20px;">
-                        <a id="prev-gallery-link" href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" style="display: inline-block; padding: 10px 20px; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">
-                            Enter the Gallery
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Points & Rewards Balance Card -->
-                <div id="prev-points-section" style="padding: 20px 14px; background-color: #fdfaf3; border: 1px solid #c9a84c; border-radius: 4px; margin-top: 25px;">
-                    <div style="font-family: 'Syne', sans-serif; font-size: 13px; font-weight: bold; color: #8b1a1a; margin-bottom: 6px;">🎁 Your TCRP Reward Balance</div>
-                    <div style="font-size: 12px; color: #555; margin-bottom: 14px; line-height: 1.4;">
-                        You currently have <strong>2</strong> Points.
-                    </div>
-                    <div id="prev-claimable-items" style="margin-bottom:14px;"></div>
-                    <a href="https://m.me/TimelessCreationsRP" target="_blank" style="display: block; width: 90%; margin: 0 auto; padding: 12px 10px; background-color: #1a1a1a; border: 1px solid #1a1a1a; color: #d4c197 !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold;">
-                        Redeem Rewards (m.me/TimelessCreationsRP)
-                    </a>
-                </div>
-            </div>
-
-            <div style="padding: 28px 16px; background-color: #1a1a1a; color: #ffffff; text-align: center;">
-                <div style="color: #d4c197; letter-spacing: 3px; font-size: 10px; text-transform: uppercase;">Timeless Creations</div>
-                <div style="font-size: 8px; opacity: 0.5; margin-top: 10px; font-family: Arial, sans-serif;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
-                <div style="margin-top:12px; font-size:8px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px;">Unsubscribe from monthly letters</div>
-            </div>
+            <div id="preview-render-target"></div>
         </div>
     </div>
   </div>
@@ -313,6 +267,7 @@
 <script>
 let currentMonth = 1;
 let liveDripMap = {};
+let masterTemplateCode = "";
 
 function getCalendarMonthLabel(monthIndex) {
   const calendarNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -326,6 +281,7 @@ function switchTab(tabId, btn) {
   document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
   document.getElementById(tabId).classList.add("active");
   btn.classList.add("active");
+  if (tabId === 'tab-guide') updateGeneratedPrompt();
 }
 
 function initSelector() {
@@ -358,6 +314,48 @@ async function fetchFromTurso() {
         };
       });
     }
+
+    // Cache default master template for editor loading
+    masterTemplateCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<style>
+  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 0; }
+  .email-container { max-width: 450px; background: #ffffff; margin: 0 auto; border: 1px solid #e0d6bc; }
+  .brand-header { padding: 35px 20px 15px; text-align: center; }
+  .logo-text { font-size: 24px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
+  .temple-img { width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0; }
+  .main-content { padding: 22px 18px; text-align: center; line-height: 1.6; }
+  .quote-container { margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
+  .product-img { width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto; }
+</style>
+</head>
+<body>
+<div class="email-container">
+  <div class="brand-header">
+    <div style="font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px;">{{MONTH}} • Dedicated Service</div>
+    <h1 class="logo-text">Timeless Creations</h1>
+    <div style="font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 8px; text-transform: uppercase;">Most Trusted Online LDS Store Across the Philippines</div>
+  </div>
+  <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" class="temple-img">
+  <div class="main-content">
+    <div style="font-size: 19px; font-style: italic; margin-bottom: 12px;">Hello {{NAME}},</div>
+    <div style="font-size: 13.5px; color: #333; margin-bottom: 18px;">{{MESSAGE}}</div>
+    <div class="quote-container">
+      <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 8px;">"{{SCRIPTURE}}"</div>
+      <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+    </div>
+    <div style="{{HIGHLIGHT_DISPLAY}}; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
+      {{HIGHLIGHT_ITEMS_HTML}}
+    </div>
+    {{REWARD_SECTION_HTML}}
+  </div>
+</div>
+</body>
+</html>`;
   } catch(e) {}
 }
 
@@ -397,11 +395,27 @@ function onSelectMonth(m) {
     document.getElementById("inp-highlight-img-2").value = "";
   }
 
+  updateStatusBadge(data.custom_html);
   renderPreview();
+}
+
+function updateStatusBadge(hasCustom) {
+  const badge = document.getElementById("badge-template-status");
+  if (hasCustom && hasCustom.trim() !== "") {
+    badge.textContent = "💻 Custom HTML Active";
+    badge.style.color = "var(--gold)";
+    badge.style.borderColor = "var(--gold)";
+  } else {
+    badge.textContent = "🏛️ Master Father Template Active";
+    badge.style.color = "var(--muted)";
+    badge.style.borderColor = "var(--border)";
+  }
 }
 
 function onLiveEdit() {
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
+  const customHtmlVal = document.getElementById("inp-custom-html").value;
+
   liveDripMap[currentMonth] = {
     month: currentMonth,
     theme: document.getElementById("inp-theme").value.trim(),
@@ -411,9 +425,10 @@ function onLiveEdit() {
     highlight_img: isHigh ? document.getElementById("inp-highlight-img").value.trim() : "",
     highlight_label_2: isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "",
     highlight_img_2: isHigh ? document.getElementById("inp-highlight-img-2").value.trim() : "",
-    custom_html: document.getElementById("inp-custom-html").value
+    custom_html: customHtmlVal
   };
 
+  updateStatusBadge(customHtmlVal);
   document.getElementById("save-banner").style.display = "flex";
   renderPreview();
 }
@@ -426,30 +441,16 @@ function cleanQuoteString(raw) {
 function renderPreview() {
   const data = liveDripMap[currentMonth] || {};
   const monthLabel = getCalendarMonthLabel(currentMonth);
+  const target = document.getElementById("preview-render-target");
 
-  document.getElementById("prev-date").textContent = `${monthLabel} • Dedicated Service`;
-  document.getElementById("prev-msg").innerHTML = (data.message || "").replace(/\n/g, "<br>");
-  
+  const name = "Elder Smith";
+  const message = (data.message || "").replace(/\n/g, "<br>");
   const cleanedQuote = cleanQuoteString(data.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.");
-  document.getElementById("prev-quote").innerHTML = `"${cleanedQuote}"`;
-  document.getElementById("prev-speaker").textContent = data.theme || "Elder Jeffrey R. Holland";
+  const theme = data.theme || "Elder Jeffrey R. Holland";
+  const points = 2;
 
-  document.getElementById("prev-ess1-name").textContent = document.getElementById("inp-ess1-name").value.trim();
-  document.getElementById("prev-ess1-img").src = document.getElementById("inp-img-ess1").value.trim();
-  document.getElementById("prev-ess2-name").textContent = document.getElementById("inp-ess2-name").value.trim();
-  document.getElementById("prev-ess2-img").src = document.getElementById("inp-img-ess2").value.trim();
-
-  for (let i = 1; i <= 9; i++) {
-    const el = document.getElementById(`prev-grid-${i}`);
-    const inp = document.getElementById(`inp-grid-${i}`);
-    if (el && inp) el.src = inp.value.trim();
-  }
-
-  document.getElementById("prev-gallery-link").href = document.getElementById("inp-gallery-url").value.trim();
-
+  // Build dual products HTML
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
-  const hContainer = document.getElementById("prev-highlight-container");
-  
   const h1Name = data.highlight_label || document.getElementById("inp-highlight-name").value.trim();
   const h1Img = data.highlight_img || document.getElementById("inp-highlight-img").value.trim();
   const h2Name = data.highlight_label_2 || document.getElementById("inp-highlight-name-2").value.trim();
@@ -459,9 +460,9 @@ function renderPreview() {
   if (h1Name) items.push({ name: h1Name, img: h1Img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" });
   if (h2Name) items.push({ name: h2Name, img: h2Img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" });
 
-  if (isHigh && items.length > 0) {
-    hContainer.style.display = "block";
-    hContainer.innerHTML = `
+  let highlightHtml = '';
+  if (items.length > 0) {
+    highlightHtml = `
       <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
       <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 8px;">
         <tr>
@@ -476,9 +477,139 @@ function renderPreview() {
       </table>
       <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 8px 18px; background: #8b1a1a; color: #fff !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 3px;">Inquire Item</a>
     `;
-  } else {
-    hContainer.style.display = "none";
   }
+
+  const rewardSectionHtml = `
+    <div style="padding: 16px 12px; background-color: #fdfaf3; border: 1px solid #c9a84c; border-radius: 4px; margin-top: 20px;">
+      <div style="font-family: 'Syne', sans-serif; font-size: 12.5px; font-weight: bold; color: #8b1a1a; margin-bottom: 4px;">🎁 Your TCRP Reward Balance</div>
+      <div style="font-size: 11.5px; color: #555; margin-bottom: 12px;">You currently have <strong>2</strong> Points.</div>
+      <div style="background:#fff; border:1px solid #e0d6bc; border-radius:6px; padding:12px; text-align:center; margin-bottom:12px;">
+        <span style="font-size:9.5px; color:#8b1a1a; font-weight:bold; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">🔥 You're so close! Next Goal:</span>
+        <img src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" style="width:55px; height:55px; aspect-ratio:1/1; object-fit:cover; border-radius:4px; display:block; margin:0 auto 6px auto; border:1px solid #d4c197;" alt="Reward">
+        <div style="font-weight:bold; font-size:11.5px; color:#1a1a1a;">Temple Keychain (6 PTS)</div>
+        <div style="font-size:11px; color:#8c7e5d; margin-top:4px; font-weight:bold;">⚡ Only <strong>4 more points</strong> needed to claim!</div>
+      </div>
+      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="display: block; width: 88%; margin: 0 auto; padding: 10px 8px; background-color: #1a1a1a; color: #d4c197 !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 3px;">
+        Redeem Rewards (m.me/TimelessCreationsRP)
+      </a>
+    </div>
+  `;
+
+  // IF Custom HTML is present, render it live!
+  if (data.custom_html && data.custom_html.trim() !== "") {
+    let renderedCustom = data.custom_html
+      .replace(/{{MONTH}}/g, monthLabel)
+      .replace(/{{NAME}}/g, name)
+      .replace(/{{MESSAGE}}/g, message)
+      .replace(/{{SCRIPTURE}}/g, cleanedQuote)
+      .replace(/{{THEME}}/g, theme)
+      .replace(/{{POINTS}}/g, String(points))
+      .replace(/{{HIGHLIGHT_DISPLAY}}/g, isHigh && items.length > 0 ? "display:block" : "display:none")
+      .replace(/{{HIGHLIGHT_ITEMS_HTML}}/g, highlightHtml)
+      .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
+      .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
+      .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())
+      .replace(/{{ESS2_NAME}}/g, document.getElementById("inp-ess2-name").value.trim())
+      .replace(/{{ESS2_IMG}}/g, document.getElementById("inp-img-ess2").value.trim())
+      .replace(/{{GALLERY_URL}}/g, document.getElementById("inp-gallery-url").value.trim());
+
+    for (let i = 1; i <= 9; i++) {
+      const gImg = document.getElementById(`inp-grid-${i}`)?.value || "";
+      renderedCustom = renderedCustom.replace(new RegExp(`{{GRID${i}}}`, 'g'), gImg);
+    }
+
+    target.innerHTML = renderedCustom;
+    return;
+  }
+
+  // Otherwise, render the Master Father Template preview
+  target.innerHTML = `
+    <div style="padding: 35px 20px 15px 20px; text-align: center; background-color: #ffffff;">
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px; display: block;">${monthLabel} • Dedicated Service</span>
+      <h1 style="font-size: 24px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a;">Timeless Creations</h1>
+      <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 8px; text-transform: uppercase; line-height: 1.4;">Most Trusted Online LDS Store Across the Philippines</div>
+    </div>
+
+    <!-- Banner (Not 1:1) -->
+    <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" style="width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0;">
+
+    <div style="padding: 22px 18px; text-align: center; line-height: 1.6;">
+      <div style="font-size: 19px; font-style: italic; margin-bottom: 12px; color: #1a1a1a;">Hello ${name},</div>
+      <div style="font-size: 13.5px; color: #333; margin-bottom: 18px;">${message}</div>
+
+      <div style="margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197;">
+        <span style="font-size: 14px; font-style: italic; display: block; color: #1a1a1a; line-height: 1.5; margin-bottom: 8px;">"${cleanedQuote}"</span>
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">${theme}</div>
+      </div>
+
+      <!-- Essentials (1:1 Ratio) -->
+      <div style="padding: 20px 12px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 18px;">
+        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; margin-bottom: 16px; color: #1a1a1a;">Missionary Essentials</h2>
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center" width="48%" valign="top">
+              <img src="${document.getElementById("inp-img-ess1").value}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 1">
+              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">${document.getElementById("inp-ess1-name").value}</div>
+            </td>
+            <td width="4%"></td>
+            <td align="center" width="48%" valign="top">
+              <img src="${document.getElementById("inp-img-ess2").value}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 2">
+              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">${document.getElementById("inp-ess2-name").value}</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Products of Month Preview (1:1 Ratio) -->
+      <div style="${isHigh && items.length > 0 ? 'display:block' : 'display:none'}; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
+        ${highlightHtml}
+      </div>
+
+      <!-- 9-Grid (1:1 Ratio) -->
+      <div style="margin: 30px auto; text-align: center;">
+        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
+        <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
+          <tr>
+            <td><img src="${document.getElementById("inp-grid-1").value}" class="strict-1-1" alt="Grid 1"></td>
+            <td><img src="${document.getElementById("inp-grid-2").value}" class="strict-1-1" alt="Grid 2"></td>
+            <td><img src="${document.getElementById("inp-grid-3").value}" class="strict-1-1" alt="Grid 3"></td>
+          </tr>
+          <tr>
+            <td><img src="${document.getElementById("inp-grid-4").value}" class="strict-1-1" alt="Grid 4"></td>
+            <td><img src="${document.getElementById("inp-grid-5").value}" class="strict-1-1" alt="Grid 5"></td>
+            <td><img src="${document.getElementById("inp-grid-6").value}" class="strict-1-1" alt="Grid 6"></td>
+          </tr>
+          <tr>
+            <td><img src="${document.getElementById("inp-grid-7").value}" class="strict-1-1" alt="Grid 7"></td>
+            <td><img src="${document.getElementById("inp-grid-8").value}" class="strict-1-1" alt="Grid 8"></td>
+            <td><img src="${document.getElementById("inp-grid-9").value}" class="strict-1-1" alt="Grid 9"></td>
+          </tr>
+        </table>
+        <a href="${document.getElementById("inp-gallery-url").value}" target="_blank" style="display: inline-block; padding: 10px 20px; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">
+          Enter the Gallery
+        </a>
+      </div>
+
+      ${rewardSectionHtml}
+    </div>
+
+    <div style="padding: 28px 16px; background-color: #1a1a1a; color: #ffffff; text-align: center;">
+      <div style="color: #d4c197; letter-spacing: 3px; font-size: 10px; text-transform: uppercase;">Timeless Creations</div>
+      <div style="font-size: 8px; opacity: 0.5; margin-top: 10px; font-family: Arial, sans-serif;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
+    </div>
+  `;
+}
+
+function loadMasterTemplateIntoEditor() {
+  document.getElementById("inp-custom-html").value = masterTemplateCode;
+  onLiveEdit();
+  showToast("Loaded Master Template into Editor!");
+}
+
+function clearCustomHtml() {
+  document.getElementById("inp-custom-html").value = "";
+  onLiveEdit();
+  showToast("Cleared custom HTML (Reverted to Master Father Template)!");
 }
 
 function resetTab1Defaults() {
@@ -487,7 +618,7 @@ function resetTab1Defaults() {
   document.getElementById("inp-msg").value = `May your faith be strengthened as you serve and invite others during ${label}.`;
   document.getElementById("inp-quote").value = "Trust in the Lord with all thine heart; and lean not unto thine own understanding.";
   onLiveEdit();
-  showToast(`Reset Tab 1 for ${label} to defaults.`);
+  showToast(`Reset Content for ${label} to defaults.`);
 }
 
 function resetTab2Defaults() {
@@ -512,7 +643,7 @@ function resetTab2Defaults() {
   }
   document.getElementById("inp-gallery-url").value = "https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7";
   renderPreview();
-  showToast("Reset Tab 2 gallery & essentials to defaults.");
+  showToast("Reset Essentials & Grid to defaults.");
 }
 
 function resetTab3Defaults() {
@@ -525,14 +656,43 @@ function resetTab3Defaults() {
   showToast("Disabled & reset Products of the Month.");
 }
 
-async function saveActiveMonth() {
-  const btn = document.getElementById("btn-main-save");
-  const saveBannerBtn = document.getElementById("btn-save-turso");
+function updateGeneratedPrompt() {
+  const theme = document.getElementById("inp-guide-theme").value.trim() || "Spiritual Encouragement";
+  const label = getCalendarMonthLabel(currentMonth);
+
+  const promptText = `Act as an expert HTML Email Developer. Create a clean, production-ready, responsive HTML newsletter template for Month "${label}" for Timeless Creations (LDS missionary rewards and encouragement platform).
+
+Strict Design & Technical Specifications:
+1. Container: Centered single-column layout, max-width: 450px, styled with Garamond/Georgia serif fonts and clean neutral warm borders (#e0d6bc on #f9f7f2 background). Supports CSS dark mode (@media prefers-color-scheme: dark).
+2. Aspect Ratio Rule: ALL product, reward, and community gallery images MUST be strictly locked to 1:1 square ratio (e.g. style="width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:4px;"). The ONLY exception is the header banner image with alt="Temple", which spans full width with height:auto.
+3. Theme/Topic for this edition: "${theme}".
+
+You MUST include these exact template Handlebar placeholders:
+- Header & Date: {{MONTH}}
+- Salutation: Hello {{NAME}},
+- Encouragement Body: {{MESSAGE}}
+- Scripture Section: "{{SCRIPTURE}}" cited by {{THEME}}
+- Highlights Section: Wrapped in a container with style="{{HIGHLIGHT_DISPLAY}}" containing {{HIGHLIGHT_ITEMS_HTML}}
+- Rewards & Points Tracker: {{REWARD_SECTION_HTML}}
+- Essentials (2 Items): {{ESS1_NAME}}, {{ESS1_IMG}}, {{ESS2_NAME}}, {{ESS2_IMG}}
+- 9-Grid Photo Gallery: {{GRID1}} through {{GRID9}}
+- Gallery CTA Button Link: {{GALLERY_URL}}
+
+Return ONLY the clean, raw HTML code.`;
+
+  document.getElementById("prompt-output-box").textContent = promptText;
+}
+
+function copyAiPrompt() {
+  const text = document.getElementById("prompt-output-box").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("📋 AI Prompt copied to clipboard! Paste it into ChatGPT/Claude.");
+  });
+}
+
+async function saveActiveMonth(sectionName = 'global') {
   const data = liveDripMap[currentMonth] || {};
   const label = getCalendarMonthLabel(currentMonth);
-  
-  if (btn) btn.textContent = "⏳ Saving Month to Database...";
-  if (saveBannerBtn) saveBannerBtn.textContent = "⏳ Saving...";
 
   try {
     const res = await fetch("/api/main", {
@@ -554,18 +714,12 @@ async function saveActiveMonth() {
     const resData = await res.json();
     if (resData.ok) {
       document.getElementById("save-banner").style.display = "none";
-      if (btn) btn.textContent = "💾 Save Month to Database";
-      if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
-      showToast(`${label} saved to database!`);
+      showToast(`✓ Saved ${sectionName.toUpperCase()} for ${label} to Database!`);
     } else {
       showToast(resData.error || "Failed to save.", "error");
-      if (btn) btn.textContent = "💾 Save Month to Database";
-      if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
     }
   } catch(e) {
     showToast("Network error saving to Turso.", "error");
-    if (btn) btn.textContent = "💾 Save Month to Database";
-    if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
   }
 }
 

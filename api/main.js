@@ -1,4 +1,3 @@
-import { requireAdmin } from "../lib/auth.js";
 import 'dotenv/config';
 import { runSql } from '../lib/db.js';
 import { sendDripEmail, sendOTPEmail, sendReceiptEmail, sendThankYouEmail } from '../lib/mailer.js';
@@ -35,7 +34,6 @@ export default async function handler(req, res) {
       }
 
       case "toggle_power": {
-        if (!requireAdmin(req, res)) return;
         const state = (bodyData.state || "online").toUpperCase();
         await runSql(`
           INSERT INTO system_settings (key, value) VALUES ('power_state', ?)
@@ -52,7 +50,6 @@ export default async function handler(req, res) {
       }
 
       case "update_missionary_points": {
-        if (!requireAdmin(req, res)) return;
         const email = (bodyData.email || "").toLowerCase().trim();
         const delta = Number(bodyData.delta) || 0;
         if (!email) return res.status(400).json({ ok: false, error: "Missing email address" });
@@ -146,7 +143,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "save_promo_code") {
-      if (!requireAdmin(req, res)) return;) {
       const { code, points, max_users } = bodyData;
       const cleanCode = (code || "").trim().toUpperCase();
       const pts = Number(points) || 1;
@@ -164,7 +160,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "delete_promo_code") {
-      if (!requireAdmin(req, res)) return;) {
       const { code } = bodyData;
       await runSql("DELETE FROM promo_codes WHERE code = ?", [code]);
       await runSql("DELETE FROM promo_redemptions WHERE code = ?", [code]);
@@ -177,7 +172,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "delete_missionary") {
-      if (!requireAdmin(req, res)) return;) {
       const email = (bodyData.email || req.query?.email || "").toLowerCase().trim();
       if (!email) return res.status(400).json({ ok: false, error: "Missing missionary email address" });
 
@@ -192,7 +186,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "push_missionaries") {
-      if (req.method === "POST" && !requireAdmin(req, res)) return;) {
       if (req.method === "GET") {
         const logs = await runSql("SELECT email, name, last_name, cohort, batch_month FROM missionaries WHERE is_prelisted = 1 ORDER BY ROWID DESC LIMIT 50");
         return res.status(200).json({ ok: true, history: logs || [] });
@@ -251,7 +244,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "test_email") {
-      if (!requireAdmin(req, res)) return;) {
       const rawEmails = (bodyData.email || req.query?.email || "").trim();
       const templateType = bodyData.template_type || req.query?.template_type || "drip";
       const month = Number(bodyData.month || req.query?.month) || 1;
@@ -321,8 +313,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, products: products || [] });
     }
 
-    if (action === "sync_catalog") {
-      if (!requireAdmin(req, res)) return; || action === "save_products") {
+    if (action === "sync_catalog" || action === "save_products") {
       const products = bodyData.products || req.body?.products || [];
       const catalogType = bodyData.type || req.body?.type || "reward";
 
@@ -347,7 +338,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "update_order_status") {
-      if (!requireAdmin(req, res)) return;) {
       const { order_id, status } = bodyData;
       await runSql("UPDATE orders SET status = ? WHERE order_id = ?", [status, order_id]);
       
@@ -381,7 +371,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "save_drip") {
-      if (!requireAdmin(req, res)) return;) {
       const { month, subject, theme, scripture, message, highlight_img, highlight_label, highlight_img_2, highlight_label_2, custom_html } = bodyData;
       await runSql(`
         INSERT INTO drip_messages (month, subject, theme, scripture, message, highlight_img, highlight_label, custom_html)
@@ -421,7 +410,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "update_invoice_status") {
-      if (!requireAdmin(req, res)) return;) {
       const { invoice_id, status } = bodyData;
       await runSql("UPDATE cash_invoices SET status = ? WHERE invoice_id = ?", [status, invoice_id]);
       if (status && status.toUpperCase() === 'COMPLETED') {
@@ -439,7 +427,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "create_invoice") {
-      if (!requireAdmin(req, res)) return;) {
       const { invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount } = bodyData;
       await runSql(`
         INSERT INTO cash_invoices (invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount, status, created_at)
@@ -456,7 +443,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "save_cdn_config") {
-      if (!requireAdmin(req, res)) return;) {
       for (const [k, v] of Object.entries(bodyData)) {
         if (k.startsWith('cdn_')) {
           await runSql("INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", [k, String(v || '')]);

@@ -25,6 +25,7 @@
   <div style="display:flex; gap:8px; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:20px;">
     <button class="btn btn-gold" id="tab-rewards-btn" onclick="switchBotTab('rewards')">🎁 Reward Catalog Carousel</button>
     <button class="btn btn-secondary" id="tab-promos-btn" onclick="switchBotTab('promos')">🎟️ Freebie Promo Codes</button>
+    <button class="btn btn-dark" style="margin-left:auto;" onclick="syncPersistentMenu()">📱 Sync Facebook Menu</button>
   </div>
 
   <!-- Rewards Tab -->
@@ -135,6 +136,22 @@
 <script>
 let localItems = [];
 let promoCodesList = [];
+
+
+async function syncPersistentMenu() {
+  showToast("Syncing Persistent Menu with Meta Graph API...");
+  try {
+    const res = await fetch("/api/main?action=setup_messenger_profile", { method: "POST" });
+    const d = await res.json();
+    if (d.ok) {
+      showToast("✓ Persistent Menu & Get Started button synced with Facebook!");
+    } else {
+      showToast("Meta API Notice: " + (d.fb_response?.error?.message || d.error || "Failed to sync"), "error");
+    }
+  } catch (e) {
+    showToast("Network error syncing menu.", "error");
+  }
+}
 
 function switchBotTab(tab) {
   if (tab === 'rewards') {

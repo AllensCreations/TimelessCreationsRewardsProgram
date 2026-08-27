@@ -296,7 +296,7 @@ export default async function handler(req, res) {
         ok: false,
         error: "Brevo REST API rejected dispatch.",
         details: results
-      });
+      }
     }
 
     if (action === "get_products") {

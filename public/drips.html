@@ -272,7 +272,40 @@
 <script>
 let currentMonth = 1;
 let liveDripMap = {};
-let masterTemplateCode = "";
+let masterTemplateCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: Georgia, serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 12px; }
+  .email-container { width: 100%; max-width: 450px; background: #ffffff; margin: 0 auto; border: 1px solid #e0d6bc; }
+  .brand-header { padding: 20px; text-align: center; }
+  .logo-text { font-size: 20px; letter-spacing: 4px; text-transform: uppercase; font-weight: 300; margin: 0; }
+  .main-content { padding: 16px; text-align: center; line-height: 1.5; }
+  .strict-1-1 { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+</style>
+</head>
+<body>
+<div class="email-container">
+  <div class="brand-header">
+    <div style="font-size: 8px; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-bottom: 6px;">{{MONTH}} • Dedicated Service</div>
+    <h1 class="logo-text">Timeless Creations</h1>
+  </div>
+  <div class="main-content">
+    <div style="font-size: 16px; font-style: italic; margin-bottom: 10px;">Hello {{NAME}},</div>
+    <div style="font-size: 13px; color: #333; margin-bottom: 14px;">{{MESSAGE}}</div>
+    <div style="margin: 14px 0; padding: 14px; background: #fdfbf8; border-left: 1px solid #d4c197;">
+      <div style="font-size: 13px; font-style: italic; margin-bottom: 6px;">"{{SCRIPTURE}}"</div>
+      <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+    </div>
+    {{HIGHLIGHT_DISPLAY}}
+    {{HIGHLIGHT_ITEMS_HTML}}
+    {{REWARD_SECTION_HTML}}
+  </div>
+</div>
+</body>
+</html>`;
 let currentTargetInputId = null;
 let currentTargetThumbId = null;
 

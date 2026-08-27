@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tcrp-cache-v15';
+const CACHE_NAME = 'tcrp-cache-v5';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -7,6 +7,7 @@ const PRECACHE_ASSETS = [
   '/assets/app.js',
   '/pusher.html',
   '/invoicing.html',
+  '/claims.html',
   '/drips.html',
   '/gallery.html',
   '/messengerbot.html',

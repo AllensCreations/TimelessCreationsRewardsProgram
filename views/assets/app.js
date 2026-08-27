@@ -10,6 +10,25 @@ const LocalStore = {
   }
 };
 
+// Default Admin Key for Web Console
+const ADMIN_KEY = "Alll3n";
+
+// Override global fetch to automatically attach x-admin-key header for /api requests
+const originalFetch = window.fetch;
+window.fetch = function (url, options = {}) {
+  if (typeof url === "string" && url.includes("/api/")) {
+    options.headers = options.headers || {};
+    if (options.headers instanceof Headers) {
+      if (!options.headers.has("x-admin-key")) options.headers.append("x-admin-key", ADMIN_KEY);
+      if (!options.headers.has("Authorization")) options.headers.append("Authorization", `Bearer ${ADMIN_KEY}`);
+    } else {
+      options.headers["x-admin-key"] = options.headers["x-admin-key"] || ADMIN_KEY;
+      options.headers["Authorization"] = options.headers["Authorization"] || `Bearer ${ADMIN_KEY}`;
+    }
+  }
+  return originalFetch(url, options);
+};
+
 function showToast(msg, type = "success") {
   let toast = document.getElementById("app-toast");
   if (!toast) {
@@ -90,19 +109,10 @@ async function triggerGlobalRefresh() {
     if (drips.ok) LocalStore.set('drips', drips.drips);
     if (prods.ok) LocalStore.set('products', prods.products);
 
-    showToast("Global data synchronized across all pages!");
+    showToast("Global data synchronized successfully!");
 
-    // Universal Event Dispatcher
     window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
-    if (typeof window.onPageDataRefreshed === "function") window.onPageDataRefreshed();
-    if (typeof window.syncData === "function") window.syncData();
-    if (typeof window.loadRoster === "function") window.loadRoster();
-    if (typeof window.loadData === "function") window.loadData();
-    if (typeof window.loadDetailedLogs === "function") window.loadDetailedLogs();
-    if (typeof window.loadGallery === "function") window.loadGallery();
-    if (typeof window.loadSettings === "function") window.loadSettings();
-    if (typeof window.renderFromCache === "function") window.renderFromCache();
-
+    if (window.onPageDataRefreshed) window.onPageDataRefreshed();
     checkSystemHealth();
   } catch (err) {
     showToast("Global sync failed: " + err.message, "error");
@@ -159,14 +169,3 @@ function initAppLayout(activeTab = 'dashboard', title = 'Dashboard') {
   }
   checkSystemHealth();
 }
-
-window.addEventListener("tcrp:data-synced", () => {
-  if (typeof window.onPageDataRefreshed === "function") window.onPageDataRefreshed();
-  if (typeof window.syncData === "function") window.syncData();
-  if (typeof window.loadRoster === "function") window.loadRoster();
-  if (typeof window.loadData === "function") window.loadData();
-  if (typeof window.loadDetailedLogs === "function") window.loadDetailedLogs();
-  if (typeof window.loadGallery === "function") window.loadGallery();
-  if (typeof window.loadSettings === "function") window.loadSettings();
-  if (typeof window.renderFromCache === "function") window.renderFromCache();
-});

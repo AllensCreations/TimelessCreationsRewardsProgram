@@ -2,91 +2,68 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Add Missionaries | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/app.css">
 <script src="/assets/app.js"></script>
 <style>
-  :root {
-    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-    --border:rgba(255,255,255,0.07);
-    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
-    --green:#4caf82; --red:#e05c5c; --text:#e8e6f0; --muted:#716e88;
+  .manual-card-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
   }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-  .container{max-width:980px;margin:20px auto;padding:0 16px 40px;}
-
-  .header-actions{margin-bottom:20px;}
-  .header-actions h2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--gold);}
-
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;}
-  .card h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:8px;color:var(--text);}
-  .card p{font-size:0.68rem;color:var(--muted);margin-bottom:16px;}
-
-  .global-batch-box{background:var(--surface2);border:1px solid var(--border);padding:14px;border-radius:8px;margin-bottom:16px;}
-  .form-header{display:grid;grid-template-columns:1.3fr 1.1fr 1.8fr 40px;gap:10px;margin-bottom:6px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
-  .form-row{display:grid;grid-template-columns:1.3fr 1.1fr 1.8fr 40px;gap:10px;margin-bottom:10px;align-items:center;}
-
-  .form-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
-  .form-input:focus{border-color:var(--gold);}
-  
-  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
-  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);margin-right:8px;}
-  .btn-danger{background:rgba(224,92,92,0.15);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  .dropzone{border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;background:var(--surface2);cursor:pointer;margin-bottom:16px;}
-  #result-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:0.75rem;margin-top:16px;white-space:pre-wrap;display:none;}
+  @media(min-width: 768px) {
+    .manual-card-row { display: grid; grid-template-columns: 1.3fr 1.1fr 1.8fr 40px; align-items: center; }
+  }
+  .dropzone {
+    border: 2px dashed var(--border-gold);
+    border-radius: var(--radius-sm);
+    padding: 24px 16px;
+    text-align: center;
+    background: var(--surface2);
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header-actions">
-    <h2>➕ Add Missionaries to Roster</h2>
-    <p style="font-size:0.7rem; color:var(--muted); margin-top:2px;">Register individual missionaries or bulk-push cohort batches into Turso.</p>
+  <div class="card">
+    <h2 style="color:var(--gold); font-size:1.25rem;">➕ Add Missionaries to Roster</h2>
+    <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Bulk register missionaries or import cohort CSV batches.</p>
   </div>
 
   <div class="card">
-    <h3>Target Cohort / Batch Month</h3>
-    <p>Set batch month below. Automatically applies to <code>batch_month</code> (Elders = 24M, Sisters = 18M).</p>
-    <div class="global-batch-box">
+    <div class="form-group">
+      <label class="form-label">Target Cohort / Batch Month</label>
       <input type="text" id="global-batch-input" class="form-input" value="August 2026"/>
     </div>
   </div>
 
-  <div class="card" id="form-card">
-    <h3>Manual Batch Registration</h3>
-    <p>Title &amp; Last Name maps to <strong><code>name</code></strong>, Prefix determines <strong><code>cohort</code></strong>, and First Name maps to <strong><code>first_name</code></strong>.</p>
-
-    <div class="form-header">
-      <div>Title &amp; Last Name</div>
-      <div>First Name</div>
-      <div>Auto Email (@missionary.org)</div>
-      <div></div>
-    </div>
-
+  <div class="card">
+    <h3 style="font-size:0.95rem; color:var(--gold); margin-bottom:8px;">Manual Batch Registration</h3>
     <div id="manual-rows"></div>
-
-    <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;">
-      <button class="btn btn-secondary" onclick="addManualRow()">+ Add Row</button>
-      <button class="btn" id="push-manual-btn" onclick="pushManualEntries()">🚀 Push Missionaries to Turso</button>
+    <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="addManualRow()" style="flex:1;">+ Add Row</button>
+      <button class="btn btn-gold" id="push-manual-btn" onclick="pushManualEntries()" style="flex:2;">🚀 Push to Database</button>
     </div>
   </div>
 
   <div class="card">
-    <h3>Upload CSV File</h3>
-    <p>Upload CSV containing <code>Name / Title</code>, <code>First Name</code>, and <code>Email</code>.</p>
-    
+    <h3 style="font-size:0.95rem; color:var(--gold); margin-bottom:8px;">Upload CSV File</h3>
     <div class="dropzone" onclick="document.getElementById('csv-file').click()">
-      <span id="file-label">📁 Click here to select CSV file or drag and drop</span>
+      <span id="file-label">📁 Tap to select CSV file</span>
       <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileSelect(event)"/>
     </div>
-    
-    <button class="btn" id="push-csv-btn" style="display:none;" onclick="pushCsvEntries()">🚀 Push CSV to Turso</button>
+    <button class="btn btn-gold" id="push-csv-btn" style="display:none; width:100%; margin-top:12px;" onclick="pushCsvEntries()">🚀 Push CSV to Database</button>
   </div>
-
-  <div id="result-box"></div>
 </div>
 
 <script>
@@ -121,18 +98,18 @@ function autoGenerateEmail(row) {
 function addManualRow() {
   const container = document.getElementById('manual-rows');
   const div = document.createElement('div');
-  div.className = 'form-row';
+  div.className = 'manual-card-row';
   div.innerHTML = `
-    <input type="text" class="form-input m-title-name" placeholder="Elder Dela Cruz" oninput="autoGenerateEmail(this.closest('.form-row'))"/>
-    <input type="text" class="form-input m-first-name" placeholder="Mark" oninput="autoGenerateEmail(this.closest('.form-row'))"/>
-    <input type="text" class="form-input m-email" placeholder="mark.delacruz@missionary.org" oninput="this.dataset.manualEdited='true'"/>
-    <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
+    <input type="text" class="form-input m-title-name" placeholder="Title & Last (e.g. Elder Dela Cruz)" oninput="autoGenerateEmail(this.closest('.manual-card-row'))"/>
+    <input type="text" class="form-input m-first-name" placeholder="First Name (e.g. Mark)" oninput="autoGenerateEmail(this.closest('.manual-card-row'))"/>
+    <input type="text" class="form-input m-email" placeholder="Email (@missionary.org)" oninput="this.dataset.manualEdited='true'"/>
+    <button class="btn-danger" style="padding:6px; height:38px;" onclick="this.parentElement.remove()">✕</button>
   `;
   container.appendChild(div);
 }
 
 async function pushManualEntries() {
-  const rows = document.querySelectorAll('.form-row');
+  const rows = document.querySelectorAll('.manual-card-row');
   const globalBatch = toTitleCase(document.getElementById('global-batch-input').value.trim()) || 'August 2026';
   const entries = [];
 
@@ -152,7 +129,7 @@ async function pushManualEntries() {
 
   const btn = document.getElementById('push-manual-btn');
   btn.disabled = true;
-  btn.textContent = 'Pushing to Turso...';
+  btn.textContent = 'Pushing to Database...';
 
   try {
     const res = await fetch('/api/main?action=push_missionaries', {
@@ -162,7 +139,7 @@ async function pushManualEntries() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Pushed ${data.added} missionaries! Tap Global Refresh to sync.`);
+      showToast(`Successfully added ${data.added} missionaries!`);
       document.getElementById('manual-rows').innerHTML = '';
       addManualRow();
     } else {
@@ -172,7 +149,7 @@ async function pushManualEntries() {
     showToast("Network error: " + e.message, "error");
   } finally {
     btn.disabled = false;
-    btn.textContent = '🚀 Push Missionaries to Turso';
+    btn.textContent = '🚀 Push to Database';
   }
 }
 
@@ -190,7 +167,7 @@ function handleFileSelect(event) {
 
     if (parsedCsvData.length > 0) {
       document.getElementById('push-csv-btn').style.display = 'inline-flex';
-      showToast(`Parsed ${parsedCsvData.length} records.`);
+      showToast(`Parsed ${parsedCsvData.length} records from CSV.`);
     }
   };
   reader.readAsText(file);
@@ -205,7 +182,7 @@ async function pushCsvEntries() {
   });
   const data = await res.json();
   if (data.ok) {
-    showToast(`Imported ${data.added} CSV records! Tap Global Refresh to sync.`);
+    showToast(`Imported ${data.added} CSV records!`);
     document.getElementById('push-csv-btn').style.display = 'none';
   }
 }

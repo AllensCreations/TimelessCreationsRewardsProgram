@@ -2,127 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Missionaries Roster | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
   <style>
-    :root {
-      --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-      --border:rgba(255,255,255,0.07);
-      --gold:#c9a84c; --gold-dim:rgba(201,168,76,0.15);
-      --green:#4caf82; --red:#e05c5c; --blue:#5c8de0; --text:#e8e6f0; --muted:#716e88;
-      --radius:10px;
+    .missionary-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-bottom: 8px;
     }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-    .main-wrap { max-width: 1100px; margin: 20px auto; padding: 0 16px 60px; }
-    .table-controls { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid var(--border); background: var(--surface2); border-radius: var(--radius) var(--radius) 0 0; flex-wrap: wrap; }
-    .search-input { flex: 1; min-width: 180px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
-    .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
-    .filter-btn.active { color: var(--gold); border-color: rgba(201,168,76,0.4); background: var(--gold-dim); font-weight: 700; }
-    .sort-select { background: var(--surface); border: 1px solid var(--border); color: var(--gold); padding: 8px 12px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; outline: none; }
-    .roster-list { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-top: none; padding: 12px; min-height: 200px; }
-    .missionary-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; display: flex; flex-direction: column; }
-    .card-main-row { display: flex; align-items: center; padding: 12px 16px; gap: 12px; }
-    .card-summary { flex: 1; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
-    .cohort-pill { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
-    .cohort-elder { background: rgba(92,141,224,0.15); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
-    .cohort-sister { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
-    .card-details { display: none; padding: 14px 16px; background: rgba(0,0,0,0.25); border-top: 1px solid var(--border); font-size: 0.72rem; line-height: 1.8; }
+    .card-main-row { display: flex; align-items: center; padding: 12px 14px; gap: 10px; cursor: pointer; }
+    .card-details {
+      display: none;
+      padding: 14px;
+      background: rgba(0,0,0,0.25);
+      border-top: 1px solid var(--border);
+      font-size: 0.74rem;
+      line-height: 1.8;
+    }
     .missionary-card.open .card-details { display: block; }
-    .pagination-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); font-size: 0.72rem; }
-    .page-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: 'DM Mono', monospace; }
-    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    
-    /* Batch Selection Toolbar */
-    .batch-toolbar {
-      position: fixed; bottom: 0; left: 0; right: 0; background: #151824; border-top: 1px solid var(--gold);
-      padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 999;
-      box-shadow: 0 -10px 30px rgba(0,0,0,0.8); transform: translateY(100%); transition: transform 0.3s ease;
-    }
-    .batch-toolbar.active { transform: translateY(0); }
-    .select-checkbox { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; display: none; }
-    .select-mode-active .select-checkbox { display: inline-block; }
-
-    .btn-delete {
-      background: rgba(224,92,92,0.12); border: 1px solid rgba(224,92,92,0.3); color: var(--red);
-      padding: 5px 12px; border-radius: 4px; font-size: 0.68rem; font-weight: 700;
-      font-family: 'DM Mono', monospace; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin-top: 10px;
-    }
-    .btn-delete:hover { background: var(--red); color: #fff; }
-
-    /* Loading Overlay */
-    #global-loading-overlay {
-      position: fixed; inset: 0; background: rgba(10, 10, 15, 0.75); backdrop-filter: blur(4px);
-      z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
-    }
-    .spinner {
-      width: 36px; height: 36px; border: 3px solid rgba(201,168,76,0.2); border-top-color: var(--gold);
-      border-radius: 50%; animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .cohort-pill { font-size: 0.62rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .cohort-elder { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
+    .cohort-sister { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
   </style>
 </head>
-<body id="body-root">
+<body>
 
-<div id="global-loading-overlay">
-  <div class="spinner"></div>
-  <div style="font-family:'Syne',sans-serif; color:var(--gold); font-size:0.85rem; letter-spacing:0.08em;" id="loading-text">Processing request...</div>
-</div>
-
-<div class="main-wrap">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+<div class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
     <div>
-      <h2 style="font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:800; color:var(--gold);">Missionaries Roster</h2>
-      <p style="font-size:0.7rem; color:var(--muted); margin-top:4px;">
-        Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered missionaries.
-      </p>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <button class="filter-btn" id="toggle-select-mode" onclick="toggleSelectMode()">☑️ Select Mode: OFF</button>
+      <h2 style="color:var(--gold); font-size:1.25rem;">Missionaries Roster</h2>
+      <p style="font-size:0.72rem; color:var(--muted);">Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered.</p>
     </div>
   </div>
 
-  <div class="table-controls">
-    <input class="search-input" id="search-box" placeholder="Search missionary name, email, or code..."/>
-    <button class="filter-btn active" onclick="filterType('all', this)">All</button>
-    <button class="filter-btn" onclick="filterType('elder', this)">Elders (24M)</button>
-    <button class="filter-btn" onclick="filterType('sister', this)">Sisters (18M)</button>
-    
-    <select class="sort-select" id="sort-select" onchange="handleSortChange(this.value)">
-      <option value="name_asc">Sort: Name (A-Z)</option>
-      <option value="name_desc">Sort: Name (Z-A)</option>
-      <option value="points_desc">Sort: Points (High to Low)</option>
-      <option value="points_asc">Sort: Points (Low to High)</option>
-      <option value="oldest">Sort: Oldest Added</option>
-      <option value="newest">Sort: Newest Added</option>
-    </select>
+  <div class="card" style="padding:12px;">
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <input class="form-input" id="search-box" placeholder="Search missionary name, email, or code..."/>
+      <div class="tab-bar" style="margin-bottom:0; padding-bottom:0;">
+        <button class="btn btn-gold tab-btn" onclick="filterType('all', this)" style="padding:6px 12px; font-size:0.72rem;">All</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('elder', this)" style="padding:6px 12px; font-size:0.72rem;">Elders</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('sister', this)" style="padding:6px 12px; font-size:0.72rem;">Sisters</button>
+      </div>
+    </div>
   </div>
 
-  <div class="roster-list" id="roster-container">
+  <div id="roster-container">
     <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries...</div>
   </div>
 
-  <div class="pagination-bar">
-    <button class="page-btn" id="prev-page-btn" onclick="changePage(-1)">← Previous</button>
-    <span id="page-indicator">Page 1</span>
-    <button class="page-btn" id="next-page-btn" onclick="changePage(1)">Next →</button>
-  </div>
-</div>
-
-<!-- Floating Batch Toolbar -->
-<div class="batch-toolbar" id="batch-toolbar">
-  <div style="display:flex; gap:12px; align-items:center;">
-    <span style="font-size:0.78rem; color:var(--gold); font-weight:bold;" id="selected-count-label">0 Selected</span>
-    <button class="filter-btn" onclick="selectAllVisible()">Select All</button>
-    <button class="filter-btn" onclick="selectCurrentCohort()">Select Current Cohort</button>
-    <button class="filter-btn" onclick="deselectAll()">Deselect</button>
-  </div>
-  <div style="display:flex; gap:10px;">
-    <button class="filter-btn" style="background:var(--gold-dim); color:var(--gold); border-color:var(--gold);" onclick="promptBulkAddPoints()">⭐ Bulk Add Points</button>
-    <button class="btn-delete" style="margin-top:0;" onclick="promptBulkDelete()">🗑️ Bulk Delete Selected</button>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+    <button class="btn btn-dark" id="prev-page-btn" onclick="changePage(-1)" style="padding:6px 14px; font-size:0.75rem;">← Prev</button>
+    <span id="page-indicator" style="font-size:0.72rem; color:var(--muted);">Page 1</span>
+    <button class="btn btn-dark" id="next-page-btn" onclick="changePage(1)" style="padding:6px 14px; font-size:0.75rem;">Next →</button>
   </div>
 </div>
 
@@ -131,32 +67,11 @@ let state = {
   missionaries: [],
   filteredList: [],
   currentFilter: 'all',
-  currentSort: 'name_asc',
   searchQuery: '',
   page: 1,
-  pageSize: 50,
-  selectMode: false,
-  selectedEmails: new Set()
+  pageSize: 30
 };
 
-function showLoading(msg = "Processing request...") {
-  document.getElementById('loading-text').textContent = msg;
-  document.getElementById('global-loading-overlay').style.display = 'flex';
-}
-
-function hideLoading() {
-  document.getElementById('global-loading-overlay').style.display = 'none';
-}
-
-function debounce(func, wait = 250) {
-  let timeout;
-  return function(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-
-window.loadRoster = loadRoster;
 function loadRoster() {
   const cached = LocalStore.get('missionaries', []);
   if (cached.length > 0) {
@@ -168,99 +83,22 @@ function loadRoster() {
   }
 }
 
-window.onPageDataRefreshed = () => {
-  state.missionaries = LocalStore.get('missionaries', []);
-  document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
-  applyFilterAndRender();
-};
-
-function toggleSelectMode() {
-  state.selectMode = !state.selectMode;
-  const btn = document.getElementById('toggle-select-mode');
-  const toolbar = document.getElementById('batch-toolbar');
-  const root = document.getElementById('body-root');
-
-  if (state.selectMode) {
-    btn.textContent = "☑️ Select Mode: ON";
-    btn.classList.add("active");
-    root.classList.add("select-mode-active");
-    toolbar.classList.add("active");
-  } else {
-    btn.textContent = "☑️ Select Mode: OFF";
-    btn.classList.remove("active");
-    root.classList.remove("select-mode-active");
-    toolbar.classList.remove("active");
-    state.selectedEmails.clear();
-    updateSelectedCount();
-  }
-  renderPaginatedCards();
-}
-
-function selectAllVisible() {
-  state.filteredList.forEach(m => state.selectedEmails.add(m.email.toLowerCase()));
-  renderPaginatedCards();
-  updateSelectedCount();
-}
-
-function selectCurrentCohort() {
-  state.filteredList.forEach(m => {
-    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-    if (state.currentFilter === 'all' || (state.currentFilter === 'sister' && isSister) || (state.currentFilter === 'elder' && !isSister)) {
-      state.selectedEmails.add(m.email.toLowerCase());
-    }
-  });
-  renderPaginatedCards();
-  updateSelectedCount();
-}
-
-function deselectAll() {
-  state.selectedEmails.clear();
-  renderPaginatedCards();
-  updateSelectedCount();
-}
-
-function toggleCheckbox(email, e) {
-  e.stopPropagation();
-  const cleanEmail = email.toLowerCase();
-  if (state.selectedEmails.has(cleanEmail)) {
-    state.selectedEmails.delete(cleanEmail);
-  } else {
-    state.selectedEmails.add(cleanEmail);
-  }
-  updateSelectedCount();
-}
-
-function updateSelectedCount() {
-  document.getElementById('selected-count-label').textContent = `${state.selectedEmails.size} Selected`;
-}
-
 function filterType(type, btn) {
   state.currentFilter = type;
   state.page = 1;
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    if (!b.id.includes('toggle-select-mode')) b.classList.remove('active');
-  });
-  btn.classList.add('active');
+  document.querySelectorAll('.tab-bar .btn').forEach(b => b.className = 'btn btn-dark tab-btn');
+  btn.className = 'btn btn-gold tab-btn';
   applyFilterAndRender();
 }
 
-function handleSortChange(sortVal) {
-  state.currentSort = sortVal;
-  state.page = 1;
-  applyFilterAndRender();
-}
-
-const handleDebouncedSearch = debounce((val) => {
-  state.searchQuery = val.toLowerCase().trim();
+document.getElementById('search-box').addEventListener('input', (e) => {
+  state.searchQuery = e.target.value.toLowerCase().trim();
   state.page = 1;
   applyFilterAndRender();
 });
 
-document.getElementById('search-box').addEventListener('input', (e) => handleDebouncedSearch(e.target.value));
-
 function applyFilterAndRender() {
   let list = [...state.missionaries];
-
   if (state.currentFilter === 'elder') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
   } else if (state.currentFilter === 'sister') {
@@ -275,23 +113,6 @@ function applyFilterAndRender() {
     );
   }
 
-  list.sort((a, b) => {
-    if (state.currentSort === 'name_asc') {
-      return (a.name || '').localeCompare(b.name || '');
-    } else if (state.currentSort === 'name_desc') {
-      return (b.name || '').localeCompare(a.name || '');
-    } else if (state.currentSort === 'points_desc') {
-      return (Number(b.points) || 0) - (Number(a.points) || 0);
-    } else if (state.currentSort === 'points_asc') {
-      return (Number(a.points) || 0) - (Number(b.points) || 0);
-    } else if (state.currentSort === 'oldest') {
-      return (a.rowid || a.id || 0) - (b.rowid || b.id || 0);
-    } else if (state.currentSort === 'newest') {
-      return (b.rowid || b.id || 0) - (a.rowid || a.id || 0);
-    }
-    return 0;
-  });
-
   state.filteredList = list;
   renderPaginatedCards();
 }
@@ -302,9 +123,7 @@ function changePage(delta) {
 }
 
 async function deleteMissionary(email, name) {
-  if (!confirm(`Permanently remove ${name} (${email}) from database?`)) return;
-
-  showLoading(`Deleting ${name}...`);
+  if (!confirm(`Permanently remove ${name} (${email})?`)) return;
   try {
     const res = await fetch("/api/main", {
       method: "POST",
@@ -316,84 +135,11 @@ async function deleteMissionary(email, name) {
       showToast(`Removed ${name} from roster.`);
       state.missionaries = state.missionaries.filter(m => m.email.toLowerCase() !== email.toLowerCase());
       LocalStore.set('missionaries', state.missionaries);
-      document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
       applyFilterAndRender();
-    } else {
-      showToast(data.error || "Failed to delete missionary", "error");
     }
   } catch (err) {
-    showToast("Network error: " + err.message, "error");
-  } finally {
-    hideLoading();
+    showToast("Error deleting missionary", "error");
   }
-}
-
-async function promptBulkAddPoints() {
-  if (state.selectedEmails.size === 0) {
-    showToast("No missionaries selected.", "error");
-    return;
-  }
-  const pts = prompt(`Enter points to add (or subtract using negative numbers) for ${state.selectedEmails.size} selected missionaries:`, "5");
-  if (pts === null) return;
-  const delta = parseInt(pts, 10);
-  if (isNaN(delta)) {
-    showToast("Invalid number.", "error");
-    return;
-  }
-
-  showLoading(`Updating points for ${state.selectedEmails.size} missionaries...`);
-  let successCount = 0;
-  for (const email of state.selectedEmails) {
-    try {
-      const res = await fetch("/api/main", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update_missionary_points", email, delta })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        successCount++;
-        const m = state.missionaries.find(x => x.email.toLowerCase() === email);
-        if (m) m.points = Math.max(0, (Number(m.points) || 0) + delta);
-      }
-    } catch (_) {}
-  }
-
-  hideLoading();
-  LocalStore.set('missionaries', state.missionaries);
-  applyFilterAndRender();
-  showToast(`Successfully updated points for ${successCount} missionaries!`);
-}
-
-async function promptBulkDelete() {
-  if (state.selectedEmails.size === 0) {
-    showToast("No missionaries selected.", "error");
-    return;
-  }
-  if (!confirm(`Permanently delete ${state.selectedEmails.size} selected missionaries from the database?`)) return;
-
-  showLoading(`Bulk deleting ${state.selectedEmails.size} missionaries...`);
-  let successCount = 0;
-  for (const email of state.selectedEmails) {
-    try {
-      const res = await fetch("/api/main", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete_missionary", email })
-      });
-      const data = await res.json();
-      if (data.ok) successCount++;
-    } catch (_) {}
-  }
-
-  hideLoading();
-  state.missionaries = state.missionaries.filter(m => !state.selectedEmails.has(m.email.toLowerCase()));
-  state.selectedEmails.clear();
-  LocalStore.set('missionaries', state.missionaries);
-  document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
-  updateSelectedCount();
-  applyFilterAndRender();
-  showToast(`Successfully deleted ${successCount} missionaries.`);
 }
 
 function renderPaginatedCards() {
@@ -419,41 +165,27 @@ function renderPaginatedCards() {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
     const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
     const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
-    const pct = Math.min(Math.round((sentCount / totalMonths) * 100), 100);
-    const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
     return `
       <div class="missionary-card">
-        <div class="card-main-row">
-          <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
-          <div class="card-summary" onclick="this.closest('.missionary-card').classList.toggle('open')">
-            <div style="display:flex; align-items:center; gap:8px;">
+        <div class="card-main-row" onclick="this.closest('.missionary-card').classList.toggle('open')">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
               <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
-              <span style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:700;">${m.name || 'Unnamed'}</span>
+              <strong style="font-size:0.85rem;">${m.name || 'Unnamed'}</strong>
             </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span style="color:var(--gold); font-weight:bold; background:var(--gold-dim); padding:2px 8px; border-radius:4px; font-size:0.7rem;">${m.points || 0} PTS</span>
-              <span style="color:var(--muted); font-size:0.7rem;">▼</span>
-            </div>
+            <div style="font-size:0.68rem; color:var(--muted);">${m.email}</div>
+          </div>
+          <div style="text-align:right;">
+            <span style="color:var(--gold); font-weight:bold; font-size:0.8rem;">⭐ ${m.points || 0} PTS</span>
           </div>
         </div>
 
         <div class="card-details">
-          <div>✉️ <strong>Email:</strong> ${m.email}</div>
           <div>🏷️ <strong>Referral Code:</strong> ${m.referral_code || 'N/A'}</div>
-          <div>🆔 <strong>Messenger PSID:</strong> ${m.psid || '<span style="color:var(--muted)">Not Linked</span>'}</div>
-          <div>⚡ <strong>Status:</strong> <span style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span></div>
-
-          <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); margin-top:8px;">
-            <span>📩 ${sentCount} / ${totalMonths} Drip Letters</span>
-            <span>${pct}%</span>
-          </div>
-          <div style="width:100%; height:5px; background:rgba(255,255,255,0.05); border-radius:99px; overflow:hidden; margin-top:3px;">
-            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,var(--green),var(--gold));"></div>
-          </div>
-
-          <div style="display:flex; justify-content:flex-end;">
-            <button class="btn-delete" onclick="deleteMissionary('${m.email}', '${m.name || 'Missionary'}')">🗑️ Delete Missionary</button>
+          <div>📩 <strong>Dispatches Sent:</strong> ${sentCount} of ${totalMonths} months</div>
+          <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-danger" style="padding:4px 10px; font-size:0.68rem; min-height:30px;" onclick="deleteMissionary('${m.email}', '${m.name || 'Missionary'}')">🗑️ Delete</button>
           </div>
         </div>
       </div>
@@ -462,7 +194,7 @@ function renderPaginatedCards() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  initAppLayout('missionaries', 'Missionaries Roster');
+  initAppLayout('missionaries', 'Missionaries');
   loadRoster();
 });
 </script>

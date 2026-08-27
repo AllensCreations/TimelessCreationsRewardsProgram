@@ -1,154 +1,108 @@
 const LocalStore = {
-  get: (k, d = null) => {
+  get(key, fallback = null) {
     try {
-      const val = localStorage.getItem('tcrp_' + k);
-      return val ? JSON.parse(val) : d;
-    } catch (e) { return d; }
+      const v = localStorage.getItem(`tcrp_${key}`);
+      return v ? JSON.parse(v) : fallback;
+    } catch { return fallback; }
   },
-  set: (k, v) => {
-    try { localStorage.setItem('tcrp_' + k, JSON.stringify(v)); } catch (e) {}
+  set(key, val) {
+    try { localStorage.setItem(`tcrp_${key}`, JSON.stringify(val)); } catch {}
+  },
+  remove(key) {
+    try { localStorage.removeItem(`tcrp_${key}`); } catch {}
   }
 };
 
-function showToast(msg, type = "success") {
-  let toast = document.getElementById("app-toast");
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.id = "app-toast";
-    toast.style.position = "fixed";
-    toast.style.bottom = "24px";
-    toast.style.right = "24px";
-    toast.style.padding = "12px 20px";
-    toast.style.borderRadius = "8px";
-    toast.style.fontWeight = "bold";
-    toast.style.fontSize = "0.85rem";
-    toast.style.zIndex = "99999";
-    toast.style.transition = "all 0.3s ease";
-    toast.style.boxShadow = "0 10px 30px rgba(0,0,0,0.6)";
-    document.body.appendChild(toast);
+function showToast(message, type = "success") {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    document.body.appendChild(container);
   }
-  toast.style.background = type === "error" ? "#e63946" : "var(--gold, #c9a84c)";
-  toast.style.color = type === "error" ? "#fff" : "#0d0e15";
-  toast.textContent = msg;
-  toast.style.display = "block";
-  toast.style.opacity = "1";
+  const toast = document.createElement("div");
+  toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
+  toast.innerHTML = `<span>${type === "error" ? "⚠️" : "✨"}</span> <span>${message}</span>`;
+  container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = "0";
-    setTimeout(() => { toast.style.display = "none"; }, 300);
-  }, 3500);
+    toast.style.transform = "translateY(10px)";
+    toast.style.transition = "all 0.25s ease";
+    setTimeout(() => toast.remove(), 250);
+  }, 3200);
 }
 
-async function checkSystemHealth() {
-  const dot = document.getElementById("nav-status-dot");
-  const text = document.getElementById("nav-status-text");
-  if (!dot || !text) return;
-  try {
-    const res = await fetch("/api/main?action=health_check");
-    const data = await res.json();
-    if (data.ok && data.status === "ONLINE") {
-      dot.style.background = "var(--green, #4caf82)";
-      dot.style.boxShadow = "0 0 8px var(--green, #4caf82)";
-      text.textContent = "Online";
-    } else {
-      dot.style.background = "var(--gold, #c9a84c)";
-      dot.style.boxShadow = "0 0 8px var(--gold, #c9a84c)";
-      text.textContent = "Sleeping";
-    }
-  } catch (e) {
-    dot.style.background = "var(--red, #e05c5c)";
-    dot.style.boxShadow = "0 0 8px var(--red, #e05c5c)";
-    text.textContent = "Offline";
-  }
+const NAV_ITEMS = [
+  { key: 'dashboard', label: '📊 Dashboard', url: '/index.html' },
+  { key: 'missionaries', label: '👥 Missionaries', url: '/missionaries.html' },
+  { key: 'pusher', label: '➕ Add Batch', url: '/pusher.html' },
+  { key: 'invoicing', label: '🧾 Invoicing & POS', url: '/invoicing.html' },
+  { key: 'drips', label: '💌 24M Drips', url: '/drips.html' },
+  { key: 'messengerbot', label: '🎁 Bot Rewards', url: '/messengerbot.html' },
+  { key: 'gallery', label: '🖼️ CDN Gallery', url: '/gallery.html' },
+  { key: 'logs', label: '📜 Logs', url: '/logs.html' },
+  { key: 'settings', label: '⚙️ Settings', url: '/settings.html' },
+  { key: 'changelog', label: '📜 Changelog', url: '/changelog.html' }
+];
+
+function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
+  // 1. Create Top Header
+  const header = document.createElement('header');
+  header.className = 'app-header';
+  header.innerHTML = `
+    <div class="header-inner">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="hamburger-btn" onclick="toggleMobileDrawer()" aria-label="Toggle Navigation">☰</button>
+        <a href="/index.html" class="brand-title">✨ Timeless Creations <span>• ${pageTitle}</span></a>
+      </div>
+      <nav class="desktop-nav">
+        ${NAV_ITEMS.map(item => `
+          <a href="${item.url}" class="nav-pill ${item.key === activeKey ? 'active' : ''}">${item.label}</a>
+        `).join('')}
+      </nav>
+      <button onclick="triggerGlobalRefresh()" class="btn btn-dark" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">↻ Sync</button>
+    </div>
+  `;
+  document.body.prepend(header);
+
+  // 2. Create Mobile Drawer
+  const drawer = document.createElement('div');
+  drawer.id = 'mobile-nav-drawer';
+  drawer.className = 'mobile-drawer';
+  drawer.onclick = (e) => { if (e.target === drawer) toggleMobileDrawer(); };
+  drawer.innerHTML = `
+    <div class="drawer-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+        <div style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.05rem; font-weight:800;">Timeless Creations</div>
+        <button onclick="toggleMobileDrawer()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+      </div>
+      ${NAV_ITEMS.map(item => `
+        <a href="${item.url}" class="drawer-link ${item.key === activeKey ? 'active' : ''}">${item.label}</a>
+      `).join('')}
+    </div>
+  `;
+  document.body.appendChild(drawer);
+}
+
+function toggleMobileDrawer() {
+  const d = document.getElementById('mobile-nav-drawer');
+  if (d) d.classList.toggle('open');
 }
 
 async function triggerGlobalRefresh() {
-  const btn = document.getElementById("nav-global-refresh-btn");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "↻ Syncing...";
-  }
-
+  showToast("Syncing data with server...");
   try {
-    const [statsRes, missRes, ordersRes, dripsRes, prodsRes] = await Promise.all([
-      fetch("/api/main?action=get_stats"),
-      fetch("/api/main?action=get_missionaries"),
-      fetch("/api/main?action=get_orders"),
-      fetch("/api/main?action=get_drips"),
-      fetch("/api/main?action=get_products")
-    ]);
-
-    const [stats, miss, orders, drips, prods] = await Promise.all([
-      statsRes.json(), missRes.json(), ordersRes.json(), dripsRes.json(), prodsRes.json()
-    ]);
-
-    if (stats.ok) {
-      LocalStore.set('stats_payload', stats);
-      LocalStore.set('stats', stats.stats);
+    const res = await fetch("/api/main?action=get_stats");
+    const data = await res.json();
+    if (data.ok) {
+      LocalStore.set('stats_payload', data);
+      showToast("✓ Live data updated successfully!");
+      window.dispatchEvent(new CustomEvent("tcrp:data-synced", { detail: data }));
+      if (typeof window.renderFromCache === 'function') window.renderFromCache();
+      if (typeof window.loadData === 'function') window.loadData();
+      if (typeof window.loadRoster === 'function') window.loadRoster();
     }
-    if (miss.ok) LocalStore.set('missionaries', miss.missionaries);
-    if (orders.ok) LocalStore.set('orders', orders.orders);
-    if (drips.ok) LocalStore.set('drips', drips.drips);
-    if (prods.ok) LocalStore.set('products', prods.products);
-
-    showToast("Global data synchronized successfully!");
-
-    // Broadcast sync event to whatever page is active
-    window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
-    if (window.onPageDataRefreshed) window.onPageDataRefreshed();
-    checkSystemHealth();
   } catch (err) {
-    showToast("Global sync failed: " + err.message, "error");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "↻ Global Refresh";
-    }
+    showToast("Network error syncing data.", "error");
   }
-}
-
-function initAppLayout(activeTab = 'dashboard', title = 'Dashboard') {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', href: '/index.html', icon: '📊' },
-    { id: 'missionaries', label: 'Roster', href: '/missionaries.html', icon: '👥' },
-    { id: 'pusher', label: '+ Add Missionaries', href: '/pusher.html', icon: '➕' },
-    { id: 'messengerbot', label: 'Bot Rewards', href: '/messengerbot.html', icon: '🎁' },
-    { id: 'drips', label: '24M Drips', href: '/drips.html', icon: '✉️' },
-    { id: 'claims', label: 'Claims & Orders', href: '/claims.html', icon: '📦' },
-    { id: 'invoicing', label: 'Cash POS', href: '/invoicing.html', icon: '💵' },
-    { id: "settings", label: "Settings", href: "/settings.html", icon: "⚙️" },
-    { id: "changelog", label: "Changelog", href: "/changelog.html", icon: "📜" }
-  ];
-
-  const header = document.querySelector("header") || document.createElement("header");
-  header.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 24px; background:var(--surface, #141622); border-bottom:1px solid var(--border, rgba(201,168,76,0.2)); flex-wrap:wrap; gap:12px;">
-      <div style="display:flex; align-items:center; gap:14px;">
-        <span style="font-size:1.4rem;">🏛️</span>
-        <div>
-          <div style="font-family:'Syne',sans-serif; font-weight:800; color:var(--gold, #c9a84c); font-size:0.95rem; letter-spacing:0.5px;">TIMELESS CREATIONS</div>
-          <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
-            <span id="nav-status-dot" style="width:7px; height:7px; border-radius:50%; background:#4caf82; display:inline-block;"></span>
-            <span id="nav-status-text" style="font-size:0.62rem; color:var(--muted, #8c90a4); text-transform:uppercase; letter-spacing:0.8px;">Checking...</span>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <nav style="display:flex; gap:6px; flex-wrap:wrap;">
-          ${navItems.map(item => `
-            <a href="${item.href}" style="padding:6px 11px; border-radius:6px; font-size:0.72rem; text-decoration:none; display:flex; align-items:center; gap:5px; font-weight:600; transition:all 0.2s; ${activeTab === item.id ? 'background:var(--gold, #c9a84c); color:#0d0e15;' : 'color:var(--text, #e2e4ee); background:var(--surface2, #1c1f2e);'}">
-              <span>${item.icon}</span> <span>${item.label}</span>
-            </a>
-          `).join('')}
-        </nav>
-        <button id="nav-global-refresh-btn" onclick="triggerGlobalRefresh()" style="background:var(--gold-dim, rgba(201,168,76,0.15)); border:1px solid rgba(201,168,76,0.4); color:var(--gold, #c9a84c); padding:6px 12px; border-radius:6px; font-family:'DM Mono',monospace; font-size:0.72rem; font-weight:bold; cursor:pointer;">
-          ↻ Global Refresh
-        </button>
-      </div>
-    </div>
-  `;
-  if (!document.querySelector("header")) {
-    document.body.insertBefore(header, document.body.firstChild);
-  }
-  checkSystemHealth();
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Invoicing, POS & Pending Claims | Timeless Creations</title>
+<title>Invoicing & Transactions | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/app.css">
 <script src="/assets/app.js"></script>
@@ -84,6 +84,9 @@
   .status-select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.66rem;outline:none;}
   .status-select.pending{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
   .status-select.completed{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(5,5,8,0.85);backdrop-filter:blur(6px);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px;}
+  .modal-content{background:var(--surface);border:1px solid var(--gold);border-radius:12px;padding:24px;max-width:540px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.8);max-height:90vh;overflow-y:auto;}
 </style>
 </head>
 <body>
@@ -91,8 +94,7 @@
 <div class="container">
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Generate Invoice</button>
-    <button class="tab-btn" onclick="switchNavTab('history-tab', this)">📜 Invoice History <span id="history-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
-    <button class="tab-btn" onclick="switchNavTab('pending-claims-tab', this)" style="border-color:var(--gold);color:var(--gold);">⏳ Pending Claims (Rewards) <span id="pending-claims-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
+    <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Transactions &amp; Claims <span id="trans-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
     <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash Product Catalog</button>
   </div>
 
@@ -256,39 +258,16 @@
     </div>
   </div>
 
-  <!-- History Tab -->
-  <div class="tab-pane" id="history-tab">
-    <div class="card">
-      <h3>Invoice Records</h3>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Invoice ID</th>
-            <th>Customer</th>
-            <th>Email</th>
-            <th>Total (₱)</th>
-            <th>Date</th>
-            <th style="text-align:center;">Status</th>
-          </tr>
-        </thead>
-        <tbody id="invoices-tbody">
-          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading invoices...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Pending Claims (Rewards) Tab -->
-  <div class="tab-pane" id="pending-claims-tab">
+  <!-- Combined Transactions & Claims Tab -->
+  <div class="tab-pane" id="transactions-tab">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <div>
-          <h3>Pending Rewards Claims &amp; Hybrid Bundling</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Review claimed items, bundle extra cash products, and mark complete to auto-send Thank You emails.</p>
+          <h3>⏳ Pending Rewards Claims</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Review claimed items, bundle extra products, and mark complete.</p>
         </div>
-        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="loadOrders()">🔄 Refresh Claims</button>
+        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
       </div>
-
       <table class="data-table">
         <thead>
           <tr>
@@ -302,6 +281,31 @@
         </thead>
         <tbody id="pending-claims-tbody">
           <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading pending claims...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div>
+          <h3>📜 Invoice Records &amp; POS History</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">View past invoices and click <strong>✏️ Edit</strong> to modify items, quantities, or pricing.</p>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice ID</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Total (₱)</th>
+            <th>Date</th>
+            <th style="text-align:center;">Status</th>
+            <th style="text-align:center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="invoices-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Loading invoices...</td></tr>
         </tbody>
       </table>
     </div>
@@ -327,6 +331,56 @@
       <div style="margin-top:16px;">
         <button class="btn" id="save-products-btn" onclick="saveProductSettings()">💾 Save Cash Products to Turso</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Invoice Modal -->
+<div class="modal-overlay" id="edit-invoice-modal">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-family:'Syne',sans-serif; color:var(--gold); margin:0;" id="edit-modal-title">Edit Invoice</h3>
+      <button onclick="closeEditModal()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="edit-inv-id">
+    
+    <div class="form-group">
+      <label>Customer Name</label>
+      <input type="text" id="edit-inv-name" class="form-input" readonly>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <label style="font-size:0.64rem; color:var(--muted); text-transform:uppercase;">Invoice Items &amp; Products</label>
+      <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.62rem;" onclick="addEditItemRow()">+ Add Product</button>
+    </div>
+
+    <table class="item-table" style="margin-bottom:12px;">
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th style="width:60px;">Qty</th>
+          <th style="width:80px;">Price</th>
+          <th style="width:70px;text-align:right;">Subtotal</th>
+          <th style="width:30px;"></th>
+        </tr>
+      </thead>
+      <tbody id="edit-items-tbody"></tbody>
+    </table>
+
+    <div class="summary-box" style="margin-bottom:16px;">
+      <div class="summary-row">
+        <span>Subtotal:</span>
+        <span id="edit-calc-sub">₱0.00</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total Amount:</span>
+        <span id="edit-calc-total">₱0.00</span>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveEditedInvoice()">💾 Save Changes</button>
     </div>
   </div>
 </div>
@@ -390,17 +444,21 @@ async function loadOrders() {
     if (data.ok) {
       orders = data.orders || [];
       renderPendingClaimsTable();
+      updateBadgeCounts();
     }
   } catch (e) {
     showToast("Failed to load orders", "error");
   }
 }
 
+function updateBadgeCounts() {
+  const pendingClaimsCount = orders.filter(o => (o.status || 'PENDING').toUpperCase() === 'PENDING').length;
+  document.getElementById('trans-badge').textContent = pendingClaimsCount + cashInvoices.length;
+}
+
 function renderPendingClaimsTable() {
   const tbody = document.getElementById('pending-claims-tbody');
-  const badge = document.getElementById('pending-claims-badge');
   const pending = orders.filter(o => (o.status || 'PENDING').toUpperCase() === 'PENDING');
-  badge.textContent = pending.length;
 
   if (pending.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No pending rewards claims found.</td></tr>';
@@ -440,11 +498,9 @@ async function updateClaimStatus(orderId, newStatus) {
     if (data.ok) {
       showToast(`Order ${orderId} updated to ${newStatus}!`);
       loadOrders();
-    } else {
-      showToast("Failed to update status", "error");
     }
   } catch(e) {
-    showToast("Network error updating order", "error");
+    showToast("Network error", "error");
   }
 }
 
@@ -624,9 +680,9 @@ async function submitInvoice() {
 
 function renderInvoicesTable() {
   const tbody = document.getElementById('invoices-tbody');
-  document.getElementById('history-badge').textContent = cashInvoices.length;
+  updateBadgeCounts();
   if (!cashInvoices.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No invoices recorded yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">No invoices recorded yet.</td></tr>';
     return;
   }
   tbody.innerHTML = cashInvoices.map(inv => `
@@ -637,8 +693,108 @@ function renderInvoicesTable() {
       <td style="font-weight:bold;">₱${Number(inv.total_amount).toFixed(2)}</td>
       <td style="color:var(--muted);font-size:0.65rem;">${new Date(inv.created_at).toLocaleDateString()}</td>
       <td style="text-align:center;"><span style="color:var(--green);font-weight:bold;">${inv.status}</span></td>
+      <td style="text-align:center;">
+        <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.65rem;" onclick="openEditModal('${inv.invoice_id}')">✏️ Edit</button>
+      </td>
     </tr>
   `).join('');
+}
+
+// Invoice Editing Functions
+function openEditModal(invoiceId) {
+  const inv = cashInvoices.find(x => x.invoice_id === invoiceId);
+  if (!inv) return;
+
+  document.getElementById('edit-inv-id').value = inv.invoice_id;
+  document.getElementById('edit-inv-name').value = inv.name;
+  document.getElementById('edit-modal-title').textContent = `Edit Invoice ${inv.invoice_id}`;
+
+  let items = [];
+  try { items = JSON.parse(inv.items_json); } catch(_) {}
+
+  const tbody = document.getElementById('edit-items-tbody');
+  tbody.innerHTML = '';
+  items.forEach(it => addEditItemRow(it.name, it.price, it.qty));
+
+  document.getElementById('edit-invoice-modal').style.display = 'flex';
+  recalculateEditTotal();
+}
+
+function closeEditModal() {
+  document.getElementById('edit-invoice-modal').style.display = 'none';
+}
+
+function addEditItemRow(name = '', price = 0, qty = 1) {
+  const tbody = document.getElementById('edit-items-tbody');
+  const tr = document.createElement('tr');
+  tr.className = 'edit-item-row';
+  tr.innerHTML = `
+    <td><input type="text" class="form-input edit-item-name" value="${name}" placeholder="Product Name" style="padding:4px 6px;font-size:0.7rem;"/></td>
+    <td><input type="number" class="form-input edit-item-qty" value="${qty}" min="1" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateEditTotal()"/></td>
+    <td><input type="number" class="form-input edit-item-price" value="${price}" min="0" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateEditTotal()"/></td>
+    <td style="text-align:right;font-weight:700;color:var(--gold);font-size:0.75rem;" class="edit-item-sub">₱${(price * qty).toFixed(2)}</td>
+    <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove(); recalculateEditTotal();">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  recalculateEditTotal();
+}
+
+function recalculateEditTotal() {
+  let subtotal = 0;
+  document.querySelectorAll('.edit-item-row').forEach(r => {
+    const qty = parseInt(r.querySelector('.edit-item-qty').value, 10) || 1;
+    const price = parseFloat(r.querySelector('.edit-item-price').value) || 0;
+    const s = qty * price;
+    r.querySelector('.edit-item-sub').textContent = `₱${s.toFixed(2)}`;
+    subtotal += s;
+  });
+  document.getElementById('edit-calc-sub').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('edit-calc-total').textContent = `₱${subtotal.toFixed(2)}`;
+}
+
+async function saveEditedInvoice() {
+  const invId = document.getElementById('edit-inv-id').value;
+  const items = [];
+  let subtotal = 0;
+
+  document.querySelectorAll('.edit-item-row').forEach(r => {
+    const name = r.querySelector('.edit-item-name').value.trim();
+    const qty = parseInt(r.querySelector('.edit-item-qty').value, 10) || 1;
+    const price = parseFloat(r.querySelector('.edit-item-price').value) || 0;
+    const s = qty * price;
+    subtotal += s;
+    if (name) items.push({ name, qty, price, subtotal: s });
+  });
+
+  if (items.length === 0) {
+    showToast("Invoice must contain at least one item", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_invoice',
+        invoice_id: invId,
+        items_json: items,
+        subtotal,
+        discount_type: 'fixed',
+        discount_val: 0,
+        discount_amount: 0,
+        total_amount: subtotal
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Invoice ${invId} successfully updated!`);
+      closeEditModal();
+      loadData();
+    }
+  } catch(e) {
+    showToast("Error updating invoice", "error");
+  }
 }
 
 function renderProductSettings() {
@@ -704,7 +860,7 @@ function copyInvoiceText() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  initAppLayout('invoicing', 'Invoicing & POS');
+  initAppLayout('invoicing', 'Invoicing & Transactions');
   document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   loadData();
 });

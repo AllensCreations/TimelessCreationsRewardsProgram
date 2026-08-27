@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS `drip_messages` (
 	`scripture` text,
 	`message` text,
 	`highlight_img` text,
-	`highlight_label` text
+	`highlight_label` text,
+	`custom_html` text
 );
 
 CREATE TABLE IF NOT EXISTS `sessions` (

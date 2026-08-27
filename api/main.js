@@ -452,9 +452,9 @@ export default async function handler(req, res) {
     }
 
     // CDN Gallery Management Endpoints
-    if (action === "list" || action === "cdn_list") {
+    if (action === "list" || action === "cdn_list" || action === "cdn_gallery" || action === "get_cdn_gallery") {
       const rows = await runSql("SELECT * FROM cdn_gallery ORDER BY id DESC");
-      return res.status(200).json({ ok: true, gallery: rows || [] });
+      return res.status(200).json({ ok: true, gallery: rows || [], items: rows || [] });
     }
 
     if (action === "upload" || action === "cdn_upload") {

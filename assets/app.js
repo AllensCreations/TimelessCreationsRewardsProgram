@@ -13,6 +13,7 @@ const LocalStore = {
   }
 };
 
+let toastTimeout = null;
 function showToast(message, type = "success") {
   let container = document.getElementById("toast-container");
   if (!container) {
@@ -20,16 +21,23 @@ function showToast(message, type = "success") {
     container.id = "toast-container";
     document.body.appendChild(container);
   }
+  
+  // Limit stacked toasts on screen
+  if (container.children.length > 2) {
+    container.firstElementChild.remove();
+  }
+
   const toast = document.createElement("div");
   toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
   toast.innerHTML = `<span>${type === "error" ? "⚠️" : "✨"}</span> <span>${message}</span>`;
   container.appendChild(toast);
+  
   setTimeout(() => {
     toast.style.opacity = "0";
     toast.style.transform = "translateY(10px)";
     toast.style.transition = "all 0.25s ease";
     setTimeout(() => toast.remove(), 250);
-  }, 3200);
+  }, 3000);
 }
 
 const NAV_ITEMS = [
@@ -46,7 +54,6 @@ const NAV_ITEMS = [
 ];
 
 function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
-  // 1. Create Top Header
   const header = document.createElement('header');
   header.className = 'app-header';
   header.innerHTML = `
@@ -65,7 +72,6 @@ function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
   `;
   document.body.prepend(header);
 
-  // 2. Create Mobile Drawer
   const drawer = document.createElement('div');
   drawer.id = 'mobile-nav-drawer';
   drawer.className = 'mobile-drawer';
@@ -89,20 +95,33 @@ function toggleMobileDrawer() {
   if (d) d.classList.toggle('open');
 }
 
+let isRefreshing = false;
 async function triggerGlobalRefresh() {
+  if (isRefreshing) return;
+  isRefreshing = true;
   showToast("Syncing data with server...");
+  
   try {
-    const res = await fetch("/api/main?action=get_stats");
-    const data = await res.json();
-    if (data.ok) {
-      LocalStore.set('stats_payload', data);
-      showToast("✓ Live data updated successfully!");
-      window.dispatchEvent(new CustomEvent("tcrp:data-synced", { detail: data }));
-      if (typeof window.renderFromCache === 'function') window.renderFromCache();
-      if (typeof window.loadData === 'function') window.loadData();
-      if (typeof window.loadRoster === 'function') window.loadRoster();
+    const [statsRes, mRes] = await Promise.all([
+      fetch("/api/main?action=get_stats").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({}))
+    ]);
+
+    if (statsRes && statsRes.ok) {
+      LocalStore.set('stats_payload', statsRes);
     }
+    if (mRes && mRes.ok && Array.isArray(mRes.missionaries)) {
+      LocalStore.set('missionaries', mRes.missionaries);
+    }
+
+    showToast("✓ Live data updated successfully!");
+    window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
+    if (typeof window.renderFromCache === 'function') window.renderFromCache();
+    if (typeof window.loadData === 'function') window.loadData();
+    if (typeof window.renderRoster === 'function') window.renderRoster();
   } catch (err) {
     showToast("Network error syncing data.", "error");
+  } finally {
+    isRefreshing = false;
   }
 }

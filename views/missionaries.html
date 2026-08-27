@@ -38,6 +38,7 @@
       <h2 style="color:var(--gold); font-size:1.25rem;">Missionaries Roster</h2>
       <p style="font-size:0.72rem; color:var(--muted);">Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered.</p>
     </div>
+    <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Refresh List</button>
   </div>
 
   <div class="card" style="padding:12px;">
@@ -45,8 +46,8 @@
       <input class="form-input" id="search-box" placeholder="Search missionary name, email, or code..."/>
       <div class="tab-bar" style="margin-bottom:0; padding-bottom:0;">
         <button class="btn btn-gold tab-btn" onclick="filterType('all', this)" style="padding:6px 12px; font-size:0.72rem;">All</button>
-        <button class="btn btn-dark tab-btn" onclick="filterType('elder', this)" style="padding:6px 12px; font-size:0.72rem;">Elders</button>
-        <button class="btn btn-dark tab-btn" onclick="filterType('sister', this)" style="padding:6px 12px; font-size:0.72rem;">Sisters</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('elder', this)" style="padding:6px 12px; font-size:0.72rem;">Elders (24M)</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('sister', this)" style="padding:6px 12px; font-size:0.72rem;">Sisters (18M)</button>
       </div>
     </div>
   </div>
@@ -72,14 +73,39 @@ let state = {
   pageSize: 30
 };
 
-function loadRoster() {
+window.renderRoster = () => {
   const cached = LocalStore.get('missionaries', []);
-  if (cached.length > 0) {
+  state.missionaries = cached;
+  document.getElementById('roster-count').textContent = cached.length.toLocaleString();
+  applyFilterAndRender();
+};
+
+async function loadRoster(force = false) {
+  const container = document.getElementById('roster-container');
+  const cached = LocalStore.get('missionaries', null);
+
+  if (cached && !force) {
     state.missionaries = cached;
     document.getElementById('roster-count').textContent = cached.length.toLocaleString();
     applyFilterAndRender();
-  } else {
-    triggerGlobalRefresh();
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/main?action=get_missionaries");
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.missionaries)) {
+      state.missionaries = data.missionaries;
+      LocalStore.set('missionaries', state.missionaries);
+      document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
+      applyFilterAndRender();
+    } else {
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">No missionaries found in database.</div>';
+    }
+  } catch (err) {
+    if (!cached) {
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red); font-size:0.8rem;">Error loading missionaries from database.</div>';
+    }
   }
 }
 

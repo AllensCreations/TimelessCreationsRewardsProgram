@@ -91,7 +91,7 @@
     }
     .badge-feat { background: rgba(76,175,130,0.2); color: var(--green); border: 1px solid rgba(76,175,130,0.3); }
     .badge-fix { background: rgba(59,130,246,0.2); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
-    .badge-security { background: rgba(230,57,70,0.2); color: #e63946; border: 1px solid rgba(230,57,70,0.3); }
+    .badge-security { background: rgba(230,57,70,0.2); color: #e63946; border: 1px solid rgba(230,57,70,0.2); }
 
     .changelog-list { list-style: none; padding: 0; margin: 0; }
     .changelog-list li {
@@ -122,6 +122,22 @@
 
     <div class="timeline">
 
+      <!-- Version 1.4 -->
+      <div class="release-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span class="version-tag">v1.4.0</span>
+          <span class="release-date">August 27, 2026</span>
+        </div>
+        <h2 class="release-title">🛡️ Security Hardening, Isolated Template Sandbox, &amp; Universal Global Sync</h2>
+        <ul class="changelog-list">
+          <li><span class="badge badge-security">Security</span><strong>Admin Authorization Guards:</strong> Enforced strict `ADMIN_SECRET` / bearer token validation across all sensitive database mutations and management actions in `api/main.js`.</li>
+          <li><span class="badge badge-security">Security</span><strong>Webhook HMAC Validation:</strong> Wired up cryptographic verification for incoming Meta Messenger payloads using `X-Hub-Signature-256`.</li>
+          <li><span class="badge badge-feat">Feature</span><strong>Isolated Iframe Sandbox:</strong> Isolated custom monthly HTML email previews in a secure iframe container, completely eliminating CSS stylesheet leakage into dashboard views.</li>
+          <li><span class="badge badge-feat">Feature</span><strong>Universal Global Refresh:</strong> Standardized event dispatching across all admin views so that clicking "Global Refresh" instantly re-fetches and re-renders data across all pages.</li>
+          <li><span class="badge badge-fix">Fix</span><strong>SQL Parameter Mismatch:</strong> Resolved parameter binding alignment in `save_drip` queries to ensure custom HTML templates and custom subject lines save reliably to Turso.</li>
+        </ul>
+      </div>
+
       <!-- Version 1.3 -->
       <div class="release-card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -131,9 +147,8 @@
         <h2 class="release-title">⚡ jsDelivr 1:1 WebP CDN, Master Power Switch & Dynamic Goal Cards</h2>
         <ul class="changelog-list">
           <li><span class="badge badge-feat">Feature</span><strong>jsDelivr CDN Gallery:</strong> Auto-crops uploaded images strictly to 1:1 Square WebP and commits directly to GitHub via API for public CDN serving.</li>
-          <li><span class="badge badge-feat">Feature</span><strong>Dual Product of the Month:</strong> Added support for up to 2 monthly products in <code>monthly-drip.html</code> with dynamic column grinding without schema mutation.</li>
+          <li><span class="badge badge-feat">Feature</span><strong>Dual Product of the Month:</strong> Added support for up to 2 monthly products in newsletters with dynamic column grinding without schema mutation.</li>
           <li><span class="badge badge-feat">Feature</span><strong>Live Goal Card Generator:</strong> Brevo templates dynamically compute claimable rewards vs points needed for nearest goal in real-time.</li>
-          <li><span class="badge badge-fix">Fix</span><strong>Master Power Switch:</strong> Unified <code>action=ping</code> and <code>action=health_check</code> in <code>api/main.js</code> to fix toggle state loading.</li>
         </ul>
       </div>
 
@@ -145,38 +160,7 @@
         </div>
         <h2 class="release-title">👤 Modular Onboarding FSM, Brevo OTP & Monthly Batch Summary</h2>
         <ul class="changelog-list">
-          <li><span class="badge badge-feat">Feature</span><strong>Modular Onboarding FSM:</strong> Isolated state machine into <code>onboardingHandler.js</code>, <code>otpHandler.js</code>, and <code>syncHandler.js</code>.</li>
           <li><span class="badge badge-feat">Feature</span><strong>Brevo OTP Verification:</strong> Dispatches authentic 6-digit confirmation codes from <code>noreply.timelesscreations.ph@gmail.com</code> strictly for official <code>@missionary.org</code> accounts.</li>
-          <li><span class="badge badge-feat">Feature</span><strong>Monthly Batch Summary Grid:</strong> Replaced the heatmap with a cohort summary card displaying active missionary counts per batch.</li>
-          <li><span class="badge badge-fix">Fix</span><strong>Automated Test Teardown:</strong> Test fixtures and generated accounts automatically delete after test execution.</li>
-        </ul>
-      </div>
-
-      <!-- Version 1.1 -->
-      <div class="release-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span class="version-tag">v1.1.0</span>
-          <span class="release-date">July 2026</span>
-        </div>
-        <h2 class="release-title">✉️ 24-Month Editorial Drip Hub & Messenger Catalog</h2>
-        <ul class="changelog-list">
-          <li><span class="badge badge-feat">Feature</span><strong>24-Month Drip Hub:</strong> Built unified editorial panel supporting 2 essentials, 9 community gallery photos, and scripture quotes.</li>
-          <li><span class="badge badge-feat">Feature</span><strong>Messenger Carousel Catalog:</strong> Added 1:1 square generic template carousel displaying catalog items with direct redeem buttons.</li>
-          <li><span class="badge badge-feat">Feature</span><strong>Moving Face CAPTCHA:</strong> Protected sensitive settings and power toggles with interactive 3-round verification.</li>
-        </ul>
-      </div>
-
-      <!-- Version 1.0 -->
-      <div class="release-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span class="version-tag">v1.0.0</span>
-          <span class="release-date">June 2026</span>
-        </div>
-        <h2 class="release-title">🏛️ Initial Core Foundation & Turso SQLite Architecture</h2>
-        <ul class="changelog-list">
-          <li><span class="badge badge-feat">Feature</span><strong>Turso Database Foundation:</strong> Established core schema including <code>missionaries</code>, <code>orders</code>, <code>drip_messages</code>, <code>sessions</code>, <code>cash_invoices</code>, and <code>product_catalog</code>.</li>
-          <li><span class="badge badge-feat">Feature</span><strong>Missionary Command Center:</strong> Deployed missionary roster management, CSV batch pusher, Cash POS, and system logs.</li>
-          <li><span class="badge badge-feat">Feature</span><strong>Referral Reward System:</strong> Unique referral codes awarded +1 point on verified invitations.</li>
         </ul>
       </div>
 
@@ -184,7 +168,7 @@
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", () => {
       initAppLayout('changelog', 'System Changelog');
     });
   </script>

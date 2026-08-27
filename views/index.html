@@ -3,41 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Command Center | Timeless Creations</title>
+  <title>Admin Cockpit | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
   <style>
-    .hero-banner {
-      background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, rgba(18,20,30,0.95) 100%);
+    .cockpit-header {
+      background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, rgba(14,15,22,0.98) 100%);
       border: 1px solid var(--border-gold);
       border-radius: var(--radius);
-      padding: 24px 20px;
-      margin-bottom: 20px;
+      padding: 20px 18px;
+      margin-bottom: 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+      gap: 12px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.5);
     }
     @media(min-width: 768px) {
-      .hero-banner { flex-direction: row; justify-content: space-between; align-items: center; padding: 32px; }
+      .cockpit-header { flex-direction: row; justify-content: space-between; align-items: center; padding: 26px 30px; }
     }
-    .quick-actions {
+
+    .status-badge-live {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.4);
+      color: var(--green); padding: 4px 10px; border-radius: 99px; font-size: 0.68rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .status-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulseDot 2s infinite; }
+    @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Cockpit Control Deck (Buttons Grid) */
+    .control-deck {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     @media(min-width: 768px) {
-      .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+      .control-deck { grid-template-columns: repeat(4, 1fr); gap: 14px; }
     }
-    .action-pill {
+    .deck-btn {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 16px 12px;
       text-align: center;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 700;
       color: var(--text);
       display: flex;
@@ -45,68 +55,87 @@
       align-items: center;
       gap: 8px;
       transition: all 0.2s;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      cursor: pointer;
     }
-    .action-pill:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); transform: translateY(-2px); }
-    
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      margin-top: 14px;
-    }
-    .cal-day-header { font-size: 0.65rem; text-align: center; color: var(--muted); text-transform: uppercase; font-weight: 700; padding: 6px 0; }
-    .cal-cell {
-      background: var(--surface2);
+    .deck-btn:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); transform: translateY(-2px); }
+
+    /* Live Activity Log Ticker */
+    .log-ticker-box {
+      background: #08080d;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      min-height: 56px;
-      padding: 8px;
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      max-height: 220px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      gap: 6px;
     }
-    .cal-cell.today { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.25) inset; }
-    .cal-cell.has-activity { background: rgba(201,168,76,0.14); border-color: rgba(201,168,76,0.45); }
-    .cal-num { font-size: 0.75rem; color: var(--muted); font-weight: bold; }
-    .cal-count { font-size: 0.62rem; font-weight: bold; color: var(--gold); align-self: flex-end; }
+    .log-ticker-item {
+      padding: 6px 8px;
+      background: var(--surface2);
+      border-radius: 4px;
+      border-left: 3px solid var(--gold);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    /* Heatmap */
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
+    .cal-day-header { font-size: 0.62rem; text-align: center; color: var(--muted); text-transform: uppercase; font-weight: 700; padding: 4px 0; }
+    .cal-cell { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; min-height: 50px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; }
+    .cal-cell.today { border-color: var(--gold); box-shadow: 0 0 10px rgba(201,168,76,0.2) inset; }
+    .cal-cell.has-activity { background: rgba(201,168,76,0.14); border-color: rgba(201,168,76,0.4); }
+    .cal-num { font-size: 0.7rem; color: var(--muted); font-weight: bold; }
+    .cal-count { font-size: 0.6rem; font-weight: bold; color: var(--gold); align-self: flex-end; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="hero-banner">
+  <!-- Cockpit Top Header & Telemetry Status -->
+  <div class="cockpit-header">
     <div>
-      <h1 style="color:var(--gold); font-size:1.5rem; margin-bottom:4px;">Command Center ✨</h1>
-      <p style="font-size:0.82rem; color:var(--muted);">Timeless Creations Administrator Dashboard &amp; Telemetry.</p>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div class="status-badge-live"><div class="status-dot"></div> Turso DB &amp; API Active</div>
+        <span style="font-size:0.68rem; color:var(--muted); font-family:'DM Mono',monospace;" id="current-utc-time">--</span>
+      </div>
+      <h1 style="color:var(--gold); font-size:1.4rem; margin-bottom:2px;">Timeless Creations Cockpit</h1>
+      <p style="font-size:0.78rem; color:var(--muted);">Centralized control station for missionary dispatches, POS invoicing, and rewards.</p>
     </div>
-    <div style="display:flex; gap:10px;">
-      <button onclick="triggerGlobalRefresh()" class="btn btn-gold" style="width:100%; min-width:150px;">↻ Refresh Data</button>
+    <div style="display:flex; gap:8px;">
+      <button onclick="triggerGlobalRefresh()" class="btn btn-gold" style="width:100%;">↻ Sync Telemetry</button>
     </div>
   </div>
 
-  <div class="quick-actions">
-    <a href="/invoicing.html" class="action-pill">
-      <span style="font-size:1.4rem;">🧾</span>
-      <span>Create Invoice</span>
+  <!-- Control Deck (Quick Action Hub) -->
+  <div class="control-deck">
+    <a href="/invoicing.html" class="deck-btn">
+      <span style="font-size:1.3rem;">🧾</span>
+      <span>POS Invoicing</span>
     </a>
-    <a href="/gallery.html" class="action-pill">
-      <span style="font-size:1.4rem;">🖼️</span>
-      <span>CDN Gallery</span>
+    <a href="/gallery.html" class="deck-btn">
+      <span style="font-size:1.3rem;">🖼️</span>
+      <span>CDN Media Hub</span>
     </a>
-    <a href="/messengerbot.html" class="action-pill">
-      <span style="font-size:1.4rem;">🎁</span>
-      <span>Bot Rewards</span>
+    <a href="/messengerbot.html" class="deck-btn">
+      <span style="font-size:1.3rem;">🎁</span>
+      <span>Rewards Bot</span>
     </a>
-    <a href="/logs.html" class="action-pill">
-      <span style="font-size:1.4rem;">📜</span>
+    <a href="/logs.html" class="deck-btn">
+      <span style="font-size:1.3rem;">📜</span>
       <span>Audit Logs</span>
     </a>
   </div>
 
+  <!-- Primary Financial & Telemetry Metric Cards -->
   <div class="stat-grid">
     <div class="stat-card gold">
-      <div class="stat-label">Total Missionaries</div>
+      <div class="stat-label">Registered Missionaries</div>
       <div class="stat-val" id="stat-missionaries">--</div>
     </div>
     <div class="stat-card green">
@@ -123,15 +152,30 @@
     </div>
   </div>
 
-  <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; flex-wrap:wrap; gap:8px;">
-      <div>
-        <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Monthly Drip Dispatch Heatmap</div>
-        <div style="font-size:0.72rem; color:var(--muted);">Visual distribution of letters sent out to missionaries.</div>
+  <!-- Two-Column Cockpit Bottom Deck -->
+  <div style="display:grid; grid-template-columns:1fr; gap:16px;">
+    <!-- Heatmap -->
+    <div class="card" style="margin-bottom:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Monthly Drip Dispatch Heatmap</div>
+          <div style="font-size:0.68rem; color:var(--muted);">Visual distribution of emails sent out this month.</div>
+        </div>
+        <span id="cal-month-name" style="font-size:0.72rem; color:#fff; font-weight:bold; background:var(--surface2); padding:4px 10px; border-radius:6px; border:1px solid var(--border);"></span>
       </div>
-      <span id="cal-month-name" style="font-size:0.75rem; color:#fff; font-weight:bold; background:var(--surface2); padding:6px 12px; border-radius:6px; border:1px solid var(--border);"></span>
+      <div class="calendar-grid" id="calendar-grid"></div>
     </div>
-    <div class="calendar-grid" id="calendar-grid"></div>
+
+    <!-- Live Telemetry Log Ticker -->
+    <div class="card" style="margin-bottom:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;">
+        <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">⚡ Live System Activity Stream</div>
+        <a href="/logs.html" style="font-size:0.68rem; color:var(--gold);">View Full Logs ↗</a>
+      </div>
+      <div class="log-ticker-box" id="log-ticker-container">
+        <div style="color:var(--muted); text-align:center; padding:16px;">Connecting to telemetry stream...</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -151,6 +195,17 @@ function renderFromCache() {
 
   dashboardState.dailyStats = cachedPayload.daily_stats || {};
   renderCalendar();
+
+  const logs = cachedPayload.recent_logs || [];
+  const ticker = document.getElementById("log-ticker-container");
+  if (logs.length > 0) {
+    ticker.innerHTML = logs.slice(0, 6).map(l => `
+      <div class="log-ticker-item">
+        <span style="color:#e8e6f0; word-break:break-all;">${l.message}</span>
+        <span style="color:var(--muted); white-space:nowrap; font-size:0.62rem;">${l.created_at ? l.created_at.slice(11, 19) : ''}</span>
+      </div>
+    `).join('');
+  }
 }
 
 function renderCalendar() {
@@ -159,7 +214,7 @@ function renderCalendar() {
   const month = now.getMonth();
   
   const monthEl = document.getElementById('cal-month-name');
-  if (monthEl) monthEl.textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  if (monthEl) monthEl.textContent = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
   const container = document.getElementById('calendar-grid');
   if (!container) return;
@@ -192,14 +247,19 @@ function renderCalendar() {
 
     const count = dashboardState.dailyStats[fullDateKey] || 0;
     cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
-    cell.innerHTML = `<div class="cal-num">${day}</div>${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}`;
+    cell.innerHTML = `<div class="cal-num">${day}</div>${count > 0 ? `<div class="cal-count">✉${count}</div>` : ''}`;
     container.appendChild(cell);
   }
 }
 
+setInterval(() => {
+  const t = document.getElementById('current-utc-time');
+  if (t) t.textContent = new Date().toUTCString().slice(17, 25) + " UTC";
+}, 1000);
+
 window.addEventListener("tcrp:data-synced", renderFromCache);
 window.addEventListener("DOMContentLoaded", () => {
-  initAppLayout('dashboard', 'Dashboard');
+  initAppLayout('dashboard', 'Admin Cockpit');
   renderFromCache();
 });
 </script>

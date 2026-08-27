@@ -30,10 +30,10 @@
       .save-banner { position: sticky; bottom: 20px; background: var(--surface2); border: 1px solid var(--gold); padding: 14px 22px; border-radius: var(--radius); display: none; justify-content: space-between; align-items: center; margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 80; }
       
       .preview-wrapper { background: #12121a; border: 1px solid var(--border); border-radius: 12px; padding: 16px; max-height: calc(100vh - 120px); overflow-y: auto; position: sticky; top: 20px; }
-      .preview-frame { width: 100%; max-width: 450px; margin: 0 auto; background: #ffffff; color: #1a1a1a; font-family: 'Garamond', 'Georgia', serif; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.5); overflow: hidden; }
+      .preview-frame { width: 100%; max-width: 450px; margin: 0 auto; background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); overflow: hidden; }
 
       .var-badge { display: inline-block; font-family: 'DM Mono', monospace; font-size: 0.68rem; background: rgba(201,168,76,0.15); color: var(--gold); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(201,168,76,0.25); margin: 2px; }
-      .code-view { background: #0b0c12; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 0.68rem; color: #716e88; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+      .code-view { background: #0b0c12; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 0.68rem; color: #716e88; max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
 
       @media(max-width: 1100px) {
         .editor-grid { grid-template-columns: 1fr; }
@@ -49,7 +49,7 @@
   <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-color:rgba(201,168,76,0.3);">
     <div>
       <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Active Month Cycle Selector</div>
-      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Select which calendar month and year cycle you are configuring:</div>
+      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Select calendar month and cycle:</div>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
       <select id="month-selector" class="form-input" style="width:190px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)"></select>
@@ -70,7 +70,7 @@
         <!-- TAB 1: Content -->
         <div id="tab-messages" class="tab-content active">
             <div class="card">
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">Monthly Message &amp; Conference Scripture</div>
+                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">Monthly Message &amp; Scripture</div>
                 <div class="form-group">
                     <label class="form-label">Speaker Name / Author Citation ({{THEME}})</label>
                     <input type="text" id="inp-theme" class="form-input" placeholder="e.g. Elder Jeffrey R. Holland" oninput="onLiveEdit()">
@@ -190,7 +190,7 @@
                     <button class="btn btn-dark" style="padding:4px 10px; font-size:0.68rem;" onclick="loadMasterTemplateIntoEditor()">📋 Load Master Template Code</button>
                 </div>
                 <div style="font-size:0.7rem; color:var(--muted); margin-bottom:12px; line-height:1.5;">
-                    Each month can have a unique HTML structure! If left blank, this month will automatically render the <strong>Master (Father) Template</strong>.
+                    Each month can have its own customized layout! If left blank, this month uses the <strong>Master Father Template</strong>.
                 </div>
                 <div class="form-group">
                     <textarea id="inp-custom-html" class="form-input" rows="13" style="font-family:'DM Mono',monospace; font-size:0.7rem; resize:vertical;" placeholder="Leave empty to use Master Father Template..." oninput="onLiveEdit()"></textarea>
@@ -207,12 +207,15 @@
             <div class="card">
                 <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">✨ AI Template Creator &amp; Prompt Generator</div>
                 <div style="font-size:0.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
-                    Want to generate a completely new layout for this month? Just enter your theme/topic below and copy the ready-to-use prompt for ChatGPT, Claude, or Gemini.
+                    Generate a new monthly template layout with ChatGPT, Claude, or Gemini. Enter your topic and click <strong>Apply Theme</strong> or <strong>Copy Prompt</strong>.
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Enter Theme or Focus for This Month</label>
-                    <input type="text" id="inp-guide-theme" class="form-input" value="Faith, Overcoming Challenges, and Temple Dedication" oninput="updateGeneratedPrompt()">
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="inp-guide-theme" class="form-input" value="Faith, Overcoming Challenges, and Temple Dedication" oninput="updateGeneratedPrompt()">
+                        <button class="btn btn-gold" style="white-space:nowrap; padding:6px 14px; font-size:0.75rem;" onclick="applyThemeToContent()">✓ Apply Theme</button>
+                    </div>
                 </div>
 
                 <div style="display:flex; justify-content:space-between; align-items:center; margin:14px 0 6px;">
@@ -222,23 +225,26 @@
                 <div class="code-view" id="prompt-output-box"></div>
 
                 <div style="margin-top:16px;">
-                    <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Supported Dynamic Placeholders</div>
+                    <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Exact Template Element Hierarchy</div>
+                    <div style="font-size:0.7rem; color:var(--muted); margin-bottom:6px;">
+                        1. <strong>Message</strong> → 2. <strong>Missionary Essentials</strong> → 3. <strong>Highlights</strong> → 4. <strong>Gallery</strong> → 5. <strong>Rewards</strong>
+                    </div>
                     <div style="line-height:1.8;">
                         <span class="var-badge">{{MONTH}}</span>
                         <span class="var-badge">{{NAME}}</span>
                         <span class="var-badge">{{MESSAGE}}</span>
                         <span class="var-badge">{{SCRIPTURE}}</span>
                         <span class="var-badge">{{THEME}}</span>
-                        <span class="var-badge">{{POINTS}}</span>
                         <span class="var-badge">{{ESS1_NAME}}</span>
                         <span class="var-badge">{{ESS1_IMG}}</span>
                         <span class="var-badge">{{ESS2_NAME}}</span>
                         <span class="var-badge">{{ESS2_IMG}}</span>
                         <span class="var-badge">{{HIGHLIGHT_DISPLAY}}</span>
                         <span class="var-badge">{{HIGHLIGHT_ITEMS_HTML}}</span>
-                        <span class="var-badge">{{REWARD_SECTION_HTML}}</span>
                         <span class="var-badge">{{GRID1}} ... {{GRID9}}</span>
                         <span class="var-badge">{{GALLERY_URL}}</span>
+                        <span class="var-badge">{{REWARD_SECTION_HTML}}</span>
+                        <span class="var-badge">{{POINTS}}</span>
                     </div>
                 </div>
             </div>
@@ -251,14 +257,14 @@
         </div>
     </div>
 
-    <!-- Right Column: Live Email Preview (1:1 Ratio Sandboxing) -->
+    <!-- Right Column: Isolated Iframe Preview (Zero CSS Leakage) -->
     <div class="preview-wrapper">
         <div style="font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; text-align:center;">
             ✦ Live 1:1 Email Template Sandbox
         </div>
         
-        <div class="preview-frame" id="live-email-frame">
-            <div id="preview-render-target"></div>
+        <div class="preview-frame">
+            <iframe id="preview-iframe" style="width:100%; min-height:860px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
         </div>
     </div>
   </div>
@@ -268,6 +274,8 @@
 let currentMonth = 1;
 let liveDripMap = {};
 let masterTemplateCode = "";
+
+const TEMPLE_IMG_URL = "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG";
 
 function getCalendarMonthLabel(monthIndex) {
   const calendarNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -315,7 +323,6 @@ async function fetchFromTurso() {
       });
     }
 
-    // Cache default master template for editor loading
     masterTemplateCode = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -323,14 +330,14 @@ async function fetchFromTurso() {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <style>
-  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 0; }
-  .email-container { max-width: 450px; background: #ffffff; margin: 0 auto; border: 1px solid #e0d6bc; }
+  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 20px 0; }
+  .email-container { max-width: 450px; background: #ffffff; margin: 0 auto; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.03); }
   .brand-header { padding: 35px 20px 15px; text-align: center; }
   .logo-text { font-size: 24px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
   .temple-img { width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0; }
   .main-content { padding: 22px 18px; text-align: center; line-height: 1.6; }
   .quote-container { margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
-  .product-img { width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto; }
+  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 4px; display: block; }
 </style>
 </head>
 <body>
@@ -340,17 +347,66 @@ async function fetchFromTurso() {
     <h1 class="logo-text">Timeless Creations</h1>
     <div style="font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 8px; text-transform: uppercase;">Most Trusted Online LDS Store Across the Philippines</div>
   </div>
-  <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" class="temple-img">
+  <img src="${TEMPLE_IMG_URL}" alt="Temple" class="temple-img">
+  
   <div class="main-content">
+    <!-- 1. MESSAGE -->
     <div style="font-size: 19px; font-style: italic; margin-bottom: 12px;">Hello {{NAME}},</div>
     <div style="font-size: 13.5px; color: #333; margin-bottom: 18px;">{{MESSAGE}}</div>
     <div class="quote-container">
       <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 8px;">"{{SCRIPTURE}}"</div>
       <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
     </div>
+
+    <!-- 2. MISSIONARY ESSENTIALS (1:1 Ratio) -->
+    <div style="padding: 20px 12px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 18px;">
+      <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; margin-bottom: 16px; color: #1a1a1a;">Missionary Essentials</h2>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td align="center" width="48%" valign="top">
+            <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="{{ESS1_NAME}}">
+            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">{{ESS1_NAME}}</div>
+          </td>
+          <td width="4%"></td>
+          <td align="center" width="48%" valign="top">
+            <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="{{ESS2_NAME}}">
+            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">{{ESS2_NAME}}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 3. HIGHLIGHT / PRODUCTS OF THE MONTH (1:1 Ratio) -->
     <div style="{{HIGHLIGHT_DISPLAY}}; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
       {{HIGHLIGHT_ITEMS_HTML}}
     </div>
+
+    <!-- 4. GALLERY (1:1 Ratio) -->
+    <div style="margin: 30px auto; text-align: center;">
+      <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
+      <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
+        <tr>
+          <td><img src="{{GRID1}}" class="strict-1-1" alt="Grid 1"></td>
+          <td><img src="{{GRID2}}" class="strict-1-1" alt="Grid 2"></td>
+          <td><img src="{{GRID3}}" class="strict-1-1" alt="Grid 3"></td>
+        </tr>
+        <tr>
+          <td><img src="{{GRID4}}" class="strict-1-1" alt="Grid 4"></td>
+          <td><img src="{{GRID5}}" class="strict-1-1" alt="Grid 5"></td>
+          <td><img src="{{GRID6}}" class="strict-1-1" alt="Grid 6"></td>
+        </tr>
+        <tr>
+          <td><img src="{{GRID7}}" class="strict-1-1" alt="Grid 7"></td>
+          <td><img src="{{GRID8}}" class="strict-1-1" alt="Grid 8"></td>
+          <td><img src="{{GRID9}}" class="strict-1-1" alt="Grid 9"></td>
+        </tr>
+      </table>
+      <a href="{{GALLERY_URL}}" target="_blank" style="display: inline-block; padding: 10px 20px; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">
+        Enter the Gallery
+      </a>
+    </div>
+
+    <!-- 5. REWARDS -->
     {{REWARD_SECTION_HTML}}
   </div>
 </div>
@@ -441,7 +497,8 @@ function cleanQuoteString(raw) {
 function renderPreview() {
   const data = liveDripMap[currentMonth] || {};
   const monthLabel = getCalendarMonthLabel(currentMonth);
-  const target = document.getElementById("preview-render-target");
+  const iframe = document.getElementById("preview-iframe");
+  if (!iframe) return;
 
   const name = "Elder Smith";
   const message = (data.message || "").replace(/\n/g, "<br>");
@@ -495,115 +552,40 @@ function renderPreview() {
     </div>
   `;
 
-  // IF Custom HTML is present, render it live!
-  if (data.custom_html && data.custom_html.trim() !== "") {
-    let renderedCustom = data.custom_html
-      .replace(/{{MONTH}}/g, monthLabel)
-      .replace(/{{NAME}}/g, name)
-      .replace(/{{MESSAGE}}/g, message)
-      .replace(/{{SCRIPTURE}}/g, cleanedQuote)
-      .replace(/{{THEME}}/g, theme)
-      .replace(/{{POINTS}}/g, String(points))
-      .replace(/{{HIGHLIGHT_DISPLAY}}/g, isHigh && items.length > 0 ? "display:block" : "display:none")
-      .replace(/{{HIGHLIGHT_ITEMS_HTML}}/g, highlightHtml)
-      .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
-      .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
-      .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())
-      .replace(/{{ESS2_NAME}}/g, document.getElementById("inp-ess2-name").value.trim())
-      .replace(/{{ESS2_IMG}}/g, document.getElementById("inp-img-ess2").value.trim())
-      .replace(/{{GALLERY_URL}}/g, document.getElementById("inp-gallery-url").value.trim());
+  let sourceTemplate = (data.custom_html && data.custom_html.trim() !== "") ? data.custom_html : masterTemplateCode;
 
-    for (let i = 1; i <= 9; i++) {
-      const gImg = document.getElementById(`inp-grid-${i}`)?.value || "";
-      renderedCustom = renderedCustom.replace(new RegExp(`{{GRID${i}}}`, 'g'), gImg);
-    }
+  let finalHtml = sourceTemplate
+    .replace(/{{MONTH}}/g, monthLabel)
+    .replace(/{{NAME}}/g, name)
+    .replace(/{{MESSAGE}}/g, message)
+    .replace(/{{SCRIPTURE}}/g, cleanedQuote)
+    .replace(/{{THEME}}/g, theme)
+    .replace(/{{POINTS}}/g, String(points))
+    .replace(/{{HIGHLIGHT_DISPLAY}}/g, isHigh && items.length > 0 ? "display:block" : "display:none")
+    .replace(/{{HIGHLIGHT_ITEMS_HTML}}/g, highlightHtml)
+    .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
+    .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
+    .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())
+    .replace(/{{ESS2_NAME}}/g, document.getElementById("inp-ess2-name").value.trim())
+    .replace(/{{ESS2_IMG}}/g, document.getElementById("inp-img-ess2").value.trim())
+    .replace(/{{GALLERY_URL}}/g, document.getElementById("inp-gallery-url").value.trim());
 
-    target.innerHTML = renderedCustom;
-    return;
+  for (let i = 1; i <= 9; i++) {
+    const gImg = document.getElementById(`inp-grid-${i}`)?.value || "";
+    finalHtml = finalHtml.replace(new RegExp(`{{GRID${i}}}`, 'g'), gImg);
   }
 
-  // Otherwise, render the Master Father Template preview
-  target.innerHTML = `
-    <div style="padding: 35px 20px 15px 20px; text-align: center; background-color: #ffffff;">
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px; display: block;">${monthLabel} • Dedicated Service</span>
-      <h1 style="font-size: 24px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a;">Timeless Creations</h1>
-      <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 8px; text-transform: uppercase; line-height: 1.4;">Most Trusted Online LDS Store Across the Philippines</div>
-    </div>
-
-    <!-- Banner (Not 1:1) -->
-    <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" style="width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0;">
-
-    <div style="padding: 22px 18px; text-align: center; line-height: 1.6;">
-      <div style="font-size: 19px; font-style: italic; margin-bottom: 12px; color: #1a1a1a;">Hello ${name},</div>
-      <div style="font-size: 13.5px; color: #333; margin-bottom: 18px;">${message}</div>
-
-      <div style="margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197;">
-        <span style="font-size: 14px; font-style: italic; display: block; color: #1a1a1a; line-height: 1.5; margin-bottom: 8px;">"${cleanedQuote}"</span>
-        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">${theme}</div>
-      </div>
-
-      <!-- Essentials (1:1 Ratio) -->
-      <div style="padding: 20px 12px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 18px;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; margin-bottom: 16px; color: #1a1a1a;">Missionary Essentials</h2>
-        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-          <tr>
-            <td align="center" width="48%" valign="top">
-              <img src="${document.getElementById("inp-img-ess1").value}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 1">
-              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">${document.getElementById("inp-ess1-name").value}</div>
-            </td>
-            <td width="4%"></td>
-            <td align="center" width="48%" valign="top">
-              <img src="${document.getElementById("inp-img-ess2").value}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="Essential 2">
-              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">${document.getElementById("inp-ess2-name").value}</div>
-            </td>
-          </tr>
-        </table>
-      </div>
-
-      <!-- Products of Month Preview (1:1 Ratio) -->
-      <div style="${isHigh && items.length > 0 ? 'display:block' : 'display:none'}; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
-        ${highlightHtml}
-      </div>
-
-      <!-- 9-Grid (1:1 Ratio) -->
-      <div style="margin: 30px auto; text-align: center;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
-        <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
-          <tr>
-            <td><img src="${document.getElementById("inp-grid-1").value}" class="strict-1-1" alt="Grid 1"></td>
-            <td><img src="${document.getElementById("inp-grid-2").value}" class="strict-1-1" alt="Grid 2"></td>
-            <td><img src="${document.getElementById("inp-grid-3").value}" class="strict-1-1" alt="Grid 3"></td>
-          </tr>
-          <tr>
-            <td><img src="${document.getElementById("inp-grid-4").value}" class="strict-1-1" alt="Grid 4"></td>
-            <td><img src="${document.getElementById("inp-grid-5").value}" class="strict-1-1" alt="Grid 5"></td>
-            <td><img src="${document.getElementById("inp-grid-6").value}" class="strict-1-1" alt="Grid 6"></td>
-          </tr>
-          <tr>
-            <td><img src="${document.getElementById("inp-grid-7").value}" class="strict-1-1" alt="Grid 7"></td>
-            <td><img src="${document.getElementById("inp-grid-8").value}" class="strict-1-1" alt="Grid 8"></td>
-            <td><img src="${document.getElementById("inp-grid-9").value}" class="strict-1-1" alt="Grid 9"></td>
-          </tr>
-        </table>
-        <a href="${document.getElementById("inp-gallery-url").value}" target="_blank" style="display: inline-block; padding: 10px 20px; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">
-          Enter the Gallery
-        </a>
-      </div>
-
-      ${rewardSectionHtml}
-    </div>
-
-    <div style="padding: 28px 16px; background-color: #1a1a1a; color: #ffffff; text-align: center;">
-      <div style="color: #d4c197; letter-spacing: 3px; font-size: 10px; text-transform: uppercase;">Timeless Creations</div>
-      <div style="font-size: 8px; opacity: 0.5; margin-top: 10px; font-family: Arial, sans-serif;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
-    </div>
-  `;
+  // Isolate in iframe to prevent any CSS leaking into dashboard
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(finalHtml);
+  doc.close();
 }
 
 function loadMasterTemplateIntoEditor() {
   document.getElementById("inp-custom-html").value = masterTemplateCode;
   onLiveEdit();
-  showToast("Loaded Master Template into Editor!");
+  showToast("Loaded Master Father Template into Editor!");
 }
 
 function clearCustomHtml() {
@@ -664,23 +646,30 @@ function updateGeneratedPrompt() {
 
 Strict Design & Technical Specifications:
 1. Container: Centered single-column layout, max-width: 450px, styled with Garamond/Georgia serif fonts and clean neutral warm borders (#e0d6bc on #f9f7f2 background). Supports CSS dark mode (@media prefers-color-scheme: dark).
-2. Aspect Ratio Rule: ALL product, reward, and community gallery images MUST be strictly locked to 1:1 square ratio (e.g. style="width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:4px;"). The ONLY exception is the header banner image with alt="Temple", which spans full width with height:auto.
+2. Aspect Ratio Rule: ALL product, reward, and community gallery images MUST be strictly locked to 1:1 square ratio (e.g. style="width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:4px;"). The ONLY exception is the header banner image with alt="Temple" (Source: "${TEMPLE_IMG_URL}"), which spans full width with height:auto.
 3. Theme/Topic for this edition: "${theme}".
 
-You MUST include these exact template Handlebar placeholders:
-- Header & Date: {{MONTH}}
-- Salutation: Hello {{NAME}},
-- Encouragement Body: {{MESSAGE}}
-- Scripture Section: "{{SCRIPTURE}}" cited by {{THEME}}
-- Highlights Section: Wrapped in a container with style="{{HIGHLIGHT_DISPLAY}}" containing {{HIGHLIGHT_ITEMS_HTML}}
-- Rewards & Points Tracker: {{REWARD_SECTION_HTML}}
-- Essentials (2 Items): {{ESS1_NAME}}, {{ESS1_IMG}}, {{ESS2_NAME}}, {{ESS2_IMG}}
-- 9-Grid Photo Gallery: {{GRID1}} through {{GRID9}}
-- Gallery CTA Button Link: {{GALLERY_URL}}
+You MUST include these dynamic Handlebar placeholders in this EXACT chronological order:
+1. Message Section: Salutation (Hello {{NAME}},) and Encouragement Body ({{MESSAGE}}), followed by the Scripture Section ("{{SCRIPTURE}}" cited by {{THEME}}).
+2. Missionary Essentials Section: Two items ({{ESS1_NAME}}, {{ESS1_IMG}}, {{ESS2_NAME}}, {{ESS2_IMG}}).
+3. Highlight / Products of the Month Section: Container with style="{{HIGHLIGHT_DISPLAY}}" containing {{HIGHLIGHT_ITEMS_HTML}}.
+4. Community Archive Gallery Section: 9-Grid photos ({{GRID1}} through {{GRID9}}) and Gallery Link ({{GALLERY_URL}}).
+5. Rewards & Points Tracker Section: {{REWARD_SECTION_HTML}}
 
-Return ONLY the clean, raw HTML code.`;
+Return ONLY the clean, raw HTML code with zero markdown wrapper blocks so it can be pasted directly into our template editor.`;
 
   document.getElementById("prompt-output-box").textContent = promptText;
+}
+
+function applyThemeToContent() {
+  const themeVal = document.getElementById("inp-guide-theme").value.trim();
+  if (!themeVal) {
+    showToast("Please enter a theme or topic first.", "error");
+    return;
+  }
+  document.getElementById("inp-theme").value = themeVal;
+  onLiveEdit();
+  showToast(`✓ Applied theme to Content tab for ${getCalendarMonthLabel(currentMonth)}!`);
 }
 
 function copyAiPrompt() {

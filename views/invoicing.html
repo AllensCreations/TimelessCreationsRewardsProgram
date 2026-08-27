@@ -663,42 +663,50 @@ function handleProductChange(selectEl) {
 function recalculateTotal() {
   let subtotal = 0;
   const previewItems = [];
-  document.querySelectorAll('.item-card-row').forEach(r => {
-    const name = r.querySelector('.item-select').value;
-    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
-    const price = parseFloat(r.querySelector('.item-price').value) || 0;
+  document.querySelectorAll(".item-card-row").forEach(r => {
+    const selectEl = r.querySelector(".item-select");
+    let name = "Custom Item";
+    if (selectEl && selectEl.selectedIndex >= 0) {
+      name = selectEl.options[selectEl.selectedIndex].value;
+    }
+    const qty = parseInt(r.querySelector(".item-qty")?.value, 10) || 1;
+    const price = parseFloat(r.querySelector(".item-price")?.value) || 0;
     const rowSubtotal = qty * price;
-    r.querySelector('.item-subtotal').textContent = `₱${rowSubtotal.toFixed(2)}`;
+    const subEl = r.querySelector(".item-subtotal");
+    if (subEl) subEl.textContent = `₱${rowSubtotal.toFixed(2)}`;
     subtotal += rowSubtotal;
-    previewItems.push({ name, qty, price, subtotal: rowSubtotal });
+    if (name) previewItems.push({ name, qty, price, subtotal: rowSubtotal });
   });
 
-  const discountType = document.getElementById('discount-type').value;
-  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
-  let discountDeducted = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
+  const discountType = document.getElementById("discount-type")?.value || "fixed";
+  const discountVal = parseFloat(document.getElementById("discount-val")?.value) || 0;
+  let discountDeducted = discountType === "percent" ? (subtotal * (discountVal / 100)) : discountVal;
   if (discountDeducted > subtotal) discountDeducted = subtotal;
 
   const grandTotal = Math.max(0, subtotal - discountDeducted);
-  document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
-  document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
-  document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
+  
+  if (document.getElementById("calc-subtotal")) document.getElementById("calc-subtotal").textContent = `₱${subtotal.toFixed(2)}`;
+  if (document.getElementById("calc-discount-deducted")) document.getElementById("calc-discount-deducted").textContent = `-₱${discountDeducted.toFixed(2)}`;
+  if (document.getElementById("calc-grand-total")) document.getElementById("calc-grand-total").textContent = `₱${grandTotal.toFixed(2)}`;
 
-  document.getElementById('prev-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
-  document.getElementById('prev-discount').textContent = `-₱${discountDeducted.toFixed(2)}`;
-  document.getElementById('prev-total').textContent = `₱${grandTotal.toFixed(2)}`;
+  if (document.getElementById("prev-subtotal")) document.getElementById("prev-subtotal").textContent = `₱${subtotal.toFixed(2)}`;
+  if (document.getElementById("prev-discount")) document.getElementById("prev-discount").textContent = `-₱${discountDeducted.toFixed(2)}`;
+  if (document.getElementById("prev-total")) document.getElementById("prev-total").textContent = `₱${grandTotal.toFixed(2)}`;
 
-  const prevTbody = document.getElementById('prev-table-body');
-  if (previewItems.length === 0) {
-    prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items selected.</td></tr>';
-  } else {
-    prevTbody.innerHTML = previewItems.map(item => `
-      <tr>
-        <td><strong>${item.name}</strong></td>
-        <td style="text-align:center;">${item.qty}</td>
-        <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
-        <td style="text-align:right; font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
-      </tr>
-    `).join('');
+  const prevTbody = document.getElementById("prev-table-body");
+  if (prevTbody) {
+    if (previewItems.length === 0) {
+      prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items selected.</td></tr>';
+    } else {
+      prevTbody.innerHTML = previewItems.map(item => `
+        <tr>
+          <td><strong>${item.name}</strong></td>
+          <td style="text-align:center;">${item.qty}</td>
+          <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
+          <td style="text-align:right; font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
+        </tr>
+      `).join("");
+    }
   }
 }
 

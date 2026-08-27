@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import { runSql } from '../lib/db.js';
-import { sendDripEmail, sendOTPEmail, sendReceiptEmail, sendThankYouEmail, renderMonthlyDripTemplate } from '../lib/mailer.js';
+import { sendDripEmail, sendOTPEmail, sendReceiptEmail, sendThankYouEmail } from '../lib/mailer.js';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-admin-key");
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
@@ -19,6 +19,22 @@ export default async function handler(req, res) {
       bodyData = req.body || {};
     }
     if (bodyData.action) action = bodyData.action;
+  }
+
+  // Authorization Guard for Mutating Administrative Actions
+  const SENSITIVE_ACTIONS = [
+    "toggle_power", "delete_missionary", "update_missionary_points",
+    "push_missionaries", "sync_catalog", "save_products",
+    "save_drip", "update_order_status", "update_invoice_status",
+    "create_invoice", "get_system_logs", "force_cron"
+  ];
+
+  if (SENSITIVE_ACTIONS.includes(action)) {
+    const adminSecret = process.env.ADMIN_SECRET || process.env.CRON_SECRET;
+    const authHeader = req.headers?.authorization || req.headers?.['x-admin-key'] || req.query?.admin_key || bodyData.admin_key;
+    if (adminSecret && authHeader !== `Bearer ${adminSecret}` && authHeader !== adminSecret) {
+      return res.status(401).json({ ok: false, error: "Unauthorized administrative request." });
+    }
   }
 
   try {

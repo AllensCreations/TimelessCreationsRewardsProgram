@@ -24,6 +24,15 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
+const ALLOWED_ROOTS = [
+  path.resolve(__dirname, 'public'),
+  path.resolve(__dirname, 'views')
+];
+
+function isSafePath(resolvedPath) {
+  return ALLOWED_ROOTS.some(root => resolvedPath.startsWith(root));
+}
+
 const server = http.createServer(async (req, res) => {
   res.status = function(code) {
     res.statusCode = code;
@@ -60,25 +69,21 @@ const server = http.createServer(async (req, res) => {
     return mainHandler(req, res);
   }
 
-  let targetFile = pathname === '/' ? '/views/index.html' : pathname;
-  
+  let cleanPath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+  let targetFile = cleanPath === '/' ? 'index.html' : cleanPath.replace(/^\//, '');
+
   if (!path.extname(targetFile)) {
-    if (fs.existsSync(path.join(__dirname, 'views', `${targetFile}.html`))) {
-      targetFile = `/views/${targetFile}.html`;
-    } else if (fs.existsSync(path.join(__dirname, 'public', `${targetFile}.html`))) {
-      targetFile = `/public/${targetFile}.html`;
-    }
+    targetFile += '.html';
   }
 
   const searchPaths = [
-    path.join(__dirname, targetFile),
-    path.join(__dirname, 'public', targetFile.replace(/^\/public\//, '/')),
-    path.join(__dirname, 'views', targetFile.replace(/^\/views\//, '/'))
+    path.resolve(__dirname, 'public', targetFile),
+    path.resolve(__dirname, 'views', targetFile)
   ];
 
   let resolvedPath = null;
   for (const p of searchPaths) {
-    if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+    if (isSafePath(p) && fs.existsSync(p) && fs.statSync(p).isFile()) {
       resolvedPath = p;
       break;
     }

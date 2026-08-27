@@ -1,9 +1,10 @@
 import { handleBotMessage } from '../lib/botHandler.js';
+import { verifyFbSignature } from '../lib/security.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Hub-Signature-256');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -21,7 +22,14 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const body = req.body;
+    // Validate Meta Webhook Signature
+    const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+    if (process.env.FB_APP_SECRET && !verifyFbSignature(req, rawBody)) {
+      console.warn("⚠️ Unauthorized webhook signature rejected.");
+      return res.status(401).send('Invalid signature');
+    }
+
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     if (body?.object === 'page') {
       try {
         for (const entry of body.entry || []) {

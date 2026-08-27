@@ -9,102 +9,101 @@
   <script src="/assets/app.js"></script>
   <style>
     .hero-banner {
-      background: linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(24,27,42,0.9) 100%);
+      background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, rgba(18,20,30,0.95) 100%);
       border: 1px solid var(--border-gold);
       border-radius: var(--radius);
-      padding: 22px 18px;
-      margin-bottom: 16px;
+      padding: 24px 20px;
+      margin-bottom: 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
     }
     @media(min-width: 768px) {
-      .hero-banner { flex-direction: row; justify-content: space-between; align-items: center; padding: 28px; }
+      .hero-banner { flex-direction: row; justify-content: space-between; align-items: center; padding: 32px; }
     }
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 20px;
     }
     @media(min-width: 768px) {
-      .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 14px; }
     }
     .action-pill {
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px;
+      border-radius: var(--radius);
+      padding: 16px 12px;
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--text);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.2s;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
     }
-    .action-pill:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+    .action-pill:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); transform: translateY(-2px); }
     
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
+      gap: 8px;
       margin-top: 14px;
     }
-    .cal-day-header { font-size: 0.62rem; text-align: center; color: var(--muted); text-transform: uppercase; font-weight: 700; padding: 4px 0; }
+    .cal-day-header { font-size: 0.65rem; text-align: center; color: var(--muted); text-transform: uppercase; font-weight: 700; padding: 6px 0; }
     .cal-cell {
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      min-height: 52px;
-      padding: 6px;
+      border-radius: 8px;
+      min-height: 56px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
-    .cal-cell.today { border-color: var(--gold); box-shadow: 0 0 10px rgba(201,168,76,0.2) inset; }
-    .cal-cell.has-activity { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); }
-    .cal-num { font-size: 0.7rem; color: var(--muted); font-weight: bold; }
-    .cal-count { font-size: 0.6rem; font-weight: bold; color: var(--gold); align-self: flex-end; }
+    .cal-cell.today { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.25) inset; }
+    .cal-cell.has-activity { background: rgba(201,168,76,0.14); border-color: rgba(201,168,76,0.45); }
+    .cal-num { font-size: 0.75rem; color: var(--muted); font-weight: bold; }
+    .cal-count { font-size: 0.62rem; font-weight: bold; color: var(--gold); align-self: flex-end; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <!-- Hero Banner -->
   <div class="hero-banner">
     <div>
-      <h1 style="color:var(--gold); font-size:1.4rem; margin-bottom:4px;">Welcome back, Administrator ✨</h1>
-      <p style="font-size:0.78rem; color:var(--muted);">Missionary encouragement and reward dispatch overview.</p>
+      <h1 style="color:var(--gold); font-size:1.5rem; margin-bottom:4px;">Command Center ✨</h1>
+      <p style="font-size:0.82rem; color:var(--muted);">Timeless Creations Administrator Dashboard &amp; Telemetry.</p>
     </div>
-    <div style="display:flex; gap:8px;">
-      <button onclick="triggerGlobalRefresh()" class="btn btn-gold" style="width:100%;">↻ Refresh Live Data</button>
+    <div style="display:flex; gap:10px;">
+      <button onclick="triggerGlobalRefresh()" class="btn btn-gold" style="width:100%; min-width:150px;">↻ Refresh Data</button>
     </div>
   </div>
 
-  <!-- Quick Actions Grid -->
   <div class="quick-actions">
     <a href="/invoicing.html" class="action-pill">
-      <span style="font-size:1.2rem;">🧾</span>
+      <span style="font-size:1.4rem;">🧾</span>
       <span>Create Invoice</span>
     </a>
     <a href="/gallery.html" class="action-pill">
-      <span style="font-size:1.2rem;">🖼️</span>
+      <span style="font-size:1.4rem;">🖼️</span>
       <span>CDN Gallery</span>
     </a>
     <a href="/messengerbot.html" class="action-pill">
-      <span style="font-size:1.2rem;">🎁</span>
+      <span style="font-size:1.4rem;">🎁</span>
       <span>Bot Rewards</span>
     </a>
     <a href="/logs.html" class="action-pill">
-      <span style="font-size:1.2rem;">📜</span>
+      <span style="font-size:1.4rem;">📜</span>
       <span>Audit Logs</span>
     </a>
   </div>
 
-  <!-- Primary Stat Cards -->
   <div class="stat-grid">
     <div class="stat-card gold">
       <div class="stat-label">Total Missionaries</div>
@@ -124,14 +123,13 @@
     </div>
   </div>
 
-  <!-- Calendar Heatmap Section -->
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; flex-wrap:wrap; gap:8px;">
       <div>
-        <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Monthly Drip Dispatch Heatmap</div>
-        <div style="font-size:0.68rem; color:var(--muted);">Visual distribution of letters sent out to elders and sisters.</div>
+        <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Monthly Drip Dispatch Heatmap</div>
+        <div style="font-size:0.72rem; color:var(--muted);">Visual distribution of letters sent out to missionaries.</div>
       </div>
-      <span id="cal-month-name" style="font-size:0.72rem; color:#fff; font-weight:bold; background:var(--surface2); padding:4px 10px; border-radius:6px; border:1px solid var(--border);"></span>
+      <span id="cal-month-name" style="font-size:0.75rem; color:#fff; font-weight:bold; background:var(--surface2); padding:6px 12px; border-radius:6px; border:1px solid var(--border);"></span>
     </div>
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
@@ -194,7 +192,7 @@ function renderCalendar() {
 
     const count = dashboardState.dailyStats[fullDateKey] || 0;
     cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
-    cell.innerHTML = `<div class="cal-num">${day}</div>${count > 0 ? `<div class="cal-count">✉${count}</div>` : ''}`;
+    cell.innerHTML = `<div class="cal-num">${day}</div>${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}`;
     container.appendChild(cell);
   }
 }

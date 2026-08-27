@@ -687,11 +687,12 @@ function recalculateTotal() {
   let subtotal = 0;
   const previewItems = [];
   document.querySelectorAll('.item-card-row').forEach(r => {
-    const name = r.querySelector('.item-select').value;
-    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
-    const price = parseFloat(r.querySelector('.item-price').value) || 0;
+    const name = r.querySelector('.item-select')?.value || "Product";
+    const qty = parseInt(r.querySelector('.item-qty')?.value, 10) || 1;
+    const price = parseFloat(r.querySelector('.item-price')?.value) || 0;
     const rowSubtotal = qty * price;
-    r.querySelector('.item-subtotal').textContent = `₱${rowSubtotal.toFixed(2)}`;
+    const subEl = r.querySelector('.item-subtotal');
+    if (subEl) subEl.textContent = `₱${rowSubtotal.toFixed(2)}`;
     subtotal += rowSubtotal;
     previewItems.push({ name, qty, price, subtotal: rowSubtotal });
   });

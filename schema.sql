@@ -20,6 +20,24 @@ CREATE TABLE IF NOT EXISTS `missionaries` (
 	`pending_ref_notices` integer DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS `sessions` (
+	`psid` text PRIMARY KEY,
+	`state` text DEFAULT 'AWAITING_TERMS',
+	`invite_code` text,
+	`temp_title` text,
+	`temp_email` text,
+	`temp_batch` text,
+	`otp_code` text,
+	`last_otp_at` integer DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS `bot_hourly_views` (
+	`psid` text,
+	`hour_key` text,
+	`view_count` integer DEFAULT 1,
+	PRIMARY KEY(`psid`, `hour_key`)
+);
+
 CREATE TABLE IF NOT EXISTS `hashed_audit_identities` (
 	`identity_hash` text PRIMARY KEY,
 	`type` text,

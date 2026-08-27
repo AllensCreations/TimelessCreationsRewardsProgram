@@ -459,7 +459,7 @@ export default async function handler(req, res) {
 
     if (action === "upload" || action === "cdn_upload") {
       const { filename, targetSize, originalKb, compressedKb, direct_url } = bodyData;
-      const url = direct_url || `https://cdn.jsdelivr.net/gh/${process.env.CDN_GITHUB_OWNER || 'AllensCreations'}/${process.env.CDN_GITHUB_REPO || 'CDN-Assets'}@main/assets/rewards/${filename || 'image.webp'}`;
+      const url = direct_url || `https://cdn.jsdelivr.net/gh/${process.env.CDN_GITHUB_OWNER || 'AllensCreations'}/${process.env.CDN_GITHUB_REPO || 'Gallery'}@main/assets/rewards/${filename || 'image.webp'}`;
       
       await runSql(`
         INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb)

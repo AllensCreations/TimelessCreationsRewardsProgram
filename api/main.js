@@ -296,7 +296,7 @@ export default async function handler(req, res) {
         ok: false,
         error: "Brevo REST API rejected dispatch.",
         details: results
-      }
+      });
     }
 
     if (action === "get_products") {
@@ -457,7 +457,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, gallery: rows || [] });
     }
 
-        if (action === "upload" || action === "cdn_upload") {
+    if (action === "upload" || action === "cdn_upload") {
       const { filename, targetSize, originalKb, compressedKb, base64Data } = bodyData;
       
       let owner = process.env.CDN_GITHUB_OWNER || 'AllensCreations';
@@ -526,7 +526,6 @@ export default async function handler(req, res) {
       `, [cleanFilename, directUrl, targetSize || 'square_600', Number(originalKb) || 0, Number(compressedKb) || 0]);
 
       return res.status(200).json({ ok: true, direct_url: directUrl, item: { filename: cleanFilename, direct_url: directUrl, size_label: targetSize } });
-    });
     }
 
     if (action === "delete" || action === "cdn_delete") {

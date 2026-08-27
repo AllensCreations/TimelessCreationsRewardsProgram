@@ -36,7 +36,7 @@
   .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
   .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
 
-  /* Live Preview */
+  /* Live Preview Card */
   .preview-wrapper { width: 100%; position: sticky; top: 70px; }
   .invoice-preview-card {
     width: 100%;
@@ -73,6 +73,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    transition: border-color 0.2s;
   }
   .trx-card:hover { border-color: var(--border-gold); }
 
@@ -268,7 +269,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">📜 Active Transactions &amp; Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to view itemized breakdown, customer email, and total.</p>
+          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to expand details (one opens at a time).</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
@@ -325,8 +326,14 @@
       <input type="text" id="edit-trx-name" class="form-input" readonly>
     </div>
 
+    <!-- Embedded Reward Notification Box -->
+    <div id="edit-reward-box" style="display:none; background:#181926; border:1px solid var(--gold); border-radius:6px; padding:10px 12px; margin-bottom:12px;">
+      <div style="font-size:0.68rem; color:var(--gold); font-weight:bold; text-transform:uppercase;">🎁 Claimed Freebie Reward (Always Embedded):</div>
+      <div style="font-size:0.85rem; color:#fff; font-weight:bold; margin-top:2px;" id="edit-reward-item-label">—</div>
+    </div>
+
     <div style="display:flex; justify-content:space-between; align-items:center; margin:12px 0 8px;">
-      <label class="form-label" style="margin:0;">Bundle Items / Extra Products</label>
+      <label class="form-label" style="margin:0;">Bundle Extra Cash Products</label>
       <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addEditItemRow()">+ Add Product</button>
     </div>
 
@@ -334,7 +341,7 @@
 
     <div class="summary-box" style="margin:14px 0;">
       <div class="summary-row total">
-        <span>Total Value:</span>
+        <span>Total Extra Cash Amount:</span>
         <span id="edit-calc-total">₱0.00</span>
       </div>
     </div>
@@ -392,6 +399,19 @@ async function loadData() {
   }
 }
 
+// Accordion toggle: Only ONE card open at a time
+function toggleTrxCardAccordion(el) {
+  const card = el.closest('.trx-card');
+  const isAlreadyOpen = card.classList.contains('open');
+
+  // Close all other open transaction cards
+  document.querySelectorAll('.trx-card').forEach(c => c.classList.remove('open'));
+
+  if (!isAlreadyOpen) {
+    card.classList.add('open');
+  }
+}
+
 function renderTransactionsWireframeCards() {
   const activeContainer = document.getElementById('active-trx-cards-wrapper');
   const archiveContainer = document.getElementById('archive-trx-cards-wrapper');
@@ -403,7 +423,11 @@ function renderTransactionsWireframeCards() {
   orders.forEach(o => {
     let itemsList = [];
     try { itemsList = JSON.parse(o.items_json || '[]'); } catch (_) {}
-    if (!itemsList.length) itemsList = [{ name: o.item, qty: 1, price: 0 }];
+    
+    // Always guarantee primary reward item is embedded
+    if (!itemsList.length || !itemsList.some(i => i.name.includes(o.item))) {
+      itemsList = [{ name: `🎁 ${o.item} (Free Reward)`, qty: 1, price: 0 }, ...itemsList];
+    }
 
     const itemObj = {
       id: o.order_id,
@@ -411,6 +435,7 @@ function renderTransactionsWireframeCards() {
       type: 'Reward Claim',
       status: (o.status || 'PENDING').toUpperCase(),
       items: itemsList,
+      primaryReward: o.item,
       totalDisplay: `${o.points_cost} Points (Free Reward)`,
       email: o.email || '—',
       raw: o,
@@ -425,7 +450,9 @@ function renderTransactionsWireframeCards() {
   cashInvoices.forEach(inv => {
     let itemsList = [];
     try { itemsList = JSON.parse(inv.items_json || '[]'); } catch (_) {}
-    if (!itemsList.length) itemsList = [{ name: "Custom Order", qty: 1, price: inv.total_amount }];
+    if (!itemsList.length) {
+      itemsList = [{ name: "Custom Order", qty: 1, price: inv.total_amount }];
+    }
 
     const itemObj = {
       id: inv.invoice_id,
@@ -433,6 +460,7 @@ function renderTransactionsWireframeCards() {
       type: 'Cash Invoice',
       status: (inv.status || 'PENDING').toUpperCase(),
       items: itemsList,
+      primaryReward: null,
       totalDisplay: `₱${Number(inv.total_amount).toFixed(2)}`,
       email: inv.email || '—',
       raw: inv,
@@ -488,8 +516,8 @@ function buildCardListHtml(list, emptyText) {
           <div class="trx-type-badge">${item.type}</div>
         </div>
 
-        <!-- DROPDOWN TOGGLE BAR -->
-        <div class="trx-details-toggle" onclick="this.closest('.trx-card').classList.toggle('open')">
+        <!-- ONE-AT-A-TIME ACCORDION TOGGLE: DETAILS ∇ ─────────────────── -->
+        <div class="trx-details-toggle" onclick="toggleTrxCardAccordion(this)">
           <span>DETAILS ▾</span>
           <div class="trx-toggle-line"></div>
         </div>
@@ -500,7 +528,7 @@ function buildCardListHtml(list, emptyText) {
             ${itemsFormatted}
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
             <span><strong style="color:var(--muted);">• TOTAL:</strong> <span style="color:var(--gold); font-weight:bold;">${item.totalDisplay}</span></span>
             <span><strong style="color:var(--muted);">• Email:</strong> ${item.email}</span>
           </div>
@@ -560,6 +588,59 @@ async function deleteTransaction(id, isOrder, name) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// LIVE INVOICE PREVIEW SYNC WITH STEP 1 & 2
+// ─────────────────────────────────────────────────────────────
+function syncLiveInvoicePreview() {
+  let name = "Elder / Sister [Name]";
+  let email = "customer@example.com";
+  let phone = "—";
+
+  if (recipientMode === 'db') {
+    const m = missionaries.find(x => x.email === document.getElementById('missionary-select').value);
+    if (m) {
+      name = m.name;
+      email = m.email;
+      phone = document.getElementById('db-phone-input').value.trim() || '—';
+    }
+  } else {
+    name = document.getElementById('custom-name-input').value.trim() || "Customer [Name]";
+    email = document.getElementById('custom-email-input').value.trim() || "customer@example.com";
+    phone = document.getElementById('custom-phone-input').value.trim() || "—";
+  }
+
+  document.getElementById('prev-name').textContent = name;
+  document.getElementById('prev-email').textContent = email;
+  document.getElementById('prev-phone').textContent = phone;
+
+  recalculateTotal();
+}
+
+function handleDbPhoneInput() { syncLiveInvoicePreview(); }
+function handleCustomInput() { syncLiveInvoicePreview(); }
+
+function switchRecipientMode(mode) {
+  recipientMode = mode;
+  document.getElementById('mode-db-btn').classList.toggle('active', mode === 'db');
+  document.getElementById('mode-custom-btn').classList.toggle('active', mode === 'custom');
+  document.getElementById('recipient-db-box').style.display = mode === 'db' ? 'block' : 'none';
+  document.getElementById('recipient-custom-box').style.display = mode === 'custom' ? 'block' : 'none';
+  syncLiveInvoicePreview();
+}
+
+function populateMissionarySelect(list) {
+  const sel = document.getElementById('missionary-select');
+  sel.innerHTML = '<option value="">-- Choose Missionary --</option>' + 
+    list.map(m => `<option value="${m.email}">${m.name} (${m.email})</option>`).join('');
+}
+
+function filterMissionaryDropdown(query) {
+  const q = query.toLowerCase();
+  populateMissionarySelect(missionaries.filter(m => (m.name || '').toLowerCase().includes(q) || (m.email || '').toLowerCase().includes(q)));
+}
+
+function handleMissionarySelect() { syncLiveInvoicePreview(); }
+
 function addItemRow(defaultName = "", defaultPrice = 0, defaultQty = 1) {
   if (!defaultName && productCatalog.length > 0) {
     defaultName = productCatalog[0].name;
@@ -613,7 +694,7 @@ function recalculateTotal() {
   let discountDeducted = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
   if (discountDeducted > subtotal) discountDeducted = subtotal;
 
-  const grandTotal = subtotal - discountDeducted;
+  const grandTotal = Math.max(0, subtotal - discountDeducted);
   document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
   document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
   document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
@@ -624,7 +705,7 @@ function recalculateTotal() {
 
   const prevTbody = document.getElementById('prev-table-body');
   if (previewItems.length === 0) {
-    prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items.</td></tr>';
+    prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items selected.</td></tr>';
   } else {
     prevTbody.innerHTML = previewItems.map(item => `
       <tr>
@@ -695,24 +776,32 @@ async function submitInvoice() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// EDIT MODAL: ALWAYS EMBED REWARD FOR REWARD CLAIMS
+// ─────────────────────────────────────────────────────────────
 function openEditModal(id, isOrder) {
   document.getElementById('edit-trx-id').value = id;
   document.getElementById('edit-trx-type').value = isOrder ? 'order' : 'invoice';
 
   let name = '';
   let items = [];
+  const rewardBox = document.getElementById('edit-reward-box');
 
   if (isOrder) {
     const o = orders.find(x => x.order_id === id);
     if (!o) return;
     name = o.name;
-    try { items = JSON.parse(o.items_json || '[]'); } catch(_) {
-      items = [{ name: o.item, qty: 1, price: 0, subtotal: 0 }];
-    }
+    rewardBox.style.display = 'block';
+    document.getElementById('edit-reward-item-label').textContent = `${o.item} (${o.points_cost} Points Reward)`;
+
+    try { items = JSON.parse(o.items_json || '[]'); } catch(_) {}
+    // Filter out primary reward from cash table so it doesn't double charge
+    items = items.filter(i => !i.name.includes(o.item));
   } else {
     const inv = cashInvoices.find(x => x.invoice_id === id);
     if (!inv) return;
     name = inv.name;
+    rewardBox.style.display = 'none';
     try { items = JSON.parse(inv.items_json || '[]'); } catch(_) {}
   }
 
@@ -740,7 +829,7 @@ function addEditItemRow(name = '', price = 0, qty = 1) {
       <option value="">-- Select Catalog Item --</option>
       ${productCatalog.map(p => `<option value="${p.name}" data-price="${p.price}" ${p.name === name ? 'selected' : ''}>${p.name} (₱${p.price})</option>`).join('')}
     </select>
-    <input type="text" class="form-input edit-item-name" value="${name}" placeholder="Or custom item name..." style="margin-top:4px;"/>
+    <input type="text" class="form-input edit-item-name" value="${name}" placeholder="Or custom product name..." style="margin-top:4px;"/>
     <div class="item-card-controls">
       <div style="display:flex; align-items:center; gap:6px;">
         <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
@@ -781,7 +870,7 @@ function recalculateEditTotal() {
 }
 
 function promptSaveConfirmation() {
-  if (!confirm("Save bundled items to this transaction?")) return;
+  if (!confirm("Save changes to this transaction and update record?")) return;
   saveEditedTransaction();
 }
 
@@ -799,6 +888,14 @@ async function saveEditedTransaction() {
     subtotal += s;
     if (nameInput) items.push({ name: nameInput, qty, price, subtotal: s });
   });
+
+  // If it's a reward claim order, embed the free reward at index 0
+  if (isOrder) {
+    const o = orders.find(x => x.order_id === id);
+    if (o) {
+      items.unshift({ name: `🎁 ${o.item} (Free Reward)`, qty: 1, price: 0, subtotal: 0 });
+    }
+  }
 
   const actionName = isOrder ? 'update_order' : 'update_invoice';
   const idKey = isOrder ? 'order_id' : 'invoice_id';
@@ -827,51 +924,6 @@ async function saveEditedTransaction() {
   } catch(e) {
     showToast("Error updating transaction", "error");
   }
-}
-
-function switchRecipientMode(mode) {
-  recipientMode = mode;
-  document.getElementById('mode-db-btn').classList.toggle('active', mode === 'db');
-  document.getElementById('mode-custom-btn').classList.toggle('active', mode === 'custom');
-  document.getElementById('recipient-db-box').style.display = mode === 'db' ? 'block' : 'none';
-  document.getElementById('recipient-custom-box').style.display = mode === 'custom' ? 'block' : 'none';
-  if (mode === 'db') handleMissionarySelect();
-  else handleCustomInput();
-}
-
-function handleDbPhoneInput() {
-  document.getElementById('prev-phone').textContent = document.getElementById('db-phone-input').value.trim() || '—';
-}
-
-function handleCustomInput() {
-  document.getElementById('prev-name').textContent = document.getElementById('custom-name-input').value.trim() || 'Customer [Name]';
-  document.getElementById('prev-email').textContent = document.getElementById('custom-email-input').value.trim() || 'customer@example.com';
-  document.getElementById('prev-phone').textContent = document.getElementById('custom-phone-input').value.trim() || '—';
-}
-
-function populateMissionarySelect(list) {
-  const sel = document.getElementById('missionary-select');
-  sel.innerHTML = '<option value="">-- Choose Missionary --</option>' + 
-    list.map(m => `<option value="${m.email}">${m.name} (${m.email})</option>`).join('');
-}
-
-function filterMissionaryDropdown(query) {
-  const q = query.toLowerCase();
-  populateMissionarySelect(missionaries.filter(m => (m.name || '').toLowerCase().includes(q) || (m.email || '').toLowerCase().includes(q)));
-}
-
-function handleMissionarySelect() {
-  const m = missionaries.find(x => x.email === document.getElementById('missionary-select').value);
-  if (m) {
-    document.getElementById('prev-name').textContent = m.name;
-    document.getElementById('prev-email').textContent = m.email;
-    document.getElementById('prev-phone').textContent = document.getElementById('db-phone-input').value.trim() || '—';
-  } else {
-    document.getElementById('prev-name').textContent = "Elder / Sister [Name]";
-    document.getElementById('prev-email').textContent = "customer@example.com";
-    document.getElementById('prev-phone').textContent = "—";
-  }
-  recalculateTotal();
 }
 
 function renderProductSettings() {

@@ -10,25 +10,6 @@ const LocalStore = {
   }
 };
 
-// Default Admin Key for Web Console
-const ADMIN_KEY = "Alll3n";
-
-// Override global fetch to automatically attach x-admin-key header for /api requests
-const originalFetch = window.fetch;
-window.fetch = function (url, options = {}) {
-  if (typeof url === "string" && url.includes("/api/")) {
-    options.headers = options.headers || {};
-    if (options.headers instanceof Headers) {
-      if (!options.headers.has("x-admin-key")) options.headers.append("x-admin-key", ADMIN_KEY);
-      if (!options.headers.has("Authorization")) options.headers.append("Authorization", `Bearer ${ADMIN_KEY}`);
-    } else {
-      options.headers["x-admin-key"] = options.headers["x-admin-key"] || ADMIN_KEY;
-      options.headers["Authorization"] = options.headers["Authorization"] || `Bearer ${ADMIN_KEY}`;
-    }
-  }
-  return originalFetch(url, options);
-};
-
 function showToast(msg, type = "success") {
   let toast = document.getElementById("app-toast");
   if (!toast) {

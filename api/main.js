@@ -5,7 +5,7 @@ import { sendDripEmail, sendOTPEmail, sendReceiptEmail, sendThankYouEmail } from
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-admin-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
@@ -19,23 +19,6 @@ export default async function handler(req, res) {
       bodyData = req.body || {};
     }
     if (bodyData.action) action = bodyData.action;
-  }
-
-  // Administrative Authorization Guard (Only enforced if ADMIN_SECRET is explicitly configured)
-  const SENSITIVE_ACTIONS = [
-    "toggle_power", "delete_missionary", "update_missionary_points",
-    "push_missionaries", "sync_catalog", "save_products",
-    "save_drip", "update_order_status", "update_invoice_status",
-    "create_invoice", "get_system_logs", "force_cron",
-    "save_promo_code", "delete_promo_code", "save_cdn_config"
-  ];
-
-  if (process.env.ADMIN_SECRET && SENSITIVE_ACTIONS.includes(action)) {
-    const adminSecret = process.env.ADMIN_SECRET;
-    const authHeader = req.headers?.authorization || req.headers?.['x-admin-key'] || req.query?.admin_key || bodyData.admin_key;
-    if (authHeader !== `Bearer ${adminSecret}` && authHeader !== adminSecret) {
-      return res.status(401).json({ ok: false, error: "Unauthorized administrative request." });
-    }
   }
 
   try {
@@ -121,7 +104,6 @@ export default async function handler(req, res) {
       }
     }
 
-    
     if (action === "setup_messenger_profile") {
       const pageToken = (process.env.PAGE_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || "").trim();
       if (!pageToken) return res.status(400).json({ ok: false, error: "Missing PAGE_ACCESS_TOKEN" });
@@ -476,7 +458,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "upload" || action === "cdn_upload") {
-      const { filename, targetSize, originalKb, compressedKb, direct_url, base64Data } = bodyData;
+      const { filename, targetSize, originalKb, compressedKb, direct_url } = bodyData;
       const url = direct_url || `https://cdn.jsdelivr.net/gh/${process.env.CDN_GITHUB_OWNER || 'AllensCreations'}/${process.env.CDN_GITHUB_REPO || 'CDN-Assets'}@main/assets/rewards/${filename || 'image.webp'}`;
       
       await runSql(`

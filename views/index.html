@@ -9,77 +9,33 @@
   <script src="/assets/app.js"></script>
   <style>
     .cockpit-header {
-      background: linear-gradient(135deg, rgba(201,168,76,0.2) 0%, rgba(14,15,22,0.98) 100%);
+      background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, rgba(14,15,22,0.98) 100%);
       border: 1px solid var(--border-gold);
       border-radius: var(--radius);
-      padding: 24px 20px;
-      margin-bottom: 20px;
+      padding: 22px 18px;
+      margin-bottom: 16px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      gap: 12px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.5);
     }
     @media(min-width: 768px) {
-      .cockpit-header { flex-direction: row; justify-content: space-between; align-items: center; padding: 32px 36px; }
+      .cockpit-header { flex-direction: row; justify-content: space-between; align-items: center; padding: 28px 32px; }
     }
 
     .status-badge-live {
       display: inline-flex; align-items: center; gap: 6px;
       background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.4);
-      color: var(--green); padding: 4px 12px; border-radius: 99px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--green); padding: 4px 10px; border-radius: 99px; font-size: 0.68rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
     }
-    .status-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green); animation: pulseDot 2s infinite; }
+    .status-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulseDot 2s infinite; }
     @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-    /* Massive Command Metrics Grid */
-    .command-metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(1, 1fr);
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-    @media(min-width: 768px) {
-      .command-metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-    }
-    .command-stat-card {
-      background: linear-gradient(135deg, #151622 0%, #10111a 100%);
-      border: 1px solid var(--border-gold);
-      border-radius: var(--radius);
-      padding: 24px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-      position: relative;
-      overflow: hidden;
-    }
-    .command-stat-card::after {
-      content: '';
-      position: absolute; right: -20px; bottom: -20px; width: 100px; height: 100px;
-      background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
-      border-radius: 50%; pointer-events: none;
-    }
-    .command-stat-val {
-      font-size: 3rem;
-      font-weight: 800;
-      font-family: 'Syne', sans-serif;
-      color: #fff;
-      line-height: 1.1;
-      letter-spacing: -1px;
-    }
-    .command-stat-label {
-      font-size: 0.78rem;
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      font-weight: 800;
-    }
 
     .control-deck {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     @media(min-width: 768px) {
       .control-deck { grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -88,9 +44,9 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px 14px;
+      padding: 16px 12px;
       text-align: center;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--text);
       display: flex;
@@ -102,6 +58,32 @@
       cursor: pointer;
     }
     .deck-btn:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); transform: translateY(-2px); }
+
+    /* Prominent Stat Numbers */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    @media(min-width: 768px) {
+      .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    }
+    .stat-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .stat-card.gold { border-left: 4px solid var(--gold); }
+    .stat-card.green { border-left: 4px solid var(--green); }
+    .stat-card.blue { border-left: 4px solid var(--blue); }
+    .stat-val { font-size: 2.1rem; font-weight: 900; font-family: 'Syne', sans-serif; color: #fff; line-height: 1.1; }
+    .stat-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; }
 
     .log-ticker-box {
       background: #08080d;
@@ -140,52 +122,43 @@
 <div class="container">
   <div class="cockpit-header">
     <div>
-      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
         <div class="status-badge-live"><div class="status-dot"></div> Turso DB &amp; API Active</div>
-        <span style="font-size:0.7rem; color:var(--muted); font-family:'DM Mono',monospace;" id="current-utc-time">--</span>
+        <span style="font-size:0.68rem; color:var(--muted); font-family:'DM Mono',monospace;" id="current-utc-time">--</span>
       </div>
-      <h1 style="color:var(--gold); font-size:1.6rem; margin-bottom:4px;">Timeless Creations Cockpit</h1>
-      <p style="font-size:0.82rem; color:var(--muted);">Command station monitoring registered missionaries, reward dispatches, and POS revenue.</p>
+      <h1 style="color:var(--gold); font-size:1.4rem; margin-bottom:2px;">Timeless Creations Cockpit</h1>
+      <p style="font-size:0.78rem; color:var(--muted);">Centralized control station for missionary dispatches, POS invoicing, and rewards.</p>
     </div>
     <div style="display:flex; gap:8px;">
-      <button onclick="triggerGlobalRefresh()" class="btn btn-gold" style="width:100%; padding:12px 20px;">↻ Sync Telemetry</button>
+      <button onclick="triggerGlobalRefresh()" class="btn btn-gold" style="width:100%;">↻ Sync Telemetry</button>
     </div>
   </div>
 
   <div class="control-deck">
     <a href="/invoicing.html" class="deck-btn">
-      <span style="font-size:1.4rem;">🧾</span>
+      <span style="font-size:1.3rem;">🧾</span>
       <span>POS Invoicing</span>
     </a>
     <a href="/gallery.html" class="deck-btn">
-      <span style="font-size:1.4rem;">🖼️</span>
+      <span style="font-size:1.3rem;">🖼️</span>
       <span>CDN Media Hub</span>
     </a>
     <a href="/messengerbot.html" class="deck-btn">
-      <span style="font-size:1.4rem;">🎁</span>
+      <span style="font-size:1.3rem;">🎁</span>
       <span>Rewards Bot</span>
     </a>
     <a href="/logs.html" class="deck-btn">
-      <span style="font-size:1.4rem;">📜</span>
+      <span style="font-size:1.3rem;">📜</span>
       <span>Audit Logs</span>
     </a>
   </div>
 
-  <!-- ENLARGED COMMAND METRIC CARDS -->
-  <div class="command-metrics-grid">
-    <div class="command-stat-card">
-      <div class="command-stat-label">Registered Missionaries</div>
-      <div class="command-stat-val" id="stat-missionaries" style="color:var(--gold);">--</div>
-      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Active full-time missionary rosters synced in Turso</div>
+  <!-- Prominent Stat Cards -->
+  <div class="stat-grid">
+    <div class="stat-card gold">
+      <div class="stat-label">Registered Missionaries</div>
+      <div class="stat-val" id="stat-missionaries">--</div>
     </div>
-    <div class="command-stat-card">
-      <div class="command-stat-label">Circulating Reward Points</div>
-      <div class="command-stat-val" id="stat-points" style="color:var(--blue);">--</div>
-      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Total active points available for reward redemptions</div>
-    </div>
-  </div>
-
-  <div class="stat-grid" style="margin-bottom:16px;">
     <div class="stat-card green">
       <div class="stat-label">Dispatched Today</div>
       <div class="stat-val" id="stat-sent-today" style="color:var(--green);">0</div>
@@ -193,6 +166,10 @@
     <div class="stat-card blue">
       <div class="stat-label">Sent This Month</div>
       <div class="stat-val" id="stat-sent-month" style="color:var(--blue);">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Circulating Points</div>
+      <div class="stat-val" id="stat-points">--</div>
     </div>
   </div>
 

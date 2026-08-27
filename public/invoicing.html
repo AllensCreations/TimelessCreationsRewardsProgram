@@ -19,7 +19,7 @@
   .mode-switch-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 0.72rem; cursor: pointer; text-align: center; }
   .mode-switch-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); font-weight: 700; }
 
-  /* Mobile Item Cards */
+  /* Mobile Item Input Cards */
   .item-card-row {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -41,7 +41,7 @@
   .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
   .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
 
-  /* Mobile-Fluid Live Invoice Preview Card */
+  /* Live Invoice Preview */
   .preview-wrapper { width: 100%; position: sticky; top: 70px; }
   .invoice-preview-card {
     width: 100%;
@@ -66,25 +66,143 @@
   .inv-table th { background: #fdfaf3; border-bottom: 1px solid #e7d8b8; padding: 5px 6px; text-align: left; color: #78716c; }
   .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; }
 
-  .status-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 0.68rem; outline: none; }
-  .status-select.pending { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
-  .status-select.paid { border-color: var(--green); color: var(--green); background: var(--green-dim); }
-
-  /* Full Customer Name Visibility */
-  .customer-cell {
+  /* ─────────────────────────────────────────────────────────────
+     TRANSACTIONS & CLAIMS CARD UI (MATCHING HAND-DRAWN SKETCH)
+     ───────────────────────────────────────────────────────────── */
+  .trx-card-container {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    min-width: 140px;
+    gap: 12px;
   }
-  .customer-full-name {
+  .trx-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.2s;
+  }
+  .trx-card:hover { border-color: var(--border-gold); }
+
+  /* Row 1: INVOICE NO. | STATUS */
+  .trx-card-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .trx-inv-no {
+    font-family: 'DM Mono', monospace;
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--text);
-    word-break: break-word;
-    white-space: normal;
-    line-height: 1.35;
+    color: var(--gold);
+    letter-spacing: 0.5px;
   }
+
+  /* Row 2: NAME | TYPE */
+  .trx-card-row-mid {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .trx-cust-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+    word-break: break-word;
+  }
+  .trx-type-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(201, 168, 76, 0.12);
+    color: var(--gold);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    text-transform: uppercase;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* Row 3: DETAILS ∇ ─────────────────── (DROPDOWN BAR) */
+  .trx-details-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    cursor: pointer;
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 700;
+    user-select: none;
+  }
+  .trx-details-toggle:hover { color: var(--gold2); }
+  .trx-toggle-line {
+    flex: 1;
+    height: 1px;
+    border-top: 1px dashed rgba(201, 168, 76, 0.45);
+  }
+
+  /* Dropdown Collapsible Area */
+  .trx-details-body {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    font-size: 0.76rem;
+    line-height: 1.6;
+  }
+  .trx-card.open .trx-details-body {
+    display: flex;
+  }
+
+  .trx-item-list-box {
+    background: #0d0e15;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .trx-item-line {
+    color: #d1d5db;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+  }
+
+  .trx-info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trx-info-label {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .trx-info-val {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .status-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    outline: none;
+    font-weight: 700;
+  }
+  .status-select.pending { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .status-select.paid { border-color: var(--green); color: var(--green); background: var(--green-dim); }
 </style>
 </head>
 <body>
@@ -243,42 +361,30 @@
     </div>
   </div>
 
-  <!-- TAB 2: Transactions & Rewards Claims (Strictly Standalone) -->
+  <!-- TAB 2: Transactions & Claims (Strictly Card-Based Matching Wireframe Sketch) -->
   <div class="tab-pane" id="transactions-tab">
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">📜 Transactions &amp; Rewards Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Full customer view with instant status email updates.</p>
+          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to view itemized breakdown, full customer email, and total.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
 
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="min-width:160px;">Customer Name</th>
-              <th>Email</th>
-              <th style="text-align:center;">Status Update</th>
-              <th style="text-align:center;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="unified-tbody">
-            <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Loading transactions...</td></tr>
-          </tbody>
-        </table>
+      <div class="trx-card-container" id="trx-cards-wrapper">
+        <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">Loading transactions &amp; claims...</div>
       </div>
     </div>
   </div>
 
-  <!-- TAB 3: Cash POS Catalog (PHP Pricing) (Strictly Standalone) -->
+  <!-- TAB 3: Cash POS Catalog (PHP Pricing) -->
   <div class="tab-pane" id="products-tab">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">⚙️ Cash POS Catalog (PHP Pricing)</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Configure catalog product items and cash prices.</p>
+          <p style="font-size:0.68rem; color:var(--muted);">Configure products and pricing for direct billing.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addNewProductSetting()">+ Add Product</button>
       </div>
@@ -359,7 +465,7 @@ async function loadData() {
     orders = ordRes.orders || [];
 
     populateMissionarySelect(missionaries);
-    renderUnifiedTable();
+    renderTransactionsWireframeCards();
     renderProductSettings();
 
     if (document.querySelectorAll('.item-card-row').length === 0 && productCatalog.length > 0) {
@@ -370,29 +476,55 @@ async function loadData() {
   }
 }
 
-function renderUnifiedTable() {
-  const tbody = document.getElementById('unified-tbody');
+// Render Transactions matching user's exact hand-drawn sketch
+function renderTransactionsWireframeCards() {
+  const container = document.getElementById('trx-cards-wrapper');
   const totalCount = orders.length + cashInvoices.length;
   document.getElementById('trans-badge').textContent = totalCount;
 
   let combined = [];
+
+  // 1. Map Orders (Reward Claims)
   orders.forEach(o => {
+    let itemsList = [];
+    try {
+      itemsList = JSON.parse(o.items_json || '[]');
+    } catch (_) {}
+    if (!itemsList.length) {
+      itemsList = [{ name: o.item, qty: 1, price: 0 }];
+    }
+
     combined.push({
       id: o.order_id,
-      name: o.name || 'Anonymous',
-      email: o.email || '—',
+      name: o.name || 'Anonymous Missionary',
+      type: 'Reward Claim',
       status: (o.status || 'PENDING').toUpperCase(),
+      items: itemsList,
+      totalDisplay: `${o.points_cost} Points (Free Reward)`,
+      email: o.email || '—',
       raw: o,
       isOrder: true
     });
   });
 
+  // 2. Map Cash Invoices
   cashInvoices.forEach(inv => {
+    let itemsList = [];
+    try {
+      itemsList = JSON.parse(inv.items_json || '[]');
+    } catch (_) {}
+    if (!itemsList.length) {
+      itemsList = [{ name: "Custom Order", qty: 1, price: inv.total_amount }];
+    }
+
     combined.push({
       id: inv.invoice_id,
-      name: inv.name,
-      email: inv.email || '—',
+      name: inv.name || 'Customer',
+      type: 'Cash Invoice',
       status: (inv.status || 'PENDING').toUpperCase(),
+      items: itemsList,
+      totalDisplay: `₱${Number(inv.total_amount).toFixed(2)}`,
+      email: inv.email || '—',
       raw: inv,
       isOrder: false
     });
@@ -401,42 +533,76 @@ function renderUnifiedTable() {
   combined.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
 
   if (!combined.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">No transactions found.</td></tr>';
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">No transactions or claims recorded yet.</div>';
     return;
   }
 
-  tbody.innerHTML = combined.map(item => {
+  container.innerHTML = combined.map(item => {
     const isPaid = item.status === 'PAID' || item.status === 'COMPLETED';
     const statusClass = isPaid ? 'paid' : 'pending';
+
+    const itemsFormatted = item.items.map(i => {
+      const priceStr = i.price > 0 ? `₱${Number(i.price * i.qty).toFixed(2)}` : `Free Reward`;
+      return `<div class="trx-item-line">• <strong>${i.qty}x</strong> | ${i.name} | ${priceStr}</div>`;
+    }).join('');
+
     return `
-      <tr>
-        <td>
-          <div class="customer-cell">
-            <span class="customer-full-name">${item.name}</span>
+      <div class="trx-card">
+        <!-- TOP ROW: INVOICE NO. | STATUS -->
+        <div class="trx-card-row-top">
+          <div class="trx-inv-no">${item.id}</div>
+          <div>
+            <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
+              <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+              <option value="PAID" ${isPaid ? 'selected' : ''}>PAID</option>
+              <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
+              <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
+              <option value="DELIVERED" ${item.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
+            </select>
           </div>
-        </td>
-        <td style="color:var(--muted); font-size:0.75rem;">${item.email}</td>
-        <td style="text-align:center;">
-          <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
-            <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
-            <option value="PAID" ${isPaid ? 'selected' : ''}>PAID</option>
-            <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
-            <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
-            <option value="DELIVERED" ${item.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
-          </select>
-        </td>
-        <td style="text-align:center; white-space:nowrap;">
-          <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.65rem;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
-          <button class="btn-danger" style="padding:4px 8px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
-        </td>
-      </tr>
+        </div>
+
+        <!-- MID ROW: NAME | TYPE -->
+        <div class="trx-card-row-mid">
+          <div class="trx-cust-name">${item.name}</div>
+          <div class="trx-type-badge">${item.type}</div>
+        </div>
+
+        <!-- DROPDOWN TOGGLE BAR: DETAILS ∇ ─────────────────── -->
+        <div class="trx-details-toggle" onclick="this.closest('.trx-card').classList.toggle('open')">
+          <span>DETAILS ▾</span>
+          <div class="trx-toggle-line"></div>
+        </div>
+
+        <!-- EXPANDED DETAILS BODY -->
+        <div class="trx-details-body">
+          <div class="trx-item-list-box">
+            ${itemsFormatted}
+          </div>
+
+          <div class="trx-info-row">
+            <span class="trx-info-label">• TOTAL:</span>
+            <span class="trx-info-val" style="color:var(--gold); font-size:0.85rem;">${item.totalDisplay}</span>
+          </div>
+
+          <div class="trx-info-row">
+            <span class="trx-info-label">• Email:</span>
+            <span class="trx-info-val">${item.email}</span>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end;">
+            <button class="btn btn-secondary" style="padding:5px 12px; font-size:0.68rem; min-height:32px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit / Add Products</button>
+            <button class="btn-danger" style="padding:5px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
     `;
   }).join('');
 }
 
 async function updateStatus(id, isOrder, newStatus) {
-  if (!confirm(`Confirm status update to [${newStatus}] for ${id}? Automated notification will be dispatched.`)) {
-    renderUnifiedTable();
+  if (!confirm(`Confirm status update to [${newStatus}] for ${id}? Automated notification email will be dispatched.`)) {
+    renderTransactionsWireframeCards();
     return;
   }
   const endpointAction = isOrder ? 'update_order_status' : 'update_invoice_status';

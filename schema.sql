@@ -65,6 +65,21 @@ CREATE TABLE IF NOT EXISTS `drip_messages` (
 	`custom_html` text
 );
 
+CREATE TABLE IF NOT EXISTS `promo_codes` (
+	`code` text PRIMARY KEY,
+	`points` integer DEFAULT 1,
+	`max_users` integer DEFAULT 30,
+	`claimed_count` integer DEFAULT 0,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS `promo_redemptions` (
+	`code` text,
+	`psid` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY(`code`, `psid`)
+);
+
 CREATE TABLE IF NOT EXISTS `sessions` (
 	`psid` text PRIMARY KEY,
 	`state` text DEFAULT 'AWAITING_TERMS',

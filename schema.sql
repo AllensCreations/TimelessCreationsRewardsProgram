@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS `product_catalog` (
 
 CREATE TABLE IF NOT EXISTS `drip_messages` (
 	`month` integer PRIMARY KEY,
+	`subject` text,
 	`theme` text,
 	`scripture` text,
 	`message` text,

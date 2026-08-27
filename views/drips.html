@@ -49,7 +49,7 @@
   <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-color:rgba(201,168,76,0.3);">
     <div>
       <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Active Month Cycle Selector</div>
-      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Select calendar month and cycle:</div>
+      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Select calendar month:</div>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
       <select id="month-selector" class="form-input" style="width:190px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)"></select>
@@ -70,7 +70,12 @@
         <!-- TAB 1: Content -->
         <div id="tab-messages" class="tab-content active">
             <div class="card">
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">Monthly Message &amp; Scripture</div>
+                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">Monthly Subject, Message &amp; Scripture</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email Subject Line</label>
+                    <input type="text" id="inp-subject" class="form-input" placeholder="e.g. Monthly Encouragement (January) • Timeless Creations" oninput="onLiveEdit()">
+                </div>
                 <div class="form-group">
                     <label class="form-label">Speaker Name / Author Citation ({{THEME}})</label>
                     <input type="text" id="inp-theme" class="form-input" placeholder="e.g. Elder Jeffrey R. Holland" oninput="onLiveEdit()">
@@ -227,7 +232,7 @@
                 <div style="margin-top:16px;">
                     <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Exact Template Element Hierarchy</div>
                     <div style="font-size:0.7rem; color:var(--muted); margin-bottom:6px;">
-                        1. <strong>Message</strong> → 2. <strong>Missionary Essentials</strong> → 3. <strong>Highlights</strong> → 4. <strong>Gallery</strong> → 5. <strong>Rewards</strong>
+                        1. <strong>Message</strong> → <strong>Transition Zone</strong> → 2. <strong>Missionary Essentials</strong> → 3. <strong>Highlights</strong> → 4. <strong>Gallery</strong> → 5. <strong>Rewards</strong>
                     </div>
                     <div style="line-height:1.8;">
                         <span class="var-badge">{{MONTH}}</span>
@@ -252,7 +257,7 @@
 
         <!-- Floating Sync Bar -->
         <div class="save-banner" id="save-banner">
-            <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ Unsaved edits for <span id="unsaved-month-label">January (Odd)</span></span>
+            <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ Unsaved edits for <span id="unsaved-month-label">January (Month 1)</span></span>
             <button class="btn btn-gold" id="btn-save-turso" onclick="saveActiveMonth('global')">💾 Save Month to Turso</button>
         </div>
     </div>
@@ -264,7 +269,7 @@
         </div>
         
         <div class="preview-frame">
-            <iframe id="preview-iframe" style="width:100%; min-height:860px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
+            <iframe id="preview-iframe" style="width:100%; min-height:880px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
         </div>
     </div>
   </div>
@@ -280,8 +285,7 @@ const TEMPLE_IMG_URL = "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG0
 function getCalendarMonthLabel(monthIndex) {
   const calendarNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const idx = (Number(monthIndex) - 1) % 12;
-  const cycleNum = Number(monthIndex) <= 12 ? "(Odd)" : "(Even)";
-  return `${calendarNames[idx]} ${cycleNum}`;
+  return calendarNames[idx];
 }
 
 function switchTab(tabId, btn) {
@@ -298,7 +302,7 @@ function initSelector() {
   for (let i = 1; i <= 24; i++) {
     const opt = document.createElement("option");
     opt.value = i;
-    opt.textContent = `${getCalendarMonthLabel(i)} (M${i})`;
+    opt.textContent = `${getCalendarMonthLabel(i)} (Month ${i})`;
     sel.appendChild(opt);
   }
 }
@@ -311,6 +315,7 @@ async function fetchFromTurso() {
       data.drips.forEach(d => {
         liveDripMap[Number(d.month)] = {
           month: Number(d.month),
+          subject: d.subject || `Monthly Encouragement (${getCalendarMonthLabel(d.month)}) • Timeless Creations`,
           theme: d.theme || "Elder Jeffrey R. Holland",
           scripture: d.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
           message: d.message || `May your faith be strengthened as you serve and invite others during ${getCalendarMonthLabel(d.month)}.`,
@@ -337,6 +342,7 @@ async function fetchFromTurso() {
   .temple-img { width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0; }
   .main-content { padding: 22px 18px; text-align: center; line-height: 1.6; }
   .quote-container { margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
+  .transition-zone { margin: 25px 0; padding: 15px 10px; font-style: italic; color: #8c7e5d; font-size: 13px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
   .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 4px; display: block; }
 </style>
 </head>
@@ -356,6 +362,11 @@ async function fetchFromTurso() {
     <div class="quote-container">
       <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 8px;">"{{SCRIPTURE}}"</div>
       <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+    </div>
+
+    <!-- TRANSITION ZONE -->
+    <div class="transition-zone">
+      As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
     </div>
 
     <!-- 2. MISSIONARY ESSENTIALS (1:1 Ratio) -->
@@ -418,10 +429,11 @@ async function fetchFromTurso() {
 function onSelectMonth(m) {
   currentMonth = parseInt(m, 10);
   const label = getCalendarMonthLabel(currentMonth);
-  document.getElementById("unsaved-month-label").textContent = label;
+  document.getElementById("unsaved-month-label").textContent = `${label} (Month ${currentMonth})`;
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,
+    subject: `Monthly Encouragement (${label}) • Timeless Creations`,
     theme: "Elder Jeffrey R. Holland",
     scripture: "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
     message: `May your faith be strengthened as you serve and invite others during ${label}.`,
@@ -432,6 +444,7 @@ function onSelectMonth(m) {
     custom_html: ""
   };
 
+  document.getElementById("inp-subject").value = data.subject || `Monthly Encouragement (${label}) • Timeless Creations`;
   document.getElementById("inp-theme").value = data.theme || "";
   document.getElementById("inp-msg").value = data.message || "";
   document.getElementById("inp-quote").value = data.scripture || "";
@@ -474,6 +487,7 @@ function onLiveEdit() {
 
   liveDripMap[currentMonth] = {
     month: currentMonth,
+    subject: document.getElementById("inp-subject").value.trim(),
     theme: document.getElementById("inp-theme").value.trim(),
     message: document.getElementById("inp-msg").value.trim(),
     scripture: document.getElementById("inp-quote").value.trim(),
@@ -575,7 +589,6 @@ function renderPreview() {
     finalHtml = finalHtml.replace(new RegExp(`{{GRID${i}}}`, 'g'), gImg);
   }
 
-  // Isolate in iframe to prevent any CSS leaking into dashboard
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
   doc.write(finalHtml);
@@ -596,6 +609,7 @@ function clearCustomHtml() {
 
 function resetTab1Defaults() {
   const label = getCalendarMonthLabel(currentMonth);
+  document.getElementById("inp-subject").value = `Monthly Encouragement (${label}) • Timeless Creations`;
   document.getElementById("inp-theme").value = "Elder Jeffrey R. Holland";
   document.getElementById("inp-msg").value = `May your faith be strengthened as you serve and invite others during ${label}.`;
   document.getElementById("inp-quote").value = "Trust in the Lord with all thine heart; and lean not unto thine own understanding.";
@@ -651,10 +665,14 @@ Strict Design & Technical Specifications:
 
 You MUST include these dynamic Handlebar placeholders in this EXACT chronological order:
 1. Message Section: Salutation (Hello {{NAME}},) and Encouragement Body ({{MESSAGE}}), followed by the Scripture Section ("{{SCRIPTURE}}" cited by {{THEME}}).
-2. Missionary Essentials Section: Two items ({{ESS1_NAME}}, {{ESS1_IMG}}, {{ESS2_NAME}}, {{ESS2_IMG}}).
-3. Highlight / Products of the Month Section: Container with style="{{HIGHLIGHT_DISPLAY}}" containing {{HIGHLIGHT_ITEMS_HTML}}.
-4. Community Archive Gallery Section: 9-Grid photos ({{GRID1}} through {{GRID9}}) and Gallery Link ({{GALLERY_URL}}).
-5. Rewards & Points Tracker Section: {{REWARD_SECTION_HTML}}
+2. Transition Zone: Include this exact text container:
+   <div style="margin: 25px 0; padding: 15px 10px; font-style: italic; color: #8c7e5d; font-size: 13px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; text-align: center;">
+     As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
+   </div>
+3. Missionary Essentials Section: Two items ({{ESS1_NAME}}, {{ESS1_IMG}}, {{ESS2_NAME}}, {{ESS2_IMG}}).
+4. Highlight / Products of the Month Section: Container with style="{{HIGHLIGHT_DISPLAY}}" containing {{HIGHLIGHT_ITEMS_HTML}}.
+5. Community Archive Gallery Section: 9-Grid photos ({{GRID1}} through {{GRID9}}) and Gallery Link ({{GALLERY_URL}}).
+6. Rewards & Points Tracker Section: {{REWARD_SECTION_HTML}}
 
 Return ONLY the clean, raw HTML code with zero markdown wrapper blocks so it can be pasted directly into our template editor.`;
 
@@ -690,6 +708,7 @@ async function saveActiveMonth(sectionName = 'global') {
       body: JSON.stringify({
         action: "save_drip",
         month: currentMonth,
+        subject: data.subject,
         theme: data.theme,
         scripture: data.scripture,
         message: data.message,

@@ -22,7 +22,6 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    // Validate Meta Webhook Signature
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
     if (process.env.FB_APP_SECRET && !verifyFbSignature(req, rawBody)) {
       console.warn("⚠️ Unauthorized webhook signature rejected.");
@@ -34,11 +33,18 @@ export default async function handler(req, res) {
       try {
         for (const entry of body.entry || []) {
           for (const event of entry.messaging || entry.standby || []) {
+            // Ignore bot message echoes / deliveries / read receipts
+            if (event?.message?.is_echo || event?.delivery || event?.read) {
+              continue;
+            }
+
             if (event?.sender?.id) {
               const psid = event.sender.id;
               const text = event.message?.text || '';
-              const payload = event.postback?.payload || event.message?.quick_reply?.payload || null;
+              // Extract quick reply payload or button postback payload
+              const payload = event.message?.quick_reply?.payload || event.postback?.payload || null;
               const ref = event.referral?.ref || event.postback?.referral?.ref || '';
+
               await handleBotMessage(psid, text, payload, ref);
             }
           }

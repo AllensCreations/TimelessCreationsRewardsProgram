@@ -88,6 +88,7 @@
 let allLogs = [];
 let currentFilter = 'ALL';
 
+window.loadDetailedLogs = loadDetailedLogs;
 async function loadDetailedLogs() {
   try {
     const res = await fetch('/api/main?action=get_system_logs&limit=150');

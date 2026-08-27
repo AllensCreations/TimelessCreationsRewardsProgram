@@ -9,8 +9,8 @@
 <script src="/assets/app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-  .grid-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
-  @media(min-width: 1024px) { .grid-layout { grid-template-columns: 1.25fr 440px; } }
+  .grid-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; width: 100%; }
+  @media(min-width: 1024px) { .grid-layout { grid-template-columns: 1.2fr 440px; } }
 
   .mode-switch-row { display: flex; gap: 8px; margin-bottom: 12px; }
   .mode-switch-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 0.72rem; cursor: pointer; text-align: center; }
@@ -42,7 +42,6 @@
   .preview-wrapper { width: 100%; position: sticky; top: 70px; }
   .invoice-preview-card {
     width: 100%;
-    max-width: 100%;
     background: #ffffff;
     color: #1c1917;
     padding: 20px 16px;
@@ -64,9 +63,20 @@
   .inv-table th { background: #fdfaf3; border-bottom: 1px solid #e7d8b8; padding: 5px 6px; text-align: left; color: #78716c; }
   .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; }
 
-  .status-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 0.65rem; outline: none; }
+  .status-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 0.68rem; outline: none; }
   .status-select.pending { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .status-select.paid { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+  /* Full-width Name styling */
+  .full-customer-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text);
+    word-break: break-word;
+    white-space: normal;
+    display: block;
+    line-height: 1.4;
+  }
 </style>
 </head>
 <body>
@@ -104,8 +114,8 @@
 
           <div id="recipient-custom-box" style="display:none;">
             <div class="form-group">
-              <label class="form-label">Customer Name</label>
-              <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Maria Santos" oninput="handleCustomInput()"/>
+              <label class="form-label">Customer Full Name</label>
+              <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Sister Maria Santos or John Doe" oninput="handleCustomInput()"/>
             </div>
             <div class="form-group">
               <label class="form-label">Email Address</label>
@@ -161,7 +171,7 @@
       <!-- Fluid Live Preview -->
       <div class="preview-wrapper">
         <div class="card" style="padding:12px;">
-          <h4 style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; text-transform:uppercase;">✦ Live Mobile Invoice Preview</h4>
+          <h4 style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; text-transform:uppercase;">✦ Live Invoice Preview</h4>
           <div class="invoice-preview-card" id="invoice-node">
             <div>
               <div class="inv-header">
@@ -230,8 +240,8 @@
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <div>
-          <h3 style="font-size:0.95rem; color:var(--gold);">📜 Unified Transactions &amp; Rewards Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Manage statuses and click <strong>✏️ Edit</strong> to bundle items or modify orders.</p>
+          <h3 style="font-size:0.95rem; color:var(--gold);">📜 Transactions &amp; Rewards Claims</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Full customer view with status dispatches and custom item bundling.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
@@ -240,16 +250,14 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Type</th>
-              <th>Customer</th>
-              <th>Details / Items</th>
+              <th style="min-width:140px;">Customer Name</th>
+              <th>Email</th>
               <th style="text-align:center;">Status</th>
               <th style="text-align:center;">Actions</th>
             </tr>
           </thead>
           <tbody id="unified-tbody">
-            <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">Loading transactions...</td></tr>
+            <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Loading transactions...</td></tr>
           </tbody>
         </table>
       </div>
@@ -359,10 +367,8 @@ function renderUnifiedTable() {
   orders.forEach(o => {
     combined.push({
       id: o.order_id,
-      type: 'Reward Claim',
       name: o.name || 'Anonymous',
       email: o.email || '—',
-      details: `🎁 ${o.item} (${o.points_cost} PTS)`,
       status: (o.status || 'PENDING').toUpperCase(),
       raw: o,
       isOrder: true
@@ -370,17 +376,10 @@ function renderUnifiedTable() {
   });
 
   cashInvoices.forEach(inv => {
-    let summary = 'Custom Order';
-    try {
-      const parsed = JSON.parse(inv.items_json);
-      summary = parsed.map(i => `${i.qty}x ${i.name}`).join(', ');
-    } catch(_) {}
     combined.push({
       id: inv.invoice_id,
-      type: 'Cash Invoice',
       name: inv.name,
       email: inv.email || '—',
-      details: `${summary} (₱${Number(inv.total_amount).toFixed(2)})`,
       status: (inv.status || 'PENDING').toUpperCase(),
       raw: inv,
       isOrder: false
@@ -390,7 +389,7 @@ function renderUnifiedTable() {
   combined.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
 
   if (!combined.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No transactions found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">No transactions found.</td></tr>';
     return;
   }
 
@@ -399,16 +398,17 @@ function renderUnifiedTable() {
     const statusClass = isPaid ? 'paid' : 'pending';
     return `
       <tr>
-        <td style="font-weight:bold; color:var(--gold);">${item.id}</td>
-        <td><span style="font-size:0.6rem; padding:2px 6px; border-radius:4px; background:var(--surface2); border:1px solid var(--border);">${item.type}</span></td>
-        <td style="font-weight:600;">${item.name}</td>
-        <td>${item.details}</td>
+        <td>
+          <span class="full-customer-name">${item.name}</span>
+          <span style="font-size:0.65rem; color:var(--muted); font-family:'DM Mono',monospace;">${item.id}</span>
+        </td>
+        <td style="color:var(--muted); font-size:0.75rem;">${item.email}</td>
         <td style="text-align:center;">
           <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
             <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
             <option value="PAID" ${isPaid ? 'selected' : ''}>PAID</option>
-            <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY</option>
-            <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT</option>
+            <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
+            <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
             <option value="DELIVERED" ${item.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
           </select>
         </td>
@@ -446,7 +446,7 @@ async function updateStatus(id, isOrder, newStatus) {
 }
 
 async function deleteTransaction(id, isOrder, name) {
-  if (!confirm(`Permanently delete transaction ${id} for ${name}?`)) return;
+  if (!confirm(`Permanently delete transaction for ${name}?`)) return;
   const actionName = isOrder ? 'delete_order' : 'delete_invoice';
   const idKey = isOrder ? 'order_id' : 'invoice_id';
 

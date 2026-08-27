@@ -28,9 +28,20 @@
     .cohort-pill { font-size: 0.62rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .cohort-elder { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
     .cohort-sister { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
+
+    /* Batch Toolbar */
+    .batch-toolbar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #151824; border-top: 1px solid var(--gold);
+      padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 999;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.8); transform: translateY(100%); transition: transform 0.3s ease;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .batch-toolbar.active { transform: translateY(0); }
+    .select-checkbox { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; display: none; }
+    .select-mode-active .select-checkbox { display: inline-block; }
   </style>
 </head>
-<body>
+<body id="body-root">
 
 <div class="container">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
@@ -38,16 +49,19 @@
       <h2 style="color:var(--gold); font-size:1.25rem;">Missionaries Roster</h2>
       <p style="font-size:0.72rem; color:var(--muted);">Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered.</p>
     </div>
-    <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Refresh List</button>
+    <div style="display:flex; gap:6px;">
+      <button class="btn btn-dark" id="toggle-select-mode" onclick="toggleSelectMode()" style="padding:6px 10px; font-size:0.72rem;">☑️ Select Mode</button>
+      <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Sync</button>
+    </div>
   </div>
 
   <div class="card" style="padding:12px;">
     <div style="display:flex; flex-direction:column; gap:8px;">
       <input class="form-input" id="search-box" placeholder="Search missionary name, email, or code..."/>
       <div class="tab-bar" style="margin-bottom:0; padding-bottom:0;">
-        <button class="btn btn-gold tab-btn" onclick="filterType('all', this)" style="padding:6px 12px; font-size:0.72rem;">All</button>
-        <button class="btn btn-dark tab-btn" onclick="filterType('elder', this)" style="padding:6px 12px; font-size:0.72rem;">Elders (24M)</button>
-        <button class="btn btn-dark tab-btn" onclick="filterType('sister', this)" style="padding:6px 12px; font-size:0.72rem;">Sisters (18M)</button>
+        <button class="btn btn-gold tab-btn" onclick="filterType('all', this)">All</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('elder', this)">Elders</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('sister', this)">Sisters</button>
       </div>
     </div>
   </div>
@@ -63,6 +77,78 @@
   </div>
 </div>
 
+<!-- Floating Batch Toolbar -->
+<div class="batch-toolbar" id="batch-toolbar">
+  <div style="display:flex; gap:8px; align-items:center;">
+    <span style="font-size:0.74rem; color:var(--gold); font-weight:bold;" id="selected-count-label">0 Selected</span>
+    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="selectAllVisible()">All</button>
+    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="deselectAll()">None</button>
+  </div>
+  <div style="display:flex; gap:6px;">
+    <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem;" onclick="promptBulkAddPoints()">⭐ Add Points</button>
+    <button class="btn-danger" style="padding:5px 10px; font-size:0.68rem; border-radius:4px;" onclick="promptBulkDelete()">🗑️ Delete</button>
+  </div>
+</div>
+
+<!-- Edit Missionary Modal -->
+<div class="modal-overlay" id="edit-missionary-modal">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h3 style="color:var(--gold); font-size:1.05rem;" id="modal-missionary-heading">Edit Missionary Profile</h3>
+      <button onclick="closeMissionaryModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="edit-m-original-email">
+
+    <div class="form-group">
+      <label class="form-label">Title &amp; Name</label>
+      <input type="text" id="edit-m-name" class="form-input" placeholder="e.g. Elder Smith">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email (@missionary.org)</label>
+      <input type="email" id="edit-m-email" class="form-input" placeholder="name@missionary.org">
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div class="form-group">
+        <label class="form-label">Cohort</label>
+        <select id="edit-m-cohort" class="form-select">
+          <option value="elder">Elder (24M)</option>
+          <option value="sister">Sister (18M)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Batch Month</label>
+        <input type="text" id="edit-m-batch" class="form-input" placeholder="August 2026">
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div class="form-group">
+        <label class="form-label">Points Balance</label>
+        <input type="number" id="edit-m-points" class="form-input" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Referral Code</label>
+        <input type="text" id="edit-m-code" class="form-input">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select id="edit-m-status" class="form-select">
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+      <button class="btn btn-secondary" onclick="closeMissionaryModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveMissionaryChanges()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let state = {
   missionaries: [],
@@ -70,7 +156,9 @@ let state = {
   currentFilter: 'all',
   searchQuery: '',
   page: 1,
-  pageSize: 30
+  pageSize: 30,
+  selectMode: false,
+  selectedEmails: new Set()
 };
 
 window.renderRoster = () => {
@@ -100,13 +188,59 @@ async function loadRoster(force = false) {
       document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
       applyFilterAndRender();
     } else {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">No missionaries found in database.</div>';
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">No missionaries found.</div>';
     }
   } catch (err) {
     if (!cached) {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red); font-size:0.8rem;">Error loading missionaries from database.</div>';
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red); font-size:0.8rem;">Error loading missionaries.</div>';
     }
   }
+}
+
+function toggleSelectMode() {
+  state.selectMode = !state.selectMode;
+  const btn = document.getElementById('toggle-select-mode');
+  const toolbar = document.getElementById('batch-toolbar');
+  const root = document.getElementById('body-root');
+
+  if (state.selectMode) {
+    btn.textContent = "☑️ Select: ON";
+    btn.className = "btn btn-gold";
+    root.classList.add("select-mode-active");
+    toolbar.classList.add("active");
+  } else {
+    btn.textContent = "☑️ Select Mode";
+    btn.className = "btn btn-dark";
+    root.classList.remove("select-mode-active");
+    toolbar.classList.remove("active");
+    state.selectedEmails.clear();
+    updateSelectedCount();
+  }
+  renderPaginatedCards();
+}
+
+function selectAllVisible() {
+  state.filteredList.forEach(m => state.selectedEmails.add(m.email.toLowerCase()));
+  renderPaginatedCards();
+  updateSelectedCount();
+}
+
+function deselectAll() {
+  state.selectedEmails.clear();
+  renderPaginatedCards();
+  updateSelectedCount();
+}
+
+function toggleCheckbox(email, e) {
+  e.stopPropagation();
+  const cleanEmail = email.toLowerCase();
+  if (state.selectedEmails.has(cleanEmail)) state.selectedEmails.delete(cleanEmail);
+  else state.selectedEmails.add(cleanEmail);
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  document.getElementById('selected-count-label').textContent = `${state.selectedEmails.size} Selected`;
 }
 
 function filterType(type, btn) {
@@ -148,6 +282,116 @@ function changePage(delta) {
   renderPaginatedCards();
 }
 
+// Edit Modal Functions
+function openEditMissionaryModal(email) {
+  const m = state.missionaries.find(x => x.email.toLowerCase() === email.toLowerCase());
+  if (!m) return;
+
+  document.getElementById('edit-m-original-email').value = m.email;
+  document.getElementById('edit-m-name').value = m.name || '';
+  document.getElementById('edit-m-email').value = m.email || '';
+  document.getElementById('edit-m-cohort').value = (m.cohort || '').toLowerCase().includes('sister') ? 'sister' : 'elder';
+  document.getElementById('edit-m-batch').value = m.batch_month || 'August 2026';
+  document.getElementById('edit-m-points').value = m.points || 0;
+  document.getElementById('edit-m-code').value = m.referral_code || '';
+  document.getElementById('edit-m-status').value = m.status || 'active';
+
+  document.getElementById('edit-missionary-modal').style.display = 'flex';
+}
+
+function closeMissionaryModal() {
+  document.getElementById('edit-missionary-modal').style.display = 'none';
+}
+
+async function saveMissionaryChanges() {
+  const original_email = document.getElementById('edit-m-original-email').value;
+  const name = document.getElementById('edit-m-name').value.trim();
+  const email = document.getElementById('edit-m-email').value.trim().toLowerCase();
+  const cohort = document.getElementById('edit-m-cohort').value;
+  const batch_month = document.getElementById('edit-m-batch').value.trim();
+  const points = parseInt(document.getElementById('edit-m-points').value, 10) || 0;
+  const referral_code = document.getElementById('edit-m-code').value.trim().toUpperCase();
+  const status = document.getElementById('edit-m-status').value;
+
+  if (!name || !email) {
+    showToast("Name and email are required", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update_missionary",
+        original_email,
+        name,
+        email,
+        cohort,
+        batch_month,
+        points,
+        referral_code,
+        status
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Profile updated successfully!");
+      closeMissionaryModal();
+      loadRoster(true);
+    } else {
+      showToast(data.error || "Failed to update profile", "error");
+    }
+  } catch (err) {
+    showToast("Network error: " + err.message, "error");
+  }
+}
+
+async function promptBulkAddPoints() {
+  if (state.selectedEmails.size === 0) {
+    showToast("No missionaries selected.", "error");
+    return;
+  }
+  const pts = prompt(`Enter points delta for ${state.selectedEmails.size} selected missionaries:`, "5");
+  if (pts === null) return;
+  const delta = parseInt(pts, 10);
+  if (isNaN(delta)) return;
+
+  for (const email of state.selectedEmails) {
+    try {
+      await fetch("/api/main", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_missionary_points", email, delta })
+      });
+    } catch (_) {}
+  }
+  showToast(`Updated points for ${state.selectedEmails.size} missionaries!`);
+  loadRoster(true);
+}
+
+async function promptBulkDelete() {
+  if (state.selectedEmails.size === 0) {
+    showToast("No missionaries selected.", "error");
+    return;
+  }
+  if (!confirm(`Delete ${state.selectedEmails.size} selected missionaries?`)) return;
+
+  for (const email of state.selectedEmails) {
+    try {
+      await fetch("/api/main", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_missionary", email })
+      });
+    } catch (_) {}
+  }
+  showToast(`Deleted ${state.selectedEmails.size} missionaries.`);
+  state.selectedEmails.clear();
+  updateSelectedCount();
+  loadRoster(true);
+}
+
 async function deleteMissionary(email, name) {
   if (!confirm(`Permanently remove ${name} (${email})?`)) return;
   try {
@@ -159,9 +403,7 @@ async function deleteMissionary(email, name) {
     const data = await res.json();
     if (data.ok) {
       showToast(`Removed ${name} from roster.`);
-      state.missionaries = state.missionaries.filter(m => m.email.toLowerCase() !== email.toLowerCase());
-      LocalStore.set('missionaries', state.missionaries);
-      applyFilterAndRender();
+      loadRoster(true);
     }
   } catch (err) {
     showToast("Error deleting missionary", "error");
@@ -191,10 +433,12 @@ function renderPaginatedCards() {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
     const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
     const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
+    const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
     return `
       <div class="missionary-card">
         <div class="card-main-row" onclick="this.closest('.missionary-card').classList.toggle('open')">
+          <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
           <div style="flex:1;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
               <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
@@ -209,9 +453,11 @@ function renderPaginatedCards() {
 
         <div class="card-details">
           <div>🏷️ <strong>Referral Code:</strong> ${m.referral_code || 'N/A'}</div>
-          <div>📩 <strong>Dispatches Sent:</strong> ${sentCount} of ${totalMonths} months</div>
-          <div style="margin-top:10px; display:flex; justify-content:flex-end;">
-            <button class="btn btn-danger" style="padding:4px 10px; font-size:0.68rem; min-height:30px;" onclick="deleteMissionary('${m.email}', '${m.name || 'Missionary'}')">🗑️ Delete</button>
+          <div>📩 <strong>Dispatches Sent:</strong> ${sentCount} of ${totalMonths} months (${m.batch_month || 'August 2026'})</div>
+          <div>⚡ <strong>Status:</strong> <span style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span></div>
+          <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditMissionaryModal('${m.email}')">✏️ Edit</button>
+            <button class="btn-danger" style="padding:4px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteMissionary('${m.email}', '${m.name || 'Missionary'}')">🗑️ Delete</button>
           </div>
         </div>
       </div>

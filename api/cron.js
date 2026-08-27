@@ -4,7 +4,10 @@ import { sendDripEmail } from '../lib/mailer.js';
 
 export default async function handler(req, res) {
   const authHeader = req.headers?.authorization || req.query?.key;
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}` && authHeader !== process.env.CRON_SECRET) {
+  if (!process.env.CRON_SECRET) {
+    return res.status(500).json({ ok: false, error: "CRON_SECRET not configured — refusing to run." });
+  }
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && authHeader !== process.env.CRON_SECRET) {
     return res.status(401).json({ ok: false, error: "Unauthorized cron execution." });
   }
 
@@ -14,7 +17,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "System is in sleep mode. No drips sent." });
     }
 
-    // 28 Elders per hourly trigger (Case-Insensitive cohort check)
     const dueElders = await runSql(`
       SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
@@ -29,7 +31,6 @@ export default async function handler(req, res) {
       LIMIT 28
     `);
 
-    // 28 Sisters per hourly trigger (Case-Insensitive cohort check)
     const dueSisters = await runSql(`
       SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 

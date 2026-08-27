@@ -10,8 +10,8 @@
     <style>
       .rewards-preview-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 14px;
         margin-top: 14px;
       }
       .reward-catalog-card {
@@ -22,49 +22,59 @@
         display: flex;
         flex-direction: column;
         box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        transition: transform 0.2s, border-color 0.2s;
       }
-      .reward-catalog-card:hover { border-color: var(--gold); transform: translateY(-3px); }
       .reward-img-box {
         width: 100%;
         aspect-ratio: 1 / 1;
         background: #08080d;
         overflow: hidden;
-        position: relative;
         border-bottom: 1px solid var(--border);
       }
-      .reward-img-box img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-      .reward-info-pad {
-        padding: 14px;
+      .reward-img-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .reward-info-pad { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; justify-content: space-between; }
+
+      /* Mobile-Friendly Collapsible Promo Code Cards */
+      .promo-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        margin-bottom: 10px;
         display: flex;
         flex-direction: column;
         gap: 6px;
-        flex: 1;
-        justify-content: space-between;
       }
-      .data-table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
-      .data-table th { padding: 10px 12px; background: var(--surface2); color: var(--muted); text-align: left; font-size: 0.62rem; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-      .data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-
-      /* Modal Grid */
-      .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; overflow-y: auto; padding: 10px 0; max-height: 45vh; }
-      .modal-img-card { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; cursor: pointer; }
-      .modal-img-card:hover { border-color: var(--gold); }
-      .modal-img-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .promo-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .promo-code-title {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: var(--gold);
+      }
+      .promo-details-collapse {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--border);
+        font-size: 0.74rem;
+        color: var(--muted);
+      }
+      .promo-card.open .promo-details-collapse { display: flex; }
     </style>
 </head>
 <body>
 
 <div class="container">
   <div class="tab-bar">
-    <button class="tab-btn active" id="tab-rewards-btn" onclick="switchBotTab('rewards')">🎁 Reward Catalog Carousel</button>
-    <button class="tab-btn" id="tab-promos-btn" onclick="switchBotTab('promos')">🎟️ Freebie Promo Codes</button>
-    <button class="btn btn-dark" style="margin-left:auto; padding:6px 12px; font-size:0.72rem;" onclick="syncPersistentMenu()">📱 Sync Facebook Menu</button>
+    <button class="tab-btn active" id="tab-rewards-btn" onclick="switchBotTab('rewards')">🎁 Reward Catalog</button>
+    <button class="tab-btn" id="tab-promos-btn" onclick="switchBotTab('promos')">🎟️ Freebie Promos</button>
+    <button class="btn btn-dark" style="margin-left:auto; padding:6px 12px; font-size:0.72rem;" onclick="syncPersistentMenu()">📱 Sync FB Menu</button>
   </div>
 
   <!-- Rewards Tab -->
@@ -88,27 +98,13 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
         <div>
           <h3 style="font-size:1.05rem; color:var(--gold); margin-bottom:2px;">🎟️ Freebie Promo Codes</h3>
-          <p style="font-size:0.7rem; color:var(--muted);">Create codes missionaries can type in Messenger (e.g. <code>/redeem CODE</code>).</p>
+          <p style="font-size:0.7rem; color:var(--muted);">Tap any promo card to expand details and copy snippets.</p>
         </div>
-        <button class="btn btn-gold" onclick="openPromoModal()">+ Create Promo Code</button>
+        <button class="btn btn-gold" onclick="openPromoModal()">+ Create Promo</button>
       </div>
 
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Points</th>
-              <th>Cap</th>
-              <th>Claimed</th>
-              <th>Announcement Snippet</th>
-              <th style="text-align:center;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="promo-tbody">
-            <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">Loading promo codes...</td></tr>
-          </tbody>
-        </table>
+      <div id="promo-cards-container">
+        <div style="text-align:center; padding:20px; color:var(--muted); font-size:0.75rem;">Loading promo codes...</div>
       </div>
     </div>
   </div>
@@ -122,18 +118,12 @@
             <button onclick="closeProductModal()" class="modal-close-btn">✕</button>
         </div>
         <input type="hidden" id="modal-item-index">
-        <div class="form-group">
-            <label class="form-label">Reward Item Name</label>
-            <input type="text" id="modal-prod-name" class="form-input" placeholder="e.g. Temple Keychain">
-        </div>
-        <div class="form-group">
-            <label class="form-label">Cost in Points</label>
-            <input type="number" id="modal-prod-price" class="form-input" placeholder="e.g. 6">
-        </div>
+        <div class="form-group"><label class="form-label">Reward Item Name</label><input type="text" id="modal-prod-name" class="form-input" placeholder="e.g. Temple Keychain"></div>
+        <div class="form-group"><label class="form-label">Cost in Points</label><input type="number" id="modal-prod-price" class="form-input" placeholder="e.g. 6"></div>
         <div class="form-group" style="text-align:center;">
             <label class="form-label" style="text-align:left;">Reward Image (1:1 Square)</label>
             <input type="hidden" id="modal-prod-img" value="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png">
-            <div style="width:130px; height:130px; margin:8px auto; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+            <div style="width:120px; height:120px; margin:8px auto; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
               <img id="modal-preview-box" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" style="width:100%; height:100%; object-fit:cover;" alt="Preview">
             </div>
             <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
@@ -221,7 +211,6 @@ async function loadInitialData(forceFetch = false) {
     renderGrid();
     return;
   }
-
   try {
     const res = await fetch("/api/main?action=get_products&type=reward").then(r => r.json());
     if (res.ok) {
@@ -229,9 +218,7 @@ async function loadInitialData(forceFetch = false) {
       LocalStore.set('temp_products', localItems);
       renderGrid();
     }
-  } catch(e) {
-    document.getElementById("products-grid").innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">Error loading items.</div>';
-  }
+  } catch(e) {}
 }
 
 function renderGrid() {
@@ -252,7 +239,7 @@ function renderGrid() {
         </div>
         <div style="display:flex; gap:6px; margin-top:10px;">
           <button class="btn btn-dark" style="flex:1; padding:6px; font-size:0.68rem;" onclick="openProductModal(${idx})">✏️ Edit</button>
-          <button class="btn btn-danger" style="padding:6px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteLocalItem(${idx})">🗑️</button>
+          <button class="btn-danger" style="padding:6px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteLocalItem(${idx})">🗑️</button>
         </div>
       </div>
     </div>
@@ -264,31 +251,35 @@ async function loadPromoCodes() {
     const res = await fetch("/api/main?action=get_promo_codes").then(r => r.json());
     if (res.ok) {
       promoCodesList = res.promo_codes || [];
-      renderPromoTable();
+      renderPromoCards();
     }
   } catch (e) {}
 }
 
-function renderPromoTable() {
-  const tbody = document.getElementById("promo-tbody");
+function renderPromoCards() {
+  const container = document.getElementById("promo-cards-container");
   if (!promoCodesList.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No promo codes created yet.</td></tr>';
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:0.75rem;">No promo codes created yet.</div>';
     return;
   }
-  tbody.innerHTML = promoCodesList.map(p => {
+
+  container.innerHTML = promoCodesList.map(p => {
     const snippet = `Type /redeem ${p.code} to get free points worth ${p.points}`;
     return `
-      <tr>
-        <td style="font-weight:bold; color:var(--gold); font-family:'DM Mono',monospace;">${p.code}</td>
-        <td><strong>+${p.points} PTS</strong></td>
-        <td>${p.max_users}</td>
-        <td><span style="color:${p.claimed_count >= p.max_users ? 'var(--red)' : 'var(--green)'}; font-weight:bold;">${p.claimed_count}/${p.max_users}</span></td>
-        <td><code style="background:var(--bg); padding:3px 6px; border-radius:4px; font-size:0.62rem; color:var(--gold2);">${snippet}</code></td>
-        <td style="text-align:center; white-space:nowrap;">
-          <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.65rem;" onclick="navigator.clipboard.writeText('${snippet}').then(() => showToast('Snippet copied!'))">📋 Copy</button>
-          <button class="btn-danger" style="padding:4px 8px; font-size:0.65rem; border-radius:4px; margin-left:4px;" onclick="deletePromo('${p.code}')">🗑️</button>
-        </td>
-      </tr>
+      <div class="promo-card" onclick="this.classList.toggle('open')">
+        <div class="promo-header-row">
+          <span class="promo-code-title">🎟️ ${p.code}</span>
+          <span style="font-size:0.72rem; color:var(--gold); font-weight:bold;">+${p.points} PTS (Tap to view ▾)</span>
+        </div>
+        <div class="promo-details-collapse">
+          <div>👥 <strong>Claim Cap:</strong> <span style="color:${p.claimed_count >= p.max_users ? 'var(--red)' : 'var(--green)'};">${p.claimed_count}/${p.max_users} claimed</span></div>
+          <div>💬 <strong>Messenger Snippet:</strong> <code style="background:var(--bg); padding:3px 6px; border-radius:4px; color:var(--gold2);">${snippet}</code></div>
+          <div style="display:flex; gap:6px; margin-top:6px; justify-content:flex-end;" onclick="event.stopPropagation()">
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="navigator.clipboard.writeText('${snippet}').then(() => showToast('Snippet copied!'))">📋 Copy Snippet</button>
+            <button class="btn-danger" style="padding:4px 8px; font-size:0.65rem; border-radius:4px;" onclick="deletePromo('${p.code}')">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
     `;
   }).join('');
 }

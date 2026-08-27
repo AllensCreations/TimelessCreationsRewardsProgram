@@ -85,8 +85,9 @@
   .status-select.pending{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
   .status-select.paid{border-color:var(--green);color:var(--green);background:var(--green-dim);}
 
-  .modal-overlay{position:fixed;inset:0;background:rgba(5,5,8,0.85);backdrop-filter:blur(6px);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px;}
-  .modal-content{background:var(--surface);border:1px solid var(--gold);border-radius:12px;padding:24px;max-width:540px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.8);max-height:90vh;overflow-y:auto;}
+  /* Gorgeous Dark-Gold Modal Styling */
+  .modal-overlay{position:fixed;inset:0;background:rgba(5,5,10,0.85);backdrop-filter:blur(8px);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px;}
+  .modal-content{background:#12131d;border:1px solid rgba(201,168,76,0.4);border-radius:14px;padding:28px;max-width:580px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.9);max-height:90vh;overflow-y:auto;}
 </style>
 </head>
 <body>
@@ -94,7 +95,7 @@
 <div class="container">
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Generate Invoice</button>
-    <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Transactions &amp; Claims <span id="trans-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
+    <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Unified Transactions &amp; Claims <span id="trans-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
     <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash Product Catalog</button>
   </div>
 
@@ -264,7 +265,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <div>
           <h3>📜 Unified Transactions &amp; Rewards Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">All rewards claims and cash invoices in one place. Click <strong>✏️ Edit / Add Items</strong> to bundle extra items or modify orders.</p>
+          <p style="font-size:0.68rem; color:var(--muted);">All rewards claims and cash invoices in one place. Click <strong>✏️ Edit / Add Items</strong> to bundle extra items, or trash to delete.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
       </div>
@@ -277,7 +278,7 @@
             <th>Email</th>
             <th>Details / Items</th>
             <th style="text-align:center;">Status</th>
-            <th style="text-align:center;">Action</th>
+            <th style="text-align:center;">Actions</th>
           </tr>
         </thead>
         <tbody id="unified-tbody">
@@ -311,7 +312,7 @@
   </div>
 </div>
 
-<!-- Edit / Add Items Modal with Confirmation Popup -->
+<!-- Edit / Add Items Modal -->
 <div class="modal-overlay" id="edit-transaction-modal">
   <div class="modal-content">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -480,10 +481,14 @@ function renderUnifiedTable() {
           <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
             <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
             <option value="PAID" ${isPaid ? 'selected' : ''}>PAID</option>
+            <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
+            <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
+            <option value="DELIVERED" ${item.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
           </select>
         </td>
-        <td style="text-align:center;">
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.65rem;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit / Add Items</button>
+        <td style="text-align:center; display:flex; gap:6px; justify-content:center;">
+          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.65rem;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
+          <button class="btn-danger" style="padding:4px 8px;font-size:0.65rem;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
         </td>
       </tr>
     `;
@@ -491,7 +496,7 @@ function renderUnifiedTable() {
 }
 
 async function updateStatus(id, isOrder, newStatus) {
-  if ((newStatus === 'PAID' || newStatus === 'COMPLETED') && !confirm(`Confirm status change to PAID and trigger notification email for ${id}?`)) {
+  if (!confirm(`Confirm status change to [${newStatus}] and trigger automated notification email for ${id}?`)) {
     renderUnifiedTable();
     return;
   }
@@ -507,11 +512,33 @@ async function updateStatus(id, isOrder, newStatus) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Transaction ${id} marked as ${newStatus}!`);
+      showToast(`Transaction ${id} updated to ${newStatus}! Email dispatched.`);
       loadData();
     }
   } catch(e) {
     showToast("Error updating status", "error");
+  }
+}
+
+async function deleteTransaction(id, isOrder, name) {
+  if (!confirm(`Permanently delete transaction ${id} for ${name}?`)) return;
+
+  const actionName = isOrder ? 'delete_order' : 'delete_invoice';
+  const idKey = isOrder ? 'order_id' : 'invoice_id';
+
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: actionName, [idKey]: id })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Deleted ${id}`);
+      loadData();
+    }
+  } catch(e) {
+    showToast("Error deleting record", "error");
   }
 }
 
@@ -597,7 +624,7 @@ function recalculateEditTotal() {
 }
 
 function promptSaveConfirmation() {
-  if (!confirm("Are you sure you want to save these bundled changes to the transaction?")) return;
+  if (!confirm("Are you sure you want to save these bundled changes and notify the customer?")) return;
   saveEditedTransaction();
 }
 

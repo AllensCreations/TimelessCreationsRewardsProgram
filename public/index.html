@@ -9,18 +9,44 @@
   <script src="/assets/app.js"></script>
   <style>
     .hero-banner {
-      background: linear-gradient(135deg, rgba(201,168,76,0.12) 0%, rgba(24,27,42,0.85) 100%);
+      background: linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(24,27,42,0.9) 100%);
       border: 1px solid var(--border-gold);
       border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 18px;
+      padding: 22px 18px;
+      margin-bottom: 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
     @media(min-width: 768px) {
-      .hero-banner { flex-direction: row; justify-content: space-between; align-items: center; padding: 26px; }
+      .hero-banner { flex-direction: row; justify-content: space-between; align-items: center; padding: 28px; }
     }
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    @media(min-width: 768px) {
+      .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    }
+    .action-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .action-pill:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+    
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -32,7 +58,7 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 6px;
-      min-height: 48px;
+      min-height: 52px;
       padding: 6px;
       display: flex;
       flex-direction: column;
@@ -47,15 +73,35 @@
 <body>
 
 <div class="container">
+  <!-- Hero Banner -->
   <div class="hero-banner">
     <div>
-      <h1 style="color:var(--gold); font-size:1.35rem; margin-bottom:4px;">Welcome back, Administrator ✨</h1>
+      <h1 style="color:var(--gold); font-size:1.4rem; margin-bottom:4px;">Welcome back, Administrator ✨</h1>
       <p style="font-size:0.78rem; color:var(--muted);">Missionary encouragement and reward dispatch overview.</p>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <a href="/gallery.html" class="btn btn-dark" style="font-size:0.75rem; flex:1; min-width:130px;">🖼️ Gallery</a>
-      <a href="/invoicing.html" class="btn btn-gold" style="font-size:0.75rem; flex:1; min-width:130px;">🧾 Invoicing</a>
+    <div style="display:flex; gap:8px;">
+      <button onclick="triggerGlobalRefresh()" class="btn btn-gold" style="width:100%;">↻ Refresh Live Data</button>
     </div>
+  </div>
+
+  <!-- Quick Actions Grid -->
+  <div class="quick-actions">
+    <a href="/invoicing.html" class="action-pill">
+      <span style="font-size:1.2rem;">🧾</span>
+      <span>Create Invoice</span>
+    </a>
+    <a href="/gallery.html" class="action-pill">
+      <span style="font-size:1.2rem;">🖼️</span>
+      <span>CDN Gallery</span>
+    </a>
+    <a href="/messengerbot.html" class="action-pill">
+      <span style="font-size:1.2rem;">🎁</span>
+      <span>Bot Rewards</span>
+    </a>
+    <a href="/logs.html" class="action-pill">
+      <span style="font-size:1.2rem;">📜</span>
+      <span>Audit Logs</span>
+    </a>
   </div>
 
   <!-- Primary Stat Cards -->
@@ -65,7 +111,7 @@
       <div class="stat-val" id="stat-missionaries">--</div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">Sent Today</div>
+      <div class="stat-label">Dispatched Today</div>
       <div class="stat-val" id="stat-sent-today" style="color:var(--green);">0</div>
     </div>
     <div class="stat-card blue">
@@ -73,17 +119,17 @@
       <div class="stat-val" id="stat-sent-month" style="color:var(--blue);">0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Reward Points</div>
+      <div class="stat-label">Circulating Points</div>
       <div class="stat-val" id="stat-points">--</div>
     </div>
   </div>
 
-  <!-- Heatmap Section -->
+  <!-- Calendar Heatmap Section -->
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; flex-wrap:wrap; gap:8px;">
       <div>
         <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Monthly Drip Dispatch Heatmap</div>
-        <div style="font-size:0.68rem; color:var(--muted);">Visual distribution of emails sent out this month.</div>
+        <div style="font-size:0.68rem; color:var(--muted);">Visual distribution of letters sent out to elders and sisters.</div>
       </div>
       <span id="cal-month-name" style="font-size:0.72rem; color:#fff; font-weight:bold; background:var(--surface2); padding:4px 10px; border-radius:6px; border:1px solid var(--border);"></span>
     </div>
@@ -94,6 +140,7 @@
 <script>
 let dashboardState = { dailyStats: {} };
 
+window.renderFromCache = renderFromCache;
 function renderFromCache() {
   const cachedPayload = LocalStore.get('stats_payload', null);
   if (!cachedPayload) { triggerGlobalRefresh(); return; }
@@ -114,13 +161,13 @@ function renderCalendar() {
   const month = now.getMonth();
   
   const monthEl = document.getElementById('cal-month-name');
-  if (monthEl) monthEl.textContent = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  if (monthEl) monthEl.textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   const container = document.getElementById('calendar-grid');
   if (!container) return;
   container.innerHTML = '';
 
-  const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   daysOfWeek.forEach(d => {
     const el = document.createElement('div');
     el.className = 'cal-day-header';

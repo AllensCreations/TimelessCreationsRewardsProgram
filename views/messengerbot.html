@@ -2,91 +2,124 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bot Rewards & Promos | Timeless Creations</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js"></script>
     <style>
-      .card-img-wrap { width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
-      .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 1 / 1; display: block; }
-      
-      .modal-overlay { position: fixed; inset: 0; background: rgba(5, 5, 8, 0.85); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-      .modal-content { background: var(--surface); border: 1px solid var(--gold); border-radius: 12px; padding: 24px; max-width: 440px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.8); }
-      .img-preview-box { width: 140px; height: 140px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); margin: 8px auto 0; background: var(--surface2); display: block; }
-      
-      .save-banner { position: sticky; bottom: 20px; background: var(--surface2); border: 1px solid var(--gold); padding: 14px 22px; border-radius: var(--radius); display: none; justify-content: space-between; align-items: center; margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 80; }
-      .data-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+      .rewards-preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+        margin-top: 14px;
+      }
+      .reward-catalog-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        transition: transform 0.2s, border-color 0.2s;
+      }
+      .reward-catalog-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+      .reward-img-box {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: #08080d;
+        overflow: hidden;
+        position: relative;
+        border-bottom: 1px solid var(--border);
+      }
+      .reward-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .reward-info-pad {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+        justify-content: space-between;
+      }
+      .data-table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
       .data-table th { padding: 10px 12px; background: var(--surface2); color: var(--muted); text-align: left; font-size: 0.62rem; text-transform: uppercase; border-bottom: 1px solid var(--border); }
       .data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
 
-      /* Nested Gallery Modal */
+      /* Modal Grid */
       .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; overflow-y: auto; padding: 10px 0; max-height: 45vh; }
-      .modal-img-card { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; cursor: pointer; transition: transform 0.15s; }
-      .modal-img-card:hover { border-color: var(--gold); transform: scale(1.05); }
+      .modal-img-card { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; cursor: pointer; }
+      .modal-img-card:hover { border-color: var(--gold); }
       .modal-img-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
     </style>
 </head>
 <body>
 
-<div class="container" style="max-width:1100px; margin:20px auto; padding:0 16px 40px;">
-  <div style="display:flex; gap:8px; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:20px;">
-    <button class="btn btn-gold" id="tab-rewards-btn" onclick="switchBotTab('rewards')">🎁 Reward Catalog Carousel</button>
-    <button class="btn btn-secondary" id="tab-promos-btn" onclick="switchBotTab('promos')">🎟️ Freebie Promo Codes</button>
-    <button class="btn btn-dark" style="margin-left:auto;" onclick="syncPersistentMenu()">📱 Sync Facebook Menu</button>
+<div class="container">
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-rewards-btn" onclick="switchBotTab('rewards')">🎁 Reward Catalog Carousel</button>
+    <button class="tab-btn" id="tab-promos-btn" onclick="switchBotTab('promos')">🎟️ Freebie Promo Codes</button>
+    <button class="btn btn-dark" style="margin-left:auto; padding:6px 12px; font-size:0.72rem;" onclick="syncPersistentMenu()">📱 Sync Facebook Menu</button>
   </div>
 
   <!-- Rewards Tab -->
   <div id="pane-rewards">
-    <div class="card" style="border-color: rgba(201,168,76,0.3); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-color:var(--border-gold);">
         <div>
-            <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Instant Messenger Rewards Workspace</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Direct 1:1 image selection from your CDN gallery cache.</div>
+            <h3 style="font-family:'Syne',sans-serif; font-size:1.05rem; color:var(--gold); margin-bottom:2px;">Messenger Reward Catalog Carousel</h3>
+            <p style="font-size:0.7rem; color:var(--muted);">Visual preview of items missionaries see and can claim in Facebook Messenger.</p>
         </div>
         <button class="btn btn-gold" onclick="openProductModal()">+ Add New Reward</button>
     </div>
 
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;" id="products-grid">
-        <div style="color:var(--muted); font-size:0.75rem;">Loading rewards workspace...</div>
+    <div class="rewards-preview-grid" id="products-grid">
+        <div style="color:var(--muted); font-size:0.75rem;">Loading rewards catalog...</div>
     </div>
   </div>
 
   <!-- Promo Codes Tab -->
   <div id="pane-promos" style="display:none;">
-    <div class="card" style="border-color: rgba(201,168,76,0.3);">
+    <div class="card" style="border-color: var(--border-gold);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
         <div>
-          <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">🎟️ Freebie Promo Codes &amp; Email Announcements</div>
-          <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Create codes that missionaries can type in Messenger (e.g. <code>/redeem CODE</code>).</div>
+          <h3 style="font-size:1.05rem; color:var(--gold); margin-bottom:2px;">🎟️ Freebie Promo Codes</h3>
+          <p style="font-size:0.7rem; color:var(--muted);">Create codes missionaries can type in Messenger (e.g. <code>/redeem CODE</code>).</p>
         </div>
         <button class="btn btn-gold" onclick="openPromoModal()">+ Create Promo Code</button>
       </div>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Points Value</th>
-            <th>User Cap</th>
-            <th>Claimed Count</th>
-            <th>Email Announcement Banner Snippet</th>
-            <th style="text-align:center;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="promo-tbody">
-          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading promo codes...</td></tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Points</th>
+              <th>Cap</th>
+              <th>Claimed</th>
+              <th>Announcement Snippet</th>
+              <th style="text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="promo-tbody">
+            <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">Loading promo codes...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Popup for Reward Item (No Textbox for Image) -->
+<!-- Modal Popup for Reward Item -->
 <div class="modal-overlay" id="product-modal">
     <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold);" id="modal-heading">Add Reward Item</div>
-            <button onclick="closeProductModal()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+        <div class="modal-header-row">
+            <div class="modal-title-text" id="modal-heading">Add Reward Item</div>
+            <button onclick="closeProductModal()" class="modal-close-btn">✕</button>
         </div>
         <input type="hidden" id="modal-item-index">
         <div class="form-group">
@@ -100,14 +133,16 @@
         <div class="form-group" style="text-align:center;">
             <label class="form-label" style="text-align:left;">Reward Image (1:1 Square)</label>
             <input type="hidden" id="modal-prod-img" value="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png">
-            <img id="modal-preview-box" class="img-preview-box" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" alt="Preview">
+            <div style="width:130px; height:130px; margin:8px auto; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+              <img id="modal-preview-box" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" style="width:100%; height:100%; object-fit:cover;" alt="Preview">
+            </div>
             <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-              <button type="button" class="btn btn-gold" style="padding:6px 14px; font-size:0.72rem;" onclick="openBotGalleryPicker()">🖼️ Choose from Gallery</button>
-              <button type="button" class="btn btn-dark" style="padding:6px 14px; font-size:0.72rem;" onclick="revertBotDefault()">↺ Default</button>
+              <button type="button" class="btn btn-gold" style="padding:6px 12px; font-size:0.7rem;" onclick="openBotGalleryPicker()">🖼️ Choose from Gallery</button>
+              <button type="button" class="btn btn-dark" style="padding:6px 12px; font-size:0.7rem;" onclick="revertBotDefault()">↺ Default</button>
             </div>
         </div>
-        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
-            <button class="btn btn-dark" onclick="closeProductModal()">Cancel</button>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+            <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
             <button class="btn btn-gold" onclick="applyModalChanges()">✓ Apply Item</button>
         </div>
     </div>
@@ -116,44 +151,34 @@
 <!-- Modal Popup for Promo Code -->
 <div class="modal-overlay" id="promo-modal">
     <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:var(--gold);">Create Promo Code</div>
-            <button onclick="closePromoModal()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+        <div class="modal-header-row">
+            <div class="modal-title-text">Create Promo Code</div>
+            <button onclick="closePromoModal()" class="modal-close-btn">✕</button>
         </div>
-        <div class="form-group">
-            <label class="form-label">Promo Code</label>
-            <input type="text" id="promo-code-input" class="form-input" placeholder="e.g. SPECIALGIFT">
-        </div>
-        <div class="form-group">
-            <label class="form-label">Free Points Equivalent</label>
-            <input type="number" id="promo-points-input" class="form-input" value="2" min="1">
-        </div>
-        <div class="form-group">
-            <label class="form-label">User Claim Cap (Max Users)</label>
-            <input type="number" id="promo-max-input" class="form-input" value="30" min="1">
-        </div>
-        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
-            <button class="btn btn-dark" onclick="closePromoModal()">Cancel</button>
-            <button class="btn btn-gold" onclick="savePromoCode()">💾 Save Promo Code</button>
+        <div class="form-group"><label class="form-label">Promo Code</label><input type="text" id="promo-code-input" class="form-input" placeholder="SPECIALGIFT"></div>
+        <div class="form-group"><label class="form-label">Free Points</label><input type="number" id="promo-points-input" class="form-input" value="2" min="1"></div>
+        <div class="form-group"><label class="form-label">User Claim Cap</label><input type="number" id="promo-max-input" class="form-input" value="30" min="1"></div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+            <button class="btn btn-secondary" onclick="closePromoModal()">Cancel</button>
+            <button class="btn btn-gold" onclick="savePromoCode()">💾 Save</button>
         </div>
     </div>
 </div>
 
 <!-- Gallery Picker Sub-Modal -->
-<div class="modal-overlay" id="bot-gallery-modal" style="z-index:1100;">
-  <div class="modal-content" style="max-width:520px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Pick Reward Graphic</div>
-      <button onclick="document.getElementById('bot-gallery-modal').style.display='none'" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+<div class="modal-overlay" id="bot-gallery-modal" style="z-index:1300;">
+  <div class="modal-content" style="max-width:480px;">
+    <div class="modal-header-row">
+      <div class="modal-title-text">Pick Reward Graphic</div>
+      <button onclick="document.getElementById('bot-gallery-modal').style.display='none'" class="modal-close-btn">✕</button>
     </div>
     <div class="modal-grid" id="bot-gallery-grid"></div>
   </div>
 </div>
 
-<!-- Floating Action Bar for Rewards Syncing -->
 <div class="save-banner" id="save-banner">
-    <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ You have unsaved local edits</span>
-    <button class="btn btn-gold" id="btn-sync-turso" onclick="saveAllToTurso()">💾 Save Changes to Turso</button>
+    <span style="font-size:0.72rem; color:var(--gold); font-weight:bold;">⚡ Unsaved local catalog edits</span>
+    <button class="btn btn-gold" id="btn-sync-turso" onclick="saveAllToTurso()">💾 Save to Turso</button>
 </div>
 
 <script>
@@ -161,31 +186,25 @@ let localItems = [];
 let promoCodesList = [];
 
 async function syncPersistentMenu() {
-  if (typeof showToast === 'function') showToast("Syncing Persistent Menu with Meta Graph API...");
+  showToast("Syncing Persistent Menu with Meta...");
   try {
-    const res = await fetch("/api/main?action=setup_messenger_profile", { method: "POST" });
-    const d = await res.json();
-    if (d.ok) {
-      if (typeof showToast === 'function') showToast("✓ Persistent Menu synced with Facebook!");
-    } else {
-      if (typeof showToast === 'function') showToast("Notice: " + (d.error || "Sync error"), "error");
-    }
-  } catch (e) {
-    if (typeof showToast === 'function') showToast("Network error syncing menu.", "error");
-  }
+    const res = await fetch("/api/main?action=setup_messenger_profile", { method: "POST" }).then(r => r.json());
+    if (res.ok) showToast("✓ Persistent Menu synced!");
+    else showToast("Sync notice: " + (res.error || "Failed"), "error");
+  } catch (e) { showToast("Network error syncing menu.", "error"); }
 }
 
 function switchBotTab(tab) {
   if (tab === 'rewards') {
     document.getElementById('pane-rewards').style.display = 'block';
     document.getElementById('pane-promos').style.display = 'none';
-    document.getElementById('tab-rewards-btn').className = 'btn btn-gold';
-    document.getElementById('tab-promos-btn').className = 'btn btn-secondary';
+    document.getElementById('tab-rewards-btn').className = 'tab-btn active';
+    document.getElementById('tab-promos-btn').className = 'tab-btn';
   } else {
     document.getElementById('pane-rewards').style.display = 'none';
     document.getElementById('pane-promos').style.display = 'block';
-    document.getElementById('tab-rewards-btn').className = 'btn btn-secondary';
-    document.getElementById('tab-promos-btn').className = 'btn btn-gold';
+    document.getElementById('tab-rewards-btn').className = 'tab-btn';
+    document.getElementById('tab-promos-btn').className = 'tab-btn active';
     loadPromoCodes();
   }
 }
@@ -204,10 +223,9 @@ async function loadInitialData(forceFetch = false) {
   }
 
   try {
-    const res = await fetch("/api/main?action=get_products&type=reward");
-    const data = await res.json();
-    if (data.ok) {
-      localItems = data.products || [];
+    const res = await fetch("/api/main?action=get_products&type=reward").then(r => r.json());
+    if (res.ok) {
+      localItems = res.products || [];
       LocalStore.set('temp_products', localItems);
       renderGrid();
     }
@@ -219,22 +237,97 @@ async function loadInitialData(forceFetch = false) {
 function renderGrid() {
   const grid = document.getElementById("products-grid");
   if (!localItems.length) {
-    grid.innerHTML = '<div style="color:var(--muted); font-size:0.75rem;">No reward products. Click "+ Add New Reward" above to create one.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No reward products. Click "+ Add New Reward" above.</div>';
     return;
   }
   grid.innerHTML = localItems.map((p, idx) => `
-    <div class="card" style="display:flex; flex-direction:column; gap:8px; margin-bottom:0;">
-      <div class="card-img-wrap">
-        <img src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" alt="${p.name}">
+    <div class="reward-catalog-card">
+      <div class="reward-img-box">
+        <img src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" alt="${p.name}" loading="lazy">
       </div>
-      <div style="font-weight:bold; font-size:0.85rem; margin-top:4px;">${p.name}</div>
-      <div style="color:var(--gold); font-size:0.72rem; font-weight:bold;">⭐ ${p.price || 0} PTS</div>
-      <div style="display:flex; gap:6px; margin-top:6px;">
-        <button class="btn btn-dark" style="flex:1;" onclick="openProductModal(${idx})">✏️ Edit</button>
-        <button class="btn btn-danger" onclick="deleteLocalItem(${idx})">🗑️</button>
+      <div class="reward-info-pad">
+        <div>
+          <div style="font-weight:bold; font-size:0.88rem; margin-bottom:4px; font-family:'Syne',sans-serif;">${p.name}</div>
+          <div style="color:var(--gold); font-size:0.75rem; font-weight:bold;">⭐ Cost: ${p.price || 0} Points</div>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:10px;">
+          <button class="btn btn-dark" style="flex:1; padding:6px; font-size:0.68rem;" onclick="openProductModal(${idx})">✏️ Edit</button>
+          <button class="btn btn-danger" style="padding:6px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteLocalItem(${idx})">🗑️</button>
+        </div>
       </div>
     </div>
   `).join('');
+}
+
+async function loadPromoCodes() {
+  try {
+    const res = await fetch("/api/main?action=get_promo_codes").then(r => r.json());
+    if (res.ok) {
+      promoCodesList = res.promo_codes || [];
+      renderPromoTable();
+    }
+  } catch (e) {}
+}
+
+function renderPromoTable() {
+  const tbody = document.getElementById("promo-tbody");
+  if (!promoCodesList.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No promo codes created yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = promoCodesList.map(p => {
+    const snippet = `Type /redeem ${p.code} to get free points worth ${p.points}`;
+    return `
+      <tr>
+        <td style="font-weight:bold; color:var(--gold); font-family:'DM Mono',monospace;">${p.code}</td>
+        <td><strong>+${p.points} PTS</strong></td>
+        <td>${p.max_users}</td>
+        <td><span style="color:${p.claimed_count >= p.max_users ? 'var(--red)' : 'var(--green)'}; font-weight:bold;">${p.claimed_count}/${p.max_users}</span></td>
+        <td><code style="background:var(--bg); padding:3px 6px; border-radius:4px; font-size:0.62rem; color:var(--gold2);">${snippet}</code></td>
+        <td style="text-align:center; white-space:nowrap;">
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.65rem;" onclick="navigator.clipboard.writeText('${snippet}').then(() => showToast('Snippet copied!'))">📋 Copy</button>
+          <button class="btn-danger" style="padding:4px 8px; font-size:0.65rem; border-radius:4px; margin-left:4px;" onclick="deletePromo('${p.code}')">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openPromoModal() {
+  document.getElementById("promo-code-input").value = "";
+  document.getElementById("promo-points-input").value = "2";
+  document.getElementById("promo-max-input").value = "30";
+  document.getElementById("promo-modal").style.display = "flex";
+}
+function closePromoModal() { document.getElementById("promo-modal").style.display = "none"; }
+
+async function savePromoCode() {
+  const code = document.getElementById("promo-code-input").value.trim().toUpperCase();
+  const points = document.getElementById("promo-points-input").value;
+  const max_users = document.getElementById("promo-max-input").value;
+  if (!code) { showToast("Promo code required", "error"); return; }
+
+  const res = await fetch("/api/main", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "save_promo_code", code, points, max_users })
+  }).then(r => r.json());
+
+  if (res.ok) {
+    closePromoModal();
+    showToast(`Promo code ${code} saved!`);
+    loadPromoCodes();
+  }
+}
+
+async function deletePromo(code) {
+  if (!confirm(`Delete promo code ${code}?`)) return;
+  await fetch("/api/main", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete_promo_code", code })
+  });
+  loadPromoCodes();
 }
 
 function openProductModal(idx = null) {
@@ -257,9 +350,7 @@ function openProductModal(idx = null) {
   document.getElementById("product-modal").style.display = "flex";
 }
 
-function closeProductModal() {
-  document.getElementById("product-modal").style.display = "none";
-}
+function closeProductModal() { document.getElementById("product-modal").style.display = "none"; }
 
 function openBotGalleryPicker() {
   const modal = document.getElementById("bot-gallery-modal");
@@ -296,16 +387,10 @@ function applyModalChanges() {
   const price = parseInt(document.getElementById("modal-prod-price").value, 10) || 0;
   const image_url = document.getElementById("modal-prod-img").value.trim();
 
-  if (!name) {
-    if (typeof showToast === 'function') showToast("Reward item name is required.", "error");
-    return;
-  }
+  if (!name) { showToast("Reward name required", "error"); return; }
 
-  if (idx !== "") {
-    localItems[Number(idx)] = { name, price, image_url };
-  } else {
-    localItems.push({ name, price, image_url });
-  }
+  if (idx !== "") localItems[Number(idx)] = { name, price, image_url };
+  else localItems.push({ name, price, image_url });
 
   closeProductModal();
   renderGrid();
@@ -320,29 +405,24 @@ function deleteLocalItem(idx) {
 
 async function saveAllToTurso() {
   const btn = document.getElementById("btn-sync-turso");
-  btn.textContent = "⏳ Syncing to Turso...";
+  btn.textContent = "⏳ Syncing...";
   try {
     const res = await fetch("/api/main", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "sync_catalog", type: "reward", products: localItems })
-    });
-    const data = await res.json();
-    if (data.ok) {
+    }).then(r => r.json());
+
+    if (res.ok) {
       document.getElementById("save-banner").style.display = "none";
-      btn.textContent = "💾 Save Changes to Turso";
-      if (typeof showToast === 'function') showToast("Reward catalog saved to Turso database!");
-    } else {
-      if (typeof showToast === 'function') showToast(data.error || "Failed to save.", "error");
-      btn.textContent = "💾 Save Changes to Turso";
+      btn.textContent = "💾 Save to Turso";
+      showToast("Reward catalog saved to Turso!");
     }
-  } catch(e) {
-    btn.textContent = "💾 Save Changes to Turso";
-  }
+  } catch(e) { btn.textContent = "💾 Save to Turso"; }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  if (typeof initAppLayout === 'function') initAppLayout('messengerbot', 'Messenger Bot Rewards');
+  initAppLayout('messengerbot', 'Bot Rewards');
   loadInitialData();
 });
 </script>

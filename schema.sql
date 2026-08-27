@@ -140,6 +140,20 @@ CREATE TABLE IF NOT EXISTS `bot_daily_views` (
 	PRIMARY KEY(`sender_id`, `view_date`)
 );
 
+CREATE TABLE IF NOT EXISTS `chat_messages` (
+  `id` integer PRIMARY KEY AUTOINCREMENT,
+  `psid` text,
+  `sender` text CHECK(sender IN ('user','bot')),
+  `message` text,
+  `created_at` text DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS `bot_rate_limits` (
+  `psid` text PRIMARY KEY,
+  `msg_count` integer DEFAULT 0,
+  `window_start` integer DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS `idx_m_email` ON `missionaries` (`email`);
 CREATE INDEX IF NOT EXISTS `idx_m_psid` ON `missionaries` (`psid`);
 CREATE INDEX IF NOT EXISTS `idx_m_ref` ON `missionaries` (`referral_code`);

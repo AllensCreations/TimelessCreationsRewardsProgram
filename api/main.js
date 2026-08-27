@@ -21,18 +21,19 @@ export default async function handler(req, res) {
     if (bodyData.action) action = bodyData.action;
   }
 
-  // Authorization Guard for Mutating Administrative Actions
+  // Administrative Authorization Guard (Only enforced if ADMIN_SECRET is explicitly configured)
   const SENSITIVE_ACTIONS = [
     "toggle_power", "delete_missionary", "update_missionary_points",
     "push_missionaries", "sync_catalog", "save_products",
     "save_drip", "update_order_status", "update_invoice_status",
-    "create_invoice", "get_system_logs", "force_cron"
+    "create_invoice", "get_system_logs", "force_cron",
+    "save_promo_code", "delete_promo_code", "save_cdn_config"
   ];
 
-  if (SENSITIVE_ACTIONS.includes(action)) {
-    const adminSecret = process.env.ADMIN_SECRET || process.env.CRON_SECRET;
+  if (process.env.ADMIN_SECRET && SENSITIVE_ACTIONS.includes(action)) {
+    const adminSecret = process.env.ADMIN_SECRET;
     const authHeader = req.headers?.authorization || req.headers?.['x-admin-key'] || req.query?.admin_key || bodyData.admin_key;
-    if (adminSecret && authHeader !== `Bearer ${adminSecret}` && authHeader !== adminSecret) {
+    if (authHeader !== `Bearer ${adminSecret}` && authHeader !== adminSecret) {
       return res.status(401).json({ ok: false, error: "Unauthorized administrative request." });
     }
   }
@@ -120,7 +121,6 @@ export default async function handler(req, res) {
       }
     }
 
-    
     if (action === "get_promo_codes") {
       const rows = await runSql("SELECT * FROM promo_codes ORDER BY created_at DESC");
       return res.status(200).json({ ok: true, promo_codes: rows || [] });
@@ -416,6 +416,46 @@ export default async function handler(req, res) {
         INSERT INTO cash_invoices (invoice_id, email, name, items_json, subtotal, discount_type, discount_val, discount_amount, total_amount, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)
       `, [invoice_id, email, name, JSON.stringify(items_json || []), subtotal, discount_type, discount_val, discount_amount, total_amount]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === "get_cdn_config") {
+      const rows = await runSql("SELECT key, value FROM system_config WHERE key LIKE 'cdn_%'");
+      const config = {};
+      (rows || []).forEach(r => { config[r.key] = r.value; });
+      return res.status(200).json({ ok: true, config });
+    }
+
+    if (action === "save_cdn_config") {
+      for (const [k, v] of Object.entries(bodyData)) {
+        if (k.startsWith('cdn_')) {
+          await runSql("INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", [k, String(v || '')]);
+        }
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    // CDN Gallery Management Endpoints
+    if (action === "list" || action === "cdn_list") {
+      const rows = await runSql("SELECT * FROM cdn_gallery ORDER BY id DESC");
+      return res.status(200).json({ ok: true, gallery: rows || [] });
+    }
+
+    if (action === "upload" || action === "cdn_upload") {
+      const { filename, targetSize, originalKb, compressedKb, direct_url, base64Data } = bodyData;
+      const url = direct_url || `https://cdn.jsdelivr.net/gh/${process.env.CDN_GITHUB_OWNER || 'AllensCreations'}/${process.env.CDN_GITHUB_REPO || 'CDN-Assets'}@main/assets/rewards/${filename || 'image.webp'}`;
+      
+      await runSql(`
+        INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb)
+        VALUES (?, ?, ?, ?, ?)
+      `, [filename || 'image.webp', url, targetSize || 'square_600', Number(originalKb) || 0, Number(compressedKb) || 0]);
+
+      return res.status(200).json({ ok: true, direct_url: url, item: { filename, direct_url: url, size_label: targetSize } });
+    }
+
+    if (action === "delete" || action === "cdn_delete") {
+      const id = Number(bodyData.id || req.query?.id);
+      await runSql("DELETE FROM cdn_gallery WHERE id = ?", [id]);
       return res.status(200).json({ ok: true });
     }
 

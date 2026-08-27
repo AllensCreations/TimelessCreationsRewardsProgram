@@ -28,32 +28,43 @@ export default async function handler(req, res) {
       return res.status(401).send('Invalid signature');
     }
 
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    let body = {};
+    try {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    } catch (_) {
+      body = {};
+    }
+
     if (body?.object === 'page') {
-      try {
-        for (const entry of body.entry || []) {
-          for (const event of entry.messaging || entry.standby || []) {
-            // Ignore bot message echoes / deliveries / read receipts
-            if (event?.message?.is_echo || event?.delivery || event?.read) {
-              continue;
-            }
+      const dispatchPromises = [];
 
-            if (event?.sender?.id) {
-              const psid = event.sender.id;
-              const text = event.message?.text || '';
-              // Extract quick reply payload or button postback payload
-              const payload = event.message?.quick_reply?.payload || event.postback?.payload || null;
-              const ref = event.referral?.ref || event.postback?.referral?.ref || '';
+      for (const entry of body.entry || []) {
+        for (const event of entry.messaging || entry.standby || []) {
+          // Drop echoes, deliveries, and read notifications immediately
+          if (event?.message?.is_echo || event?.delivery || event?.read) {
+            continue;
+          }
 
-              await handleBotMessage(psid, text, payload, ref);
-            }
+          if (event?.sender?.id) {
+            const psid = String(event.sender.id);
+            const text = event.message?.text || '';
+            const payload = event.message?.quick_reply?.payload || event.postback?.payload || null;
+            const ref = event.referral?.ref || event.postback?.referral?.ref || '';
+
+            // Queue processing guarantee
+            dispatchPromises.push(
+              handleBotMessage(psid, text, payload, ref).catch(err => {
+                console.error(`[CRITICAL] Bot handling error for PSID ${psid}:`, err);
+              })
+            );
           }
         }
-      } catch (err) {
-        console.error('Bot webhook error:', err.message);
       }
+
+      await Promise.all(dispatchPromises);
       return res.status(200).send('EVENT_RECEIVED');
     }
+
     return res.status(404).send('Not Found');
   }
 

@@ -13,7 +13,6 @@ const LocalStore = {
   }
 };
 
-let toastTimeout = null;
 function showToast(message, type = "success") {
   let container = document.getElementById("toast-container");
   if (!container) {
@@ -21,17 +20,13 @@ function showToast(message, type = "success") {
     container.id = "toast-container";
     document.body.appendChild(container);
   }
-  
-  // Limit stacked toasts on screen
   if (container.children.length > 2) {
     container.firstElementChild.remove();
   }
-
   const toast = document.createElement("div");
   toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
   toast.innerHTML = `<span>${type === "error" ? "⚠️" : "✨"}</span> <span>${message}</span>`;
   container.appendChild(toast);
-  
   setTimeout(() => {
     toast.style.opacity = "0";
     toast.style.transform = "translateY(10px)";
@@ -49,8 +44,7 @@ const NAV_ITEMS = [
   { key: 'messengerbot', label: '🎁 Bot Rewards', url: '/messengerbot.html' },
   { key: 'gallery', label: '🖼️ CDN Gallery', url: '/gallery.html' },
   { key: 'logs', label: '📜 Logs', url: '/logs.html' },
-  { key: 'settings', label: '⚙️ Settings', url: '/settings.html' },
-  { key: 'changelog', label: '📜 Changelog', url: '/changelog.html' }
+  { key: 'settings', label: '⚙️ Settings', url: '/settings.html' }
 ];
 
 function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
@@ -80,7 +74,7 @@ function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
     <div class="drawer-panel">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--border);">
         <div style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.05rem; font-weight:800;">Timeless Creations</div>
-        <button onclick="toggleMobileDrawer()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+        <button onclick="toggleMobileDrawer()" class="modal-close-btn">✕</button>
       </div>
       ${NAV_ITEMS.map(item => `
         <a href="${item.url}" class="drawer-link ${item.key === activeKey ? 'active' : ''}">${item.label}</a>
@@ -107,14 +101,10 @@ async function triggerGlobalRefresh() {
       fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({}))
     ]);
 
-    if (statsRes && statsRes.ok) {
-      LocalStore.set('stats_payload', statsRes);
-    }
-    if (mRes && mRes.ok && Array.isArray(mRes.missionaries)) {
-      LocalStore.set('missionaries', mRes.missionaries);
-    }
+    if (statsRes && statsRes.ok) LocalStore.set('stats_payload', statsRes);
+    if (mRes && mRes.ok && Array.isArray(mRes.missionaries)) LocalStore.set('missionaries', mRes.missionaries);
 
-    showToast("✓ Live data updated successfully!");
+    showToast("✓ Live data updated!");
     window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
     if (typeof window.renderFromCache === 'function') window.renderFromCache();
     if (typeof window.loadData === 'function') window.loadData();

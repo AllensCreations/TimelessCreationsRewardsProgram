@@ -30,18 +30,13 @@
     flex-direction: column;
     gap: 8px;
   }
-  .item-card-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
+  .item-card-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
   .summary-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 14px; }
   .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
   .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
 
-  /* Live Invoice Preview */
+  /* Live Preview */
   .preview-wrapper { width: 100%; position: sticky; top: 70px; }
   .invoice-preview-card {
     width: 100%;
@@ -67,13 +62,9 @@
   .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; }
 
   /* ─────────────────────────────────────────────────────────────
-     TRANSACTIONS & CLAIMS CARD UI (MATCHING HAND-DRAWN SKETCH)
+     TRANSACTIONS & CLAIMS CARD UI (SKETCH IMPLEMENTATION)
      ───────────────────────────────────────────────────────────── */
-  .trx-card-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  .trx-card-container { display: flex; flex-direction: column; gap: 12px; }
   .trx-card {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -82,124 +73,33 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    transition: border-color 0.2s;
   }
   .trx-card:hover { border-color: var(--border-gold); }
 
-  /* Row 1: INVOICE NO. | STATUS */
-  .trx-card-row-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-  }
-  .trx-inv-no {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--gold);
-    letter-spacing: 0.5px;
-  }
+  .trx-card-row-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .trx-inv-no { font-family: 'DM Mono', monospace; font-size: 0.85rem; font-weight: 700; color: var(--gold); }
 
-  /* Row 2: NAME | TYPE */
-  .trx-card-row-mid {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-  }
-  .trx-cust-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 800;
-    color: #ffffff;
-    word-break: break-word;
-  }
+  .trx-card-row-mid { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .trx-cust-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; color: #ffffff; word-break: break-word; }
   .trx-type-badge {
-    font-size: 0.65rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: rgba(201, 168, 76, 0.12);
-    color: var(--gold);
-    border: 1px solid rgba(201, 168, 76, 0.3);
-    text-transform: uppercase;
-    font-weight: 700;
-    white-space: nowrap;
+    font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); text-transform: uppercase; font-weight: 700;
   }
 
-  /* Row 3: DETAILS ∇ ─────────────────── (DROPDOWN BAR) */
   .trx-details-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-    cursor: pointer;
-    color: var(--gold);
-    font-size: 0.72rem;
-    font-weight: 700;
-    user-select: none;
+    display: flex; align-items: center; gap: 8px; margin-top: 6px; cursor: pointer; color: var(--gold); font-size: 0.72rem; font-weight: 700; user-select: none;
   }
-  .trx-details-toggle:hover { color: var(--gold2); }
-  .trx-toggle-line {
-    flex: 1;
-    height: 1px;
-    border-top: 1px dashed rgba(201, 168, 76, 0.45);
-  }
+  .trx-toggle-line { flex: 1; height: 1px; border-top: 1px dashed rgba(201, 168, 76, 0.45); }
 
-  /* Dropdown Collapsible Area */
   .trx-details-body {
-    display: none;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--border);
-    font-size: 0.76rem;
-    line-height: 1.6;
+    display: none; flex-direction: column; gap: 8px; margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 0.76rem; line-height: 1.6;
   }
-  .trx-card.open .trx-details-body {
-    display: flex;
-  }
+  .trx-card.open .trx-details-body { display: flex; }
 
-  .trx-item-list-box {
-    background: #0d0e15;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .trx-item-line {
-    color: #d1d5db;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-  }
-
-  .trx-info-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .trx-info-label {
-    color: var(--muted);
-    font-weight: 600;
-  }
-  .trx-info-val {
-    color: #ffffff;
-    font-weight: 600;
-  }
+  .trx-item-list-box { background: #0d0e15; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .trx-item-line { color: #d1d5db; font-family: 'DM Mono', monospace; font-size: 0.72rem; }
 
   .status-select {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 5px 8px;
-    border-radius: 4px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    outline: none;
-    font-weight: 700;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 0.68rem; outline: none; font-weight: 700;
   }
   .status-select.pending { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .status-select.paid { border-color: var(--green); color: var(--green); background: var(--green-dim); }
@@ -210,7 +110,8 @@
 <div class="container">
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Invoice</button>
-    <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Transactions &amp; Claims (<span id="trans-badge">0</span>)</button>
+    <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Active Transactions (<span id="active-trans-badge">0</span>)</button>
+    <button class="tab-btn" onclick="switchNavTab('archives-tab', this)">📦 Delivered Archives (<span id="archive-badge">0</span>)</button>
     <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash POS Catalog</button>
   </div>
 
@@ -294,7 +195,7 @@
         </div>
       </div>
 
-      <!-- Fluid Live Preview -->
+      <!-- Live Preview -->
       <div class="preview-wrapper">
         <div class="card" style="padding:12px;">
           <h4 style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; text-transform:uppercase;">✦ Live Invoice Preview</h4>
@@ -361,24 +262,39 @@
     </div>
   </div>
 
-  <!-- TAB 2: Transactions & Claims (Strictly Card-Based Matching Wireframe Sketch) -->
+  <!-- TAB 2: Active Transactions & Claims -->
   <div class="tab-pane" id="transactions-tab">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
-          <h3 style="font-size:0.95rem; color:var(--gold);">📜 Transactions &amp; Rewards Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to view itemized breakdown, full customer email, and total.</p>
+          <h3 style="font-size:0.95rem; color:var(--gold);">📜 Active Transactions &amp; Claims</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to view itemized breakdown, customer email, and total.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
-
-      <div class="trx-card-container" id="trx-cards-wrapper">
-        <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">Loading transactions &amp; claims...</div>
+      <div class="trx-card-container" id="active-trx-cards-wrapper">
+        <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">Loading active transactions...</div>
       </div>
     </div>
   </div>
 
-  <!-- TAB 3: Cash POS Catalog (PHP Pricing) -->
+  <!-- TAB 3: Delivered Archives -->
+  <div class="tab-pane" id="archives-tab">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h3 style="font-size:0.95rem; color:var(--green);">📦 Delivered Packages &amp; Fulfilled Archives</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">History of all delivered missionary orders and freebie reward packages.</p>
+        </div>
+        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
+      </div>
+      <div class="trx-card-container" id="archive-trx-cards-wrapper">
+        <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">No delivered orders in archives yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: Cash POS Catalog (PHP Pricing) -->
   <div class="tab-pane" id="products-tab">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
@@ -394,12 +310,12 @@
   </div>
 </div>
 
-<!-- Edit / Bundle Items Modal -->
+<!-- Beautiful Dark-Gold Edit / Bundle Modal -->
 <div class="modal-overlay" id="edit-transaction-modal">
   <div class="modal-content">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-      <h3 style="color:var(--gold); font-size:1.05rem;" id="edit-modal-title">Edit Transaction</h3>
-      <button onclick="closeEditModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
+    <div class="modal-header-row">
+      <div class="modal-title-text" id="edit-modal-title">Edit Transaction</div>
+      <button onclick="closeEditModal()" class="modal-close-btn">✕</button>
     </div>
     <input type="hidden" id="edit-trx-id">
     <input type="hidden" id="edit-trx-type">
@@ -409,14 +325,14 @@
       <input type="text" id="edit-trx-name" class="form-input" readonly>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0 6px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin:12px 0 8px;">
       <label class="form-label" style="margin:0;">Bundle Items / Extra Products</label>
-      <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.65rem;" onclick="addEditItemRow()">+ Add Product</button>
+      <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addEditItemRow()">+ Add Product</button>
     </div>
 
     <div id="edit-items-container"></div>
 
-    <div class="summary-box" style="margin:12px 0;">
+    <div class="summary-box" style="margin:14px 0;">
       <div class="summary-row total">
         <span>Total Value:</span>
         <span id="edit-calc-total">₱0.00</span>
@@ -476,25 +392,20 @@ async function loadData() {
   }
 }
 
-// Render Transactions matching user's exact hand-drawn sketch
 function renderTransactionsWireframeCards() {
-  const container = document.getElementById('trx-cards-wrapper');
-  const totalCount = orders.length + cashInvoices.length;
-  document.getElementById('trans-badge').textContent = totalCount;
+  const activeContainer = document.getElementById('active-trx-cards-wrapper');
+  const archiveContainer = document.getElementById('archive-trx-cards-wrapper');
 
-  let combined = [];
+  let activeList = [];
+  let archiveList = [];
 
-  // 1. Map Orders (Reward Claims)
+  // 1. Process Orders (Reward Claims)
   orders.forEach(o => {
     let itemsList = [];
-    try {
-      itemsList = JSON.parse(o.items_json || '[]');
-    } catch (_) {}
-    if (!itemsList.length) {
-      itemsList = [{ name: o.item, qty: 1, price: 0 }];
-    }
+    try { itemsList = JSON.parse(o.items_json || '[]'); } catch (_) {}
+    if (!itemsList.length) itemsList = [{ name: o.item, qty: 1, price: 0 }];
 
-    combined.push({
+    const itemObj = {
       id: o.order_id,
       name: o.name || 'Anonymous Missionary',
       type: 'Reward Claim',
@@ -504,20 +415,19 @@ function renderTransactionsWireframeCards() {
       email: o.email || '—',
       raw: o,
       isOrder: true
-    });
+    };
+
+    if (itemObj.status === 'DELIVERED') archiveList.push(itemObj);
+    else activeList.push(itemObj);
   });
 
-  // 2. Map Cash Invoices
+  // 2. Process Cash Invoices
   cashInvoices.forEach(inv => {
     let itemsList = [];
-    try {
-      itemsList = JSON.parse(inv.items_json || '[]');
-    } catch (_) {}
-    if (!itemsList.length) {
-      itemsList = [{ name: "Custom Order", qty: 1, price: inv.total_amount }];
-    }
+    try { itemsList = JSON.parse(inv.items_json || '[]'); } catch (_) {}
+    if (!itemsList.length) itemsList = [{ name: "Custom Order", qty: 1, price: inv.total_amount }];
 
-    combined.push({
+    const itemObj = {
       id: inv.invoice_id,
       name: inv.name || 'Customer',
       type: 'Cash Invoice',
@@ -527,19 +437,29 @@ function renderTransactionsWireframeCards() {
       email: inv.email || '—',
       raw: inv,
       isOrder: false
-    });
+    };
+
+    if (itemObj.status === 'DELIVERED') archiveList.push(itemObj);
+    else activeList.push(itemObj);
   });
 
-  combined.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
+  document.getElementById('active-trans-badge').textContent = activeList.length;
+  document.getElementById('archive-badge').textContent = archiveList.length;
 
-  if (!combined.length) {
-    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">No transactions or claims recorded yet.</div>';
-    return;
+  activeContainer.innerHTML = buildCardListHtml(activeList, "No active transactions or claims.");
+  archiveContainer.innerHTML = buildCardListHtml(archiveList, "No delivered packages in archive.");
+}
+
+function buildCardListHtml(list, emptyText) {
+  if (!list.length) {
+    return `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">${emptyText}</div>`;
   }
 
-  container.innerHTML = combined.map(item => {
+  list.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
+
+  return list.map(item => {
     const isPaid = item.status === 'PAID' || item.status === 'COMPLETED';
-    const statusClass = isPaid ? 'paid' : 'pending';
+    const statusClass = isPaid ? 'paid' : (item.status === 'DELIVERED' ? 'paid' : 'pending');
 
     const itemsFormatted = item.items.map(i => {
       const priceStr = i.price > 0 ? `₱${Number(i.price * i.qty).toFixed(2)}` : `Free Reward`;
@@ -568,7 +488,7 @@ function renderTransactionsWireframeCards() {
           <div class="trx-type-badge">${item.type}</div>
         </div>
 
-        <!-- DROPDOWN TOGGLE BAR: DETAILS ∇ ─────────────────── -->
+        <!-- DROPDOWN TOGGLE BAR -->
         <div class="trx-details-toggle" onclick="this.closest('.trx-card').classList.toggle('open')">
           <span>DETAILS ▾</span>
           <div class="trx-toggle-line"></div>
@@ -580,14 +500,9 @@ function renderTransactionsWireframeCards() {
             ${itemsFormatted}
           </div>
 
-          <div class="trx-info-row">
-            <span class="trx-info-label">• TOTAL:</span>
-            <span class="trx-info-val" style="color:var(--gold); font-size:0.85rem;">${item.totalDisplay}</span>
-          </div>
-
-          <div class="trx-info-row">
-            <span class="trx-info-label">• Email:</span>
-            <span class="trx-info-val">${item.email}</span>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span><strong style="color:var(--muted);">• TOTAL:</strong> <span style="color:var(--gold); font-weight:bold;">${item.totalDisplay}</span></span>
+            <span><strong style="color:var(--muted);">• Email:</strong> ${item.email}</span>
           </div>
 
           <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end;">
@@ -601,7 +516,7 @@ function renderTransactionsWireframeCards() {
 }
 
 async function updateStatus(id, isOrder, newStatus) {
-  if (!confirm(`Confirm status update to [${newStatus}] for ${id}? Automated notification email will be dispatched.`)) {
+  if (!confirm(`Confirm status change to [${newStatus}] for ${id}? Automated notification will be dispatched.`)) {
     renderTransactionsWireframeCards();
     return;
   }

@@ -345,6 +345,7 @@ function switchNavTab(tabId, btn) {
   btn.classList.add('active');
 }
 
+window.loadData = loadData;
 async function loadData() {
   try {
     const [mRes, invRes, prodRes] = await Promise.all([

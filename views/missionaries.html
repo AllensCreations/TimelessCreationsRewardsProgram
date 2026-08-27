@@ -156,6 +156,7 @@ function debounce(func, wait = 250) {
   };
 }
 
+window.loadRoster = loadRoster;
 function loadRoster() {
   const cached = LocalStore.get('missionaries', []);
   if (cached.length > 0) {

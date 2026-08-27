@@ -3,34 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Direct Link Maker & Gallery | Timeless Creations</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <title>CDN Media Gallery | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
   <style>
-    body { font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e6f0; margin: 0; }
-    .card {
-      background: #11131d;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #181822;
+      --border: rgba(255,255,255,0.08);
+      --gold: #c9a84c;
+      --gold-dim: rgba(201,168,76,0.15);
+      --green: #4caf82;
+      --red: #e05c5c;
+      --text: #e8e6f0;
+      --muted: #716e88;
+      --radius: 10px;
     }
-    .upload-zone {
-      border: 2px dashed rgba(201,168,76,0.4);
-      background: rgba(201,168,76,0.03);
-      border-radius: 12px;
-      padding: 30px;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+    .container { max-width: 1180px; margin: 20px auto; padding: 0 16px 60px; }
+    
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .header-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-color: rgba(201,168,76,0.25);
+    }
+    .dropzone {
+      border: 2px dashed rgba(201,168,76,0.35);
+      border-radius: var(--radius);
+      background: var(--surface2);
+      padding: 30px 20px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .upload-zone.dragover, .upload-zone:hover {
-      border-color: #c9a84c;
-      background: rgba(201,168,76,0.08);
-      transform: scale(1.01);
-    }
+    .dropzone:hover { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+    
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -38,308 +58,270 @@
       margin-top: 20px;
     }
     .gallery-item {
-      background: #151824;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s;
+      transition: transform 0.2s, border-color 0.2s;
     }
-    .gallery-item:hover { transform: translateY(-3px); border-color: rgba(201,168,76,0.4); }
-    .gallery-thumb {
+    .gallery-item:hover { transform: translateY(-3px); border-color: var(--gold); }
+    .img-wrap {
       width: 100%;
-      height: 140px;
-      object-fit: cover;
+      aspect-ratio: 1 / 1;
       background: #08080d;
-      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+    }
+    .img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .meta-body {
+      padding: 12px;
+      font-size: 0.68rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
     }
     .btn-action {
-      border: none;
-      padding: 7px 10px;
-      border-radius: 6px;
-      font-weight: bold;
-      font-size: 0.72rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-family: inherit;
       cursor: pointer;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
     }
-    .btn-gold-action { background: #c9a84c; color: #0d0e15; }
-    .btn-gold-action:hover { background: #dfbc5a; }
-    .btn-drip-action { background: #181b2a; color: #5c8de0; border: 1px solid rgba(92,141,224,0.3); }
-    .btn-drip-action:hover { background: rgba(92,141,224,0.15); }
-    .btn-del-action { background: rgba(224,92,92,0.15); color: #e05c5c; border: 1px solid rgba(224,92,92,0.25); }
-    .btn-del-action:hover { background: rgba(224,92,92,0.25); }
-    .lightbox-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-      display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
+    .btn-action:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-delete { color: var(--red); border-color: rgba(224,92,92,0.25); }
+    .btn-delete:hover { background: var(--red); color: #fff; }
+    
+    .error-banner {
+      background: rgba(224,92,92,0.12);
+      border: 1px solid rgba(224,92,92,0.3);
+      color: var(--red);
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      margin-bottom: 16px;
+      display: none;
     }
-    .lightbox-img { max-width: 90vw; max-height: 80vh; border-radius: 8px; border: 1px solid #c9a84c; }
   </style>
 </head>
 <body>
 
-<div style="max-width:1200px; margin:24px auto; padding:0 20px 40px;">
-  
-  <div style="margin-bottom:24px;">
-    <h1 style="font-family:'Syne',sans-serif; color:#c9a84c; font-size:1.6rem; font-weight:800; margin:0 0 4px 0;">Direct Link Maker &amp; CDN Gallery</h1>
-    <p style="font-size:0.85rem; color:#8c90a4; margin:0;">Upload images to store in your permanent gallery, convert to WebP, and get 1-tap direct links.</p>
-  </div>
-
-  <!-- Upload Studio -->
-  <div class="card">
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
-      <div>
-        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-          <div style="font-size:2rem; margin-bottom:8px;">📷</div>
-          <div style="font-weight:bold; color:#fff; font-size:0.9rem;">Click, Drag &amp; Drop, or Paste (Ctrl+V)</div>
-          <div style="font-size:0.75rem; color:#8c90a4; margin-top:4px;">Encodes to WebP and stores in your gallery automatically</div>
-          <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(event)">
-        </div>
-        <div id="savings-meter" style="font-size:0.75rem; color:#4caf82; margin-top:8px; font-family:'DM Mono',monospace; display:none;"></div>
-      </div>
-
-      <div style="display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <label class="form-label" style="display:block; font-size:0.8rem; font-weight:bold; color:#c9a84c; margin-bottom:6px;">Target Preset / Dimensions</label>
-          <select id="size-preset-select" class="form-select" style="width:100%; background:#181b2a; color:#fff; border:1px solid rgba(255,255,255,0.08); padding:10px; border-radius:8px;">
-            <option value="square_600">🔲 1:1 Square (600x600) — Best for Rewards &amp; Nametags</option>
-            <option value="banner_1200">🖼️ Email Banner (1200x630)</option>
-            <option value="thumb_300">📱 Thumbnail (300x300)</option>
-            <option value="original">✨ Original Aspect Ratio (WebP 85%)</option>
-          </select>
-        </div>
-
-        <button id="upload-btn" onclick="processAndUploadWebP()" style="background:#c9a84c; color:#0d0e15; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; font-size:0.85rem; cursor:pointer; margin-top:14px;">
-          ⚡ Convert, Store &amp; Generate Link
-        </button>
-      </div>
+<div class="container">
+  <div class="card header-banner">
+    <div>
+      <h2 style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.3rem;">🖼️ jsDelivr & GitHub CDN Gallery</h2>
+      <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">
+        Uploads are automatically converted to compressed 1:1 Square WebP format and hosted globally via jsDelivr.
+      </p>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <a href="/settings.html" class="btn btn-secondary" style="font-size:0.75rem;">⚙️ CDN Settings</a>
+      <button class="btn btn-gold" onclick="fetchGalleryItems()" style="font-size:0.75rem;">↻ Refresh Gallery</button>
     </div>
   </div>
 
-  <!-- CDN Gallery Store -->
+  <div id="error-box" class="error-banner"></div>
+
+  <!-- Uploader Box -->
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-      <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:bold; color:#c9a84c;">🖼️ Stored CDN Media Library</div>
-      <div style="display:flex; gap:10px;">
-        <input type="text" id="gallery-search" placeholder="🔍 Search stored media..." oninput="filterGallery()" style="background:#181b2a; border:1px solid rgba(255,255,255,0.08); color:#fff; padding:6px 12px; border-radius:6px; font-size:0.75rem; width:180px;">
-        <button onclick="loadGallery()" style="background:#181b2a; color:#c9a84c; border:1px solid rgba(201,168,76,0.3); padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:bold; cursor:pointer;">↻ Refresh</button>
-      </div>
+    <div class="dropzone" id="drop-area" onclick="document.getElementById('file-input').click()">
+      <div style="font-size:2rem; margin-bottom:8px;">📤</div>
+      <div style="font-weight:bold; color:var(--gold); font-size:0.85rem;">Click to upload or drag &amp; drop images</div>
+      <div style="font-size:0.7rem; color:var(--muted); margin-top:4px;">Supports PNG, JPG, JPEG, and WebP (Automatically cropped to 1:1 Square)</div>
+      <input type="file" id="file-input" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
+    </div>
+    <div id="upload-progress" style="margin-top:12px; font-size:0.72rem; color:var(--gold); display:none;"></div>
+  </div>
+
+  <!-- Gallery List -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="font-size:0.95rem; color:var(--gold);">Hosted Assets (<span id="asset-count">0</span>)</h3>
+      <input type="text" id="filter-input" placeholder="Search filenames..." class="form-input" style="width:200px; padding:6px 10px; font-size:0.7rem;" oninput="filterGallery(this.value)">
     </div>
     <div class="gallery-grid" id="gallery-container">
-      <div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">Loading gallery store...</div>
+      <div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">Loading gallery assets...</div>
     </div>
   </div>
-
-</div>
-
-<!-- Lightbox Modal -->
-<div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox()">
-  <img id="lightbox-img" class="lightbox-img" src="" alt="Full Preview">
 </div>
 
 <script>
-let selectedImageFile = null;
-let cachedGalleryItems = [];
+let galleryItems = [];
 
-const dropZone = document.getElementById("drop-zone");
-['dragenter', 'dragover'].forEach(eName => {
-  dropZone.addEventListener(eName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-});
-['dragleave', 'drop'].forEach(eName => {
-  dropZone.addEventListener(eName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-});
-dropZone.addEventListener('drop', (e) => {
-  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-    setFile(e.dataTransfer.files[0]);
-  }
-});
-window.addEventListener('paste', (e) => {
-  const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
-  if (!items) return;
-  for (let item of items) {
-    if (item.kind === 'file' && item.type.includes('image/')) {
-      setFile(item.getAsFile());
-      break;
-    }
-  }
-});
+async function fetchGalleryItems() {
+  const container = document.getElementById('gallery-container');
+  const errorBox = document.getElementById('error-box');
+  errorBox.style.display = 'none';
 
-function handleFileSelected(e) {
-  if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
-}
-
-function setFile(file) {
-  selectedImageFile = file;
-  const meter = document.getElementById("savings-meter");
-  meter.style.display = "block";
-  meter.textContent = `✓ Selected: ${file.name || 'Pasted Image'} (${(file.size / 1024).toFixed(1)} KB)`;
-}
-
-async function processAndUploadWebP() {
-  if (!selectedImageFile) {
-    if (typeof showToast === 'function') showToast("Please select or paste an image first.", "error");
-    return;
-  }
-
-  const btn = document.getElementById("upload-btn");
-  btn.disabled = true;
-  btn.textContent = "⏳ Uploading & Storing in Gallery...";
-
-  const preset = document.getElementById("size-preset-select").value;
-  const reader = new FileReader();
-
-  reader.onload = function(event) {
-    const img = new Image();
-    img.onload = async function() {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      let width = img.width;
-      let height = img.height;
-
-      if (preset === "square_600") { width = 600; height = 600; }
-      else if (preset === "banner_1200") { width = 1200; height = 630; }
-      else if (preset === "thumb_300") { width = 300; height = 300; }
-
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const base64Data = canvas.toDataURL("image/webp", 0.85);
-      const originalKb = (selectedImageFile.size / 1024).toFixed(1);
-      const compressedKb = (Math.round((base64Data.length * 3 / 4)) / 1024).toFixed(1);
-      const savedPct = Math.max(0, Math.round((1 - (compressedKb / originalKb)) * 100));
-
-      try {
-        const res = await fetch("/api/cdn?action=upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "upload",
-            filename: selectedImageFile.name || "image.png",
-            base64Data,
-            targetSize: preset,
-            originalKb,
-            compressedKb
-          })
-        });
-
-        const data = await res.json();
-        if (data.ok) {
-          document.getElementById("savings-meter").textContent = `⚡ Stored in Gallery: ${originalKb}KB → ${compressedKb}KB (${savedPct}% saved!)`;
-          if (typeof showToast === 'function') showToast("✓ Uploaded & stored in Gallery! Direct link copied.");
-          navigator.clipboard.writeText(data.direct_url).catch(() => {});
-          
-          // Prepend newly uploaded item to current gallery
-          if (data.item) {
-            cachedGalleryItems.unshift(data.item);
-            renderGalleryItems(cachedGalleryItems);
-          } else {
-            loadGallery();
-          }
-        } else {
-          if (typeof showToast === 'function') showToast(`Upload issue: ${data.error}`, "error");
-        }
-      } catch (err) {
-        if (typeof showToast === 'function') showToast("Error connecting to CDN API.", "error");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "⚡ Convert, Store & Generate Link";
-      }
-    };
-    img.src = event.target.result;
-  };
-  reader.readAsDataURL(selectedImageFile);
-}
-
-async function loadGallery() {
-  const container = document.getElementById("gallery-container");
   try {
-    const res = await fetch("/api/cdn?action=list");
+    const res = await fetch('/api/main?action=cdn_list');
     const data = await res.json();
-    if (data.ok && data.gallery) {
-      cachedGalleryItems = data.gallery;
-      renderGalleryItems(cachedGalleryItems);
+    if (data.ok) {
+      galleryItems = data.gallery || data.items || [];
+      document.getElementById('asset-count').textContent = galleryItems.length;
+      renderGallery(galleryItems);
+    } else {
+      showError(data.error || "Failed to load CDN gallery items");
+      container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--red); padding:20px;">${data.error || 'Failed to connect'}</div>`;
     }
-  } catch (e) {
-    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">Failed to load CDN gallery.</div>';
+  } catch (err) {
+    showError("Network error connecting to /api/main: " + err.message);
+    container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--red); padding:20px;">Connection Failed: ${err.message}</div>`;
   }
 }
 
-function renderGalleryItems(items) {
-  const container = document.getElementById("gallery-container");
-  if (!items || items.length === 0) {
-    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#8c90a4; padding:40px;">No images stored yet. Upload one above!</div>';
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  box.textContent = "⚠️ " + msg;
+  box.style.display = 'block';
+}
+
+function renderGallery(items) {
+  const container = document.getElementById('gallery-container');
+  if (!items.length) {
+    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No hosted assets yet. Upload one above!</div>';
     return;
   }
 
   container.innerHTML = items.map(item => `
     <div class="gallery-item">
-      <img src="${item.direct_url}" class="gallery-thumb" alt="${item.filename}" onclick="openLightbox('${item.direct_url}')" loading="lazy">
-      <div style="padding:10px; display:flex; flex-direction:column; gap:6px;">
-        <div style="font-family:'DM Mono',monospace; font-size:0.68rem; color:#e8e6f0; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.filename}">
-          🔒 ${item.filename}
+      <div class="img-wrap">
+        <img src="${item.direct_url}" alt="${item.filename}" loading="lazy" onerror="this.src='https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'">
+      </div>
+      <div class="meta-body">
+        <div style="font-weight:bold; color:var(--text); word-break:break-all;" title="${item.filename}">${item.filename}</div>
+        <div style="color:var(--muted); font-size:0.62rem;">
+          ${item.compressed_kb ? `${item.compressed_kb} KB` : 'Optimized'} • ${item.size_label || '1:1 Square'}
         </div>
-        <div style="font-size:0.65rem; color:#8c90a4;">Preset: ${item.size_label || 'WebP 85%'}</div>
-        <button class="btn-action btn-gold-action" onclick="copyUrl('${item.direct_url}')">📋 Copy Direct Link</button>
-        <button class="btn-action btn-drip-action" onclick="insertIntoDrips('${item.direct_url}')">💌 Insert into Drips</button>
-        <button class="btn-action btn-del-action" onclick="deleteImage(${item.id})">🗑️ Remove</button>
+        <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+          <button class="btn-action" onclick="copyText('${item.direct_url}', 'CDN URL Copied!')">🔗 Copy Direct URL</button>
+          <button class="btn-action" onclick="copyText('<img src=&quot;${item.direct_url}&quot; alt=&quot;${item.filename}&quot; style=&quot;width:100%;aspect-ratio:1/1;object-fit:cover;&quot;>', 'HTML Snippet Copied!')">&lt;/&gt; Copy HTML Tag</button>
+          <button class="btn-action btn-delete" onclick="deleteAsset(${item.id})">🗑️ Delete</button>
+        </div>
       </div>
     </div>
   `).join('');
 }
 
-function filterGallery() {
-  const q = document.getElementById("gallery-search").value.toLowerCase();
-  const filtered = cachedGalleryItems.filter(i => (i.filename || '').toLowerCase().includes(q) || (i.size_label || '').toLowerCase().includes(q));
-  renderGalleryItems(filtered);
+function filterGallery(q) {
+  const clean = (q || '').toLowerCase().trim();
+  const filtered = galleryItems.filter(i => (i.filename || '').toLowerCase().includes(clean));
+  renderGallery(filtered);
 }
 
-function copyUrl(url) {
-  navigator.clipboard.writeText(url).then(() => {
-    if (typeof showToast === 'function') showToast("📋 Direct link copied to clipboard!");
+function copyText(str, successMsg) {
+  navigator.clipboard.writeText(str).then(() => {
+    if (typeof showToast === 'function') showToast(successMsg);
+    else alert(successMsg);
   });
 }
 
-function insertIntoDrips(url) {
-  sessionStorage.setItem("tcrp_inserted_image_url", url);
-  if (typeof showToast === 'function') showToast("✓ Direct link saved! Opening Drip Editor...");
-  setTimeout(() => { window.location.href = "/drips.html"; }, 600);
-}
-
-function openLightbox(url) {
-  document.getElementById("lightbox-img").src = url;
-  document.getElementById("lightbox-modal").style.display = "flex";
-}
-
-function closeLightbox() {
-  document.getElementById("lightbox-modal").style.display = "none";
-}
-
-async function deleteImage(id) {
-  if (!confirm("Remove this asset from the gallery store?")) return;
+async function deleteAsset(id) {
+  if (!confirm("Remove this asset from your CDN gallery record?")) return;
   try {
-    const res = await fetch("/api/cdn?action=delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", id })
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cdn_delete', id })
     });
-    const data = await res.json();
-    if (data.ok) {
-      if (typeof showToast === 'function') showToast("Asset purged from gallery store.");
-      loadGallery();
+    const d = await res.json();
+    if (d.ok) {
+      if (typeof showToast === 'function') showToast("Asset record deleted.");
+      fetchGalleryItems();
+    } else {
+      alert(d.error || "Failed to delete");
     }
-  } catch(e) {
-    if (typeof showToast === 'function') showToast("Failed to delete.", "error");
+  } catch (e) {
+    alert("Error: " + e.message);
   }
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+// Convert image client-side to 1:1 Square WebP
+function processImageToSquareWebP(file, size = 600) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+        
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        const base64Data = canvas.toDataURL('image/webp', 0.85);
+        const compressedKb = Math.round((base64Data.length * 0.75) / 1024);
+        resolve({ base64Data, compressedKb });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFiles(files) {
+  if (!files || !files.length) return;
+  const prog = document.getElementById('upload-progress');
+  prog.style.display = 'block';
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    prog.textContent = `⏳ Processing & uploading (${i + 1}/${files.length}): ${file.name}...`;
+    
+    try {
+      const originalKb = Math.round(file.size / 1024);
+      const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_") + `_${Date.now()}.webp`;
+      const { base64Data, compressedKb } = await processImageToSquareWebP(file, 600);
+
+      const res = await fetch('/api/main', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'cdn_upload',
+          filename: cleanName,
+          targetSize: 'square_600',
+          originalKb,
+          compressedKb,
+          base64Data
+        })
+      });
+
+      const d = await res.json();
+      if (!d.ok) {
+        showError(d.error || "GitHub commit failed. Verify your token in Settings.");
+      }
+    } catch (err) {
+      showError(`Failed to upload ${file.name}: ${err.message}`);
+    }
+  }
+
+  prog.style.display = 'none';
+  fetchGalleryItems();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
   if (typeof initAppLayout === 'function') initAppLayout('gallery', 'CDN Media Gallery');
-  loadGallery();
+  fetchGalleryItems();
 });
 </script>
 </body>

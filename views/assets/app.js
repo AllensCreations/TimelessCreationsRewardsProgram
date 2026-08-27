@@ -92,14 +92,16 @@ async function triggerGlobalRefresh() {
 
     showToast("Global data synchronized across all pages!");
 
-    // Broadcast sync event to all listening tabs/components
+    // Universal Event Dispatcher
     window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
+    if (typeof window.onPageDataRefreshed === "function") window.onPageDataRefreshed();
     if (typeof window.syncData === "function") window.syncData();
     if (typeof window.loadRoster === "function") window.loadRoster();
     if (typeof window.loadData === "function") window.loadData();
     if (typeof window.loadDetailedLogs === "function") window.loadDetailedLogs();
     if (typeof window.loadGallery === "function") window.loadGallery();
     if (typeof window.loadSettings === "function") window.loadSettings();
+    if (typeof window.renderFromCache === "function") window.renderFromCache();
 
     checkSystemHealth();
   } catch (err) {
@@ -158,12 +160,13 @@ function initAppLayout(activeTab = 'dashboard', title = 'Dashboard') {
   checkSystemHealth();
 }
 
-// Global page listener for sync event
 window.addEventListener("tcrp:data-synced", () => {
+  if (typeof window.onPageDataRefreshed === "function") window.onPageDataRefreshed();
   if (typeof window.syncData === "function") window.syncData();
   if (typeof window.loadRoster === "function") window.loadRoster();
   if (typeof window.loadData === "function") window.loadData();
   if (typeof window.loadDetailedLogs === "function") window.loadDetailedLogs();
   if (typeof window.loadGallery === "function") window.loadGallery();
   if (typeof window.loadSettings === "function") window.loadSettings();
+  if (typeof window.renderFromCache === "function") window.renderFromCache();
 });

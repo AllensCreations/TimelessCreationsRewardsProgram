@@ -309,16 +309,28 @@ export default async function handler(req, res) {
     }
 
     if (action === "save_drip") {
-      const { month, theme, scripture, message, highlight_img, highlight_label, highlight_img_2, highlight_label_2 } = bodyData;
+      const { month, subject, theme, scripture, message, highlight_img, highlight_label, highlight_img_2, highlight_label_2, custom_html } = bodyData;
       await runSql(`
-        INSERT INTO drip_messages (month, subject, theme, scripture, message, highlight_img, highlight_label, custom_html) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO drip_messages (month, subject, theme, scripture, message, highlight_img, highlight_label, custom_html)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(month) DO UPDATE SET
+          subject = excluded.subject,
           theme = excluded.theme,
           scripture = excluded.scripture,
           message = excluded.message,
           highlight_img = excluded.highlight_img,
-          highlight_label = excluded.highlight_label
-      `, [month, theme, scripture, message, highlight_img || '', highlight_label || '']);
+          highlight_label = excluded.highlight_label,
+          custom_html = excluded.custom_html
+      `, [
+        Number(month) || 1,
+        subject || "",
+        theme || "",
+        scripture || "",
+        message || "",
+        highlight_img || "",
+        highlight_label || "",
+        custom_html || ""
+      ]);
 
       if (highlight_label_2) {
         const val = JSON.stringify({ label: highlight_label_2, img: highlight_img_2 || "" });

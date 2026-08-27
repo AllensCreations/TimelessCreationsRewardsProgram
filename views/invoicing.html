@@ -36,7 +36,7 @@
   .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
   .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
 
-  /* Live Preview Card */
+  /* Live Preview */
   .preview-wrapper { width: 100%; position: sticky; top: 70px; }
   .invoice-preview-card {
     width: 100%;
@@ -61,9 +61,7 @@
   .inv-table th { background: #fdfaf3; border-bottom: 1px solid #e7d8b8; padding: 5px 6px; text-align: left; color: #78716c; }
   .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; }
 
-  /* ─────────────────────────────────────────────────────────────
-     TRANSACTIONS & CLAIMS CARD UI (SKETCH IMPLEMENTATION)
-     ───────────────────────────────────────────────────────────── */
+  /* Transactions Card UI */
   .trx-card-container { display: flex; flex-direction: column; gap: 12px; }
   .trx-card {
     background: var(--surface2);
@@ -73,7 +71,6 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    transition: border-color 0.2s;
   }
   .trx-card:hover { border-color: var(--border-gold); }
 
@@ -263,16 +260,29 @@
     </div>
   </div>
 
-  <!-- TAB 2: Active Transactions & Claims -->
+  <!-- TAB 2: Active Transactions & Claims with Search & Status Filter -->
   <div class="tab-pane" id="transactions-tab">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">📜 Active Transactions &amp; Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to expand details (one opens at a time).</p>
+          <p style="font-size:0.68rem; color:var(--muted);">Sorted PENDING-first (oldest first). Search Order ID or filter by status.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
+
+      <!-- Search & Status Filter Bar -->
+      <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+        <input type="text" id="trx-search-box" class="form-input" placeholder="🔍 Search Order ID or Customer Name..." oninput="renderTransactionsWireframeCards()" style="flex:2; min-width:200px; padding:8px 12px; font-size:0.75rem;"/>
+        <select id="trx-status-filter" class="form-select" onchange="renderTransactionsWireframeCards()" style="flex:1; min-width:140px; padding:8px 12px; font-size:0.75rem;">
+          <option value="ALL">All Statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="PAID">Paid</option>
+          <option value="READY FOR PICKUP">Ready For Pickup</option>
+          <option value="OUT FOR DELIVERY">Out For Delivery</option>
+        </select>
+      </div>
+
       <div class="trx-card-container" id="active-trx-cards-wrapper">
         <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">Loading active transactions...</div>
       </div>
@@ -403,18 +413,15 @@ async function loadData() {
 function toggleTrxCardAccordion(el) {
   const card = el.closest('.trx-card');
   const isAlreadyOpen = card.classList.contains('open');
-
-  // Close all other open transaction cards
   document.querySelectorAll('.trx-card').forEach(c => c.classList.remove('open'));
-
-  if (!isAlreadyOpen) {
-    card.classList.add('open');
-  }
+  if (!isAlreadyOpen) card.classList.add('open');
 }
 
 function renderTransactionsWireframeCards() {
   const activeContainer = document.getElementById('active-trx-cards-wrapper');
   const archiveContainer = document.getElementById('archive-trx-cards-wrapper');
+  const searchQuery = (document.getElementById('trx-search-box')?.value || '').toLowerCase().trim();
+  const statusFilter = document.getElementById('trx-status-filter')?.value || 'ALL';
 
   let activeList = [];
   let archiveList = [];
@@ -423,8 +430,6 @@ function renderTransactionsWireframeCards() {
   orders.forEach(o => {
     let itemsList = [];
     try { itemsList = JSON.parse(o.items_json || '[]'); } catch (_) {}
-    
-    // Always guarantee primary reward item is embedded
     if (!itemsList.length || !itemsList.some(i => i.name.includes(o.item))) {
       itemsList = [{ name: `🎁 ${o.item} (Free Reward)`, qty: 1, price: 0 }, ...itemsList];
     }
@@ -450,9 +455,7 @@ function renderTransactionsWireframeCards() {
   cashInvoices.forEach(inv => {
     let itemsList = [];
     try { itemsList = JSON.parse(inv.items_json || '[]'); } catch (_) {}
-    if (!itemsList.length) {
-      itemsList = [{ name: "Custom Order", qty: 1, price: inv.total_amount }];
-    }
+    if (!itemsList.length) itemsList = [{ name: "Custom Order", qty: 1, price: inv.total_amount }];
 
     const itemObj = {
       id: inv.invoice_id,
@@ -471,10 +474,17 @@ function renderTransactionsWireframeCards() {
     else activeList.push(itemObj);
   });
 
+  // Filter Active List by Search Query & Status Filter
+  activeList = activeList.filter(item => {
+    const matchSearch = !searchQuery || item.id.toLowerCase().includes(searchQuery) || item.name.toLowerCase().includes(searchQuery) || item.email.toLowerCase().includes(searchQuery);
+    const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
   document.getElementById('active-trans-badge').textContent = activeList.length;
   document.getElementById('archive-badge').textContent = archiveList.length;
 
-  activeContainer.innerHTML = buildCardListHtml(activeList, "No active transactions or claims.");
+  activeContainer.innerHTML = buildCardListHtml(activeList, "No matching active transactions found.");
   archiveContainer.innerHTML = buildCardListHtml(archiveList, "No delivered packages in archive.");
 }
 
@@ -483,7 +493,12 @@ function buildCardListHtml(list, emptyText) {
     return `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">${emptyText}</div>`;
   }
 
-  list.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
+  // Sort: PENDING first (oldest first), then others sorted by date ascending
+  list.sort((a, b) => {
+    if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
+    if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
+    return new Date(a.raw.created_at || 0) - new Date(b.raw.created_at || 0);
+  });
 
   return list.map(item => {
     const isPaid = item.status === 'PAID' || item.status === 'COMPLETED';
@@ -496,7 +511,6 @@ function buildCardListHtml(list, emptyText) {
 
     return `
       <div class="trx-card">
-        <!-- TOP ROW: INVOICE NO. | STATUS -->
         <div class="trx-card-row-top">
           <div class="trx-inv-no">${item.id}</div>
           <div>
@@ -510,19 +524,16 @@ function buildCardListHtml(list, emptyText) {
           </div>
         </div>
 
-        <!-- MID ROW: NAME | TYPE -->
         <div class="trx-card-row-mid">
           <div class="trx-cust-name">${item.name}</div>
           <div class="trx-type-badge">${item.type}</div>
         </div>
 
-        <!-- ONE-AT-A-TIME ACCORDION TOGGLE: DETAILS ∇ ─────────────────── -->
         <div class="trx-details-toggle" onclick="toggleTrxCardAccordion(this)">
           <span>DETAILS ▾</span>
           <div class="trx-toggle-line"></div>
         </div>
 
-        <!-- EXPANDED DETAILS BODY -->
         <div class="trx-details-body">
           <div class="trx-item-list-box">
             ${itemsFormatted}
@@ -588,9 +599,6 @@ async function deleteTransaction(id, isOrder, name) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// LIVE INVOICE PREVIEW SYNC WITH STEP 1 & 2
-// ─────────────────────────────────────────────────────────────
 function syncLiveInvoicePreview() {
   let name = "Elder / Sister [Name]";
   let email = "customer@example.com";
@@ -612,7 +620,6 @@ function syncLiveInvoicePreview() {
   document.getElementById('prev-name').textContent = name;
   document.getElementById('prev-email').textContent = email;
   document.getElementById('prev-phone').textContent = phone;
-
   recalculateTotal();
 }
 
@@ -776,9 +783,6 @@ async function submitInvoice() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// EDIT MODAL: ALWAYS EMBED REWARD FOR REWARD CLAIMS
-// ─────────────────────────────────────────────────────────────
 function openEditModal(id, isOrder) {
   document.getElementById('edit-trx-id').value = id;
   document.getElementById('edit-trx-type').value = isOrder ? 'order' : 'invoice';
@@ -795,7 +799,6 @@ function openEditModal(id, isOrder) {
     document.getElementById('edit-reward-item-label').textContent = `${o.item} (${o.points_cost} Points Reward)`;
 
     try { items = JSON.parse(o.items_json || '[]'); } catch(_) {}
-    // Filter out primary reward from cash table so it doesn't double charge
     items = items.filter(i => !i.name.includes(o.item));
   } else {
     const inv = cashInvoices.find(x => x.invoice_id === id);
@@ -816,9 +819,7 @@ function openEditModal(id, isOrder) {
   recalculateEditTotal();
 }
 
-function closeEditModal() {
-  document.getElementById('edit-transaction-modal').style.display = 'none';
-}
+function closeEditModal() { document.getElementById('edit-transaction-modal').style.display = 'none'; }
 
 function addEditItemRow(name = '', price = 0, qty = 1) {
   const container = document.getElementById('edit-items-container');
@@ -889,7 +890,6 @@ async function saveEditedTransaction() {
     if (nameInput) items.push({ name: nameInput, qty, price, subtotal: s });
   });
 
-  // If it's a reward claim order, embed the free reward at index 0
   if (isOrder) {
     const o = orders.find(x => x.order_id === id);
     if (o) {

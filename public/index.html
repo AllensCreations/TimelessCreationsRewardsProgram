@@ -12,7 +12,7 @@
       background: linear-gradient(135deg, rgba(201,168,76,0.18) 0%, rgba(14,15,22,0.98) 100%);
       border: 1px solid var(--border-gold);
       border-radius: var(--radius);
-      padding: 20px 18px;
+      padding: 22px 18px;
       margin-bottom: 16px;
       display: flex;
       flex-direction: column;
@@ -20,7 +20,7 @@
       box-shadow: 0 15px 40px rgba(0,0,0,0.5);
     }
     @media(min-width: 768px) {
-      .cockpit-header { flex-direction: row; justify-content: space-between; align-items: center; padding: 26px 30px; }
+      .cockpit-header { flex-direction: row; justify-content: space-between; align-items: center; padding: 28px 32px; }
     }
 
     .status-badge-live {
@@ -31,7 +31,6 @@
     .status-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulseDot 2s infinite; }
     @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    /* Cockpit Control Deck (Buttons Grid) */
     .control-deck {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -60,7 +59,6 @@
     }
     .deck-btn:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); transform: translateY(-2px); }
 
-    /* Live Activity Log Ticker */
     .log-ticker-box {
       background: #08080d;
       border: 1px solid var(--border);
@@ -84,7 +82,6 @@
       gap: 10px;
     }
 
-    /* Heatmap */
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
     .cal-day-header { font-size: 0.62rem; text-align: center; color: var(--muted); text-transform: uppercase; font-weight: 700; padding: 4px 0; }
     .cal-cell { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; min-height: 50px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -97,7 +94,6 @@
 <body>
 
 <div class="container">
-  <!-- Cockpit Top Header & Telemetry Status -->
   <div class="cockpit-header">
     <div>
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
@@ -112,7 +108,6 @@
     </div>
   </div>
 
-  <!-- Control Deck (Quick Action Hub) -->
   <div class="control-deck">
     <a href="/invoicing.html" class="deck-btn">
       <span style="font-size:1.3rem;">🧾</span>
@@ -132,7 +127,6 @@
     </a>
   </div>
 
-  <!-- Primary Financial & Telemetry Metric Cards -->
   <div class="stat-grid">
     <div class="stat-card gold">
       <div class="stat-label">Registered Missionaries</div>
@@ -152,9 +146,7 @@
     </div>
   </div>
 
-  <!-- Two-Column Cockpit Bottom Deck -->
   <div style="display:grid; grid-template-columns:1fr; gap:16px;">
-    <!-- Heatmap -->
     <div class="card" style="margin-bottom:0;">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; flex-wrap:wrap; gap:8px;">
         <div>
@@ -166,7 +158,6 @@
       <div class="calendar-grid" id="calendar-grid"></div>
     </div>
 
-    <!-- Live Telemetry Log Ticker -->
     <div class="card" style="margin-bottom:0;">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;">
         <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">⚡ Live System Activity Stream</div>
@@ -247,7 +238,7 @@ function renderCalendar() {
 
     const count = dashboardState.dailyStats[fullDateKey] || 0;
     cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
-    cell.innerHTML = `<div class="cal-num">${day}</div>${count > 0 ? `<div class="cal-count">✉${count}</div>` : ''}`;
+    cell.innerHTML = `<div class="cal-num">${day}</div>${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}`;
     container.appendChild(cell);
   }
 }

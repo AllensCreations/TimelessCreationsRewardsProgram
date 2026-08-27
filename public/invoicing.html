@@ -36,7 +36,7 @@
   .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
   .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
 
-  /* Live Preview */
+  /* Live Preview (Fixed Visibility & Layout) */
   .preview-wrapper { width: 100%; position: sticky; top: 70px; }
   .invoice-preview-card {
     width: 100%;
@@ -51,6 +51,7 @@
     flex-direction: column;
     justify-content: space-between;
     margin: 0 auto;
+    box-sizing: border-box;
   }
   .inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1e4cb; padding-bottom: 8px; margin-bottom: 10px; }
   .inv-title-large { font-size: 1.5rem; font-weight: 900; color: #8b1a1a; font-family: 'Syne', sans-serif; }
@@ -59,7 +60,7 @@
   
   .inv-table { width: 100%; border-collapse: collapse; font-size: 0.68rem; }
   .inv-table th { background: #fdfaf3; border-bottom: 1px solid #e7d8b8; padding: 5px 6px; text-align: left; color: #78716c; }
-  .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; }
+  .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; color: #1c1917; }
 
   /* Transactions Card UI */
   .trx-card-container { display: flex; flex-direction: column; gap: 12px; }
@@ -71,6 +72,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    transition: border-color 0.2s;
   }
   .trx-card:hover { border-color: var(--border-gold); }
 
@@ -260,29 +262,16 @@
     </div>
   </div>
 
-  <!-- TAB 2: Active Transactions & Claims with Search & Status Filter -->
+  <!-- TAB 2: Active Transactions & Claims -->
   <div class="tab-pane" id="transactions-tab">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">📜 Active Transactions &amp; Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Sorted PENDING-first (oldest first). Search Order ID or filter by status.</p>
+          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to expand details (one opens at a time).</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
-
-      <!-- Search & Status Filter Bar -->
-      <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
-        <input type="text" id="trx-search-box" class="form-input" placeholder="🔍 Search Order ID or Customer Name..." oninput="renderTransactionsWireframeCards()" style="flex:2; min-width:200px; padding:8px 12px; font-size:0.75rem;"/>
-        <select id="trx-status-filter" class="form-select" onchange="renderTransactionsWireframeCards()" style="flex:1; min-width:140px; padding:8px 12px; font-size:0.75rem;">
-          <option value="ALL">All Statuses</option>
-          <option value="PENDING">Pending</option>
-          <option value="PAID">Paid</option>
-          <option value="READY FOR PICKUP">Ready For Pickup</option>
-          <option value="OUT FOR DELIVERY">Out For Delivery</option>
-        </select>
-      </div>
-
       <div class="trx-card-container" id="active-trx-cards-wrapper">
         <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">Loading active transactions...</div>
       </div>
@@ -420,8 +409,6 @@ function toggleTrxCardAccordion(el) {
 function renderTransactionsWireframeCards() {
   const activeContainer = document.getElementById('active-trx-cards-wrapper');
   const archiveContainer = document.getElementById('archive-trx-cards-wrapper');
-  const searchQuery = (document.getElementById('trx-search-box')?.value || '').toLowerCase().trim();
-  const statusFilter = document.getElementById('trx-status-filter')?.value || 'ALL';
 
   let activeList = [];
   let archiveList = [];
@@ -430,6 +417,7 @@ function renderTransactionsWireframeCards() {
   orders.forEach(o => {
     let itemsList = [];
     try { itemsList = JSON.parse(o.items_json || '[]'); } catch (_) {}
+    
     if (!itemsList.length || !itemsList.some(i => i.name.includes(o.item))) {
       itemsList = [{ name: `🎁 ${o.item} (Free Reward)`, qty: 1, price: 0 }, ...itemsList];
     }
@@ -474,17 +462,10 @@ function renderTransactionsWireframeCards() {
     else activeList.push(itemObj);
   });
 
-  // Filter Active List by Search Query & Status Filter
-  activeList = activeList.filter(item => {
-    const matchSearch = !searchQuery || item.id.toLowerCase().includes(searchQuery) || item.name.toLowerCase().includes(searchQuery) || item.email.toLowerCase().includes(searchQuery);
-    const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
-
   document.getElementById('active-trans-badge').textContent = activeList.length;
   document.getElementById('archive-badge').textContent = archiveList.length;
 
-  activeContainer.innerHTML = buildCardListHtml(activeList, "No matching active transactions found.");
+  activeContainer.innerHTML = buildCardListHtml(activeList, "No active transactions or claims.");
   archiveContainer.innerHTML = buildCardListHtml(archiveList, "No delivered packages in archive.");
 }
 
@@ -493,12 +474,7 @@ function buildCardListHtml(list, emptyText) {
     return `<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.78rem;">${emptyText}</div>`;
   }
 
-  // Sort: PENDING first (oldest first), then others sorted by date ascending
-  list.sort((a, b) => {
-    if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
-    if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
-    return new Date(a.raw.created_at || 0) - new Date(b.raw.created_at || 0);
-  });
+  list.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
 
   return list.map(item => {
     const isPaid = item.status === 'PAID' || item.status === 'COMPLETED';
@@ -599,6 +575,7 @@ async function deleteTransaction(id, isOrder, name) {
   }
 }
 
+// Live Preview Sync with Step 1 & 2 (Strictly displaying exact item rows provided)
 function syncLiveInvoicePreview() {
   let name = "Elder / Sister [Name]";
   let email = "customer@example.com";
@@ -686,46 +663,42 @@ function handleProductChange(selectEl) {
 function recalculateTotal() {
   let subtotal = 0;
   const previewItems = [];
-  document.querySelectorAll(".item-card-row").forEach(r => {
-    const name = r.querySelector(".item-select")?.value || r.querySelector(".p-name")?.value || "Custom Item";
-    const qty = parseInt(r.querySelector(".item-qty")?.value, 10) || 1;
-    const price = parseFloat(r.querySelector(".item-price")?.value) || 0;
+  document.querySelectorAll('.item-card-row').forEach(r => {
+    const name = r.querySelector('.item-select').value;
+    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
+    const price = parseFloat(r.querySelector('.item-price').value) || 0;
     const rowSubtotal = qty * price;
-    const subEl = r.querySelector(".item-subtotal");
-    if (subEl) subEl.textContent = `₱${rowSubtotal.toFixed(2)}`;
+    r.querySelector('.item-subtotal').textContent = `₱${rowSubtotal.toFixed(2)}`;
     subtotal += rowSubtotal;
     previewItems.push({ name, qty, price, subtotal: rowSubtotal });
   });
 
-  const discountType = document.getElementById("discount-type")?.value || "fixed";
-  const discountVal = parseFloat(document.getElementById("discount-val")?.value) || 0;
-  let discountDeducted = discountType === "percent" ? (subtotal * (discountVal / 100)) : discountVal;
+  const discountType = document.getElementById('discount-type').value;
+  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
+  let discountDeducted = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
   if (discountDeducted > subtotal) discountDeducted = subtotal;
 
   const grandTotal = Math.max(0, subtotal - discountDeducted);
-  
-  if (document.getElementById("calc-subtotal")) document.getElementById("calc-subtotal").textContent = `₱${subtotal.toFixed(2)}`;
-  if (document.getElementById("calc-discount-deducted")) document.getElementById("calc-discount-deducted").textContent = `-₱${discountDeducted.toFixed(2)}`;
-  if (document.getElementById("calc-grand-total")) document.getElementById("calc-grand-total").textContent = `₱${grandTotal.toFixed(2)}`;
+  document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
 
-  if (document.getElementById("prev-subtotal")) document.getElementById("prev-subtotal").textContent = `₱${subtotal.toFixed(2)}`;
-  if (document.getElementById("prev-discount")) document.getElementById("prev-discount").textContent = `-₱${discountDeducted.toFixed(2)}`;
-  if (document.getElementById("prev-total")) document.getElementById("prev-total").textContent = `₱${grandTotal.toFixed(2)}`;
+  document.getElementById('prev-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('prev-discount').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  document.getElementById('prev-total').textContent = `₱${grandTotal.toFixed(2)}`;
 
-  const prevTbody = document.getElementById("prev-table-body");
-  if (prevTbody) {
-    if (previewItems.length === 0) {
-      prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items selected.</td></tr>';
-    } else {
-      prevTbody.innerHTML = previewItems.map(item => `
-        <tr>
-          <td><strong>${item.name}</strong></td>
-          <td style="text-align:center;">${item.qty}</td>
-          <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
-          <td style="text-align:right; font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
-        </tr>
-      `).join("");
-    }
+  const prevTbody = document.getElementById('prev-table-body');
+  if (previewItems.length === 0) {
+    prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items selected.</td></tr>';
+  } else {
+    prevTbody.innerHTML = previewItems.map(item => `
+      <tr>
+        <td><strong>${item.name}</strong></td>
+        <td style="text-align:center;">${item.qty}</td>
+        <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
+        <td style="text-align:right; font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
+      </tr>
+    `).join('');
   }
 }
 

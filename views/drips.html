@@ -2,23 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>24-Month Drips & Media Hub | Timeless Creations</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js"></script>
     <style>
-      .main-wrap { max-width: 1240px; margin: 20px auto; padding: 0 16px 40px; }
-      .editor-grid { display: grid; grid-template-columns: 1fr 480px; gap: 24px; align-items: start; }
-      .tab-bar { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; overflow-x: auto; }
-      .tab-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; border-radius: 6px; font-family: inherit; font-size: 0.72rem; font-weight: bold; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-      .tab-btn:hover { color: var(--text); border-color: var(--gold); }
-      .tab-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); }
-      .tab-content { display: none; }
-      .tab-content.active { display: block; }
-      .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); display: block; }
+      .editor-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+      @media(min-width: 1024px) { .editor-grid { grid-template-columns: 1fr 440px; } }
 
-      .toggle-wrap { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); padding: 12px 16px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 14px; }
+      .toggle-wrap { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 12px; }
       .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
       .switch input { opacity: 0; width: 0; height: 0; }
       .slider { position: absolute; cursor: pointer; inset: 0; background-color: #2a2a38; transition: .3s; border-radius: 24px; border: 1px solid var(--border); }
@@ -26,76 +19,56 @@
       input:checked + .slider { background-color: var(--gold-dim); border-color: var(--gold); }
       input:checked + .slider:before { transform: translateX(20px); background-color: var(--gold); }
 
-      /* Visual Picker Tiles */
+      /* Mobile Visual Picker Tiles */
       .img-picker-card {
         background: var(--surface2);
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 10px;
+        border-radius: var(--radius-sm);
+        padding: 8px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
         text-align: center;
       }
       .picker-thumb-wrap {
         width: 100%;
         aspect-ratio: 1 / 1;
-        max-width: 130px;
+        max-width: 110px;
         background: #08080d;
         border-radius: 6px;
         overflow: hidden;
         border: 1px solid var(--border);
       }
-      .picker-thumb-wrap img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-      .picker-btn-group {
-        display: flex;
-        gap: 6px;
-        width: 100%;
-      }
-      .picker-btn-group button {
-        flex: 1;
-        padding: 5px 6px;
-        font-size: 0.65rem;
-      }
+      .picker-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .picker-btn-group { display: flex; gap: 4px; width: 100%; }
+      .picker-btn-group button { flex: 1; padding: 5px 4px; font-size: 0.65rem; min-height: 32px; }
 
-      .tab-save-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }
-      .save-banner { position: sticky; bottom: 20px; background: var(--surface2); border: 1px solid var(--gold); padding: 14px 22px; border-radius: var(--radius); display: none; justify-content: space-between; align-items: center; margin-top: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 80; }
-      
-      .preview-wrapper { background: #12121a; border: 1px solid var(--border); border-radius: 12px; padding: 16px; max-height: calc(100vh - 120px); overflow-y: auto; position: sticky; top: 20px; }
-      .preview-frame { width: 100%; max-width: 420px; max-width: 450px; margin: 0 auto; background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); overflow: hidden; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+
+      /* Fluid Live Preview */
+      .preview-wrapper { width: 100%; background: #12121a; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; position: sticky; top: 70px; }
+      .preview-frame { width: 100%; max-width: 100%; margin: 0 auto; background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; overflow: hidden; }
 
       /* Modal Gallery Selector */
-      .modal-overlay { position: fixed; inset: 0; background: rgba(5,5,8,0.88); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-      .modal-box { background: var(--surface); border: 1px solid var(--gold); padding: 24px; border-radius: 12px; max-width: 680px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.85); }
-      .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; overflow-y: auto; padding: 10px 0; max-height: 55vh; }
-      .modal-img-card { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; cursor: pointer; transition: border-color 0.2s, transform 0.15s; background: var(--surface2); }
-      .modal-img-card:hover { border-color: var(--gold); transform: scale(1.04); }
+      .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; overflow-y: auto; padding: 10px 0; max-height: 50vh; }
+      .modal-img-card { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; cursor: pointer; }
       .modal-img-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-      @media(max-width: 1100px) {
-        .editor-grid { grid-template-columns: 1fr; }
-        .preview-wrapper { position: static; max-height: 80vh; overflow-y: auto; margin-top: 20px; padding: 10px; }
-      }
     </style>
 </head>
 <body>
 
 <div class="main-wrap">
-  <!-- Month Cycle Selector Banner -->
-  <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-color:rgba(201,168,76,0.3);">
+  <!-- Cycle Selector -->
+  <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-color:var(--border-gold);">
     <div>
-      <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Active Month Cycle Selector</div>
-      <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Select calendar month:</div>
+      <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Active Month Cycle</div>
+      <div style="font-size:0.68rem; color:var(--muted);">Select calendar month:</div>
     </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <select id="month-selector" class="form-input" style="width:190px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)"></select>
-      <span id="badge-template-status" style="font-size:0.68rem; font-weight:bold; padding:6px 10px; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--muted);">Checking template...</span>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <select id="month-selector" class="form-input" style="width:160px; font-weight:bold; color:var(--gold); padding:6px 10px;" onchange="onSelectMonth(this.value)"></select>
+      <span id="badge-template-status" style="font-size:0.65rem; font-weight:bold; padding:6px 8px; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--muted);">...</span>
     </div>
   </div>
 
@@ -105,75 +78,70 @@
             <button class="tab-btn active" onclick="switchTab('tab-messages', this)">📝 Content</button>
             <button class="tab-btn" onclick="switchTab('tab-images', this)">🖼️ Essentials &amp; Grid</button>
             <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Products of Month</button>
-            <button class="tab-btn" onclick="switchTab('tab-html', this)">💻 Monthly HTML Template</button>
+            <button class="tab-btn" onclick="switchTab('tab-html', this)">💻 Custom HTML</button>
         </div>
 
         <!-- TAB 1: Content -->
         <div id="tab-messages" class="tab-content active">
             <div class="card">
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">Monthly Subject, Message &amp; Scripture</div>
-                
+                <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold); margin-bottom:10px;">Monthly Message &amp; Quote</div>
                 <div class="form-group">
                     <label class="form-label">Email Subject Line</label>
-                    <input type="text" id="inp-subject" class="form-input" placeholder="e.g. Monthly Encouragement (January) • Timeless Creations" oninput="onLiveEdit()">
+                    <input type="text" id="inp-subject" class="form-input" placeholder="e.g. Monthly Encouragement" oninput="onLiveEdit()">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Speaker Name / Author Citation ({{THEME}})</label>
+                    <label class="form-label">Author Citation ({{THEME}})</label>
                     <input type="text" id="inp-theme" class="form-input" placeholder="e.g. Elder Jeffrey R. Holland" oninput="onLiveEdit()">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Monthly Encouragement Letter ({{MESSAGE}})</label>
+                    <label class="form-label">Encouragement Letter ({{MESSAGE}})</label>
                     <textarea id="inp-msg" class="form-input" rows="4" style="resize:vertical;" oninput="onLiveEdit()"></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Conference Quote / Scripture ({{SCRIPTURE}})</label>
                     <textarea id="inp-quote" class="form-input" rows="2" style="resize:vertical;" oninput="onLiveEdit()"></textarea>
                 </div>
-
-                <div class="tab-save-bar">
-                    <button class="btn btn-dark" onclick="resetTab1Defaults()">↺ Reset Content</button>
-                    <button class="btn btn-gold" onclick="saveActiveMonth('content')">💾 Save Content</button>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+                    <button class="btn btn-dark" onclick="resetTab1Defaults()">↺ Reset</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('content')">💾 Save</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: Essentials & Grid (No Text Boxes) -->
+        <!-- TAB 2: Essentials & Grid -->
         <div id="tab-images" class="tab-content">
             <div class="card">
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">2 Missionary Essentials (1:1 Ratio)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-                    <!-- Essential 1 -->
+                <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold); margin-bottom:10px;">2 Missionary Essentials (1:1 Ratio)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
                     <div class="img-picker-card">
-                        <label class="form-label">Essential 1 Label</label>
-                        <input type="text" id="inp-ess1-name" class="form-input" value="Wooden Nametag" oninput="onLiveEdit()" style="margin-bottom:6px;">
+                        <label class="form-label">Essential 1</label>
+                        <input type="text" id="inp-ess1-name" class="form-input" value="Wooden Nametag" oninput="onLiveEdit()" style="margin-bottom:4px; font-size:0.75rem;">
                         <input type="hidden" id="inp-img-ess1" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE">
                         <div class="picker-thumb-wrap">
                           <img id="thumb-ess1" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" alt="Essential 1">
                         </div>
                         <div class="picker-btn-group">
-                          <button class="btn btn-gold" onclick="openGalleryModal('inp-img-ess1', 'thumb-ess1')">🖼️ Gallery</button>
-                          <button class="btn btn-dark" onclick="revertImage('inp-img-ess1', 'thumb-ess1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE')">↺ Default</button>
+                          <button class="btn btn-gold" onclick="openGalleryModal('inp-img-ess1', 'thumb-ess1')">🖼️ Pick</button>
+                          <button class="btn btn-dark" onclick="revertImage('inp-img-ess1', 'thumb-ess1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE')">↺</button>
                         </div>
                     </div>
 
-                    <!-- Essential 2 -->
                     <div class="img-picker-card">
-                        <label class="form-label">Essential 2 Label</label>
-                        <input type="text" id="inp-ess2-name" class="form-input" value="POS Kit" oninput="onLiveEdit()" style="margin-bottom:6px;">
+                        <label class="form-label">Essential 2</label>
+                        <input type="text" id="inp-ess2-name" class="form-input" value="POS Kit" oninput="onLiveEdit()" style="margin-bottom:4px; font-size:0.75rem;">
                         <input type="hidden" id="inp-img-ess2" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ">
                         <div class="picker-thumb-wrap">
                           <img id="thumb-ess2" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" alt="Essential 2">
                         </div>
                         <div class="picker-btn-group">
-                          <button class="btn btn-gold" onclick="openGalleryModal('inp-img-ess2', 'thumb-ess2')">🖼️ Gallery</button>
-                          <button class="btn btn-dark" onclick="revertImage('inp-img-ess2', 'thumb-ess2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ')">↺ Default</button>
+                          <button class="btn btn-gold" onclick="openGalleryModal('inp-img-ess2', 'thumb-ess2')">🖼️ Pick</button>
+                          <button class="btn btn-dark" onclick="revertImage('inp-img-ess2', 'thumb-ess2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ')">↺</button>
                         </div>
                     </div>
                 </div>
 
-                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">9 Community Archive Photos (1:1 Ratio)</div>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:16px;">
-                    <!-- Grid 1..9 -->
+                <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold); margin-bottom:10px;">9 Community Archive Photos</div>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:12px;">
                     <script>
                       const defaultGrids = [
                         "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
@@ -189,13 +157,13 @@
                       for (let i = 1; i <= 9; i++) {
                         document.write(`
                           <div class="img-picker-card">
-                            <span style="font-size:0.65rem; color:var(--muted); font-weight:bold;">Photo ${i}</span>
+                            <span style="font-size:0.6rem; color:var(--muted);">Grid ${i}</span>
                             <input type="hidden" id="inp-grid-${i}" value="${defaultGrids[i-1]}">
-                            <div class="picker-thumb-wrap" style="max-width:90px;">
+                            <div class="picker-thumb-wrap" style="max-width:75px;">
                               <img id="thumb-grid-${i}" src="${defaultGrids[i-1]}" alt="Grid ${i}">
                             </div>
                             <div class="picker-btn-group">
-                              <button class="btn btn-gold" onclick="openGalleryModal('inp-grid-${i}', 'thumb-grid-${i}')">🖼️ Pick</button>
+                              <button class="btn btn-gold" onclick="openGalleryModal('inp-grid-${i}', 'thumb-grid-${i}')">🖼️</button>
                               <button class="btn btn-dark" onclick="revertImage('inp-grid-${i}', 'thumb-grid-${i}', '${defaultGrids[i-1]}')">↺</button>
                             </div>
                           </div>
@@ -204,20 +172,20 @@
                     </script>
                 </div>
 
-                <div class="tab-save-bar">
-                    <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset Essentials &amp; Grid</button>
-                    <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save Essentials &amp; Grid</button>
+                <div style="display:flex; justify-content:flex-end; gap:8px;">
+                    <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: Products of Month (Dual with Gallery Picker) -->
+        <!-- TAB 3: Products of Month -->
         <div id="tab-products" class="tab-content">
             <div class="card">
                 <div class="toggle-wrap">
                     <div>
-                        <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Enable Products of the Month</div>
-                        <div style="font-size:0.68rem; color:var(--muted);">Showcase 1 or 2 special highlighted items in the email newsletter.</div>
+                        <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold);">Enable Products of the Month</div>
+                        <div style="font-size:0.65rem; color:var(--muted);">Highlight 1 or 2 special items.</div>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="inp-highlight-toggle" onchange="onLiveEdit()">
@@ -225,90 +193,84 @@
                     </label>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                  <!-- Product 1 -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                   <div class="img-picker-card">
-                      <label class="form-label">Product 1 Name</label>
-                      <input type="text" id="inp-highlight-name" class="form-input" placeholder="e.g. Scripture Case" oninput="onLiveEdit()" style="margin-bottom:6px;">
+                      <label class="form-label">Product 1</label>
+                      <input type="text" id="inp-highlight-name" class="form-input" placeholder="Name" oninput="onLiveEdit()" style="margin-bottom:4px; font-size:0.75rem;">
                       <input type="hidden" id="inp-highlight-img" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE">
                       <div class="picker-thumb-wrap">
                         <img id="thumb-hl-1" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" alt="Product 1">
                       </div>
                       <div class="picker-btn-group">
-                        <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img', 'thumb-hl-1')">🖼️ Gallery</button>
-                        <button class="btn btn-dark" onclick="revertImage('inp-highlight-img', 'thumb-hl-1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE')">↺ Default</button>
+                        <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img', 'thumb-hl-1')">🖼️</button>
+                        <button class="btn btn-dark" onclick="revertImage('inp-highlight-img', 'thumb-hl-1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE')">↺</button>
                       </div>
                   </div>
 
-                  <!-- Product 2 -->
                   <div class="img-picker-card">
-                      <label class="form-label">Product 2 Name (Optional)</label>
-                      <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="e.g. Leather Strap" oninput="onLiveEdit()" style="margin-bottom:6px;">
+                      <label class="form-label">Product 2</label>
+                      <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="Name (Opt)" oninput="onLiveEdit()" style="margin-bottom:4px; font-size:0.75rem;">
                       <input type="hidden" id="inp-highlight-img-2" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ">
                       <div class="picker-thumb-wrap">
                         <img id="thumb-hl-2" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" alt="Product 2">
                       </div>
                       <div class="picker-btn-group">
-                        <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img-2', 'thumb-hl-2')">🖼️ Gallery</button>
-                        <button class="btn btn-dark" onclick="revertImage('inp-highlight-img-2', 'thumb-hl-2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ')">↺ Default</button>
+                        <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img-2', 'thumb-hl-2')">🖼️</button>
+                        <button class="btn btn-dark" onclick="revertImage('inp-highlight-img-2', 'thumb-hl-2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ')">↺</button>
                       </div>
                   </div>
                 </div>
 
-                <div class="tab-save-bar">
-                    <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset Products</button>
-                    <button class="btn btn-gold" onclick="saveActiveMonth('products')">💾 Save Products</button>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+                    <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('products')">💾 Save</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 4: Monthly HTML Template Override -->
+        <!-- TAB 4: HTML Override -->
         <div id="tab-html" class="tab-content">
             <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-                    <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Custom HTML Template Override</div>
-                    <button class="btn btn-dark" style="padding:4px 10px; font-size:0.68rem;" onclick="loadMasterTemplateIntoEditor()">📋 Load Master Template Code</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold);">Custom HTML Override</div>
+                    <button class="btn btn-dark" style="padding:4px 8px; font-size:0.65rem;" onclick="loadMasterTemplateIntoEditor()">📋 Load Master</button>
                 </div>
-                <div class="form-group">
-                    <textarea id="inp-custom-html" class="form-input" rows="13" style="font-family:'DM Mono',monospace; font-size:0.7rem; resize:vertical;" placeholder="Leave empty to use Master Father Template..." oninput="onLiveEdit()"></textarea>
-                </div>
-                <div class="tab-save-bar">
-                    <button class="btn btn-dark" onclick="clearCustomHtml()">↺ Clear (Use Master Template)</button>
-                    <button class="btn btn-gold" onclick="saveActiveMonth('html')">💾 Save Custom HTML</button>
+                <textarea id="inp-custom-html" class="form-input" rows="12" style="font-family:'DM Mono',monospace; font-size:0.7rem;" placeholder="Leave empty for Master Template..." oninput="onLiveEdit()"></textarea>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+                    <button class="btn btn-dark" onclick="clearCustomHtml()">↺ Clear</button>
+                    <button class="btn btn-gold" onclick="saveActiveMonth('html')">💾 Save HTML</button>
                 </div>
             </div>
         </div>
 
-        <!-- Floating Sync Bar -->
         <div class="save-banner" id="save-banner">
-            <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ Unsaved edits for <span id="unsaved-month-label">January (Month 1)</span></span>
-            <button class="btn btn-gold" id="btn-save-turso" onclick="saveActiveMonth('global')">💾 Save Month to Turso</button>
+            <span style="font-size:0.72rem; color:var(--gold); font-weight:bold;">⚡ Unsaved edits for <span id="unsaved-month-label">Month</span></span>
+            <button class="btn btn-gold" id="btn-save-turso" onclick="saveActiveMonth('global')">💾 Save to Turso</button>
         </div>
     </div>
 
-    <!-- Right Column: Isolated Iframe Preview -->
+    <!-- Fluid Live Preview -->
     <div class="preview-wrapper">
-        <div style="font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; text-align:center;">
-            ✦ Live 1:1 Email Template Sandbox
+        <div style="font-size:0.68rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; text-align:center;">
+            ✦ Live Mobile Email Preview (100% Fluid)
         </div>
         <div class="preview-frame">
-            <iframe id="preview-iframe" style="width:100%; min-height:880px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
+            <iframe id="preview-iframe" style="width:100%; min-height:680px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
         </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Image Picker Connected to CDN Gallery -->
+<!-- Modal Image Picker -->
 <div class="modal-overlay" id="gallery-picker-modal">
-  <div class="modal-box">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">Choose Image from Gallery</div>
-      <button onclick="closeGalleryModal()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Select CDN Image</div>
+      <button onclick="closeGalleryModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
     </div>
-    <input type="text" id="modal-gallery-search" class="form-input" placeholder="Search gallery by filename..." oninput="filterModalGrid(this.value)" style="margin-bottom:12px;">
+    <input type="text" id="modal-gallery-search" class="form-input" placeholder="Filter by filename..." oninput="filterModalGrid(this.value)" style="margin-bottom:10px;">
     <div class="modal-grid" id="modal-grid-container"></div>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
-      <a href="/gallery.html" target="_blank" style="color:var(--gold); font-size:0.7rem; text-decoration:none;">+ Upload New Image in Gallery ↗</a>
+    <div style="display:flex; justify-content:flex-end; margin-top:12px;">
       <button class="btn btn-dark" onclick="closeGalleryModal()">Cancel</button>
     </div>
   </div>
@@ -342,12 +304,11 @@ function initSelector() {
   for (let i = 1; i <= 24; i++) {
     const opt = document.createElement("option");
     opt.value = i;
-    opt.textContent = `${getCalendarMonthLabel(i)} (Month ${i})`;
+    opt.textContent = `${getCalendarMonthLabel(i)} (M${i})`;
     sel.appendChild(opt);
   }
 }
 
-// Open Gallery Modal Picker
 async function openGalleryModal(inputId, thumbId) {
   currentTargetInputId = inputId;
   currentTargetThumbId = thumbId;
@@ -356,9 +317,8 @@ async function openGalleryModal(inputId, thumbId) {
   let items = LocalStore.get('tcrp_cdn_gallery', null);
   if (!items) {
     try {
-      const res = await fetch('/api/main?action=cdn_list');
-      const d = await res.json();
-      items = d.gallery || d.items || [];
+      const res = await fetch('/api/main?action=cdn_list').then(r => r.json());
+      items = res.gallery || res.items || [];
       LocalStore.set('tcrp_cdn_gallery', items);
     } catch (_) { items = []; }
   }
@@ -372,7 +332,7 @@ function closeGalleryModal() {
 function renderModalGrid(items) {
   const grid = document.getElementById("modal-grid-container");
   if (!items || !items.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No images in Gallery. Upload images in CDN Gallery first!</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted); font-size:0.75rem;">No images in Gallery. Upload images in CDN Gallery first!</div>';
     return;
   }
   grid.innerHTML = items.map(it => `
@@ -390,30 +350,24 @@ function filterModalGrid(q) {
 }
 
 function selectImage(url) {
-  if (currentTargetInputId) {
-    document.getElementById(currentTargetInputId).value = url;
-  }
-  if (currentTargetThumbId) {
-    document.getElementById(currentTargetThumbId).src = url;
-  }
+  if (currentTargetInputId) document.getElementById(currentTargetInputId).value = url;
+  if (currentTargetThumbId) document.getElementById(currentTargetThumbId).src = url;
   closeGalleryModal();
   onLiveEdit();
-  if (typeof showToast === 'function') showToast("✓ Image selected from gallery!");
+  showToast("Image selected!");
 }
 
 function revertImage(inputId, thumbId, defaultUrl) {
   document.getElementById(inputId).value = defaultUrl;
   document.getElementById(thumbId).src = defaultUrl;
   onLiveEdit();
-  if (typeof showToast === 'function') showToast("↺ Reverted to default image.");
 }
 
 async function fetchFromTurso() {
   try {
-    const res = await fetch("/api/main?action=get_drips");
-    const data = await res.json();
-    if (data.ok && Array.isArray(data.drips)) {
-      data.drips.forEach(d => {
+    const res = await fetch("/api/main?action=get_drips").then(r => r.json());
+    if (res.ok && Array.isArray(res.drips)) {
+      res.drips.forEach(d => {
         liveDripMap[Number(d.month)] = {
           month: Number(d.month),
           subject: d.subject || `Monthly Encouragement (${getCalendarMonthLabel(d.month)}) • Timeless Creations`,
@@ -434,64 +388,62 @@ async function fetchFromTurso() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light dark">
 <style>
-  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 20px 0; }
-  .email-container { max-width: 450px; background: #ffffff; margin: 0 auto; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.03); }
-  .brand-header { padding: 35px 20px 15px; text-align: center; }
-  .logo-text { font-size: 24px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
-  .temple-img { width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0; }
-  .main-content { padding: 22px 18px; text-align: center; line-height: 1.6; }
-  .quote-container { margin: 18px 0; padding: 18px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
-  .transition-zone { margin: 25px 0; padding: 15px 10px; font-style: italic; color: #8c7e5d; font-size: 13px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
+  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 12px; }
+  .email-container { width: 100%; max-width: 450px; background: #ffffff; margin: 0 auto; border: 1px solid #e0d6bc; box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+  .brand-header { padding: 25px 14px 10px; text-align: center; }
+  .logo-text { font-size: 20px; letter-spacing: 4px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
+  .temple-img { width: 100%; height: auto; object-fit: cover; display: block; border: 0; }
+  .main-content { padding: 16px 14px; text-align: center; line-height: 1.5; }
+  .quote-container { margin: 14px 0; padding: 14px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
+  .transition-zone { margin: 18px 0; padding: 10px; font-style: italic; color: #8c7e5d; font-size: 12px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
   .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 4px; display: block; }
 </style>
 </head>
 <body>
 <div class="email-container">
   <div class="brand-header">
-    <div style="font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px;">{{MONTH}} • Dedicated Service</div>
+    <div style="font-size: 7.5px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 8px;">{{MONTH}} • Dedicated Service</div>
     <h1 class="logo-text">Timeless Creations</h1>
-    <div style="font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 8px; text-transform: uppercase;">Most Trusted Online LDS Store Across the Philippines</div>
   </div>
   <img src="${TEMPLE_IMG_URL}" alt="Temple" class="temple-img">
   
   <div class="main-content">
-    <div style="font-size: 19px; font-style: italic; margin-bottom: 12px;">Hello {{NAME}},</div>
-    <div style="font-size: 13.5px; color: #333; margin-bottom: 18px;">{{MESSAGE}}</div>
+    <div style="font-size: 17px; font-style: italic; margin-bottom: 10px;">Hello {{NAME}},</div>
+    <div style="font-size: 13px; color: #333; margin-bottom: 14px;">{{MESSAGE}}</div>
     <div class="quote-container">
-      <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 8px;">"{{SCRIPTURE}}"</div>
-      <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+      <div style="font-size: 13.5px; font-style: italic; color: #1a1a1a; margin-bottom: 6px;">"{{SCRIPTURE}}"</div>
+      <div style="font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
     </div>
 
     <div class="transition-zone">
       As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
     </div>
 
-    <div style="padding: 20px 12px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 18px;">
-      <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; margin-bottom: 16px; color: #1a1a1a;">Missionary Essentials</h2>
+    <div style="padding: 16px 10px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 14px;">
+      <h2 style="font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; font-size: 13px; margin-bottom: 12px; color: #1a1a1a;">Missionary Essentials</h2>
       <table width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
           <td align="center" width="48%" valign="top">
-            <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="{{ESS1_NAME}}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">{{ESS1_NAME}}</div>
+            <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 120px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
+            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS1_NAME}}</div>
           </td>
           <td width="4%"></td>
           <td align="center" width="48%" valign="top">
-            <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 130px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 8px auto;" alt="{{ESS2_NAME}}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; letter-spacing: 1px; font-weight: bold;">{{ESS2_NAME}}</div>
+            <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 120px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
+            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS2_NAME}}</div>
           </td>
         </tr>
       </table>
     </div>
 
-    <div style="{{HIGHLIGHT_DISPLAY}}; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
+    <div style="{{HIGHLIGHT_DISPLAY}}; margin: 18px 0; padding: 14px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
       {{HIGHLIGHT_ITEMS_HTML}}
     </div>
 
-    <div style="margin: 30px auto; text-align: center;">
-      <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
-      <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
+    <div style="margin: 20px auto; text-align: center;">
+      <h2 style="font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
+      <table width="100%" border="0" cellspacing="2" cellpadding="0" style="table-layout: fixed; margin-bottom: 12px;">
         <tr>
           <td><img src="{{GRID1}}" class="strict-1-1" alt="Grid 1"></td>
           <td><img src="{{GRID2}}" class="strict-1-1" alt="Grid 2"></td>
@@ -508,9 +460,6 @@ async function fetchFromTurso() {
           <td><img src="{{GRID9}}" class="strict-1-1" alt="Grid 9"></td>
         </tr>
       </table>
-      <a href="{{GALLERY_URL}}" target="_blank" style="display: inline-block; padding: 10px 20px; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">
-        Enter the Gallery
-      </a>
     </div>
 
     {{REWARD_SECTION_HTML}}
@@ -524,7 +473,7 @@ async function fetchFromTurso() {
 function onSelectMonth(m) {
   currentMonth = parseInt(m, 10);
   const label = getCalendarMonthLabel(currentMonth);
-  document.getElementById("unsaved-month-label").textContent = `${label} (Month ${currentMonth})`;
+  document.getElementById("unsaved-month-label").textContent = `${label} (M${currentMonth})`;
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,
@@ -539,7 +488,7 @@ function onSelectMonth(m) {
     custom_html: ""
   };
 
-  document.getElementById("inp-subject").value = data.subject || `Monthly Encouragement (${label}) • Timeless Creations`;
+  document.getElementById("inp-subject").value = data.subject || "";
   document.getElementById("inp-theme").value = data.theme || "";
   document.getElementById("inp-msg").value = data.message || "";
   document.getElementById("inp-quote").value = data.scripture || "";
@@ -559,21 +508,16 @@ function onSelectMonth(m) {
     document.getElementById("inp-highlight-name-2").value = "";
   }
 
-  updateStatusBadge(data.custom_html);
-  renderPreview();
-}
-
-function updateStatusBadge(hasCustom) {
   const badge = document.getElementById("badge-template-status");
-  if (hasCustom && hasCustom.trim() !== "") {
-    badge.textContent = "💻 Custom HTML Active";
+  if (data.custom_html && data.custom_html.trim() !== "") {
+    badge.textContent = "💻 Custom HTML";
     badge.style.color = "var(--gold)";
-    badge.style.borderColor = "var(--gold)";
   } else {
-    badge.textContent = "🏛️ Master Father Template Active";
+    badge.textContent = "🏛️ Master Template";
     badge.style.color = "var(--muted)";
-    badge.style.borderColor = "var(--border)";
   }
+
+  renderPreview();
 }
 
 function onLiveEdit() {
@@ -593,14 +537,8 @@ function onLiveEdit() {
     custom_html: customHtmlVal
   };
 
-  updateStatusBadge(customHtmlVal);
   document.getElementById("save-banner").style.display = "flex";
   renderPreview();
-}
-
-function cleanQuoteString(raw) {
-  if (!raw) return "";
-  return raw.replace(/^["'“](.*)["'”]$/, '$1').replace(/^["'“]/, '').replace(/["'”]$/, '').trim();
 }
 
 function renderPreview() {
@@ -611,7 +549,7 @@ function renderPreview() {
 
   const name = "Elder Smith";
   const message = (data.message || "").replace(/\n/g, "<br>");
-  const cleanedQuote = cleanQuoteString(data.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.");
+  const cleanedQuote = (data.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.").replace(/^["'“](.*)["'”]$/, '$1').trim();
   const theme = data.theme || "Elder Jeffrey R. Holland";
   const points = 2;
 
@@ -628,35 +566,28 @@ function renderPreview() {
   let highlightHtml = '';
   if (items.length > 0) {
     highlightHtml = `
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
-      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 8px;">
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 6px;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
           ${items.map((it, idx) => `
             <td align="center" width="${items.length === 2 ? '48%' : '100%'}" valign="top">
-              <img src="${it.img}" style="width: 100%; max-width: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${it.name}">
-              <div style="font-family: 'Syne', sans-serif; font-size: 11px; font-weight: bold; color: #1a1a1a;">${it.name}</div>
+              <img src="${it.img}" style="width: 100%; max-width: 110px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 4px auto;" alt="${it.name}">
+              <div style="font-family: 'Syne', sans-serif; font-size: 10px; font-weight: bold; color: #1a1a1a;">${it.name}</div>
             </td>
             ${idx === 0 && items.length === 2 ? '<td width="4%"></td>' : ''}
           `).join('')}
         </tr>
       </table>
-      <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 8px 18px; background: #8b1a1a; color: #fff !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 3px;">Inquire Item</a>
     `;
   }
 
   const rewardSectionHtml = `
-    <div style="padding: 16px 12px; background-color: #fdfaf3; border: 1px solid #c9a84c; border-radius: 4px; margin-top: 20px;">
-      <div style="font-family: 'Syne', sans-serif; font-size: 12.5px; font-weight: bold; color: #8b1a1a; margin-bottom: 4px;">🎁 Your TCRP Reward Balance</div>
-      <div style="font-size: 11.5px; color: #555; margin-bottom: 12px;">You currently have <strong>2</strong> Points.</div>
-      <div style="background:#fff; border:1px solid #e0d6bc; border-radius:6px; padding:12px; text-align:center; margin-bottom:12px;">
-        <span style="font-size:9.5px; color:#8b1a1a; font-weight:bold; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">🔥 You're so close! Next Goal:</span>
-        <img src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" style="width:55px; height:55px; aspect-ratio:1/1; object-fit:cover; border-radius:4px; display:block; margin:0 auto 6px auto; border:1px solid #d4c197;" alt="Reward">
-        <div style="font-weight:bold; font-size:11.5px; color:#1a1a1a;">Temple Keychain (6 PTS)</div>
-        <div style="font-size:11px; color:#8c7e5d; margin-top:4px; font-weight:bold;">⚡ Only <strong>4 more points</strong> needed to claim!</div>
+    <div style="padding: 14px 10px; background-color: #fdfaf3; border: 1px solid #c9a84c; border-radius: 4px; margin-top: 16px;">
+      <div style="font-family: 'Syne', sans-serif; font-size: 11.5px; font-weight: bold; color: #8b1a1a; margin-bottom: 2px;">🎁 Rewards Balance</div>
+      <div style="font-size: 10.5px; color: #555; margin-bottom: 8px;">You currently have <strong>2</strong> Points.</div>
+      <div style="background:#fff; border:1px solid #e0d6bc; border-radius:4px; padding:8px; text-align:center;">
+        <span style="font-size:8.5px; color:#8b1a1a; font-weight:bold; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:4px;">Next Goal: Temple Keychain (6 PTS)</span>
       </div>
-      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="display: block; width: 88%; margin: 0 auto; padding: 10px 8px; background-color: #1a1a1a; color: #d4c197 !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 3px;">
-        Redeem Rewards (m.me/TimelessCreationsRP)
-      </a>
     </div>
   `;
 
@@ -675,8 +606,7 @@ function renderPreview() {
     .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
     .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())
     .replace(/{{ESS2_NAME}}/g, document.getElementById("inp-ess2-name").value.trim())
-    .replace(/{{ESS2_IMG}}/g, document.getElementById("inp-img-ess2").value.trim())
-    .replace(/{{GALLERY_URL}}/g, "https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7");
+    .replace(/{{ESS2_IMG}}/g, document.getElementById("inp-img-ess2").value.trim());
 
   for (let i = 1; i <= 9; i++) {
     const gImg = document.getElementById(`inp-grid-${i}`)?.value || "";
@@ -692,13 +622,13 @@ function renderPreview() {
 function loadMasterTemplateIntoEditor() {
   document.getElementById("inp-custom-html").value = masterTemplateCode;
   onLiveEdit();
-  if (typeof showToast === 'function') showToast("Loaded Master Father Template into Editor!");
+  showToast("Master Template Loaded!");
 }
 
 function clearCustomHtml() {
   document.getElementById("inp-custom-html").value = "";
   onLiveEdit();
-  if (typeof showToast === 'function') showToast("Cleared custom HTML!");
+  showToast("Cleared custom HTML!");
 }
 
 function resetTab1Defaults() {
@@ -746,21 +676,21 @@ async function saveActiveMonth(sectionName = 'global') {
         highlight_img_2: data.highlight_img_2,
         custom_html: data.custom_html
       })
-    });
-    const resData = await res.json();
-    if (resData.ok) {
+    }).then(r => r.json());
+
+    if (res.ok) {
       document.getElementById("save-banner").style.display = "none";
-      if (typeof showToast === 'function') showToast(`✓ Saved ${sectionName.toUpperCase()} for ${label} to Database!`);
+      showToast(`Saved for ${label}!`);
     } else {
-      if (typeof showToast === 'function') showToast(resData.error || "Failed to save.", "error");
+      showToast(res.error || "Failed to save.", "error");
     }
   } catch(e) {
-    if (typeof showToast === 'function') showToast("Network error saving to Turso.", "error");
+    showToast("Network error saving to Turso.", "error");
   }
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-  if (typeof initAppLayout === 'function') initAppLayout('drips', '24-Month Drips & Media');
+  initAppLayout('drips', '24-Month Drips');
   initSelector();
   await fetchFromTurso();
   onSelectMonth(1);

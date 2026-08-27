@@ -2,101 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Invoicing & Transactions | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/app.css">
 <script src="/assets/app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-  :root {
-    --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-    --border:rgba(255,255,255,0.08);
-    --gold:#c9a84c; --gold2:#f0d080; --gold-dim:rgba(201,168,76,0.15);
-    --green:#4caf82; --green-dim:rgba(76,175,130,0.15);
-    --red:#e05c5c; --red-dim:rgba(224,92,92,0.15);
-    --blue:#5c8de0; --blue-dim:rgba(92,141,224,0.15);
-    --text:#e8e6f0; --muted:#716e88;
-    --radius:10px;
+  .grid-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  @media(min-width: 1024px) { .grid-layout { grid-template-columns: 1.25fr 440px; } }
+
+  .mode-switch-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .mode-switch-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 0.72rem; cursor: pointer; text-align: center; }
+  .mode-switch-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); font-weight: 700; }
+
+  /* Mobile Item Entry Cards */
+  .item-card-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-  .container{max-width:1160px;margin:20px auto;padding:0 16px 40px;}
-
-  .nav-tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap;}
-  .tab-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;}
-  .tab-btn:hover{color:var(--text);border-color:var(--gold);}
-  .tab-btn.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.3);}
-
-  .tab-pane{display:none;}
-  .tab-pane.active{display:block;}
-
-  .grid-layout{display:grid;grid-template-columns:1.25fr 460px;gap:24px;align-items:start;}
-  @media(max-width:1040px){.grid-layout{grid-template-columns:1fr;}}
-
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
-  .card h3{font-family:'Syne',sans-serif;font-size:0.95rem;color:var(--gold);margin-bottom:12px;}
-
-  .form-group{margin-bottom:14px;}
-  .form-group label{font-size:0.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px;}
-  .form-input,.form-select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;width:100%;}
-  .form-input:focus,.form-select:focus{border-color:var(--gold);}
-
-  .mode-switch-row{display:flex;gap:10px;margin-bottom:12px;}
-  .mode-switch-btn{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:6px;font-size:0.7rem;cursor:pointer;text-align:center;}
-  .mode-switch-btn.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.4);font-weight:700;}
-
-  .item-table{width:100%;border-collapse:collapse;margin:12px 0;}
-  .item-table th{font-size:0.6rem;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--border);}
-  .item-table td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.04);}
-
-  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0f;border:none;padding:10px 18px;border-radius:6px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;}
-  .btn:hover{opacity:0.9;}
-  .btn:disabled{opacity:0.5;cursor:not-allowed;}
-  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
-  .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.3);padding:6px 10px;border-radius:6px;cursor:pointer;}
-
-  .summary-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;}
-  .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;margin-bottom:8px;color:var(--muted);}
-  .summary-row.total{font-size:1.05rem;font-weight:800;color:var(--gold);border-top:1px solid var(--border);padding-top:10px;margin-top:10px;}
-
-  .preview-wrapper{position:sticky;top:20px;}
-  .invoice-preview-card{
-    width:420px;
-    min-height:560px;
-    background:#ffffff;color:#1c1917;padding:28px 24px;border-radius:12px;border:2px solid #e7d8b8;
-    box-shadow:0 15px 35px rgba(0,0,0,0.5);font-family:Georgia,serif;position:relative;
-    display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;margin:0 auto;
+  .item-card-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
-  .inv-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #f1e4cb;padding-bottom:10px;margin-bottom:12px;}
-  .inv-title-large{font-size:1.8rem;font-weight:900;color:#8b1a1a;font-family:'Syne',sans-serif;letter-spacing:0.05em;line-height:1;}
-  .inv-id{font-family:'DM Mono',monospace;font-size:0.72rem;color:#78716c;}
-  .inv-meta{font-size:0.72rem;line-height:1.55;color:#44403c;margin-bottom:12px;font-family:'DM Mono',monospace;}
-  .inv-table-wrap{flex:1;max-height:220px;overflow-y:auto;margin-bottom:12px;}
-  .inv-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
-  .inv-table th{background:#fdfaf3;border-bottom:1px solid #e7d8b8;padding:6px 8px;text-align:left;color:#78716c;position:sticky;top:0;}
-  .inv-table td{padding:6px 8px;border-bottom:1px solid #f5eedf;}
 
-  .data-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
-  .data-table th{padding:10px 12px;background:var(--surface2);color:var(--muted);text-align:left;font-size:0.62rem;text-transform:uppercase;border-bottom:1px solid var(--border);}
-  .data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
+  .summary-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 14px; }
+  .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
+  .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
 
-  .status-select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.66rem;outline:none;}
-  .status-select.pending{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
-  .status-select.paid{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+  /* Mobile-Fluid Live Invoice Preview Card */
+  .preview-wrapper { width: 100%; position: sticky; top: 70px; }
+  .invoice-preview-card {
+    width: 100%;
+    max-width: 100%;
+    background: #ffffff;
+    color: #1c1917;
+    padding: 20px 16px;
+    border-radius: var(--radius);
+    border: 2px solid #e7d8b8;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    font-family: Georgia, serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin: 0 auto;
+  }
+  .inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1e4cb; padding-bottom: 8px; margin-bottom: 10px; }
+  .inv-title-large { font-size: 1.5rem; font-weight: 900; color: #8b1a1a; font-family: 'Syne', sans-serif; }
+  .inv-id { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: #78716c; }
+  .inv-meta { font-size: 0.68rem; line-height: 1.5; color: #44403c; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+  
+  .inv-table { width: 100%; border-collapse: collapse; font-size: 0.68rem; }
+  .inv-table th { background: #fdfaf3; border-bottom: 1px solid #e7d8b8; padding: 5px 6px; text-align: left; color: #78716c; }
+  .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; }
 
-  /* Gorgeous Dark-Gold Modal Styling */
-  .modal-overlay{position:fixed;inset:0;background:rgba(5,5,10,0.85);backdrop-filter:blur(8px);display:none;justify-content:center;align-items:center;z-index:1000;padding:20px;}
-  .modal-content{background:#12131d;border:1px solid rgba(201,168,76,0.4);border-radius:14px;padding:28px;max-width:580px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.9);max-height:90vh;overflow-y:auto;}
+  .status-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 0.65rem; outline: none; }
+  .status-select.pending { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .status-select.paid { border-color: var(--green); color: var(--green); background: var(--green-dim); }
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Generate Invoice</button>
-    <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Unified Transactions &amp; Claims <span id="trans-badge" style="background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:20px;font-size:0.65rem;">0</span></button>
-    <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash Product Catalog</button>
+    <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Invoice</button>
+    <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Transactions &amp; Claims (<span id="trans-badge">0</span>)</button>
+    <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash Products</button>
   </div>
 
   <!-- Generate Invoice Tab -->
@@ -104,60 +83,48 @@
     <div class="grid-layout">
       <div>
         <div class="card">
-          <h3>1. Customer &amp; Recipient Information</h3>
+          <h3 style="font-size:0.95rem; color:var(--gold); margin-bottom:10px;">1. Customer Information</h3>
           <div class="mode-switch-row">
-            <button class="mode-switch-btn active" id="mode-db-btn" onclick="switchRecipientMode('db')">🔍 Search Registered</button>
-            <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom / Non-Listed</button>
+            <button class="mode-switch-btn active" id="mode-db-btn" onclick="switchRecipientMode('db')">🔍 Registered Missionary</button>
+            <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom Customer</button>
           </div>
 
           <div id="recipient-db-box">
             <div class="form-group">
-              <label>Search Registered Missionary</label>
-              <input type="text" class="form-input" id="missionary-search" placeholder="Type name or email to filter..." oninput="filterMissionaryDropdown(this.value)" style="margin-bottom:8px;"/>
+              <input type="text" class="form-input" id="missionary-search" placeholder="Type name or email to filter..." oninput="filterMissionaryDropdown(this.value)" style="margin-bottom:6px;"/>
               <select id="missionary-select" class="form-select" onchange="handleMissionarySelect()">
                 <option value="">-- Choose Missionary --</option>
               </select>
             </div>
             <div class="form-group">
-              <label>Phone Number (Optional)</label>
+              <label class="form-label">Phone Number (Optional)</label>
               <input type="text" class="form-input" id="db-phone-input" placeholder="e.g. 09123456789" oninput="handleDbPhoneInput()"/>
             </div>
           </div>
 
           <div id="recipient-custom-box" style="display:none;">
             <div class="form-group">
-              <label>Customer Full Name / Title</label>
-              <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Sister Maria Santos or John Doe" oninput="handleCustomInput()"/>
+              <label class="form-label">Customer Name</label>
+              <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Maria Santos" oninput="handleCustomInput()"/>
             </div>
             <div class="form-group">
-              <label>Email Address</label>
+              <label class="form-label">Email Address</label>
               <input type="email" class="form-input" id="custom-email-input" placeholder="customer@example.com" oninput="handleCustomInput()"/>
             </div>
             <div class="form-group">
-              <label>Phone Number</label>
+              <label class="form-label">Phone Number</label>
               <input type="text" class="form-input" id="custom-phone-input" placeholder="e.g. 09123456789" oninput="handleCustomInput()"/>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3>2. Items &amp; Pricing</h3>
-            <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addItemRow()">+ Add Item</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="font-size:0.95rem; color:var(--gold);">2. Items &amp; Pricing</h3>
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addItemRow()">+ Add Item</button>
           </div>
 
-          <table class="item-table">
-            <thead>
-              <tr>
-                <th>Item / Product</th>
-                <th style="width:70px;">Qty</th>
-                <th style="width:90px;">Price (₱)</th>
-                <th style="width:80px;text-align:right;">Subtotal</th>
-                <th style="width:40px;"></th>
-              </tr>
-            </thead>
-            <tbody id="items-tbody"></tbody>
-          </table>
+          <div id="items-container"></div>
 
           <div class="summary-box">
             <div class="summary-row">
@@ -165,47 +132,46 @@
               <span id="calc-subtotal" style="font-weight:700;">₱0.00</span>
             </div>
             
-            <div class="summary-row" style="gap:10px;align-items:center;">
-              <span>Custom Discount:</span>
-              <div style="display:flex;gap:6px;width:180px;">
-                <select id="discount-type" class="form-select" style="padding:4px 6px;font-size:0.7rem;width:85px;" onchange="recalculateTotal()">
-                  <option value="fixed">Fixed (₱)</option>
-                  <option value="percent">Percent (%)</option>
+            <div class="summary-row" style="gap:8px; align-items:center;">
+              <span>Discount:</span>
+              <div style="display:flex; gap:6px; max-width:160px;">
+                <select id="discount-type" class="form-select" style="padding:4px 6px; font-size:0.68rem; width:80px;" onchange="recalculateTotal()">
+                  <option value="fixed">₱ Fixed</option>
+                  <option value="percent">% Off</option>
                 </select>
-                <input type="number" id="discount-val" class="form-input" style="padding:4px 6px;font-size:0.7rem;text-align:right;" value="0" min="0" oninput="recalculateTotal()"/>
+                <input type="number" id="discount-val" class="form-input" style="padding:4px 6px; font-size:0.68rem; text-align:right;" value="0" min="0" oninput="recalculateTotal()"/>
               </div>
             </div>
 
             <div class="summary-row">
-              <span>Discount Deducted:</span>
+              <span>Deducted:</span>
               <span id="calc-discount-deducted" style="color:var(--green);">-₱0.00</span>
             </div>
 
             <div class="summary-row total">
-              <span>Grand Total (PHP):</span>
+              <span>Grand Total:</span>
               <span id="calc-grand-total">₱0.00</span>
             </div>
           </div>
 
-          <div style="margin-top:16px;">
-            <button class="btn" id="generate-btn" style="width:100%;justify-content:center;" onclick="submitInvoice()">🧾 Finalize &amp; Save Invoice</button>
-          </div>
+          <button class="btn btn-gold" id="generate-btn" style="width:100%; margin-top:14px;" onclick="submitInvoice()">🧾 Save &amp; Finalize Invoice</button>
         </div>
       </div>
 
+      <!-- Fluid Live Preview -->
       <div class="preview-wrapper">
-        <div class="card" style="padding:16px;">
-          <h3 style="margin-bottom:8px;">Live Invoice Preview</h3>
+        <div class="card" style="padding:12px;">
+          <h4 style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; text-transform:uppercase;">✦ Live Mobile Invoice Preview</h4>
           <div class="invoice-preview-card" id="invoice-node">
             <div>
               <div class="inv-header">
                 <div>
                   <div class="inv-title-large">INVOICE</div>
-                  <div style="font-size:0.72rem;color:#b8955a;font-style:italic;margin-top:2px;">✨ Timeless Creations ✨</div>
+                  <div style="font-size:0.65rem; color:#b8955a; font-style:italic;">✨ Timeless Creations ✨</div>
                 </div>
                 <div style="text-align:right;">
                   <div class="inv-id" id="prev-inv-id">INV-DRAFT</div>
-                  <div style="font-size:0.65rem;color:#a8a29e;" id="prev-date">Today</div>
+                  <div style="font-size:0.62rem; color:#a8a29e;" id="prev-date">Today</div>
                 </div>
               </div>
 
@@ -215,34 +181,34 @@
                 <div><strong>Phone:</strong> <span id="prev-phone">—</span></div>
               </div>
 
-              <div class="inv-table-wrap">
+              <div style="max-height:180px; overflow-y:auto; margin-bottom:10px;">
                 <table class="inv-table">
                   <thead>
                     <tr>
-                      <th>Description</th>
-                      <th style="width:36px;text-align:center;">Qty</th>
-                      <th style="width:75px;text-align:right;">Price</th>
-                      <th style="width:75px;text-align:right;">Total</th>
+                      <th>Item</th>
+                      <th style="text-align:center;">Qty</th>
+                      <th style="text-align:right;">Price</th>
+                      <th style="text-align:right;">Total</th>
                     </tr>
                   </thead>
                   <tbody id="prev-table-body">
-                    <tr><td colspan="4" style="text-align:center;color:#a8a29e;">No items selected.</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items selected.</td></tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
             <div>
-              <div style="border-top:1px solid #e7d8b8;padding-top:8px;font-size:0.72rem;font-family:'DM Mono',monospace;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <div style="border-top:1px solid #e7d8b8; padding-top:6px; font-size:0.68rem; font-family:'DM Mono',monospace;">
+                <div style="display:flex; justify-content:space-between;">
                   <span>Subtotal:</span>
                   <span id="prev-subtotal">₱0.00</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;color:#16a34a;margin-bottom:5px;">
+                <div style="display:flex; justify-content:space-between; color:#16a34a;">
                   <span>Discount:</span>
                   <span id="prev-discount">-₱0.00</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:800;color:#8b1a1a;border-top:1px solid #f1e4cb;padding-top:6px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.92rem; font-weight:800; color:#8b1a1a; border-top:1px solid #f1e4cb; padding-top:4px; margin-top:4px;">
                   <span>Total Amount:</span>
                   <span id="prev-total">₱0.00</span>
                 </div>
@@ -250,9 +216,9 @@
             </div>
           </div>
 
-          <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;">
-            <button class="btn" style="padding:8px 14px;font-size:0.7rem;" onclick="downloadInvoiceImage()">📥 Download PNG</button>
-            <button class="btn btn-secondary" style="padding:8px 14px;font-size:0.7rem;" onclick="copyInvoiceText()">📋 Copy Text</button>
+          <div style="display:flex; gap:8px; margin-top:12px; justify-content:center;">
+            <button class="btn btn-gold" style="padding:6px 12px; font-size:0.72rem; flex:1;" onclick="downloadInvoiceImage()">📥 PNG</button>
+            <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.72rem; flex:1;" onclick="copyInvoiceText()">📋 Text</button>
           </div>
         </div>
       </div>
@@ -262,101 +228,77 @@
   <!-- Unified Transactions & Claims Tab -->
   <div class="tab-pane" id="transactions-tab">
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <div>
-          <h3>📜 Unified Transactions &amp; Rewards Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">All rewards claims and cash invoices in one place. Click <strong>✏️ Edit / Add Items</strong> to bundle extra items, or trash to delete.</p>
+          <h3 style="font-size:0.95rem; color:var(--gold);">📜 Unified Transactions &amp; Rewards Claims</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Manage statuses and click <strong>✏️ Edit</strong> to bundle items or modify orders.</p>
         </div>
-        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="loadData()">🔄 Refresh</button>
+        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Type</th>
-            <th>Customer</th>
-            <th>Email</th>
-            <th>Details / Items</th>
-            <th style="text-align:center;">Status</th>
-            <th style="text-align:center;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="unified-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Loading transactions...</td></tr>
-        </tbody>
-      </table>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Customer</th>
+              <th>Details / Items</th>
+              <th style="text-align:center;">Status</th>
+              <th style="text-align:center;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="unified-tbody">
+            <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">Loading transactions...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <!-- Cash Product Catalog Tab -->
   <div class="tab-pane" id="products-tab">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <h3>Cash POS Catalog (PHP Pricing)</h3>
-        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.65rem;" onclick="addNewProductSetting()">+ Add Product</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-size:0.95rem; color:var(--gold);">Cash POS Catalog (PHP Pricing)</h3>
+        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addNewProductSetting()">+ Add Product</button>
       </div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Product Name</th>
-            <th style="width:160px;">Price (PHP ₱)</th>
-            <th style="width:100px;text-align:center;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="products-settings-tbody"></tbody>
-      </table>
-      <div style="margin-top:16px;">
-        <button class="btn" id="save-products-btn" onclick="saveProductSettings()">💾 Save Cash Products to Turso</button>
-      </div>
+      <div id="products-settings-container"></div>
+      <button class="btn btn-gold" style="width:100%; margin-top:14px;" onclick="saveProductSettings()">💾 Save Products to Turso</button>
     </div>
   </div>
 </div>
 
-<!-- Edit / Add Items Modal -->
+<!-- Edit / Bundle Items Modal -->
 <div class="modal-overlay" id="edit-transaction-modal">
   <div class="modal-content">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 style="font-family:'Syne',sans-serif; color:var(--gold); margin:0;" id="edit-modal-title">Edit Transaction</h3>
-      <button onclick="closeEditModal()" style="background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">✕</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h3 style="color:var(--gold); font-size:1.05rem;" id="edit-modal-title">Edit Transaction</h3>
+      <button onclick="closeEditModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
     </div>
     <input type="hidden" id="edit-trx-id">
     <input type="hidden" id="edit-trx-type">
     
     <div class="form-group">
-      <label>Customer Name</label>
+      <label class="form-label">Customer Name</label>
       <input type="text" id="edit-trx-name" class="form-input" readonly>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <label style="font-size:0.64rem; color:var(--muted); text-transform:uppercase;">Bundle Items / Add Cash Products</label>
-      <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.62rem;" onclick="addEditItemRow()">+ Add Product</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0 6px;">
+      <label class="form-label" style="margin:0;">Bundle Items / Extra Products</label>
+      <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.65rem;" onclick="addEditItemRow()">+ Add Product</button>
     </div>
 
-    <table class="item-table" style="margin-bottom:12px;">
-      <thead>
-        <tr>
-          <th>Product Name</th>
-          <th style="width:60px;">Qty</th>
-          <th style="width:80px;">Price</th>
-          <th style="width:70px;text-align:right;">Subtotal</th>
-          <th style="width:30px;"></th>
-        </tr>
-      </thead>
-      <tbody id="edit-items-tbody"></tbody>
-    </table>
+    <div id="edit-items-container"></div>
 
-    <div class="summary-box" style="margin-bottom:16px;">
-      <div class="summary-row">
-        <span>Subtotal:</span>
-        <span id="edit-calc-sub">₱0.00</span>
-      </div>
+    <div class="summary-box" style="margin:12px 0;">
       <div class="summary-row total">
-        <span>Total Amount / Value:</span>
+        <span>Total Value:</span>
         <span id="edit-calc-total">₱0.00</span>
       </div>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; gap:10px;">
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
       <button class="btn btn-gold" onclick="promptSaveConfirmation()">💾 Save Changes</button>
     </div>
@@ -381,35 +323,26 @@ window.loadData = loadData;
 async function loadData() {
   try {
     const [mRes, invRes, prodRes, ordRes] = await Promise.all([
-      fetch('/api/main?action=get_missionaries'),
-      fetch('/api/main?action=get_invoices'),
-      fetch('/api/main?action=get_products&type=cash'),
-      fetch('/api/main?action=get_orders')
+      fetch('/api/main?action=get_missionaries').then(r => r.json()).catch(() => ({})),
+      fetch('/api/main?action=get_invoices').then(r => r.json()).catch(() => ({})),
+      fetch('/api/main?action=get_products&type=cash').then(r => r.json()).catch(() => ({})),
+      fetch('/api/main?action=get_orders').then(r => r.json()).catch(() => ({}))
     ]);
 
-    const mData = await mRes.json();
-    const invData = await invRes.json();
-    const prodData = await prodRes.json();
-    const ordData = await ordRes.json();
-
-    missionaries = mData.missionaries || [];
-    cashInvoices = invData.invoices || [];
-    productCatalog = prodData.products || [];
-    orders = ordData.orders || [];
-
-    if (productCatalog.length === 0) {
-      productCatalog = [
-        { name: "Standard Missionary Strap", price: 150 },
-        { name: "Customized Nametag", price: 250 },
-        { name: "Scripture Cover Set", price: 450 }
-      ];
-    }
+    missionaries = mRes.missionaries || [];
+    cashInvoices = invRes.invoices || [];
+    productCatalog = prodRes.products || [
+      { name: "Standard Missionary Strap", price: 150 },
+      { name: "Customized Nametag", price: 250 },
+      { name: "Scripture Cover Set", price: 450 }
+    ];
+    orders = ordRes.orders || [];
 
     populateMissionarySelect(missionaries);
     renderUnifiedTable();
     renderProductSettings();
 
-    if (document.querySelectorAll('#items-tbody tr').length === 0 && productCatalog.length > 0) {
+    if (document.querySelectorAll('.item-card-row').length === 0 && productCatalog.length > 0) {
       addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
     }
   } catch (err) {
@@ -417,17 +350,12 @@ async function loadData() {
   }
 }
 
-function updateBadgeCounts() {
-  const totalCount = orders.length + cashInvoices.length;
-  document.getElementById('trans-badge').textContent = totalCount;
-}
-
 function renderUnifiedTable() {
   const tbody = document.getElementById('unified-tbody');
-  updateBadgeCounts();
+  const totalCount = orders.length + cashInvoices.length;
+  document.getElementById('trans-badge').textContent = totalCount;
 
   let combined = [];
-  
   orders.forEach(o => {
     combined.push({
       id: o.order_id,
@@ -442,12 +370,11 @@ function renderUnifiedTable() {
   });
 
   cashInvoices.forEach(inv => {
-    let summary = 'Custom POS Order';
+    let summary = 'Custom Order';
     try {
       const parsed = JSON.parse(inv.items_json);
       summary = parsed.map(i => `${i.qty}x ${i.name}`).join(', ');
     } catch(_) {}
-
     combined.push({
       id: inv.invoice_id,
       type: 'Cash Invoice',
@@ -463,7 +390,7 @@ function renderUnifiedTable() {
   combined.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
 
   if (!combined.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">No transactions or claims recorded yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No transactions found.</td></tr>';
     return;
   }
 
@@ -472,23 +399,22 @@ function renderUnifiedTable() {
     const statusClass = isPaid ? 'paid' : 'pending';
     return `
       <tr>
-        <td style="font-weight:bold;color:var(--gold);">${item.id}</td>
-        <td><span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);">${item.type}</span></td>
+        <td style="font-weight:bold; color:var(--gold);">${item.id}</td>
+        <td><span style="font-size:0.6rem; padding:2px 6px; border-radius:4px; background:var(--surface2); border:1px solid var(--border);">${item.type}</span></td>
         <td style="font-weight:600;">${item.name}</td>
-        <td style="color:var(--muted);">${item.email}</td>
         <td>${item.details}</td>
         <td style="text-align:center;">
           <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
             <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
             <option value="PAID" ${isPaid ? 'selected' : ''}>PAID</option>
-            <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
-            <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
+            <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY</option>
+            <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT</option>
             <option value="DELIVERED" ${item.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
           </select>
         </td>
-        <td style="text-align:center; display:flex; gap:6px; justify-content:center;">
-          <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.65rem;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
-          <button class="btn-danger" style="padding:4px 8px;font-size:0.65rem;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
+        <td style="text-align:center; white-space:nowrap;">
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.65rem;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
+          <button class="btn-danger" style="padding:4px 8px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
         </td>
       </tr>
     `;
@@ -496,11 +422,10 @@ function renderUnifiedTable() {
 }
 
 async function updateStatus(id, isOrder, newStatus) {
-  if (!confirm(`Confirm status change to [${newStatus}] and trigger automated notification email for ${id}?`)) {
+  if (!confirm(`Confirm status update to [${newStatus}] for ${id}?`)) {
     renderUnifiedTable();
     return;
   }
-
   const endpointAction = isOrder ? 'update_order_status' : 'update_invoice_status';
   const payloadKey = isOrder ? 'order_id' : 'invoice_id';
 
@@ -512,7 +437,7 @@ async function updateStatus(id, isOrder, newStatus) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Transaction ${id} updated to ${newStatus}! Email dispatched.`);
+      showToast(`Status updated to ${newStatus}!`);
       loadData();
     }
   } catch(e) {
@@ -522,7 +447,6 @@ async function updateStatus(id, isOrder, newStatus) {
 
 async function deleteTransaction(id, isOrder, name) {
   if (!confirm(`Permanently delete transaction ${id} for ${name}?`)) return;
-
   const actionName = isOrder ? 'delete_order' : 'delete_invoice';
   const idKey = isOrder ? 'order_id' : 'invoice_id';
 
@@ -542,7 +466,141 @@ async function deleteTransaction(id, isOrder, name) {
   }
 }
 
-// Edit Modal Functions with Confirmation Popup
+function addItemRow(defaultName = "", defaultPrice = 0, defaultQty = 1) {
+  if (!defaultName && productCatalog.length > 0) {
+    defaultName = productCatalog[0].name;
+    defaultPrice = productCatalog[0].price;
+  }
+  const container = document.getElementById('items-container');
+  const div = document.createElement('div');
+  div.className = 'item-card-row';
+  div.innerHTML = `
+    <select class="form-select item-select" onchange="handleProductChange(this)">
+      ${productCatalog.map(p => `<option value="${p.name}" data-price="${p.price}" ${p.name === defaultName ? 'selected' : ''}>${p.name} (₱${p.price})</option>`).join('')}
+    </select>
+    <div class="item-card-controls">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
+        <input type="number" class="form-input item-qty" value="${defaultQty}" min="1" style="width:60px; text-align:center; padding:6px;" oninput="recalculateTotal()"/>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:0.68rem; color:var(--muted);">₱:</span>
+        <input type="number" class="form-input item-price" value="${defaultPrice}" min="0" style="width:75px; text-align:center; padding:6px;" oninput="recalculateTotal()"/>
+      </div>
+      <span style="font-weight:bold; color:var(--gold); font-size:0.75rem;" class="item-subtotal">₱${(defaultPrice * defaultQty).toFixed(2)}</span>
+      <button class="btn-danger" style="padding:6px 10px; border-radius:4px;" onclick="this.closest('.item-card-row').remove(); recalculateTotal();">✕</button>
+    </div>
+  `;
+  container.appendChild(div);
+  recalculateTotal();
+}
+
+function handleProductChange(selectEl) {
+  const opt = selectEl.options[selectEl.selectedIndex];
+  selectEl.closest('.item-card-row').querySelector('.item-price').value = opt.getAttribute('data-price') || 0;
+  recalculateTotal();
+}
+
+function recalculateTotal() {
+  let subtotal = 0;
+  const previewItems = [];
+  document.querySelectorAll('.item-card-row').forEach(r => {
+    const name = r.querySelector('.item-select').value;
+    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
+    const price = parseFloat(r.querySelector('.item-price').value) || 0;
+    const rowSubtotal = qty * price;
+    r.querySelector('.item-subtotal').textContent = `₱${rowSubtotal.toFixed(2)}`;
+    subtotal += rowSubtotal;
+    previewItems.push({ name, qty, price, subtotal: rowSubtotal });
+  });
+
+  const discountType = document.getElementById('discount-type').value;
+  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
+  let discountDeducted = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
+  if (discountDeducted > subtotal) discountDeducted = subtotal;
+
+  const grandTotal = subtotal - discountDeducted;
+  document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
+
+  document.getElementById('prev-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('prev-discount').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  document.getElementById('prev-total').textContent = `₱${grandTotal.toFixed(2)}`;
+
+  const prevTbody = document.getElementById('prev-table-body');
+  if (previewItems.length === 0) {
+    prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items.</td></tr>';
+  } else {
+    prevTbody.innerHTML = previewItems.map(item => `
+      <tr>
+        <td><strong>${item.name}</strong></td>
+        <td style="text-align:center;">${item.qty}</td>
+        <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
+        <td style="text-align:right; font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+async function submitInvoice() {
+  let customerName = recipientMode === 'db' ? missionaries.find(x => x.email === document.getElementById('missionary-select').value)?.name || 'Missionary' : document.getElementById('custom-name-input').value.trim();
+  let customerEmail = recipientMode === 'db' ? document.getElementById('missionary-select').value : document.getElementById('custom-email-input').value.trim();
+
+  if (!customerName) {
+    showToast("Please provide customer name.", "error");
+    return;
+  }
+
+  const items = [];
+  let subtotal = 0;
+  document.querySelectorAll('.item-card-row').forEach(r => {
+    const name = r.querySelector('.item-select').value;
+    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
+    const price = parseFloat(r.querySelector('.item-price').value) || 0;
+    const rowSubtotal = qty * price;
+    subtotal += rowSubtotal;
+    items.push({ name, qty, price, subtotal: rowSubtotal });
+  });
+
+  if (items.length === 0) {
+    showToast("Please add items.", "error");
+    return;
+  }
+
+  const discountType = document.getElementById('discount-type').value;
+  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
+  let discountAmount = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
+  const totalAmount = subtotal - discountAmount;
+  const invId = `INV-${Date.now().toString().slice(-6)}`;
+
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create_invoice',
+        invoice_id: invId,
+        email: customerEmail,
+        name: customerName,
+        items_json: items,
+        subtotal,
+        discount_type: discountType,
+        discount_val: discountVal,
+        discount_amount: discountAmount,
+        total_amount: totalAmount
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Invoice ${invId} saved!`);
+      loadData();
+    }
+  } catch(e) {
+    showToast("Error saving invoice", "error");
+  }
+}
+
 function openEditModal(id, isOrder) {
   document.getElementById('edit-trx-id').value = id;
   document.getElementById('edit-trx-type').value = isOrder ? 'order' : 'invoice';
@@ -567,8 +625,8 @@ function openEditModal(id, isOrder) {
   document.getElementById('edit-trx-name').value = name;
   document.getElementById('edit-modal-title').textContent = `Edit Transaction ${id}`;
 
-  const tbody = document.getElementById('edit-items-tbody');
-  tbody.innerHTML = '';
+  const container = document.getElementById('edit-items-container');
+  container.innerHTML = '';
   items.forEach(it => addEditItemRow(it.name, it.price, it.qty));
 
   document.getElementById('edit-transaction-modal').style.display = 'flex';
@@ -580,32 +638,38 @@ function closeEditModal() {
 }
 
 function addEditItemRow(name = '', price = 0, qty = 1) {
-  const tbody = document.getElementById('edit-items-tbody');
-  const tr = document.createElement('tr');
-  tr.className = 'edit-item-row';
-  tr.innerHTML = `
-    <td>
-      <select class="form-input edit-item-select" onchange="handleEditProductChange(this)" style="padding:4px 6px;font-size:0.7rem;">
-        <option value="">-- Select Product --</option>
-        ${productCatalog.map(p => `<option value="${p.name}" data-price="${p.price}" ${p.name === name ? 'selected' : ''}>${p.name} (₱${p.price})</option>`).join('')}
-      </select>
-      <input type="text" class="form-input edit-item-name" value="${name}" placeholder="Or custom item name..." style="padding:4px 6px;font-size:0.7rem;margin-top:4px;" ${name ? '' : 'style="display:none;"'}/>
-    </td>
-    <td><input type="number" class="form-input edit-item-qty" value="${qty}" min="1" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateEditTotal()"/></td>
-    <td><input type="number" class="form-input edit-item-price" value="${price}" min="0" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateEditTotal()"/></td>
-    <td style="text-align:right;font-weight:700;color:var(--gold);font-size:0.75rem;" class="edit-item-sub">₱${(price * qty).toFixed(2)}</td>
-    <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove(); recalculateEditTotal();">✕</button></td>
+  const container = document.getElementById('edit-items-container');
+  const div = document.createElement('div');
+  div.className = 'edit-item-row item-card-row';
+  div.innerHTML = `
+    <select class="form-select edit-item-select" onchange="handleEditProductChange(this)">
+      <option value="">-- Select Catalog Item --</option>
+      ${productCatalog.map(p => `<option value="${p.name}" data-price="${p.price}" ${p.name === name ? 'selected' : ''}>${p.name} (₱${p.price})</option>`).join('')}
+    </select>
+    <input type="text" class="form-input edit-item-name" value="${name}" placeholder="Or custom item name..." style="margin-top:4px;"/>
+    <div class="item-card-controls">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
+        <input type="number" class="form-input edit-item-qty" value="${qty}" min="1" style="width:60px; text-align:center; padding:6px;" oninput="recalculateEditTotal()"/>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:0.68rem; color:var(--muted);">₱:</span>
+        <input type="number" class="form-input edit-item-price" value="${price}" min="0" style="width:75px; text-align:center; padding:6px;" oninput="recalculateEditTotal()"/>
+      </div>
+      <span style="font-weight:bold; color:var(--gold); font-size:0.75rem;" class="edit-item-sub">₱${(price * qty).toFixed(2)}</span>
+      <button class="btn-danger" style="padding:6px 10px; border-radius:4px;" onclick="this.closest('.edit-item-row').remove(); recalculateEditTotal();">✕</button>
+    </div>
   `;
-  tbody.appendChild(tr);
+  container.appendChild(div);
   recalculateEditTotal();
 }
 
 function handleEditProductChange(sel) {
   const opt = sel.options[sel.selectedIndex];
-  const tr = sel.closest('tr');
+  const card = sel.closest('.edit-item-row');
   if (opt.value) {
-    tr.querySelector('.edit-item-price').value = opt.getAttribute('data-price') || 0;
-    tr.querySelector('.edit-item-name').value = opt.value;
+    card.querySelector('.edit-item-price').value = opt.getAttribute('data-price') || 0;
+    card.querySelector('.edit-item-name').value = opt.value;
   }
   recalculateEditTotal();
 }
@@ -619,12 +683,11 @@ function recalculateEditTotal() {
     r.querySelector('.edit-item-sub').textContent = `₱${s.toFixed(2)}`;
     subtotal += s;
   });
-  document.getElementById('edit-calc-sub').textContent = `₱${subtotal.toFixed(2)}`;
   document.getElementById('edit-calc-total').textContent = `₱${subtotal.toFixed(2)}`;
 }
 
 function promptSaveConfirmation() {
-  if (!confirm("Are you sure you want to save these bundled changes and notify the customer?")) return;
+  if (!confirm("Save bundled items to this transaction?")) return;
   saveEditedTransaction();
 }
 
@@ -642,11 +705,6 @@ async function saveEditedTransaction() {
     subtotal += s;
     if (nameInput) items.push({ name: nameInput, qty, price, subtotal: s });
   });
-
-  if (items.length === 0) {
-    showToast("Transaction must contain at least one item", "error");
-    return;
-  }
 
   const actionName = isOrder ? 'update_order' : 'update_invoice';
   const idKey = isOrder ? 'order_id' : 'invoice_id';
@@ -668,7 +726,7 @@ async function saveEditedTransaction() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Transaction ${id} successfully updated with bundled items!`);
+      showToast(`Transaction ${id} updated!`);
       closeEditModal();
       loadData();
     }
@@ -722,159 +780,37 @@ function handleMissionarySelect() {
   recalculateTotal();
 }
 
-function addItemRow(defaultName = "", defaultPrice = 0, defaultQty = 1) {
-  if (!defaultName && productCatalog.length > 0) {
-    defaultName = productCatalog[0].name;
-    defaultPrice = productCatalog[0].price;
-  }
-  const tbody = document.getElementById('items-tbody');
-  const tr = document.createElement('tr');
-  tr.className = 'item-row';
-  tr.innerHTML = `
-    <td>
-      <select class="form-select item-select" onchange="handleProductChange(this)" style="padding:4px 6px;font-size:0.7rem;">
-        ${productCatalog.map(p => `<option value="${p.name}" data-price="${p.price}" ${p.name === defaultName ? 'selected' : ''}>${p.name} (₱${p.price})</option>`).join('')}
-      </select>
-    </td>
-    <td><input type="number" class="form-input item-qty" value="${defaultQty}" min="1" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateTotal()"/></td>
-    <td><input type="number" class="form-input item-price" value="${defaultPrice}" min="0" style="padding:4px 6px;font-size:0.7rem;text-align:center;" oninput="recalculateTotal()"/></td>
-    <td style="text-align:right;font-weight:700;color:var(--gold);font-size:0.75rem;" class="item-subtotal">₱${(defaultPrice * defaultQty).toFixed(2)}</td>
-    <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove(); recalculateTotal();">✕</button></td>
-  `;
-  tbody.appendChild(tr);
-  recalculateTotal();
-}
-
-function handleProductChange(selectEl) {
-  const opt = selectEl.options[selectEl.selectedIndex];
-  selectEl.closest('tr').querySelector('.item-price').value = opt.getAttribute('data-price') || 0;
-  recalculateTotal();
-}
-
-function recalculateTotal() {
-  let subtotal = 0;
-  const previewItems = [];
-  document.querySelectorAll('.item-row').forEach(r => {
-    const name = r.querySelector('.item-select').value;
-    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
-    const price = parseFloat(r.querySelector('.item-price').value) || 0;
-    const rowSubtotal = qty * price;
-    r.querySelector('.item-subtotal').textContent = `₱${rowSubtotal.toFixed(2)}`;
-    subtotal += rowSubtotal;
-    previewItems.push({ name, qty, price, subtotal: rowSubtotal });
-  });
-
-  const discountType = document.getElementById('discount-type').value;
-  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
-  let discountDeducted = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
-  if (discountDeducted > subtotal) discountDeducted = subtotal;
-
-  const grandTotal = subtotal - discountDeducted;
-  document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
-  document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
-  document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
-
-  document.getElementById('prev-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
-  document.getElementById('prev-discount').textContent = `-₱${discountDeducted.toFixed(2)}`;
-  document.getElementById('prev-total').textContent = `₱${grandTotal.toFixed(2)}`;
-
-  const prevTbody = document.getElementById('prev-table-body');
-  if (previewItems.length === 0) {
-    prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#a8a29e;">No items selected.</td></tr>';
-  } else {
-    prevTbody.innerHTML = previewItems.map(item => `
-      <tr>
-        <td><strong>${item.name}</strong></td>
-        <td style="text-align:center;">${item.qty}</td>
-        <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
-        <td style="text-align:right;font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
-      </tr>
-    `).join('');
-  }
-}
-
-async function submitInvoice() {
-  let customerName = recipientMode === 'db' ? missionaries.find(x => x.email === document.getElementById('missionary-select').value)?.name || 'Missionary' : document.getElementById('custom-name-input').value.trim();
-  let customerEmail = recipientMode === 'db' ? document.getElementById('missionary-select').value : document.getElementById('custom-email-input').value.trim();
-
-  if (!customerName) {
-    showToast("Please provide customer name.", "error");
-    return;
-  }
-
-  const items = [];
-  let subtotal = 0;
-  document.querySelectorAll('.item-row').forEach(r => {
-    const name = r.querySelector('.item-select').value;
-    const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
-    const price = parseFloat(r.querySelector('.item-price').value) || 0;
-    const rowSubtotal = qty * price;
-    subtotal += rowSubtotal;
-    items.push({ name, qty, price, subtotal: rowSubtotal });
-  });
-
-  if (items.length === 0) {
-    showToast("Please add items.", "error");
-    return;
-  }
-
-  const discountType = document.getElementById('discount-type').value;
-  const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
-  let discountAmount = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
-  const totalAmount = subtotal - discountAmount;
-
-  const invId = `INV-${Date.now().toString().slice(-6)}`;
-  try {
-    const res = await fetch('/api/main', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'create_invoice',
-        invoice_id: invId,
-        email: customerEmail,
-        name: customerName,
-        items_json: items,
-        subtotal,
-        discount_type: discountType,
-        discount_val: discountVal,
-        discount_amount: discountAmount,
-        total_amount: totalAmount
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showToast(`Invoice ${invId} saved!`);
-      loadData();
-    }
-  } catch(e) {
-    showToast("Error saving invoice", "error");
-  }
-}
-
 function renderProductSettings() {
-  const tbody = document.getElementById('products-settings-tbody');
-  tbody.innerHTML = productCatalog.map(p => `
-    <tr>
-      <td><input type="text" class="form-input p-name" value="${p.name}" style="padding:4px 8px;font-size:0.72rem;"/></td>
-      <td><input type="number" class="form-input p-price" value="${p.price}" min="0" style="padding:4px 8px;font-size:0.72rem;"/></td>
-      <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove()">✕</button></td>
-    </tr>
+  const container = document.getElementById('products-settings-container');
+  container.innerHTML = productCatalog.map(p => `
+    <div class="item-card-row">
+      <input type="text" class="form-input p-name" value="${p.name}"/>
+      <div class="item-card-controls">
+        <span style="font-size:0.68rem; color:var(--muted);">PHP Price:</span>
+        <input type="number" class="form-input p-price" value="${p.price}" min="0" style="width:90px;"/>
+        <button class="btn-danger" style="padding:6px 10px;" onclick="this.closest('.item-card-row').remove()">✕</button>
+      </div>
+    </div>
   `).join('');
 }
 
 function addNewProductSetting() {
-  const tbody = document.getElementById('products-settings-tbody');
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" class="form-input p-name" placeholder="New Product Name" style="padding:4px 8px;font-size:0.72rem;"/></td>
-    <td><input type="number" class="form-input p-price" value="100" min="0" style="padding:4px 8px;font-size:0.72rem;"/></td>
-    <td style="text-align:center;"><button class="btn-danger" onclick="this.closest('tr').remove()">✕</button></td>
+  const container = document.getElementById('products-settings-container');
+  const div = document.createElement('div');
+  div.className = 'item-card-row';
+  div.innerHTML = `
+    <input type="text" class="form-input p-name" placeholder="New Product Name"/>
+    <div class="item-card-controls">
+      <span style="font-size:0.68rem; color:var(--muted);">PHP Price:</span>
+      <input type="number" class="form-input p-price" value="100" min="0" style="width:90px;"/>
+      <button class="btn-danger" style="padding:6px 10px;" onclick="this.closest('.item-card-row').remove()">✕</button>
+    </div>
   `;
-  tbody.appendChild(tr);
+  container.appendChild(div);
 }
 
 async function saveProductSettings() {
-  const rows = document.querySelectorAll('#products-settings-tbody tr');
+  const rows = document.querySelectorAll('#products-settings-container .item-card-row');
   const updated = [];
   rows.forEach(r => {
     const name = r.querySelector('.p-name').value.trim();

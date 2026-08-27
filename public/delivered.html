@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Order Delivered • Thank You | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    .delivered-card {
+      background: var(--surface);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius);
+      padding: 32px 20px;
+      text-align: center;
+      max-width: 520px;
+      margin: 30px auto;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-dim);
+      border: 1px solid rgba(76,175,130,0.4);
+      color: var(--green);
+      padding: 6px 16px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="delivered-card">
+    <div class="status-pill">✓ Package Delivered</div>
+    <h1 style="color:var(--gold); font-size:1.6rem; margin-bottom:8px;">Thank You for Ordering!</h1>
+    <p style="font-size:0.82rem; color:var(--muted); line-height:1.6; margin-bottom:20px;">
+      Your package from <strong>Timeless Creations</strong> has been successfully fulfilled and delivered.
+    </p>
+
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; text-align:left; font-size:0.78rem; line-height:1.8; margin-bottom:20px;">
+      <div>✨ <strong>Brand:</strong> Timeless Creations</div>
+      <div>📦 <strong>Delivery Status:</strong> <span style="color:var(--green); font-weight:bold;">DELIVERED / COMPLETED</span></div>
+      <div>💌 <strong>Support:</strong> Available 24/7 on Facebook Messenger</div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <a href="https://m.me/timeless.creations.06" class="btn btn-gold" style="flex:1; min-width:180px;">💬 Messenger Support</a>
+      <a href="/index.html" class="btn btn-dark" style="flex:1; min-width:140px;">📊 Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof initAppLayout === 'function') initAppLayout('invoicing', 'Order Delivered');
+});
+</script>
+</body>
+</html>

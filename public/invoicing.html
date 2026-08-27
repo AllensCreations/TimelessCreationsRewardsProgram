@@ -9,6 +9,9 @@
 <script src="/assets/app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+  .tab-pane { display: none !important; }
+  .tab-pane.active { display: block !important; }
+
   .grid-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; width: 100%; }
   @media(min-width: 1024px) { .grid-layout { grid-template-columns: 1.2fr 440px; } }
 
@@ -16,7 +19,7 @@
   .mode-switch-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 0.72rem; cursor: pointer; text-align: center; }
   .mode-switch-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); font-weight: 700; }
 
-  /* Mobile Item Entry Cards */
+  /* Mobile Item Cards */
   .item-card-row {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -67,15 +70,20 @@
   .status-select.pending { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .status-select.paid { border-color: var(--green); color: var(--green); background: var(--green-dim); }
 
-  /* Full-width Name styling */
-  .full-customer-name {
-    font-size: 0.82rem;
+  /* Full Customer Name Visibility */
+  .customer-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 140px;
+  }
+  .customer-full-name {
+    font-size: 0.85rem;
     font-weight: 700;
     color: var(--text);
     word-break: break-word;
     white-space: normal;
-    display: block;
-    line-height: 1.4;
+    line-height: 1.35;
   }
 </style>
 </head>
@@ -85,10 +93,10 @@
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Invoice</button>
     <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Transactions &amp; Claims (<span id="trans-badge">0</span>)</button>
-    <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash Products</button>
+    <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash POS Catalog</button>
   </div>
 
-  <!-- Generate Invoice Tab -->
+  <!-- TAB 1: Create Invoice -->
   <div class="tab-pane active" id="create-tab">
     <div class="grid-layout">
       <div>
@@ -235,13 +243,13 @@
     </div>
   </div>
 
-  <!-- Unified Transactions & Claims Tab -->
+  <!-- TAB 2: Transactions & Rewards Claims (Strictly Standalone) -->
   <div class="tab-pane" id="transactions-tab">
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">📜 Transactions &amp; Rewards Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Full customer view with status dispatches and custom item bundling.</p>
+          <p style="font-size:0.68rem; color:var(--muted);">Full customer view with instant status email updates.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
@@ -250,9 +258,9 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th style="min-width:140px;">Customer Name</th>
+              <th style="min-width:160px;">Customer Name</th>
               <th>Email</th>
-              <th style="text-align:center;">Status</th>
+              <th style="text-align:center;">Status Update</th>
               <th style="text-align:center;">Actions</th>
             </tr>
           </thead>
@@ -264,11 +272,14 @@
     </div>
   </div>
 
-  <!-- Cash Product Catalog Tab -->
+  <!-- TAB 3: Cash POS Catalog (PHP Pricing) (Strictly Standalone) -->
   <div class="tab-pane" id="products-tab">
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h3 style="font-size:0.95rem; color:var(--gold);">Cash POS Catalog (PHP Pricing)</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h3 style="font-size:0.95rem; color:var(--gold);">⚙️ Cash POS Catalog (PHP Pricing)</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Configure catalog product items and cash prices.</p>
+        </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addNewProductSetting()">+ Add Product</button>
       </div>
       <div id="products-settings-container"></div>
@@ -323,8 +334,9 @@ let recipientMode = 'db';
 function switchNavTab(tabId, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  btn.classList.add('active');
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 window.loadData = loadData;
@@ -399,8 +411,9 @@ function renderUnifiedTable() {
     return `
       <tr>
         <td>
-          <span class="full-customer-name">${item.name}</span>
-          <span style="font-size:0.65rem; color:var(--muted); font-family:'DM Mono',monospace;">${item.id}</span>
+          <div class="customer-cell">
+            <span class="customer-full-name">${item.name}</span>
+          </div>
         </td>
         <td style="color:var(--muted); font-size:0.75rem;">${item.email}</td>
         <td style="text-align:center;">
@@ -422,7 +435,7 @@ function renderUnifiedTable() {
 }
 
 async function updateStatus(id, isOrder, newStatus) {
-  if (!confirm(`Confirm status update to [${newStatus}] for ${id}?`)) {
+  if (!confirm(`Confirm status update to [${newStatus}] for ${id}? Automated notification will be dispatched.`)) {
     renderUnifiedTable();
     return;
   }
@@ -437,7 +450,7 @@ async function updateStatus(id, isOrder, newStatus) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Status updated to ${newStatus}!`);
+      showToast(`Status updated to ${newStatus}! Email dispatched.`);
       loadData();
     }
   } catch(e) {

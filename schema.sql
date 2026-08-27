@@ -20,6 +20,14 @@ CREATE TABLE IF NOT EXISTS `missionaries` (
 	`pending_ref_notices` integer DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS `chat_messages` (
+	`id` integer PRIMARY KEY AUTOINCREMENT,
+	`psid` text,
+	`sender` text,
+	`message` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS `bot_hourly_views` (
 	`psid` text,
 	`hour_key` text,
@@ -146,3 +154,4 @@ CREATE INDEX IF NOT EXISTS `idx_m_psid` ON `missionaries` (`psid`);
 CREATE INDEX IF NOT EXISTS `idx_m_ref` ON `missionaries` (`referral_code`);
 CREATE INDEX IF NOT EXISTS `idx_orders_status` ON `orders` (`status`, `created_at`);
 CREATE INDEX IF NOT EXISTS `idx_catalog_type` ON `product_catalog` (`type`, `price`);
+CREATE INDEX IF NOT EXISTS `idx_chat_psid` ON `chat_messages` (`psid`);

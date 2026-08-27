@@ -45,20 +45,21 @@
   <div class="editor-grid">
     <div>
         <div class="tab-bar">
-            <button class="tab-btn active" onclick="switchTab('tab-messages', this)">📝 24-Month Drips</button>
-            <button class="tab-btn" onclick="switchTab('tab-images', this)">🖼️ Essentials &amp; 9-Grid</button>
-            <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Product of the Month</button>
+            <button class="tab-btn active" onclick="switchTab('tab-messages', this)">📝 Content</button>
+            <button class="tab-btn" onclick="switchTab('tab-images', this)">🖼️ Essentials &amp; Grid</button>
+            <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Products</button>
+            <button class="tab-btn" onclick="switchTab('tab-html', this)">💻 Monthly HTML Template</button>
         </div>
 
-        <!-- TAB 1: 24-Month Messages -->
+        <!-- TAB 1: Content -->
         <div id="tab-messages" class="tab-content active">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                     <div>
                         <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Drip Month Selector</div>
-                        <div style="font-size:0.68rem; color:var(--muted);">Theme represents the Speaker Name placed under the Quote.</div>
+                        <div style="font-size:0.68rem; color:var(--muted);">Select the target calendar month cycle.</div>
                     </div>
-                    <select id="month-selector" class="form-input" style="width:130px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)">
+                    <select id="month-selector" class="form-input" style="width:170px; font-weight:bold; color:var(--gold);" onchange="onSelectMonth(this.value)">
                     </select>
                 </div>
                 
@@ -81,7 +82,7 @@
             </div>
         </div>
 
-        <!-- TAB 2: Essentials & 9-Grid Images -->
+        <!-- TAB 2: Essentials & Grid -->
         <div id="tab-images" class="tab-content">
             <div class="card">
                 <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:12px;">2 Missionary Essentials (Names &amp; 1:1 Images)</div>
@@ -124,13 +125,13 @@
             </div>
         </div>
 
-        <!-- TAB 3: Product of the Month -->
+        <!-- TAB 3: Products -->
         <div id="tab-products" class="tab-content">
             <div class="card">
                 <div class="toggle-wrap">
                     <div>
-                        <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Enable Product of the Month</div>
-                        <div style="font-size:0.68rem; color:var(--muted);">Saved directly to <code>highlight_label</code> &amp; <code>highlight_img</code> for selected month.</div>
+                        <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Enable Products of the Month</div>
+                        <div style="font-size:0.68rem; color:var(--muted);">Showcase 1 or 2 special highlighted items in the email.</div>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="inp-highlight-toggle" onchange="onLiveEdit()">
@@ -138,17 +139,22 @@
                     </label>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Product Name (highlight_label)</label>
-                    <input type="text" id="inp-highlight-name" class="form-input" placeholder="e.g. Handcrafted Olive Scripture Case" oninput="onLiveEdit()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Product Image URL (1:1) (highlight_img)</label>
-                    <input type="url" id="inp-highlight-img" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="onLiveEdit()">
+                <!-- Product 1 -->
+                <div style="background:var(--surface2); padding:12px; border-radius:6px; border:1px solid var(--border); margin-bottom:14px;">
+                    <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Product 1</div>
+                    <div class="form-group">
+                        <label class="form-label">Product 1 Name (highlight_label)</label>
+                        <input type="text" id="inp-highlight-name" class="form-input" placeholder="e.g. Handcrafted Olive Scripture Case" oninput="onLiveEdit()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Product 1 Image URL (1:1) (highlight_img)</label>
+                        <input type="url" id="inp-highlight-img" class="form-input" placeholder="https://lh3.googleusercontent.com/..." oninput="onLiveEdit()">
+                    </div>
                 </div>
 
-                <div style="margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px;">
-                    <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Secondary Product (Optional)</div>
+                <!-- Product 2 -->
+                <div style="background:var(--surface2); padding:12px; border-radius:6px; border:1px solid var(--border);">
+                    <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:8px;">Product 2 (Optional)</div>
                     <div class="form-group">
                         <label class="form-label">Product 2 Name (highlight_label_2)</label>
                         <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="e.g. Leather Nametag Strap" oninput="onLiveEdit()">
@@ -159,36 +165,42 @@
                     </div>
                 </div>
 
-
                 <div style="margin-top: 14px; text-align: right;">
                     <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset Tab to Defaults</button>
                 </div>
             </div>
         </div>
 
-        <!-- Direct Save & Actions Bar -->
+        <!-- TAB 4: Custom Monthly HTML Template -->
+        <div id="tab-html" class="tab-content">
+            <div class="card">
+                <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">Custom HTML Template for Active Month</div>
+                <div style="font-size:0.7rem; color:var(--muted); margin-bottom:12px; line-height:1.5;">
+                    If left blank, this month uses the master template (father reference). Use placeholders: <code>{{MONTH}}</code>, <code>{{NAME}}</code>, <code>{{MESSAGE}}</code>, <code>{{SCRIPTURE}}</code>, <code>{{THEME}}</code>, <code>{{POINTS}}</code>, <code>{{REWARD_SECTION_HTML}}</code>.
+                </div>
+                <div class="form-group">
+                    <textarea id="inp-custom-html" class="form-input" rows="12" style="font-family:'DM Mono',monospace; font-size:0.7rem; resize:vertical;" placeholder="Leave empty to use master template..." oninput="onLiveEdit()"></textarea>
+                </div>
+                <div style="margin-top: 14px; text-align: right;">
+                    <button class="btn btn-dark" onclick="document.getElementById('inp-custom-html').value=''; onLiveEdit();">↺ Clear (Use Master Template)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Actions -->
         <div class="save-actions">
             <button class="btn btn-gold" id="btn-main-save" style="flex:1; justify-content:center; padding:12px;" onclick="saveActiveMonth()">💾 Save Month to Database</button>
             <button class="btn btn-dark" onclick="window.syncData ? window.syncData() : location.reload()">↻ Re-Sync</button>
         </div>
 
-        <!-- Points Testing Controls -->
-        <div class="card" style="border-color: rgba(201,168,76,0.25); margin-top:20px;">
-            <div style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:bold; color:var(--gold); margin-bottom:6px;">⚡ Points Simulation Sandbox</div>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <input type="number" id="inp-sim-points" class="form-input" style="width:120px;" value="2" oninput="renderPreview()">
-                <span style="font-size:0.7rem; color:var(--muted);">Test points evaluation below the gallery (Claimable list vs Nearest Goal card).</span>
-            </div>
-        </div>
-
         <!-- Floating Sync Bar -->
         <div class="save-banner" id="save-banner">
-            <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ Unsaved edits for Month <span id="unsaved-month-num">1</span></span>
+            <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ Unsaved edits for <span id="unsaved-month-label">January (Odd)</span></span>
             <button class="btn btn-gold" id="btn-save-turso" onclick="saveActiveMonth()">💾 Save Month to Turso</button>
         </div>
     </div>
 
-    <!-- Right Column: 1:1 Live Email Preview -->
+    <!-- Right Column: Live Email Preview -->
     <div class="preview-wrapper">
         <div style="font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; text-align:center;">
             ✦ Live 1:1 Email Template Sandbox
@@ -196,12 +208,11 @@
         
         <div class="preview-frame" id="live-email-frame">
             <div style="padding: 35px 20px 15px 20px; text-align: center; background-color: #ffffff;">
-                <span id="prev-date" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px; display: block;">Month 1 • Dedicated Service</span>
+                <span id="prev-date" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 12px; display: block;">January (Odd) • Dedicated Service</span>
                 <h1 style="font-size: 24px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a;">Timeless Creations</h1>
                 <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 8px; text-transform: uppercase; line-height: 1.4;">Most Trusted Online LDS Store by Members and Missionaries Across the Philippines</div>
             </div>
 
-            <!-- Non-Editable Header Temple Image -->
             <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" style="width: 100%; height: auto; min-height: 160px; object-fit: cover; display: block; border: 0;">
 
             <div style="padding: 22px 18px; text-align: center; line-height: 1.6;">
@@ -217,7 +228,7 @@
                     As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
                 </div>
 
-                <!-- 1. 2 Missionary Essentials -->
+                <!-- Essentials -->
                 <div style="padding: 20px 12px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 18px;">
                     <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; margin-bottom: 16px; color: #1a1a1a;">Missionary Essentials</h2>
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -241,15 +252,10 @@
                     <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold;">Order Yours Now</a>
                 </div>
 
-                <!-- 2. Product of the Month -->
-                <div id="prev-highlight-container" style="display:none; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
-                    <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px;">⭐ Product of the Month</span>
-                    <img id="prev-highlight-img" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" style="width: 140px; height: 140px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 10px auto;" alt="Highlight">
-                    <div id="prev-highlight-name" style="font-family: 'Syne', sans-serif; font-size: 12.5px; font-weight: bold; color: #1a1a1a; margin-bottom: 8px;">Handcrafted Olive Scripture Case</div>
-                    <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 8px 18px; background: #8b1a1a; color: #fff !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 3px;">Inquire Item</a>
-                </div>
+                <!-- Products of the Month Preview -->
+                <div id="prev-highlight-container" style="display:none; margin: 24px 0; padding: 18px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;"></div>
 
-                <!-- 3. Community Gallery 9-Grid -->
+                <!-- 9-Grid Gallery -->
                 <div style="margin: 30px auto; text-align: center;">
                     <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
                     <p style="font-size: 12.5px; color: #555; line-height: 1.5; margin-bottom: 16px; font-style: italic;">
@@ -281,11 +287,11 @@
                     </div>
                 </div>
 
-                <!-- 4. Dynamic Points Rewards & Nearest Goal Card -->
+                <!-- Points & Rewards Balance Card -->
                 <div id="prev-points-section" style="padding: 20px 14px; background-color: #fdfaf3; border: 1px solid #c9a84c; border-radius: 4px; margin-top: 25px;">
                     <div style="font-family: 'Syne', sans-serif; font-size: 13px; font-weight: bold; color: #8b1a1a; margin-bottom: 6px;">🎁 Your TCRP Reward Balance</div>
                     <div style="font-size: 12px; color: #555; margin-bottom: 14px; line-height: 1.4;">
-                        You currently have <strong id="prev-points-val">2</strong> Points.
+                        You currently have <strong>2</strong> Points.
                     </div>
                     <div id="prev-claimable-items" style="margin-bottom:14px;"></div>
                     <a href="https://m.me/TimelessCreationsRP" target="_blank" style="display: block; width: 90%; margin: 0 auto; padding: 12px 10px; background-color: #1a1a1a; border: 1px solid #1a1a1a; color: #d4c197 !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold;">
@@ -307,7 +313,13 @@
 <script>
 let currentMonth = 1;
 let liveDripMap = {};
-let availableRewards = [];
+
+function getCalendarMonthLabel(monthIndex) {
+  const calendarNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const idx = (Number(monthIndex) - 1) % 12;
+  const cycleNum = Number(monthIndex) <= 12 ? "(Odd)" : "(Even)";
+  return `${calendarNames[idx]} ${cycleNum}`;
+}
 
 function switchTab(tabId, btn) {
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -322,7 +334,7 @@ function initSelector() {
   for (let i = 1; i <= 24; i++) {
     const opt = document.createElement("option");
     opt.value = i;
-    opt.textContent = `Month ${i}`;
+    opt.textContent = `${getCalendarMonthLabel(i)} (M${i})`;
     sel.appendChild(opt);
   }
 }
@@ -337,41 +349,43 @@ async function fetchFromTurso() {
           month: Number(d.month),
           theme: d.theme || "Elder Jeffrey R. Holland",
           scripture: d.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
-          message: d.message || `May your faith be strengthened as you serve and invite others to come unto Christ during Month ${d.month}.`,
+          message: d.message || `May your faith be strengthened as you serve and invite others during ${getCalendarMonthLabel(d.month)}.`,
           highlight_img: d.highlight_img || "",
-          highlight_label: d.highlight_label || ""
+          highlight_label: d.highlight_label || "",
+          highlight_img_2: d.highlight_img_2 || "",
+          highlight_label_2: d.highlight_label_2 || "",
+          custom_html: d.custom_html || ""
         };
       });
-    }
-
-    const rewRes = await fetch("/api/main?action=get_products&type=reward");
-    const rewData = await rewRes.json();
-    if (rewData.ok && rewData.products) {
-      availableRewards = rewData.products;
     }
   } catch(e) {}
 }
 
 function onSelectMonth(m) {
   currentMonth = parseInt(m, 10);
-  document.getElementById("unsaved-month-num").textContent = currentMonth;
+  const label = getCalendarMonthLabel(currentMonth);
+  document.getElementById("unsaved-month-label").textContent = label;
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,
     theme: "Elder Jeffrey R. Holland",
     scripture: "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
-    message: `May your faith be strengthened as you serve and invite others to come unto Christ during Month ${currentMonth}.`,
+    message: `May your faith be strengthened as you serve and invite others during ${label}.`,
     highlight_img: "",
-    highlight_label: ""
+    highlight_label: "",
+    highlight_img_2: "",
+    highlight_label_2: "",
+    custom_html: ""
   };
 
   document.getElementById("inp-theme").value = data.theme || "";
   document.getElementById("inp-msg").value = data.message || "";
   document.getElementById("inp-quote").value = data.scripture || "";
+  document.getElementById("inp-custom-html").value = data.custom_html || "";
 
-  if (data.highlight_label && data.highlight_label.trim() !== "") {
+  if ((data.highlight_label && data.highlight_label.trim() !== "") || (data.highlight_label_2 && data.highlight_label_2.trim() !== "")) {
     document.getElementById("inp-highlight-toggle").checked = true;
-    document.getElementById("inp-highlight-name").value = data.highlight_label;
+    document.getElementById("inp-highlight-name").value = data.highlight_label || "";
     document.getElementById("inp-highlight-img").value = data.highlight_img || "";
     document.getElementById("inp-highlight-name-2").value = data.highlight_label_2 || "";
     document.getElementById("inp-highlight-img-2").value = data.highlight_img_2 || "";
@@ -379,6 +393,8 @@ function onSelectMonth(m) {
     document.getElementById("inp-highlight-toggle").checked = false;
     document.getElementById("inp-highlight-name").value = "";
     document.getElementById("inp-highlight-img").value = "";
+    document.getElementById("inp-highlight-name-2").value = "";
+    document.getElementById("inp-highlight-img-2").value = "";
   }
 
   renderPreview();
@@ -392,7 +408,10 @@ function onLiveEdit() {
     message: document.getElementById("inp-msg").value.trim(),
     scripture: document.getElementById("inp-quote").value.trim(),
     highlight_label: isHigh ? document.getElementById("inp-highlight-name").value.trim() : "",
-    highlight_img: isHigh ? document.getElementById("inp-highlight-img").value.trim() : ""
+    highlight_img: isHigh ? document.getElementById("inp-highlight-img").value.trim() : "",
+    highlight_label_2: isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "",
+    highlight_img_2: isHigh ? document.getElementById("inp-highlight-img-2").value.trim() : "",
+    custom_html: document.getElementById("inp-custom-html").value
   };
 
   document.getElementById("save-banner").style.display = "flex";
@@ -406,8 +425,9 @@ function cleanQuoteString(raw) {
 
 function renderPreview() {
   const data = liveDripMap[currentMonth] || {};
+  const monthLabel = getCalendarMonthLabel(currentMonth);
 
-  document.getElementById("prev-date").textContent = `Month ${currentMonth} • Dedicated Service`;
+  document.getElementById("prev-date").textContent = `${monthLabel} • Dedicated Service`;
   document.getElementById("prev-msg").innerHTML = (data.message || "").replace(/\n/g, "<br>");
   
   const cleanedQuote = cleanQuoteString(data.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.");
@@ -429,61 +449,45 @@ function renderPreview() {
 
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
   const hContainer = document.getElementById("prev-highlight-container");
-  if (isHigh && data.highlight_label) {
+  
+  const h1Name = data.highlight_label || document.getElementById("inp-highlight-name").value.trim();
+  const h1Img = data.highlight_img || document.getElementById("inp-highlight-img").value.trim();
+  const h2Name = data.highlight_label_2 || document.getElementById("inp-highlight-name-2").value.trim();
+  const h2Img = data.highlight_img_2 || document.getElementById("inp-highlight-img-2").value.trim();
+
+  const items = [];
+  if (h1Name) items.push({ name: h1Name, img: h1Img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" });
+  if (h2Name) items.push({ name: h2Name, img: h2Img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" });
+
+  if (isHigh && items.length > 0) {
     hContainer.style.display = "block";
-    document.getElementById("prev-highlight-name").textContent = data.highlight_label;
-    document.getElementById("prev-highlight-img").src = data.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+    hContainer.innerHTML = `
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 8px;">
+        <tr>
+          ${items.map((it, idx) => `
+            <td align="center" width="${items.length === 2 ? '48%' : '100%'}" valign="top">
+              <img src="${it.img}" style="width: 100%; max-width: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${it.name}">
+              <div style="font-family: 'Syne', sans-serif; font-size: 11px; font-weight: bold; color: #1a1a1a;">${it.name}</div>
+            </td>
+            ${idx === 0 && items.length === 2 ? '<td width="4%"></td>' : ''}
+          `).join('')}
+        </tr>
+      </table>
+      <a href="https://m.me/timelesscreations.06" target="_blank" style="display: inline-block; padding: 8px 18px; background: #8b1a1a; color: #fff !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 3px;">Inquire Item</a>
+    `;
   } else {
     hContainer.style.display = "none";
-  }
-
-  const points = parseInt(document.getElementById("inp-sim-points").value, 10) || 0;
-  document.getElementById("prev-points-val").textContent = points;
-  const claimBox = document.getElementById("prev-claimable-items");
-
-  const affordable = availableRewards.filter(r => r.price <= points);
-  if (affordable.length > 0) {
-    claimBox.innerHTML = `
-      <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:6px;">🎉 You can claim these reward items right now:</div>
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        ${affordable.map(item => `
-          <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 10px; border:1px solid #e0d6bc; border-radius:4px; text-align:left;">
-            <img src="${item.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:36px; height:36px; object-fit:cover; border-radius:3px; aspect-ratio:1/1;">
-            <div style="flex:1;">
-              <div style="font-weight:bold; font-size:11px;">${item.name}</div>
-              <div style="font-size:9.5px; color:#8c7e5d; font-weight:bold;">⭐ ${item.price} Points</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  } else {
-    const sorted = [...availableRewards].sort((a, b) => a.price - b.price);
-    const nearestItem = sorted.find(r => r.price > points) || sorted[0] || { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" };
-    const needed = Math.max(1, (nearestItem.price || 6) - points);
-
-    claimBox.innerHTML = `
-      <div style="background:#fff; border:1px solid #e0d6bc; border-radius:6px; padding:12px; text-align:center;">
-        <span style="font-size:10px; color:#8b1a1a; font-weight:bold; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">🔥 You're so close! Next Goal:</span>
-        <img src="${nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:60px; height:60px; object-fit:cover; border-radius:4px; aspect-ratio:1/1; display:block; margin:0 auto 6px auto; border:1px solid #d4c197;">
-        <div style="font-weight:bold; font-size:11.5px; color:#1a1a1a;">${nearestItem.name} (${nearestItem.price} PTS)</div>
-        <div style="font-size:11px; color:#8c7e5d; margin-top:4px; font-weight:bold;">
-          ⚡ Only <strong>${needed} more point${needed > 1 ? 's' : ''}</strong> needed to claim!
-        </div>
-        <div style="font-size:10px; color:#777; margin-top:4px; line-height:1.3;">
-          Invite just <strong>${needed} companion${needed > 1 ? 's' : ''}</strong> with your referral link to unlock this reward!
-        </div>
-      </div>
-    `;
   }
 }
 
 function resetTab1Defaults() {
+  const label = getCalendarMonthLabel(currentMonth);
   document.getElementById("inp-theme").value = "Elder Jeffrey R. Holland";
-  document.getElementById("inp-msg").value = `May your faith be strengthened as you serve and invite others to come unto Christ during Month ${currentMonth}.`;
+  document.getElementById("inp-msg").value = `May your faith be strengthened as you serve and invite others during ${label}.`;
   document.getElementById("inp-quote").value = "Trust in the Lord with all thine heart; and lean not unto thine own understanding.";
   onLiveEdit();
-  showToast(`Reset Tab 1 for Month ${currentMonth} to defaults.`);
+  showToast(`Reset Tab 1 for ${label} to defaults.`);
 }
 
 function resetTab2Defaults() {
@@ -515,14 +519,17 @@ function resetTab3Defaults() {
   document.getElementById("inp-highlight-toggle").checked = false;
   document.getElementById("inp-highlight-name").value = "";
   document.getElementById("inp-highlight-img").value = "";
+  document.getElementById("inp-highlight-name-2").value = "";
+  document.getElementById("inp-highlight-img-2").value = "";
   onLiveEdit();
-  showToast("Disabled & reset Product of the Month.");
+  showToast("Disabled & reset Products of the Month.");
 }
 
 async function saveActiveMonth() {
   const btn = document.getElementById("btn-main-save");
   const saveBannerBtn = document.getElementById("btn-save-turso");
   const data = liveDripMap[currentMonth] || {};
+  const label = getCalendarMonthLabel(currentMonth);
   
   if (btn) btn.textContent = "⏳ Saving Month to Database...";
   if (saveBannerBtn) saveBannerBtn.textContent = "⏳ Saving...";
@@ -540,7 +547,8 @@ async function saveActiveMonth() {
         highlight_img: data.highlight_img,
         highlight_label: data.highlight_label,
         highlight_label_2: data.highlight_label_2,
-        highlight_img_2: data.highlight_img_2
+        highlight_img_2: data.highlight_img_2,
+        custom_html: data.custom_html
       })
     });
     const resData = await res.json();
@@ -548,7 +556,7 @@ async function saveActiveMonth() {
       document.getElementById("save-banner").style.display = "none";
       if (btn) btn.textContent = "💾 Save Month to Database";
       if (saveBannerBtn) saveBannerBtn.textContent = "💾 Save Month to Turso";
-      showToast(`Month ${currentMonth} saved to database!`);
+      showToast(`${label} saved to database!`);
     } else {
       showToast(resData.error || "Failed to save.", "error");
       if (btn) btn.textContent = "💾 Save Month to Database";

@@ -311,8 +311,7 @@ export default async function handler(req, res) {
     if (action === "save_drip") {
       const { month, theme, scripture, message, highlight_img, highlight_label, highlight_img_2, highlight_label_2 } = bodyData;
       await runSql(`
-        INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO drip_messages (month, theme, scripture, message, highlight_img, highlight_label, custom_html) VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(month) DO UPDATE SET
           theme = excluded.theme,
           scripture = excluded.scripture,

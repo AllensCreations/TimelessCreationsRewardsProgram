@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `missionaries` (
 
 CREATE TABLE IF NOT EXISTS `bot_hourly_views` (
 	`psid` text,
-	`hour_key` text, -- Format: YYYY-MM-DD_HH (Philippine Standard Time)
+	`hour_key` text,
 	`view_count` integer DEFAULT 1,
 	PRIMARY KEY(`psid`, `hour_key`)
 );

@@ -457,16 +457,76 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, gallery: rows || [] });
     }
 
-    if (action === "upload" || action === "cdn_upload") {
-      const { filename, targetSize, originalKb, compressedKb, direct_url } = bodyData;
-      const url = direct_url || `https://cdn.jsdelivr.net/gh/${process.env.CDN_GITHUB_OWNER || 'AllensCreations'}/${process.env.CDN_GITHUB_REPO || 'Gallery'}@main/assets/rewards/${filename || 'image.webp'}`;
+        if (action === "upload" || action === "cdn_upload") {
+      const { filename, targetSize, originalKb, compressedKb, base64Data } = bodyData;
       
+      let owner = process.env.CDN_GITHUB_OWNER || 'AllensCreations';
+      let repo = process.env.CDN_GITHUB_REPO || 'Gallery';
+      let branch = process.env.CDN_GITHUB_BRANCH || 'main';
+      let uploadPath = process.env.CDN_UPLOAD_PATH || 'assets/rewards';
+      let token = process.env.CDN_GITHUB_TOKEN;
+
+      try {
+        const configRows = await runSql("SELECT key, value FROM system_config WHERE key LIKE 'cdn_%'");
+        const dbConfig = {};
+        (configRows || []).forEach(r => { dbConfig[r.key] = r.value; });
+        owner = dbConfig.cdn_github_owner || owner;
+        repo = dbConfig.cdn_github_repo || repo;
+        branch = dbConfig.cdn_github_branch || branch;
+        uploadPath = dbConfig.cdn_upload_path || uploadPath;
+        token = token || dbConfig.cdn_github_token;
+      } catch (_) {}
+
+      const cleanFilename = (filename || `image_${Date.now()}.webp`).trim();
+      const filePath = `${uploadPath}/${cleanFilename}`.replace(/^\/+\//, '');
+      const directUrl = `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${filePath}`;
+
+      if (base64Data && token) {
+        const githubApiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+        const base64Content = base64Data.includes('base64,') ? base64Data.split('base64,')[1] : base64Data;
+
+        let sha = null;
+        try {
+          const checkRes = await fetch(`${githubApiUrl}?ref=${branch}`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'User-Agent': 'TCRP-CDN-Uploader', 'Accept': 'application/vnd.github+json' }
+          });
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            sha = checkData.sha;
+          }
+        } catch (_) {}
+
+        const commitPayload = {
+          message: `Upload CDN asset ${cleanFilename} via TCRP Gallery`,
+          content: base64Content,
+          branch: branch
+        };
+        if (sha) commitPayload.sha = sha;
+
+        const commitRes = await fetch(githubApiUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'User-Agent': 'TCRP-CDN-Uploader',
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(commitPayload)
+        });
+
+        if (!commitRes.ok) {
+          const errJson = await commitRes.json().catch(() => ({}));
+          return res.status(500).json({ ok: false, error: `GitHub Commit Failed: ${errJson.message || commitRes.statusText}` });
+        }
+      }
+
       await runSql(`
         INSERT INTO cdn_gallery (filename, direct_url, size_label, original_kb, compressed_kb)
         VALUES (?, ?, ?, ?, ?)
-      `, [filename || 'image.webp', url, targetSize || 'square_600', Number(originalKb) || 0, Number(compressedKb) || 0]);
+      `, [cleanFilename, directUrl, targetSize || 'square_600', Number(originalKb) || 0, Number(compressedKb) || 0]);
 
-      return res.status(200).json({ ok: true, direct_url: url, item: { filename, direct_url: url, size_label: targetSize } });
+      return res.status(200).json({ ok: true, direct_url: directUrl, item: { filename: cleanFilename, direct_url: directUrl, size_label: targetSize } });
+    });
     }
 
     if (action === "delete" || action === "cdn_delete") {

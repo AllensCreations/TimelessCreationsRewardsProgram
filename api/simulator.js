@@ -1,7 +1,12 @@
 import { handleBotMessage } from '../lib/botHandler.js';
 import { runSql } from '../lib/db.js';
+import { requireAdmin } from '../lib/auth.js';
 
 export default async function handler(req, res) {
+  if (process.env.NODE_ENV === 'production' && !requireAdmin(req, res)) {
+    return;
+  }
+
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");

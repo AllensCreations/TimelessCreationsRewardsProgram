@@ -4,10 +4,12 @@ import { sendDripEmail } from '../lib/mailer.js';
 
 export default async function handler(req, res) {
   const authHeader = req.headers?.authorization || req.query?.key;
-  if (!process.env.CRON_SECRET) {
+  const secret = process.env.CRON_SECRET;
+
+  if (!secret) {
     return res.status(500).json({ ok: false, error: "CRON_SECRET not configured — refusing to run." });
   }
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && authHeader !== process.env.CRON_SECRET) {
+  if (authHeader !== `Bearer ${secret}` && authHeader !== secret) {
     return res.status(401).json({ ok: false, error: "Unauthorized cron execution." });
   }
 

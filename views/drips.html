@@ -272,126 +272,15 @@
 let currentMonth = 1;
 let liveDripMap = {};
 let latestPromo = { code: "SPECIALGIFT", points: 2 };
-let masterTemplateCode = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-  .email-wrapper { width: 100%; background-color: #f9f7f2; display: flex; justify-content: center; padding: 20px 0; }
-  .email-container { width: 100%; max-width: 450px; background: #ffffff; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.03); margin: 0 auto; overflow: hidden; }
-  .brand-header { padding: 30px 20px 15px; text-align: center; background-color: #ffffff; }
-  .logo-text { font-size: 22px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
-  .temple-img { width: 100%; height: auto; object-fit: cover; display: block; border: 0; }
-  .main-content { padding: 20px 18px; text-align: center; line-height: 1.6; }
-  .quote-container { margin: 18px 0; padding: 16px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
-  .transition-zone { margin: 20px 0; padding: 12px 10px; font-style: italic; color: #8c7e5d; font-size: 12.5px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
-  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; border: 1px solid #f0eadd; }
-  .footer { padding: 36px 20px; background-color: #1a1a1a; color: #ffffff; text-align: center; }
-</style>
-</head>
-<body>
-<div class="email-wrapper">
-  <div class="email-container">
-    <div class="brand-header">
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #8c7e5d; text-transform: uppercase; margin-bottom: 8px; display: block;">{{MONTH}} • Dedicated Service</span>
-      <h1 class="logo-text">Timeless Creations</h1>
-      <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 6px; text-transform: uppercase;">Most Trusted Online LDS Store by Members &amp; Missionaries Across the Philippines</div>
-    </div>
-    <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" class="temple-img">
-    <div class="main-content">
-      <div style="font-size: 18px; font-style: italic; margin-bottom: 10px; color: #1a1a1a;">Hello {{NAME}},</div>
-      <div style="font-size: 13.5px; color: #333; margin-bottom: 16px;">{{MESSAGE}}</div>
-      <div class="quote-container">
-        <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 6px;">"{{SCRIPTURE}}"</div>
-        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
-      </div>
-
-      <div class="transition-zone">
-        As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
-      </div>
-
-      <!-- 2 Missionary Essentials & Assurance -->
-      <div style="padding: 20px 14px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 4px; margin: 20px 0;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin: 0 0 16px 0; color: #1a1a1a; text-align: center;">Missionary Essentials</h2>
-        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-          <tr>
-            <td align="center" width="48%" valign="top">
-              <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border: 1px solid #d4c197; border-radius: 3px; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
-              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS1_NAME}}</div>
-            </td>
-            <td width="4%"></td>
-            <td align="center" width="48%" valign="top">
-              <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border: 1px solid #d4c197; border-radius: 3px; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
-              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS2_NAME}}</div>
-            </td>
-          </tr>
-        </table>
-        <p style="font-size: 12px; margin-top: 18px; color: #555; line-height: 1.5; text-align: center;">
-          If you have doubts with us as scams, we offer our first time customers with a <strong>"Gawa muna bago bayad"</strong> assurance.
-        </p>
-        <div style="background-color: #1a1a1a; color: #d4c197; padding: 10px; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; margin: 14px 0 16px; font-weight: bold; text-align: center; border-radius: 2px;">
-          Work, Confirm, Pay
-        </div>
-        <div style="text-align: center;">
-          <a href="https://m.me/timeless.creations.06" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
-            Inquire via Messenger
-          </a>
-        </div>
-      </div>
-
-      <div style="{{HIGHLIGHT_DISPLAY}}; margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
-        {{HIGHLIGHT_ITEMS_HTML}}
-      </div>
-
-      <!-- 9 Community Photos & Google Photos Link -->
-      <div style="margin: 26px auto 20px; text-align: center;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 6px; color: #1a1a1a;">Engrave Your Legacy</h2>
-        <p style="font-size: 12px; color: #666; font-style: italic; line-height: 1.5; margin-bottom: 14px; padding: 0 10px;">
-          Your service is a story that deserves to be told. We are archiving the moments that define a mission—one missionary, one memory, and one creation at a time.
-        </p>
-        <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
-          <tr>
-            <td><img src="{{GRID1}}" class="strict-1-1" alt="Community Photo 1"></td>
-            <td><img src="{{GRID2}}" class="strict-1-1" alt="Community Photo 2"></td>
-            <td><img src="{{GRID3}}" class="strict-1-1" alt="Community Photo 3"></td>
-          </tr>
-          <tr>
-            <td><img src="{{GRID4}}" class="strict-1-1" alt="Community Photo 4"></td>
-            <td><img src="{{GRID5}}" class="strict-1-1" alt="Community Photo 5"></td>
-            <td><img src="{{GRID6}}" class="strict-1-1" alt="Community Photo 6"></td>
-          </tr>
-          <tr>
-            <td><img src="{{GRID7}}" class="strict-1-1" alt="Community Photo 7"></td>
-            <td><img src="{{GRID8}}" class="strict-1-1" alt="Community Photo 8"></td>
-            <td><img src="{{GRID9}}" class="strict-1-1" alt="Community Photo 9"></td>
-          </tr>
-        </table>
-        <p style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; letter-spacing: 1.5px; color: #8c7e5d; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0;">
-          Engrave Your Memory. Be the Memory. Be You.
-        </p>
-        <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" style="display: inline-block; padding: 10px 22px; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
-          Enter the Gallery ↗
-        </a>
-      </div>
-
-      <!-- Combined Rewards & Promo Box -->
-      {{REWARD_SECTION_HTML}}
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-      <div style="color: #d4c197; letter-spacing: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold;">Timeless Creations</div>
-      <div style="font-size: 9px; opacity: 0.6; margin-top: 10px; font-family: Arial, sans-serif; line-height: 1.4;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
-      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="font-size: 9.5px; color: #b8955a; text-decoration: none; margin-top: 18px; display: inline-block; font-family: 'Helvetica', Arial, sans-serif; letter-spacing: 1px;">
-        Redeem Rewards &amp; Support in Messenger →
-      </a>
-    </div>
-  </div>
-</div>
-</body>
-</html>`;
+let masterTemplateCode = '';
+async function loadMasterTemplate() {
+  try {
+    const res = await fetch('/assets/email-template.html');
+    masterTemplateCode = await res.text();
+  } catch (e) {
+    console.error('Failed to load email template:', e);
+  }
+}
 
 let currentTargetInputId = null;
 let currentTargetThumbId = null;
@@ -814,6 +703,7 @@ async function saveActiveMonth(sectionName = 'global') {
 window.addEventListener("DOMContentLoaded", async () => {
   initAppLayout('drips', '24-Month Drips');
   initSelector();
+  await loadMasterTemplate();
   await fetchFromTurso();
   onSelectMonth(1);
 });

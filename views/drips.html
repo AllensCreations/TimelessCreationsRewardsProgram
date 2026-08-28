@@ -331,9 +331,7 @@ let masterTemplateCode = `<!DOCTYPE html>
       {{HIGHLIGHT_ITEMS_HTML}}
     </div>
 
-    {{PROMO_BANNER_HTML}}
-
-    <div style="margin: 20px auto; text-align: center;">
+    <div style="margin: 20px auto 14px; text-align: center;">
       <h2 style="font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
       <table width="100%" border="0" cellspacing="2" cellpadding="0" style="table-layout: fixed; margin-bottom: 12px;">
         <tr>
@@ -354,6 +352,8 @@ let masterTemplateCode = `<!DOCTYPE html>
       </table>
       <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" class="gallery-btn">Enter the Google Photos Gallery ↗</a>
     </div>
+
+    {{PROMO_BANNER_HTML}}
 
     {{REWARD_SECTION_HTML}}
   </div>
@@ -596,7 +596,7 @@ function buildRewardSectionHtml(points = 2, products = []) {
   }
 
   return `
-    <div style="padding:16px 12px; background-color:#fdfaf3; border:1px solid #c9a84c; border-radius:4px; margin-top:18px;">
+    <div style="padding:16px 12px; background-color:#fdfaf3; border:1px solid #c9a84c; border-radius:4px; margin-top:14px;">
       <div style="font-family:'Helvetica', Arial, sans-serif; font-size:12.5px; font-weight:bold; color:#8b1a1a; margin-bottom:4px;">🎁 Your Rewards Balance &amp; Goals</div>
       <div style="font-size:11.5px; color:#555555; margin-bottom:12px;">You currently have <strong>${userPoints}</strong> Points.</div>
       ${whatCanIGetHtml}
@@ -645,10 +645,11 @@ function renderPreview() {
     `;
   }
 
+  // Inject active promo snippet directly above the rewards section
   let promoBannerHtml = '';
   if (latestPromo && latestPromo.code) {
     promoBannerHtml = `
-      <div style="margin: 18px 0; padding: 14px 16px; background-color: #fff9e6; border: 1.5px dashed #c9a84c; border-radius: 6px; text-align: center;">
+      <div style="margin: 20px 0 10px; padding: 14px 16px; background-color: #fff9e6; border: 1.5px dashed #c9a84c; border-radius: 6px; text-align: center;">
         <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 4px;">
           🎟️ Exclusive Monthly Freebie Promo
         </span>

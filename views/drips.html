@@ -43,7 +43,6 @@
       .tab-content { display: none !important; }
       .tab-content.active { display: block !important; }
 
-      /* Dedicated Mobile Preview Tab (Strictly 20px each side margin) */
       .preview-wrapper { width: 100%; max-width: 480px; margin: 0 auto; background: #12121a; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 20px; box-sizing: border-box; }
       .preview-frame { width: 100%; background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
@@ -272,6 +271,7 @@
 <script>
 let currentMonth = 1;
 let liveDripMap = {};
+let latestPromo = { code: "SPECIALGIFT", points: 2 };
 let masterTemplateCode = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -330,6 +330,8 @@ let masterTemplateCode = `<!DOCTYPE html>
     <div style="{{HIGHLIGHT_DISPLAY}}; margin: 18px 0; padding: 14px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
       {{HIGHLIGHT_ITEMS_HTML}}
     </div>
+
+    {{PROMO_BANNER_HTML}}
 
     <div style="margin: 20px auto; text-align: center;">
       <h2 style="font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
@@ -440,9 +442,13 @@ function revertImage(inputId, thumbId, defaultUrl) {
 
 async function fetchFromTurso() {
   try {
-    const res = await fetch("/api/main?action=get_drips").then(r => r.json());
-    if (res.ok && Array.isArray(res.drips)) {
-      res.drips.forEach(d => {
+    const [dripRes, promoRes] = await Promise.all([
+      fetch("/api/main?action=get_drips").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_promo_codes").then(r => r.json()).catch(() => ({}))
+    ]);
+
+    if (dripRes.ok && Array.isArray(dripRes.drips)) {
+      dripRes.drips.forEach(d => {
         liveDripMap[Number(d.month)] = {
           month: Number(d.month),
           subject: d.subject || `Monthly Encouragement (${getCalendarMonthLabel(d.month)}) • Timeless Creations`,
@@ -456,6 +462,10 @@ async function fetchFromTurso() {
           custom_html: d.custom_html || ""
         };
       });
+    }
+
+    if (promoRes.ok && Array.isArray(promoRes.promo_codes) && promoRes.promo_codes.length > 0) {
+      latestPromo = promoRes.promo_codes[0];
     }
   } catch(e) {}
 }
@@ -620,7 +630,7 @@ function renderPreview() {
   let highlightHtml = '';
   if (items.length > 0) {
     highlightHtml = `
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 6px;">⭐ Product of the Month</span>
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 6px;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
       <table width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
           ${items.map((it, idx) => `
@@ -632,6 +642,26 @@ function renderPreview() {
           `).join('')}
         </tr>
       </table>
+    `;
+  }
+
+  let promoBannerHtml = '';
+  if (latestPromo && latestPromo.code) {
+    promoBannerHtml = `
+      <div style="margin: 18px 0; padding: 14px 16px; background-color: #fff9e6; border: 1.5px dashed #c9a84c; border-radius: 6px; text-align: center;">
+        <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 4px;">
+          🎟️ Exclusive Monthly Freebie Promo
+        </span>
+        <div style="font-size: 13px; color: #1a1a1a; margin-bottom: 6px;">
+          Claim <strong>+${latestPromo.points || 2} Free Reward Points</strong> right now!
+        </div>
+        <div style="font-family: monospace; font-size: 13px; font-weight: bold; background: #1a1a1a; color: #d4c197; padding: 6px 12px; border-radius: 4px; display: inline-block; letter-spacing: 1px;">
+          /redeem ${latestPromo.code}
+        </div>
+        <div style="font-size: 10px; color: #777; margin-top: 6px;">
+          Type this in our Messenger chat to claim bonus points instantly!
+        </div>
+      </div>
     `;
   }
 
@@ -654,6 +684,7 @@ function renderPreview() {
     .replace(/{{POINTS}}/g, String(points))
     .replace(/{{HIGHLIGHT_DISPLAY}}/g, isHigh && items.length > 0 ? "display:block" : "display:none")
     .replace(/{{HIGHLIGHT_ITEMS_HTML}}/g, highlightHtml)
+    .replace(/{{PROMO_BANNER_HTML}}/g, promoBannerHtml)
     .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
     .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
     .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())

@@ -15,8 +15,11 @@ export default async function handler(req, res) {
 
   try {
     const powerSetting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
-    if (powerSetting && powerSetting.value === "OFFLINE") {
-      return res.status(200).json({ ok: true, message: "System is in sleep mode. No drips sent." });
+    const isOffline = (powerSetting?.value || 'ONLINE').toUpperCase() === 'OFFLINE';
+
+    if (isOffline) {
+      await runSql("INSERT INTO system_logs (level, message, created_at) VALUES ('INFO', 'Cron triggered but aborted: System power state is OFFLINE', CURRENT_TIMESTAMP)");
+      return res.status(200).json({ ok: true, sentCount: 0, message: "System is OFFLINE. Dispatches paused." });
     }
 
     const dueElders = await runSql(`
@@ -75,8 +78,8 @@ export default async function handler(req, res) {
 
           await runSql(`
             INSERT INTO system_logs (level, message, created_at)
-            VALUES ('INFO', ?, CURRENT_TIMESTAMP)
-          `, [`Automated Drip M${nextMonth} dispatched to ${m.name} (${m.email})`]);
+            VALUES ('DISPATCH', ?, CURRENT_TIMESTAMP)
+          `, [`[EMAIL_DISPATCH] M${nextMonth} sent to ${m.name} (${m.email})`]);
 
           sentCount++;
         } else {

@@ -2,85 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>System Logs & Telemetry | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
   <style>
-    :root {
-      --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-      --border:rgba(255,255,255,0.08);
-      --gold:#c9a84c; --gold-dim:rgba(201,168,76,0.15);
-      --green:#4caf82; --red:#e05c5c; --blue:#5c8de0;
-      --text:#e8e6f0; --muted:#716e88;
-      --radius:10px;
+    .filters-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .filter-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
+    .filter-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); font-weight: 700; }
+    .search-box { flex: 1; min-width: 200px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
+    .search-box:focus { border-color: var(--gold); }
+
+    .badge { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: inline-block; }
+    .badge-info { background: rgba(76,175,130,0.15); color: var(--green); border: 1px solid rgba(76,175,130,0.3); }
+    .badge-warn { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+    .badge-error { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
+    .badge-turso { background: rgba(92,141,224,0.15); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
+    .badge-dispatch { background: rgba(201,168,76,0.25); color: #fff; border: 1px solid var(--gold); }
+
+    /* Mobile Responsive Card Feed */
+    .log-stream-container { display: flex; flex-direction: column; gap: 8px; }
+    .log-entry-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-    .container{max-width:1160px;margin:20px auto;padding:0 16px 40px;}
-
-    .header-banner{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
-    .header-banner h1{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);margin-bottom:4px;}
-    .header-banner p{font-size:0.75rem;color:var(--muted);}
-
-    .filters-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
-    .filter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:6px;font-size:0.7rem;cursor:pointer;font-family:'DM Mono',monospace;}
-    .filter-btn.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold);font-weight:700;}
-    .search-box{flex:1;min-width:220px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;}
-    .search-box:focus{border-color:var(--gold);}
-
-    .logs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-    .logs-table{width:100%;border-collapse:collapse;font-size:0.74rem;}
-    .logs-table th{background:var(--surface2);color:var(--muted);text-align:left;padding:12px 16px;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border);}
-    .logs-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
-    
-    .badge{font-size:0.6rem;padding:3px 8px;border-radius:4px;font-weight:bold;text-transform:uppercase;display:inline-block;}
-    .badge-info{background:rgba(76,175,130,0.15);color:var(--green);border:1px solid rgba(76,175,130,0.3);}
-    .badge-warn{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
-    .badge-error{background:rgba(224,92,92,0.15);color:var(--red);border:1px solid rgba(224,92,92,0.3);}
-    .badge-turso{background:rgba(92,141,224,0.15);color:var(--blue);border:1px solid rgba(92,141,224,0.3);}
-
-    .btn{background:var(--gold);color:#0a0a0f;border:none;padding:9px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-    .btn:hover{opacity:0.9;}
+    .log-entry-header { display: flex; justify-content: space-between; align-items: center; }
+    .log-entry-msg { font-size: 0.75rem; color: var(--text); word-break: break-word; line-height: 1.5; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header-banner">
+  <div class="card" style="border-color:var(--border-gold); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <div>
-      <h1>📜 Live System Logs &amp; Telemetry</h1>
-      <p>Real-time stream of backend events, database queries, webhook triggers, and email dispatches.</p>
+      <h2 style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.3rem;">📜 System Logs &amp; Audit Stream</h2>
+      <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Real-time event feed, dispatches, database triggers, and audit logs.</p>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <button class="btn" onclick="loadDetailedLogs()">↻ Refresh Live Stream</button>
-    </div>
+    <button class="btn btn-gold" onclick="loadDetailedLogs()">↻ Refresh Telemetry</button>
   </div>
 
   <div class="filters-bar">
-    <input type="text" class="search-box" id="log-search" placeholder="Filter log message content..." oninput="renderLogs()"/>
-    <button class="filter-btn active" onclick="setFilter('ALL', this)">All Logs</button>
+    <input type="text" class="search-box" id="log-search" placeholder="Search logs or email recipients..." oninput="renderLogs()"/>
+    <button class="filter-btn active" onclick="setFilter('ALL', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('DISPATCH', this)">✉️ Dispatches</button>
     <button class="filter-btn" onclick="setFilter('INFO', this)">Info</button>
     <button class="filter-btn" onclick="setFilter('WARN', this)">Warnings</button>
     <button class="filter-btn" onclick="setFilter('ERROR', this)">Errors</button>
     <button class="filter-btn" onclick="setFilter('TURSO', this)">Turso SQL</button>
   </div>
 
-  <div class="logs-card">
-    <table class="logs-table">
-      <thead>
-        <tr>
-          <th style="width:70px;">ID</th>
-          <th style="width:100px;">Level</th>
-          <th>Message Content / Telemetry Event</th>
-          <th style="width:170px;text-align:right;">Timestamp</th>
-        </tr>
-      </thead>
-      <tbody id="logs-tbody">
-        <tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted);">Loading system logs...</td></tr>
-      </tbody>
-    </table>
+  <div class="log-stream-container" id="logs-container">
+    <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">Connecting to log telemetry stream...</div>
   </div>
 </div>
 
@@ -110,37 +88,48 @@ function setFilter(level, btn) {
 }
 
 function renderLogs() {
-  const tbody = document.getElementById('logs-tbody');
+  const container = document.getElementById('logs-container');
   const query = document.getElementById('log-search').value.toLowerCase().trim();
 
   let filtered = allLogs.filter(l => {
     const lvl = (l.level || 'INFO').toUpperCase();
-    const matchLevel = currentFilter === 'ALL' || lvl === currentFilter;
+    const isDispatch = (l.message || '').includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
+    const matchLevel = currentFilter === 'ALL' 
+      ? true 
+      : (currentFilter === 'DISPATCH' ? isDispatch : lvl === currentFilter);
     const matchQuery = !query || (l.message || '').toLowerCase().includes(query);
     return matchLevel && matchQuery;
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted);">No matching log entries found.</td></tr>';
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No matching log entries found.</div>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(l => {
+  container.innerHTML = filtered.map(l => {
     const lvl = (l.level || 'INFO').toUpperCase();
+    const isDispatch = (l.message || '').includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
     let badgeCls = 'badge-info';
-    if (lvl === 'WARN') badgeCls = 'badge-warn';
+    let label = lvl;
+
+    if (isDispatch) { badgeCls = 'badge-dispatch'; label = '✉️ DISPATCH'; }
+    else if (lvl === 'WARN') badgeCls = 'badge-warn';
     else if (lvl === 'ERROR') badgeCls = 'badge-error';
     else if (lvl === 'TURSO') badgeCls = 'badge-turso';
 
     const formattedTime = l.created_at ? new Date(l.created_at).toLocaleString() : 'Just now';
 
     return `
-      <tr>
-        <td style="color:var(--muted);font-family:'DM Mono',monospace;">#${l.id}</td>
-        <td><span class="badge ${badgeCls}">${lvl}</span></td>
-        <td style="word-break:break-all;color:var(--text);">${escapeHtml(l.message)}</td>
-        <td style="text-align:right;color:var(--muted);font-size:0.68rem;">${formattedTime}</td>
-      </tr>
+      <div class="log-entry-card">
+        <div class="log-entry-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge ${badgeCls}">${label}</span>
+            <span style="font-size:0.65rem; color:var(--muted); font-family:'DM Mono',monospace;">#${l.id}</span>
+          </div>
+          <span style="color:var(--muted); font-size:0.65rem; font-family:'DM Mono',monospace;">${formattedTime}</span>
+        </div>
+        <div class="log-entry-msg">${escapeHtml(l.message)}</div>
+      </div>
     `;
   }).join('');
 }
@@ -152,7 +141,6 @@ function escapeHtml(str) {
 window.addEventListener('DOMContentLoaded', () => {
   initAppLayout('logs', 'System Logs');
   loadDetailedLogs();
-  // Auto refresh every 10 seconds for real-time live telemetry
   setInterval(loadDetailedLogs, 10000);
 });
 </script>

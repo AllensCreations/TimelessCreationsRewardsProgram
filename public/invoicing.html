@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Invoicing & Transactions | Timeless Creations</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/app.css">
 <script src="/assets/app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -19,7 +19,6 @@
   .mode-switch-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 0.72rem; cursor: pointer; text-align: center; }
   .mode-switch-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); font-weight: 700; }
 
-  /* Mobile Item Input Cards */
   .item-card-row {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -36,7 +35,6 @@
   .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
   .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
 
-  /* Live Preview (Fixed Visibility & Layout) */
   .preview-wrapper { width: 100%; position: sticky; top: 70px; }
   .invoice-preview-card {
     width: 100%;
@@ -62,7 +60,6 @@
   .inv-table th { background: #fdfaf3; border-bottom: 1px solid #e7d8b8; padding: 5px 6px; text-align: left; color: #78716c; }
   .inv-table td { padding: 5px 6px; border-bottom: 1px solid #f5eedf; color: #1c1917; }
 
-  /* Transactions Card UI */
   .trx-card-container { display: flex; flex-direction: column; gap: 12px; }
   .trx-card {
     background: var(--surface2);
@@ -75,10 +72,8 @@
     transition: border-color 0.2s;
   }
   .trx-card:hover { border-color: var(--border-gold); }
-
   .trx-card-row-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .trx-inv-no { font-family: 'DM Mono', monospace; font-size: 0.85rem; font-weight: 700; color: var(--gold); }
-
   .trx-card-row-mid { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .trx-cust-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; color: #ffffff; word-break: break-word; }
   .trx-type-badge {
@@ -325,7 +320,6 @@
       <input type="text" id="edit-trx-name" class="form-input" readonly>
     </div>
 
-    <!-- Embedded Reward Notification Box -->
     <div id="edit-reward-box" style="display:none; background:#181926; border:1px solid var(--gold); border-radius:6px; padding:10px 12px; margin-bottom:12px;">
       <div style="font-size:0.68rem; color:var(--gold); font-weight:bold; text-transform:uppercase;">🎁 Claimed Freebie Reward (Always Embedded):</div>
       <div style="font-size:0.85rem; color:#fff; font-weight:bold; margin-top:2px;" id="edit-reward-item-label">—</div>
@@ -390,7 +384,7 @@ async function loadData() {
     renderTransactionsWireframeCards();
     renderProductSettings();
 
-    if (document.querySelectorAll('.item-card-row').length === 0 && productCatalog.length > 0) {
+    if (document.querySelectorAll('#items-container .item-card-row').length === 0 && productCatalog.length > 0) {
       addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
     }
   } catch (err) {
@@ -398,7 +392,6 @@ async function loadData() {
   }
 }
 
-// Accordion toggle: Only ONE card open at a time
 function toggleTrxCardAccordion(el) {
   const card = el.closest('.trx-card');
   const isAlreadyOpen = card.classList.contains('open');
@@ -413,7 +406,6 @@ function renderTransactionsWireframeCards() {
   let activeList = [];
   let archiveList = [];
 
-  // 1. Process Orders (Reward Claims)
   orders.forEach(o => {
     let itemsList = [];
     try { itemsList = JSON.parse(o.items_json || '[]'); } catch (_) {}
@@ -439,7 +431,6 @@ function renderTransactionsWireframeCards() {
     else activeList.push(itemObj);
   });
 
-  // 2. Process Cash Invoices
   cashInvoices.forEach(inv => {
     let itemsList = [];
     try { itemsList = JSON.parse(inv.items_json || '[]'); } catch (_) {}
@@ -575,7 +566,6 @@ async function deleteTransaction(id, isOrder, name) {
   }
 }
 
-// Live Preview Sync with Step 1 & 2 (Strictly displaying exact item rows provided)
 function syncLiveInvoicePreview() {
   let name = "Elder / Sister [Name]";
   let email = "customer@example.com";
@@ -663,37 +653,39 @@ function handleProductChange(selectEl) {
 function recalculateTotal() {
   let subtotal = 0;
   const previewItems = [];
-  document.querySelectorAll(".item-card-row").forEach(r => {
-    const selectEl = r.querySelector(".item-select");
+  
+  // STRICT SCOPE: Only select rows created inside the invoice builder
+  document.querySelectorAll('#items-container .item-card-row').forEach(r => {
+    const selectEl = r.querySelector('.item-select');
     let name = "Custom Item";
     if (selectEl && selectEl.selectedIndex >= 0) {
       name = selectEl.options[selectEl.selectedIndex].value;
     }
-    const qty = parseInt(r.querySelector(".item-qty")?.value, 10) || 1;
-    const price = parseFloat(r.querySelector(".item-price")?.value) || 0;
+    const qty = parseInt(r.querySelector('.item-qty')?.value, 10) || 1;
+    const price = parseFloat(r.querySelector('.item-price')?.value) || 0;
     const rowSubtotal = qty * price;
-    const subEl = r.querySelector(".item-subtotal");
+    const subEl = r.querySelector('.item-subtotal');
     if (subEl) subEl.textContent = `₱${rowSubtotal.toFixed(2)}`;
     subtotal += rowSubtotal;
     if (name) previewItems.push({ name, qty, price, subtotal: rowSubtotal });
   });
 
-  const discountType = document.getElementById("discount-type")?.value || "fixed";
-  const discountVal = parseFloat(document.getElementById("discount-val")?.value) || 0;
-  let discountDeducted = discountType === "percent" ? (subtotal * (discountVal / 100)) : discountVal;
+  const discountType = document.getElementById('discount-type')?.value || 'fixed';
+  const discountVal = parseFloat(document.getElementById('discount-val')?.value) || 0;
+  let discountDeducted = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
   if (discountDeducted > subtotal) discountDeducted = subtotal;
 
   const grandTotal = Math.max(0, subtotal - discountDeducted);
   
-  if (document.getElementById("calc-subtotal")) document.getElementById("calc-subtotal").textContent = `₱${subtotal.toFixed(2)}`;
-  if (document.getElementById("calc-discount-deducted")) document.getElementById("calc-discount-deducted").textContent = `-₱${discountDeducted.toFixed(2)}`;
-  if (document.getElementById("calc-grand-total")) document.getElementById("calc-grand-total").textContent = `₱${grandTotal.toFixed(2)}`;
+  if (document.getElementById('calc-subtotal')) document.getElementById('calc-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  if (document.getElementById('calc-discount-deducted')) document.getElementById('calc-discount-deducted').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  if (document.getElementById('calc-grand-total')) document.getElementById('calc-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
 
-  if (document.getElementById("prev-subtotal")) document.getElementById("prev-subtotal").textContent = `₱${subtotal.toFixed(2)}`;
-  if (document.getElementById("prev-discount")) document.getElementById("prev-discount").textContent = `-₱${discountDeducted.toFixed(2)}`;
-  if (document.getElementById("prev-total")) document.getElementById("prev-total").textContent = `₱${grandTotal.toFixed(2)}`;
+  if (document.getElementById('prev-subtotal')) document.getElementById('prev-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+  if (document.getElementById('prev-discount')) document.getElementById('prev-discount').textContent = `-₱${discountDeducted.toFixed(2)}`;
+  if (document.getElementById('prev-total')) document.getElementById('prev-total').textContent = `₱${grandTotal.toFixed(2)}`;
 
-  const prevTbody = document.getElementById("prev-table-body");
+  const prevTbody = document.getElementById('prev-table-body');
   if (prevTbody) {
     if (previewItems.length === 0) {
       prevTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a8a29e;">No items selected.</td></tr>';
@@ -705,7 +697,7 @@ function recalculateTotal() {
           <td style="text-align:right;">₱${Number(item.price).toFixed(2)}</td>
           <td style="text-align:right; font-weight:bold;">₱${Number(item.subtotal).toFixed(2)}</td>
         </tr>
-      `).join("");
+      `).join('');
     }
   }
 }
@@ -721,7 +713,7 @@ async function submitInvoice() {
 
   const items = [];
   let subtotal = 0;
-  document.querySelectorAll('.item-card-row').forEach(r => {
+  document.querySelectorAll('#items-container .item-card-row').forEach(r => {
     const name = r.querySelector('.item-select').value;
     const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
     const price = parseFloat(r.querySelector('.item-price').value) || 0;
@@ -845,7 +837,7 @@ function handleEditProductChange(sel) {
 
 function recalculateEditTotal() {
   let subtotal = 0;
-  document.querySelectorAll('.edit-item-row').forEach(r => {
+  document.querySelectorAll('#edit-items-container .edit-item-row').forEach(r => {
     const qty = parseInt(r.querySelector('.edit-item-qty').value, 10) || 1;
     const price = parseFloat(r.querySelector('.edit-item-price').value) || 0;
     const s = qty * price;
@@ -866,7 +858,7 @@ async function saveEditedTransaction() {
   const items = [];
   let subtotal = 0;
 
-  document.querySelectorAll('.edit-item-row').forEach(r => {
+  document.querySelectorAll('#edit-items-container .edit-item-row').forEach(r => {
     const nameInput = r.querySelector('.edit-item-name').value.trim() || r.querySelector('.edit-item-select').value.trim();
     const qty = parseInt(r.querySelector('.edit-item-qty').value, 10) || 1;
     const price = parseFloat(r.querySelector('.edit-item-price').value) || 0;

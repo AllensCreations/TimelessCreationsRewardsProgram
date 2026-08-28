@@ -235,14 +235,14 @@
       </div>
   </div>
 
-  <!-- TAB 5: Dedicated Live Preview (20px each side margin) -->
+  <!-- TAB 5: Dedicated Live Preview -->
   <div id="tab-preview" class="tab-content">
       <div class="preview-wrapper">
           <div style="font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px; text-align:center; font-weight:bold;">
               ✦ Live Mobile Email Sandbox
           </div>
           <div class="preview-frame">
-              <iframe id="preview-iframe" style="width:100%; min-height:750px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
+              <iframe id="preview-iframe" style="width:100%; min-height:850px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
           </div>
       </div>
   </div>
@@ -278,84 +278,116 @@ let masterTemplateCode = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 12px; }
-  .email-container { width: 100%; max-width: 450px; background: #ffffff; margin: 0 auto; border: 1px solid #e0d6bc; box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
-  .brand-header { padding: 25px 14px 10px; text-align: center; }
-  .logo-text { font-size: 20px; letter-spacing: 4px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
+  body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+  .email-wrapper { width: 100%; background-color: #f9f7f2; display: flex; justify-content: center; padding: 20px 0; }
+  .email-container { width: 100%; max-width: 450px; background: #ffffff; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.03); margin: 0 auto; overflow: hidden; }
+  .brand-header { padding: 30px 20px 15px; text-align: center; background-color: #ffffff; }
+  .logo-text { font-size: 22px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
   .temple-img { width: 100%; height: auto; object-fit: cover; display: block; border: 0; }
-  .main-content { padding: 16px 14px; text-align: center; line-height: 1.5; }
-  .quote-container { margin: 14px 0; padding: 14px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
-  .transition-zone { margin: 18px 0; padding: 10px; font-style: italic; color: #8c7e5d; font-size: 12px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
-  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 4px; display: block; }
-  .gallery-btn { display: inline-block; padding: 10px 22px; border: 1px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px; margin-top: 10px; }
+  .main-content { padding: 20px 18px; text-align: center; line-height: 1.6; }
+  .quote-container { margin: 18px 0; padding: 16px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
+  .transition-zone { margin: 20px 0; padding: 12px 10px; font-style: italic; color: #8c7e5d; font-size: 12.5px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
+  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; border: 1px solid #f0eadd; }
+  .footer { padding: 36px 20px; background-color: #1a1a1a; color: #ffffff; text-align: center; }
 </style>
 </head>
 <body>
-<div class="email-container">
-  <div class="brand-header">
-    <div style="font-size: 7.5px; letter-spacing: 2px; color: #b0b0b0; text-transform: uppercase; margin-bottom: 8px;">{{MONTH}} • Dedicated Service</div>
-    <h1 class="logo-text">Timeless Creations</h1>
-  </div>
-  <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" class="temple-img">
-  
-  <div class="main-content">
-    <div style="font-size: 17px; font-style: italic; margin-bottom: 10px;">Hello {{NAME}},</div>
-    <div style="font-size: 13px; color: #333; margin-bottom: 14px;">{{MESSAGE}}</div>
-    <div class="quote-container">
-      <div style="font-size: 13.5px; font-style: italic; color: #1a1a1a; margin-bottom: 6px;">"{{SCRIPTURE}}"</div>
-      <div style="font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+<div class="email-wrapper">
+  <div class="email-container">
+    <div class="brand-header">
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #8c7e5d; text-transform: uppercase; margin-bottom: 8px; display: block;">{{MONTH}} • Dedicated Service</span>
+      <h1 class="logo-text">Timeless Creations</h1>
+      <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 6px; text-transform: uppercase;">Most Trusted Online LDS Store by Members &amp; Missionaries Across the Philippines</div>
+    </div>
+    <img src="https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" class="temple-img">
+    <div class="main-content">
+      <div style="font-size: 18px; font-style: italic; margin-bottom: 10px; color: #1a1a1a;">Hello {{NAME}},</div>
+      <div style="font-size: 13.5px; color: #333; margin-bottom: 16px;">{{MESSAGE}}</div>
+      <div class="quote-container">
+        <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 6px;">"{{SCRIPTURE}}"</div>
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+      </div>
+
+      <div class="transition-zone">
+        As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
+      </div>
+
+      <!-- 2 Missionary Essentials & Assurance -->
+      <div style="padding: 20px 14px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 4px; margin: 20px 0;">
+        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin: 0 0 16px 0; color: #1a1a1a; text-align: center;">Missionary Essentials</h2>
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center" width="48%" valign="top">
+              <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border: 1px solid #d4c197; border-radius: 3px; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
+              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS1_NAME}}</div>
+            </td>
+            <td width="4%"></td>
+            <td align="center" width="48%" valign="top">
+              <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border: 1px solid #d4c197; border-radius: 3px; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
+              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS2_NAME}}</div>
+            </td>
+          </tr>
+        </table>
+        <p style="font-size: 12px; margin-top: 18px; color: #555; line-height: 1.5; text-align: center;">
+          If you have doubts with us as scams, we offer our first time customers with a <strong>"Gawa muna bago bayad"</strong> assurance.
+        </p>
+        <div style="background-color: #1a1a1a; color: #d4c197; padding: 10px; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; margin: 14px 0 16px; font-weight: bold; text-align: center; border-radius: 2px;">
+          Work, Confirm, Pay
+        </div>
+        <div style="text-align: center;">
+          <a href="https://m.me/timeless.creations.06" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
+            Inquire via Messenger
+          </a>
+        </div>
+      </div>
+
+      <div style="{{HIGHLIGHT_DISPLAY}}; margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
+        {{HIGHLIGHT_ITEMS_HTML}}
+      </div>
+
+      <!-- 9 Community Photos & Google Photos Link -->
+      <div style="margin: 26px auto 20px; text-align: center;">
+        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 6px; color: #1a1a1a;">Engrave Your Legacy</h2>
+        <p style="font-size: 12px; color: #666; font-style: italic; line-height: 1.5; margin-bottom: 14px; padding: 0 10px;">
+          Your service is a story that deserves to be told. We are archiving the moments that define a mission—one missionary, one memory, and one creation at a time.
+        </p>
+        <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
+          <tr>
+            <td><img src="{{GRID1}}" class="strict-1-1" alt="Community Photo 1"></td>
+            <td><img src="{{GRID2}}" class="strict-1-1" alt="Community Photo 2"></td>
+            <td><img src="{{GRID3}}" class="strict-1-1" alt="Community Photo 3"></td>
+          </tr>
+          <tr>
+            <td><img src="{{GRID4}}" class="strict-1-1" alt="Community Photo 4"></td>
+            <td><img src="{{GRID5}}" class="strict-1-1" alt="Community Photo 5"></td>
+            <td><img src="{{GRID6}}" class="strict-1-1" alt="Community Photo 6"></td>
+          </tr>
+          <tr>
+            <td><img src="{{GRID7}}" class="strict-1-1" alt="Community Photo 7"></td>
+            <td><img src="{{GRID8}}" class="strict-1-1" alt="Community Photo 8"></td>
+            <td><img src="{{GRID9}}" class="strict-1-1" alt="Community Photo 9"></td>
+          </tr>
+        </table>
+        <p style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; letter-spacing: 1.5px; color: #8c7e5d; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0;">
+          Engrave Your Memory. Be the Memory. Be You.
+        </p>
+        <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" style="display: inline-block; padding: 10px 22px; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
+          Enter the Gallery ↗
+        </a>
+      </div>
+
+      <!-- Combined Rewards & Promo Box -->
+      {{REWARD_SECTION_HTML}}
     </div>
 
-    <div class="transition-zone">
-      As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
+    <!-- Footer -->
+    <div class="footer">
+      <div style="color: #d4c197; letter-spacing: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold;">Timeless Creations</div>
+      <div style="font-size: 9px; opacity: 0.6; margin-top: 10px; font-family: Arial, sans-serif; line-height: 1.4;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
+      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="font-size: 9.5px; color: #b8955a; text-decoration: none; margin-top: 18px; display: inline-block; font-family: 'Helvetica', Arial, sans-serif; letter-spacing: 1px;">
+        Redeem Rewards &amp; Support in Messenger →
+      </a>
     </div>
-
-    <div style="padding: 16px 10px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 2px; margin-bottom: 14px;">
-      <h2 style="font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; font-size: 13px; margin-bottom: 12px; color: #1a1a1a;">Missionary Essentials</h2>
-      <table width="100%" border="0" cellspacing="0" cellpadding="0">
-        <tr>
-          <td align="center" width="48%" valign="top">
-            <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 120px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS1_NAME}}</div>
-          </td>
-          <td width="4%"></td>
-          <td align="center" width="48%" valign="top">
-            <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 120px; aspect-ratio: 1 / 1; object-fit: cover; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS2_NAME}}</div>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-    <div style="{{HIGHLIGHT_DISPLAY}}; margin: 18px 0; padding: 14px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
-      {{HIGHLIGHT_ITEMS_HTML}}
-    </div>
-
-    <div style="margin: 20px auto 14px; text-align: center;">
-      <h2 style="font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a1a1a;">Engrave Your Legacy</h2>
-      <table width="100%" border="0" cellspacing="2" cellpadding="0" style="table-layout: fixed; margin-bottom: 12px;">
-        <tr>
-          <td><img src="{{GRID1}}" class="strict-1-1" alt="Grid 1"></td>
-          <td><img src="{{GRID2}}" class="strict-1-1" alt="Grid 2"></td>
-          <td><img src="{{GRID3}}" class="strict-1-1" alt="Grid 3"></td>
-        </tr>
-        <tr>
-          <td><img src="{{GRID4}}" class="strict-1-1" alt="Grid 4"></td>
-          <td><img src="{{GRID5}}" class="strict-1-1" alt="Grid 5"></td>
-          <td><img src="{{GRID6}}" class="strict-1-1" alt="Grid 6"></td>
-        </tr>
-        <tr>
-          <td><img src="{{GRID7}}" class="strict-1-1" alt="Grid 7"></td>
-          <td><img src="{{GRID8}}" class="strict-1-1" alt="Grid 8"></td>
-          <td><img src="{{GRID9}}" class="strict-1-1" alt="Grid 9"></td>
-        </tr>
-      </table>
-      <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" class="gallery-btn">Enter the Google Photos Gallery ↗</a>
-    </div>
-
-    {{PROMO_BANNER_HTML}}
-
-    {{REWARD_SECTION_HTML}}
   </div>
 </div>
 </body>
@@ -541,29 +573,49 @@ function onLiveEdit() {
   renderPreview();
 }
 
-function buildRewardSectionHtml(points = 2, products = []) {
+function buildCombinedRewardAndPromoHtml(points = 2, products = [], activePromo = null) {
   const userPoints = Number(points) || 0;
   const validProducts = Array.isArray(products) ? products : [];
   const affordable = validProducts.filter(p => Number(p.price) <= userPoints);
 
-  let whatCanIGetHtml = '';
-  if (affordable.length > 0) {
-    whatCanIGetHtml = `
-      <div style="font-size:11px; font-weight:bold; color:#1a1a1a; margin-bottom:8px; text-align:left;">
-        🎁 What You Can Get Right Now (Affordable):
+  let promoBannerHtml = "";
+  if (activePromo && activePromo.code) {
+    promoBannerHtml = `
+      <div style="margin: 0 0 14px 0; padding: 12px 14px; background-color: #fff9e6; border: 1.5px dashed #c9a84c; border-radius: 6px; text-align: center;">
+        <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 3px;">
+          🎟️ Exclusive Monthly Freebie Promo
+        </span>
+        <div style="font-size: 12px; color: #1a1a1a; margin-bottom: 5px;">
+          Claim <strong>+${activePromo.points || 2} Free Reward Points</strong> right now!
+        </div>
+        <div style="font-family: monospace; font-size: 12.5px; font-weight: bold; background: #1a1a1a; color: #d4c197; padding: 5px 12px; border-radius: 4px; display: inline-block; letter-spacing: 1px;">
+          /redeem ${activePromo.code}
+        </div>
+        <div style="font-size: 9.5px; color: #777; margin-top: 5px;">
+          Type this in our Messenger chat to claim bonus points instantly!
+        </div>
       </div>
-      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:12px;">
+    `;
+  }
+
+  let affordableHtml = "";
+  if (affordable.length > 0) {
+    affordableHtml = `
+      <div style="font-size: 11px; font-weight: bold; color: #1a1a1a; margin-bottom: 8px; text-align: left;">
+        🎁 You can claim these reward items right now:
+      </div>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 12px;">
         ${affordable.map(item => `
           <tr>
-            <td style="padding:6px; background:#ffffff; border:1px solid #e0d6bc; border-radius:4px; margin-bottom:6px;">
+            <td style="padding: 6px; background: #ffffff; border: 1px solid #e0d6bc; border-radius: 4px; margin-bottom: 6px;">
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td width="36" valign="middle">
-                    <img src="${item.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:32px; height:32px; aspect-ratio:1/1; object-fit:cover; border-radius:3px; display:block;">
+                    <img src="${item.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width: 32px; height: 32px; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; display: block;">
                   </td>
-                  <td style="padding-left:8px; text-align:left;" valign="middle">
-                    <div style="font-weight:bold; font-size:11px; color:#1a1a1a;">${item.name}</div>
-                    <div style="font-size:9.5px; color:#8c7e5d; font-weight:bold;">⭐ ${item.price} Points</div>
+                  <td style="padding-left: 8px; text-align: left;" valign="middle">
+                    <div style="font-weight: bold; font-size: 11px; color: #1a1a1a;">${item.name}</div>
+                    <div style="font-size: 9.5px; color: #8c7e5d; font-weight: bold;">⭐ ${item.price} Points</div>
                   </td>
                 </tr>
               </table>
@@ -573,34 +625,42 @@ function buildRewardSectionHtml(points = 2, products = []) {
         `).join('')}
       </table>
     `;
-  } else {
-    whatCanIGetHtml = `<div style="font-size:11px; color:#666; font-style:italic; margin-bottom:10px; text-align:left;">🎁 Keep earning points through dispatches to unlock rewards!</div>`;
   }
 
-  let whatWillIGetHtml = '';
+  let goalHtml = "";
   if (validProducts.length > 0) {
     const sorted = [...validProducts].sort((a, b) => Number(a.price) - Number(b.price));
     const nearestItem = sorted.find(p => Number(p.price) > userPoints) || sorted[0];
     const needed = Math.max(1, (Number(nearestItem.price) || 6) - userPoints);
 
-    whatWillIGetHtml = `
-      <div style="background:#ffffff; border:1px solid #e0d6bc; border-radius:6px; padding:12px; text-align:center; margin-bottom:10px;">
-        <span style="font-size:9.5px; color:#8b1a1a; font-weight:bold; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">
-          🎯 What You Will Get Next (Your Goal):
+    goalHtml = `
+      <div style="background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; padding: 12px; text-align: center; margin-bottom: 10px;">
+        <span style="font-size: 9px; color: #8b1a1a; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 6px;">
+          🎯 Nearest Reward Goal:
         </span>
-        <img src="${nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:50px; height:50px; aspect-ratio:1/1; object-fit:cover; border-radius:4px; display:block; margin:0 auto 6px auto; border:1px solid #d4c197;">
-        <div style="font-weight:bold; font-size:11.5px; color:#1a1a1a;">${nearestItem.name} (${nearestItem.price} PTS)</div>
-        <div style="font-size:11px; color:#8c7e5d; margin-top:4px; font-weight:bold;">⚡ Only <strong>${needed} more point${needed > 1 ? 's' : ''}</strong> needed!</div>
+        <img src="${nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width: 50px; height: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; display: block; margin: 0 auto 6px auto; border: 1px solid #d4c197;">
+        <div style="font-weight: bold; font-size: 11.5px; color: #1a1a1a;">${nearestItem.name} (${nearestItem.price} PTS)</div>
+        <div style="font-size: 11px; color: #8c7e5d; margin-top: 4px; font-weight: bold;">⚡ Only <strong>${needed} more point${needed > 1 ? 's' : ''}</strong> needed!</div>
       </div>
     `;
   }
 
   return `
-    <div style="padding:16px 12px; background-color:#fdfaf3; border:1px solid #c9a84c; border-radius:4px; margin-top:14px;">
-      <div style="font-family:'Helvetica', Arial, sans-serif; font-size:12.5px; font-weight:bold; color:#8b1a1a; margin-bottom:4px;">🎁 Your Rewards Balance &amp; Goals</div>
-      <div style="font-size:11.5px; color:#555555; margin-bottom:12px;">You currently have <strong>${userPoints}</strong> Points.</div>
-      ${whatCanIGetHtml}
-      ${whatWillIGetHtml}
+    <div style="margin: 24px 0; padding: 18px 14px; background-color: #fffcf5; border: 1px solid #c9a84c; border-radius: 6px; text-align: center;">
+      <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 13px; font-weight: bold; color: #8b1a1a; margin-bottom: 4px;">
+        🎁 Your TCRP Reward Balance
+      </div>
+      <p style="font-size: 12px; margin: 0 0 14px 0; font-family: 'Helvetica', Arial, sans-serif; color: #444;">
+        You currently have <strong>${userPoints} Points</strong>
+      </p>
+
+      ${promoBannerHtml}
+      ${affordableHtml}
+      ${goalHtml}
+
+      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="display: block; width: 90%; margin: 12px auto 0; padding: 12px 16px; background-color: #1a1a1a; color: #d4c197 !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; border-radius: 4px; box-sizing: border-box;">
+        Redeem Free Rewards via Messenger
+      </a>
     </div>
   `;
 }
@@ -630,13 +690,13 @@ function renderPreview() {
   let highlightHtml = '';
   if (items.length > 0) {
     highlightHtml = `
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 6px;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px; text-align: center;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
       <table width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
           ${items.map((it, idx) => `
             <td align="center" width="${items.length === 2 ? '48%' : '100%'}" valign="top">
-              <img src="${it.img}" style="width: 100%; max-width: 110px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 4px auto;" alt="${it.name}">
-              <div style="font-family: 'Syne', sans-serif; font-size: 10px; font-weight: bold; color: #1a1a1a;">${it.name}</div>
+              <img src="${it.img}" style="width: 100%; max-width: 120px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 4px auto;" alt="${it.name}">
+              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; font-weight: bold; color: #1a1a1a;">${it.name}</div>
             </td>
             ${idx === 0 && items.length === 2 ? '<td width="4%"></td>' : ''}
           `).join('')}
@@ -645,32 +705,11 @@ function renderPreview() {
     `;
   }
 
-  // Inject active promo snippet directly above the rewards section
-  let promoBannerHtml = '';
-  if (latestPromo && latestPromo.code) {
-    promoBannerHtml = `
-      <div style="margin: 20px 0 10px; padding: 14px 16px; background-color: #fff9e6; border: 1.5px dashed #c9a84c; border-radius: 6px; text-align: center;">
-        <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 4px;">
-          🎟️ Exclusive Monthly Freebie Promo
-        </span>
-        <div style="font-size: 13px; color: #1a1a1a; margin-bottom: 6px;">
-          Claim <strong>+${latestPromo.points || 2} Free Reward Points</strong> right now!
-        </div>
-        <div style="font-family: monospace; font-size: 13px; font-weight: bold; background: #1a1a1a; color: #d4c197; padding: 6px 12px; border-radius: 4px; display: inline-block; letter-spacing: 1px;">
-          /redeem ${latestPromo.code}
-        </div>
-        <div style="font-size: 10px; color: #777; margin-top: 6px;">
-          Type this in our Messenger chat to claim bonus points instantly!
-        </div>
-      </div>
-    `;
-  }
-
   let catalogProducts = LocalStore.get('temp_products', [
     { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
     { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
   ]);
-  const rewardSectionHtml = buildRewardSectionHtml(points, catalogProducts);
+  const rewardSectionHtml = buildCombinedRewardAndPromoHtml(points, catalogProducts, latestPromo);
 
   let sourceTemplate = (document.getElementById("inp-custom-html").value.trim() !== "") 
     ? document.getElementById("inp-custom-html").value 
@@ -685,7 +724,6 @@ function renderPreview() {
     .replace(/{{POINTS}}/g, String(points))
     .replace(/{{HIGHLIGHT_DISPLAY}}/g, isHigh && items.length > 0 ? "display:block" : "display:none")
     .replace(/{{HIGHLIGHT_ITEMS_HTML}}/g, highlightHtml)
-    .replace(/{{PROMO_BANNER_HTML}}/g, promoBannerHtml)
     .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
     .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
     .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())

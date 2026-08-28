@@ -1,0 +1,39 @@
+services:
+  db:
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    environment:
+      - SQLD_NODE=primary
+    volumes:
+      - db_data:/var/lib/sqld
+
+  db-init:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=http://db:8080
+    depends_on:
+      - db
+    command: /usr/local/bin/node /app/scripts/base44-init-db.mjs
+
+  web:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    environment:
+      - PORT=3000
+      - DATABASE_URL=http://db:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    command: sh -c "npm install && node --watch server.js"
+
+volumes:
+  db_data:

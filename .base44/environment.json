@@ -1,0 +1,13 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {"name": "FB_PAGE_ACCESS_TOKEN", "description": "Meta Page access token for the Messenger bot", "requiredAtBoot": false},
+    {"name": "FB_APP_SECRET", "description": "Meta app secret for webhook signature verification", "requiredAtBoot": false},
+    {"name": "FB_VERIFY_TOKEN", "description": "Messenger webhook verify token", "requiredAtBoot": false},
+    {"name": "BREVO_API_KEY", "description": "Brevo API key for drip emails/OTP", "requiredAtBoot": false},
+    {"name": "CDN_GITHUB_TOKEN", "description": "GitHub token for the image CDN repo", "requiredAtBoot": false},
+    {"name": "ADMIN_API_KEY", "description": "Admin API key protecting admin endpoints", "requiredAtBoot": false}
+  ]
+}

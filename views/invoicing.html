@@ -53,7 +53,7 @@
   }
   .inv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1e4cb; padding-bottom: 8px; margin-bottom: 10px; }
   .inv-title-large { font-size: 1.5rem; font-weight: 900; color: #8b1a1a; font-family: 'Syne', sans-serif; }
-  .inv-id { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: #78716c; }
+  .inv-id { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: #8b1a1a; font-weight: bold; }
   .inv-meta { font-size: 0.68rem; line-height: 1.5; color: #44403c; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
   
   .inv-table { width: 100%; border-collapse: collapse; font-size: 0.68rem; }
@@ -73,7 +73,7 @@
   }
   .trx-card:hover { border-color: var(--border-gold); }
   .trx-card-row-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .trx-inv-no { font-family: 'DM Mono', monospace; font-size: 0.85rem; font-weight: 700; color: var(--gold); }
+  .trx-inv-no { font-family: 'DM Mono', monospace; font-size: 0.9rem; font-weight: 800; color: var(--gold); }
   .trx-card-row-mid { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .trx-cust-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; color: #ffffff; word-break: break-word; }
   .trx-type-badge {
@@ -98,6 +98,18 @@
   }
   .status-select.pending { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .status-select.paid { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+  /* Product setting row with image preview */
+  .pos-prod-setting-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
 </style>
 </head>
 <body>
@@ -186,7 +198,7 @@
             </div>
           </div>
 
-          <button class="btn btn-gold" id="generate-btn" style="width:100%; margin-top:14px;" onclick="submitInvoice()">🧾 Save &amp; Finalize Invoice</button>
+          <button class="btn btn-gold" id="generate-btn" style="width:100%; margin-top:14px;" onclick="submitInvoice()">🧾 Save &amp; Finalize Invoice (<span id="btn-target-tc-id">TC100001</span>)</button>
         </div>
       </div>
 
@@ -202,7 +214,7 @@
                   <div style="font-size:0.65rem; color:#b8955a; font-style:italic;">✨ Timeless Creations ✨</div>
                 </div>
                 <div style="text-align:right;">
-                  <div class="inv-id" id="prev-inv-id">INV-DRAFT</div>
+                  <div class="inv-id" id="prev-inv-id">TC100001</div>
                   <div style="font-size:0.62rem; color:#a8a29e;" id="prev-date">Today</div>
                 </div>
               </div>
@@ -249,8 +261,8 @@
           </div>
 
           <div style="display:flex; gap:8px; margin-top:12px; justify-content:center;">
-            <button class="btn btn-gold" style="padding:6px 12px; font-size:0.72rem; flex:1;" onclick="downloadInvoiceImage()">📥 PNG</button>
-            <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.72rem; flex:1;" onclick="copyInvoiceText()">📋 Text</button>
+            <button class="btn btn-gold" style="padding:6px 12px; font-size:0.72rem; flex:1;" onclick="downloadInvoiceImage()">📥 Download PNG</button>
+            <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.72rem; flex:1;" onclick="copyInvoiceText()">📋 Copy Text</button>
           </div>
         </div>
       </div>
@@ -263,7 +275,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">📜 Active Transactions &amp; Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Tap <strong>DETAILS ▾</strong> to expand details (one opens at a time).</p>
+          <p style="font-size:0.68rem; color:var(--muted);">All created invoices are numbered in sequential order (TC######).</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
@@ -289,13 +301,13 @@
     </div>
   </div>
 
-  <!-- TAB 4: Cash POS Catalog (PHP Pricing) -->
+  <!-- TAB 4: Cash POS Catalog (PHP Pricing + Universal Images) -->
   <div class="tab-pane" id="products-tab">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div>
-          <h3 style="font-size:0.95rem; color:var(--gold);">⚙️ Cash POS Catalog (PHP Pricing)</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">Configure products and pricing for direct billing.</p>
+          <h3 style="font-size:0.95rem; color:var(--gold);">⚙️ Cash POS Catalog (PHP Pricing &amp; Images)</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Upload or pick product images to be used across all program pages.</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addNewProductSetting()">+ Add Product</button>
       </div>
@@ -305,43 +317,57 @@
   </div>
 </div>
 
-<!-- Beautiful Dark-Gold Edit / Bundle Modal -->
-<div class="modal-overlay" id="edit-transaction-modal">
-  <div class="modal-content">
+<!-- Modal Image Picker for POS Products -->
+<div class="modal-overlay" id="pos-gallery-modal" style="z-index:1300;">
+  <div class="modal-content" style="max-width:480px;">
     <div class="modal-header-row">
-      <div class="modal-title-text" id="edit-modal-title">Edit Transaction</div>
-      <button onclick="closeEditModal()" class="modal-close-btn">✕</button>
+      <div class="modal-title-text">Pick Product Image</div>
+      <button onclick="document.getElementById('pos-gallery-modal').style.display='none'" class="modal-close-btn">✕</button>
     </div>
-    <input type="hidden" id="edit-trx-id">
-    <input type="hidden" id="edit-trx-type">
-    
-    <div class="form-group">
-      <label class="form-label">Customer Name</label>
-      <input type="text" id="edit-trx-name" class="form-input" readonly>
-    </div>
+    <div class="modal-grid" id="pos-gallery-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(85px, 1fr)); gap:8px; max-height:45vh; overflow-y:auto;"></div>
+  </div>
+</div>
 
-    <div id="edit-reward-box" style="display:none; background:#181926; border:1px solid var(--gold); border-radius:6px; padding:10px 12px; margin-bottom:12px;">
-      <div style="font-size:0.68rem; color:var(--gold); font-weight:bold; text-transform:uppercase;">🎁 Claimed Freebie Reward (Always Embedded):</div>
-      <div style="font-size:0.85rem; color:#fff; font-weight:bold; margin-top:2px;" id="edit-reward-item-label">—</div>
-    </div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; margin:12px 0 8px;">
-      <label class="form-label" style="margin:0;">Bundle Extra Cash Products</label>
-      <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addEditItemRow()">+ Add Product</button>
-    </div>
-
-    <div id="edit-items-container"></div>
-
-    <div class="summary-box" style="margin:14px 0;">
-      <div class="summary-row total">
-        <span>Total Extra Cash Amount:</span>
-        <span id="edit-calc-total">₱0.00</span>
+<!-- Hidden Offscreen Render Node for Downloading Any Transaction's Invoice -->
+<div style="position:absolute; left:-9999px; top:-9999px;">
+  <div class="invoice-preview-card" id="render-invoice-card" style="width:400px; padding:20px;">
+    <div>
+      <div class="inv-header">
+        <div>
+          <div class="inv-title-large">INVOICE</div>
+          <div style="font-size:0.65rem; color:#b8955a; font-style:italic;">✨ Timeless Creations ✨</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="inv-id" id="dl-inv-id">TC100001</div>
+          <div style="font-size:0.62rem; color:#a8a29e;" id="dl-inv-date">Today</div>
+        </div>
       </div>
+
+      <div class="inv-meta">
+        <div><strong>Bill To:</strong> <span id="dl-inv-name">Customer</span></div>
+        <div><strong>Email:</strong> <span id="dl-inv-email">customer@example.com</span></div>
+      </div>
+
+      <table class="inv-table" style="margin-bottom:12px;">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right;">Price</th>
+            <th style="text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody id="dl-inv-body"></tbody>
+      </table>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; gap:8px;">
-      <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-      <button class="btn btn-gold" onclick="promptSaveConfirmation()">💾 Save Changes</button>
+    <div>
+      <div style="border-top:1px solid #e7d8b8; padding-top:6px; font-size:0.68rem; font-family:'DM Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; font-size:0.95rem; font-weight:800; color:#8b1a1a; border-top:1px solid #f1e4cb; padding-top:4px; margin-top:4px;">
+          <span>Total Amount:</span>
+          <span id="dl-inv-total">₱0.00</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -352,6 +378,9 @@ let cashInvoices = [];
 let orders = [];
 let productCatalog = [];
 let recipientMode = 'db';
+let nextAvailableTcId = 'TC100001';
+let currentPosTargetImgInput = null;
+let currentPosTargetThumb = null;
 
 function switchNavTab(tabId, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
@@ -364,21 +393,29 @@ function switchNavTab(tabId, btn) {
 window.loadData = loadData;
 async function loadData() {
   try {
-    const [mRes, invRes, prodRes, ordRes] = await Promise.all([
+    const [mRes, invRes, prodRes, ordRes, tcRes] = await Promise.all([
       fetch('/api/main?action=get_missionaries').then(r => r.json()).catch(() => ({})),
       fetch('/api/main?action=get_invoices').then(r => r.json()).catch(() => ({})),
       fetch('/api/main?action=get_products&type=cash').then(r => r.json()).catch(() => ({})),
-      fetch('/api/main?action=get_orders').then(r => r.json()).catch(() => ({}))
+      fetch('/api/main?action=get_orders').then(r => r.json()).catch(() => ({})),
+      fetch('/api/main?action=get_next_invoice_id').then(r => r.json()).catch(() => ({}))
     ]);
 
     missionaries = mRes.missionaries || [];
     cashInvoices = invRes.invoices || [];
     productCatalog = prodRes.products || [
-      { name: "Standard Missionary Strap", price: 150 },
-      { name: "Customized Nametag", price: 250 },
-      { name: "Scripture Cover Set", price: 450 }
+      { name: "Standard Missionary Strap", price: 150, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
+      { name: "Customized Nametag", price: 250, image_url: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" },
+      { name: "Scripture Cover Set", price: 450, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
     ];
     orders = ordRes.orders || [];
+
+    if (tcRes.ok && tcRes.next_id) {
+      nextAvailableTcId = tcRes.next_id;
+    }
+
+    document.getElementById('prev-inv-id').textContent = nextAvailableTcId;
+    document.getElementById('btn-target-tc-id').textContent = nextAvailableTcId;
 
     populateMissionarySelect(missionaries);
     renderTransactionsWireframeCards();
@@ -476,6 +513,8 @@ function buildCardListHtml(list, emptyText) {
       return `<div class="trx-item-line">• <strong>${i.qty}x</strong> | ${i.name} | ${priceStr}</div>`;
     }).join('');
 
+    const itemDataEscaped = encodeURIComponent(JSON.stringify(item));
+
     return `
       <div class="trx-card">
         <div class="trx-card-row-top">
@@ -511,9 +550,10 @@ function buildCardListHtml(list, emptyText) {
             <span><strong style="color:var(--muted);">• Email:</strong> ${item.email}</span>
           </div>
 
-          <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end;">
-            <button class="btn btn-secondary" style="padding:5px 12px; font-size:0.68rem; min-height:32px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit / Add Products</button>
-            <button class="btn-danger" style="padding:5px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️ Delete</button>
+          <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="downloadSpecificInvoice('${itemDataEscaped}')">📥 Download Invoice</button>
+            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
+            <button class="btn-danger" style="padding:5px 8px; font-size:0.68rem; border-radius:4px;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
           </div>
         </div>
       </div>
@@ -521,8 +561,40 @@ function buildCardListHtml(list, emptyText) {
   }).join('');
 }
 
+function downloadSpecificInvoice(encodedData) {
+  try {
+    const item = JSON.parse(decodeURIComponent(encodedData));
+    document.getElementById('dl-inv-id').textContent = item.id;
+    document.getElementById('dl-inv-date').textContent = new Date(item.raw.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('dl-inv-name').textContent = item.name;
+    document.getElementById('dl-inv-email').textContent = item.email;
+    document.getElementById('dl-inv-total').textContent = item.totalDisplay;
+
+    const tbody = document.getElementById('dl-inv-body');
+    tbody.innerHTML = item.items.map(i => `
+      <tr>
+        <td><strong>${i.name}</strong></td>
+        <td style="text-align:center;">${i.qty}</td>
+        <td style="text-align:right;">${i.price > 0 ? '₱' + Number(i.price).toFixed(2) : 'Free'}</td>
+        <td style="text-align:right; font-weight:bold;">${i.price > 0 ? '₱' + Number(i.price * i.qty).toFixed(2) : 'Free'}</td>
+      </tr>
+    `).join('');
+
+    const targetNode = document.getElementById('render-invoice-card');
+    html2canvas(targetNode, { scale: 2 }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `Invoice-${item.id}-${item.name.replace(/\s+/g, '_')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast(`Invoice ${item.id} downloaded!`);
+    });
+  } catch (e) {
+    showToast("Error rendering invoice download", "error");
+  }
+}
+
 async function updateStatus(id, isOrder, newStatus) {
-  if (!confirm(`Confirm status change to [${newStatus}] for ${id}? Automated notification will be dispatched.`)) {
+  if (!confirm(`Confirm status change to [${newStatus}] for ${id}? Notification will be dispatched.`)) {
     renderTransactionsWireframeCards();
     return;
   }
@@ -537,7 +609,7 @@ async function updateStatus(id, isOrder, newStatus) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Status updated to ${newStatus}! Email dispatched.`);
+      showToast(`Status updated to ${newStatus}!`);
       loadData();
     }
   } catch(e) {
@@ -654,7 +726,6 @@ function recalculateTotal() {
   let subtotal = 0;
   const previewItems = [];
   
-  // STRICT SCOPE: Only select rows created inside the invoice builder
   document.querySelectorAll('#items-container .item-card-row').forEach(r => {
     const selectEl = r.querySelector('.item-select');
     let name = "Custom Item";
@@ -731,7 +802,7 @@ async function submitInvoice() {
   const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
   let discountAmount = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
   const totalAmount = subtotal - discountAmount;
-  const invId = `INV-${Date.now().toString().slice(-6)}`;
+  const invId = nextAvailableTcId;
 
   try {
     const res = await fetch('/api/main', {
@@ -752,7 +823,7 @@ async function submitInvoice() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Invoice ${invId} saved!`);
+      showToast(`Invoice ${invId} saved to active transactions!`);
       loadData();
     }
   } catch(e) {
@@ -760,158 +831,27 @@ async function submitInvoice() {
   }
 }
 
-function openEditModal(id, isOrder) {
-  document.getElementById('edit-trx-id').value = id;
-  document.getElementById('edit-trx-type').value = isOrder ? 'order' : 'invoice';
-
-  let name = '';
-  let items = [];
-  const rewardBox = document.getElementById('edit-reward-box');
-
-  if (isOrder) {
-    const o = orders.find(x => x.order_id === id);
-    if (!o) return;
-    name = o.name;
-    rewardBox.style.display = 'block';
-    document.getElementById('edit-reward-item-label').textContent = `${o.item} (${o.points_cost} Points Reward)`;
-
-    try { items = JSON.parse(o.items_json || '[]'); } catch(_) {}
-    items = items.filter(i => !i.name.includes(o.item));
-  } else {
-    const inv = cashInvoices.find(x => x.invoice_id === id);
-    if (!inv) return;
-    name = inv.name;
-    rewardBox.style.display = 'none';
-    try { items = JSON.parse(inv.items_json || '[]'); } catch(_) {}
-  }
-
-  document.getElementById('edit-trx-name').value = name;
-  document.getElementById('edit-modal-title').textContent = `Edit Transaction ${id}`;
-
-  const container = document.getElementById('edit-items-container');
-  container.innerHTML = '';
-  items.forEach(it => addEditItemRow(it.name, it.price, it.qty));
-
-  document.getElementById('edit-transaction-modal').style.display = 'flex';
-  recalculateEditTotal();
-}
-
-function closeEditModal() { document.getElementById('edit-transaction-modal').style.display = 'none'; }
-
-function addEditItemRow(name = '', price = 0, qty = 1) {
-  const container = document.getElementById('edit-items-container');
-  const div = document.createElement('div');
-  div.className = 'edit-item-row item-card-row';
-  div.innerHTML = `
-    <select class="form-select edit-item-select" onchange="handleEditProductChange(this)">
-      <option value="">-- Select Catalog Item --</option>
-      ${productCatalog.map(p => `<option value="${p.name}" data-price="${p.price}" ${p.name === name ? 'selected' : ''}>${p.name} (₱${p.price})</option>`).join('')}
-    </select>
-    <input type="text" class="form-input edit-item-name" value="${name}" placeholder="Or custom product name..." style="margin-top:4px;"/>
-    <div class="item-card-controls">
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
-        <input type="number" class="form-input edit-item-qty" value="${qty}" min="1" style="width:60px; text-align:center; padding:6px;" oninput="recalculateEditTotal()"/>
-      </div>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span style="font-size:0.68rem; color:var(--muted);">₱:</span>
-        <input type="number" class="form-input edit-item-price" value="${price}" min="0" style="width:75px; text-align:center; padding:6px;" oninput="recalculateEditTotal()"/>
-      </div>
-      <span style="font-weight:bold; color:var(--gold); font-size:0.75rem;" class="edit-item-sub">₱${(price * qty).toFixed(2)}</span>
-      <button class="btn-danger" style="padding:6px 10px; border-radius:4px;" onclick="this.closest('.edit-item-row').remove(); recalculateEditTotal();">✕</button>
-    </div>
-  `;
-  container.appendChild(div);
-  recalculateEditTotal();
-}
-
-function handleEditProductChange(sel) {
-  const opt = sel.options[sel.selectedIndex];
-  const card = sel.closest('.edit-item-row');
-  if (opt.value) {
-    card.querySelector('.edit-item-price').value = opt.getAttribute('data-price') || 0;
-    card.querySelector('.edit-item-name').value = opt.value;
-  }
-  recalculateEditTotal();
-}
-
-function recalculateEditTotal() {
-  let subtotal = 0;
-  document.querySelectorAll('#edit-items-container .edit-item-row').forEach(r => {
-    const qty = parseInt(r.querySelector('.edit-item-qty').value, 10) || 1;
-    const price = parseFloat(r.querySelector('.edit-item-price').value) || 0;
-    const s = qty * price;
-    r.querySelector('.edit-item-sub').textContent = `₱${s.toFixed(2)}`;
-    subtotal += s;
-  });
-  document.getElementById('edit-calc-total').textContent = `₱${subtotal.toFixed(2)}`;
-}
-
-function promptSaveConfirmation() {
-  if (!confirm("Save changes to this transaction and update record?")) return;
-  saveEditedTransaction();
-}
-
-async function saveEditedTransaction() {
-  const id = document.getElementById('edit-trx-id').value;
-  const isOrder = document.getElementById('edit-trx-type').value === 'order';
-  const items = [];
-  let subtotal = 0;
-
-  document.querySelectorAll('#edit-items-container .edit-item-row').forEach(r => {
-    const nameInput = r.querySelector('.edit-item-name').value.trim() || r.querySelector('.edit-item-select').value.trim();
-    const qty = parseInt(r.querySelector('.edit-item-qty').value, 10) || 1;
-    const price = parseFloat(r.querySelector('.edit-item-price').value) || 0;
-    const s = qty * price;
-    subtotal += s;
-    if (nameInput) items.push({ name: nameInput, qty, price, subtotal: s });
-  });
-
-  if (isOrder) {
-    const o = orders.find(x => x.order_id === id);
-    if (o) {
-      items.unshift({ name: `🎁 ${o.item} (Free Reward)`, qty: 1, price: 0, subtotal: 0 });
-    }
-  }
-
-  const actionName = isOrder ? 'update_order' : 'update_invoice';
-  const idKey = isOrder ? 'order_id' : 'invoice_id';
-
-  try {
-    const res = await fetch('/api/main', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: actionName,
-        [idKey]: id,
-        items_json: items,
-        subtotal,
-        discount_type: 'fixed',
-        discount_val: 0,
-        discount_amount: 0,
-        total_amount: subtotal
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showToast(`Transaction ${id} updated!`);
-      closeEditModal();
-      loadData();
-    }
-  } catch(e) {
-    showToast("Error updating transaction", "error");
-  }
-}
-
+// POS Catalog Image & Settings Management
 function renderProductSettings() {
   const container = document.getElementById('products-settings-container');
-  container.innerHTML = productCatalog.map(p => `
-    <div class="item-card-row">
-      <input type="text" class="form-input p-name" value="${p.name}"/>
+  container.innerHTML = productCatalog.map((p, idx) => `
+    <div class="pos-prod-setting-row">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div style="width:50px; height:50px; border-radius:6px; overflow:hidden; border:1px solid var(--border); flex-shrink:0; background:#08080d;">
+          <img id="pos-thumb-${idx}" src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:100%; height:100%; object-fit:cover;" alt="Product">
+        </div>
+        <div style="flex:1;">
+          <input type="text" class="form-input p-name" value="${p.name}" placeholder="Product Name" style="font-weight:bold; font-size:0.8rem; margin-bottom:4px;"/>
+          <input type="text" class="form-input p-img" id="pos-img-${idx}" value="${p.image_url || ''}" placeholder="Image Direct URL" oninput="document.getElementById('pos-thumb-${idx}').src=this.value" style="font-size:0.68rem;"/>
+        </div>
+      </div>
       <div class="item-card-controls">
-        <span style="font-size:0.68rem; color:var(--muted);">PHP Price:</span>
-        <input type="number" class="form-input p-price" value="${p.price}" min="0" style="width:90px;"/>
-        <button class="btn-danger" style="padding:6px 10px;" onclick="this.closest('.item-card-row').remove()">✕</button>
+        <button type="button" class="btn btn-gold" style="padding:4px 8px; font-size:0.65rem;" onclick="openPosGalleryPicker('pos-img-${idx}', 'pos-thumb-${idx}')">🖼️ Pick from CDN</button>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:0.68rem; color:var(--muted);">PHP Price:</span>
+          <input type="number" class="form-input p-price" value="${p.price}" min="0" style="width:85px; text-align:center; padding:4px 6px;"/>
+        </div>
+        <button class="btn-danger" style="padding:5px 8px; border-radius:4px;" onclick="this.closest('.pos-prod-setting-row').remove()">✕</button>
       </div>
     </div>
   `).join('');
@@ -919,26 +859,64 @@ function renderProductSettings() {
 
 function addNewProductSetting() {
   const container = document.getElementById('products-settings-container');
+  const idx = Date.now();
   const div = document.createElement('div');
-  div.className = 'item-card-row';
+  div.className = 'pos-prod-setting-row';
   div.innerHTML = `
-    <input type="text" class="form-input p-name" placeholder="New Product Name"/>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div style="width:50px; height:50px; border-radius:6px; overflow:hidden; border:1px solid var(--border); flex-shrink:0; background:#08080d;">
+        <img id="pos-thumb-${idx}" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" style="width:100%; height:100%; object-fit:cover;" alt="Product">
+      </div>
+      <div style="flex:1;">
+        <input type="text" class="form-input p-name" placeholder="New Product Name" style="font-weight:bold; font-size:0.8rem; margin-bottom:4px;"/>
+        <input type="text" class="form-input p-img" id="pos-img-${idx}" placeholder="Image Direct URL" oninput="document.getElementById('pos-thumb-${idx}').src=this.value" style="font-size:0.68rem;"/>
+      </div>
+    </div>
     <div class="item-card-controls">
-      <span style="font-size:0.68rem; color:var(--muted);">PHP Price:</span>
-      <input type="number" class="form-input p-price" value="100" min="0" style="width:90px;"/>
-      <button class="btn-danger" style="padding:6px 10px;" onclick="this.closest('.item-card-row').remove()">✕</button>
+      <button type="button" class="btn btn-gold" style="padding:4px 8px; font-size:0.65rem;" onclick="openPosGalleryPicker('pos-img-${idx}', 'pos-thumb-${idx}')">🖼️ Pick from CDN</button>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:0.68rem; color:var(--muted);">PHP Price:</span>
+        <input type="number" class="form-input p-price" value="150" min="0" style="width:85px; text-align:center; padding:4px 6px;"/>
+      </div>
+      <button class="btn-danger" style="padding:5px 8px; border-radius:4px;" onclick="this.closest('.pos-prod-setting-row').remove()">✕</button>
     </div>
   `;
   container.appendChild(div);
 }
 
+function openPosGalleryPicker(inputId, thumbId) {
+  currentPosTargetImgInput = inputId;
+  currentPosTargetThumb = thumbId;
+  const modal = document.getElementById("pos-gallery-modal");
+  const grid = document.getElementById("pos-gallery-grid");
+  modal.style.display = "flex";
+
+  const items = LocalStore.get('tcrp_cdn_gallery', []);
+  if (!items.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted); font-size:0.75rem;">No images in CDN gallery. Upload in CDN Media Hub.</div>';
+    return;
+  }
+  grid.innerHTML = items.map(it => `
+    <div style="width:100%; aspect-ratio:1/1; border:1px solid var(--border); border-radius:4px; overflow:hidden; cursor:pointer;" onclick="selectPosImage('${it.direct_url}')">
+      <img src="${it.direct_url}" style="width:100%; height:100%; object-fit:cover; display:block;">
+    </div>
+  `).join('');
+}
+
+function selectPosImage(url) {
+  if (currentPosTargetImgInput) document.getElementById(currentPosTargetImgInput).value = url;
+  if (currentPosTargetThumb) document.getElementById(currentPosTargetThumb).src = url;
+  document.getElementById("pos-gallery-modal").style.display = "none";
+}
+
 async function saveProductSettings() {
-  const rows = document.querySelectorAll('#products-settings-container .item-card-row');
+  const rows = document.querySelectorAll('#products-settings-container .pos-prod-setting-row');
   const updated = [];
   rows.forEach(r => {
     const name = r.querySelector('.p-name').value.trim();
     const price = parseFloat(r.querySelector('.p-price').value) || 0;
-    if (name) updated.push({ name, price, type: 'cash' });
+    const image_url = r.querySelector('.p-img').value.trim() || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png';
+    if (name) updated.push({ name, price, image_url, type: 'cash' });
   });
 
   try {
@@ -949,7 +927,7 @@ async function saveProductSettings() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast("Cash products saved to Turso!");
+      showToast("Cash POS products and images saved to Turso!");
       productCatalog = updated;
     }
   } catch(e) {
@@ -960,10 +938,10 @@ async function saveProductSettings() {
 function downloadInvoiceImage() {
   html2canvas(document.getElementById('invoice-node'), { scale: 2 }).then(canvas => {
     const link = document.createElement('a');
-    link.download = `Invoice-${Date.now()}.png`;
+    link.download = `Invoice-${nextAvailableTcId}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-    showToast("Invoice downloaded!");
+    showToast(`Invoice ${nextAvailableTcId} downloaded!`);
   });
 }
 

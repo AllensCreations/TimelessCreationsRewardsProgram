@@ -49,7 +49,8 @@
       <h2 style="color:var(--gold); font-size:1.25rem;">Missionaries Roster</h2>
       <p style="font-size:0.72rem; color:var(--muted);">Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered.</p>
     </div>
-    <div style="display:flex; gap:6px;">
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="openPusherModal()" style="padding:6px 12px; font-size:0.72rem;">📥 CSV Importer</button>
       <button class="btn btn-dark" id="toggle-select-mode" onclick="toggleSelectMode()" style="padding:6px 10px; font-size:0.72rem;">☑️ Select Mode</button>
       <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Sync</button>
     </div>
@@ -87,6 +88,26 @@
   <div style="display:flex; gap:6px;">
     <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem;" onclick="promptBulkAddPoints()">⭐ Add Points</button>
     <button class="btn-danger" style="padding:5px 10px; font-size:0.68rem; border-radius:4px;" onclick="promptBulkDelete()">🗑️ Delete</button>
+  </div>
+</div>
+
+<!-- Embedded Pusher CSV Importer Modal -->
+<div class="modal-overlay" id="pusher-modal">
+  <div class="modal-content" style="max-width:540px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="color:var(--gold); font-size:1.05rem;">📥 Bulk Missionary CSV Importer</h3>
+      <button onclick="closePusherModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+    <p style="font-size:0.72rem; color:var(--muted); margin-bottom:10px;">Paste raw CSV or missionary records below (e.g. <code>Elder Smith, August 2026, john@missionary.org</code>).</p>
+    
+    <div class="form-group">
+      <textarea id="pusher-raw-input" class="form-input" rows="7" style="font-family:'DM Mono',monospace; font-size:0.72rem;" placeholder="Elder Smith, August 2026, john.smith@missionary.org&#10;Sister Santos, September 2026, maria.santos@missionary.org"></textarea>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+      <button class="btn btn-secondary" onclick="closePusherModal()">Cancel</button>
+      <button class="btn btn-gold" id="btn-submit-push" onclick="submitBulkPusher()">🚀 Import Roster</button>
+    </div>
   </div>
 </div>
 
@@ -160,6 +181,61 @@ let state = {
   selectMode: false,
   selectedEmails: new Set()
 };
+
+function openPusherModal() {
+  document.getElementById('pusher-raw-input').value = '';
+  document.getElementById('pusher-modal').style.display = 'flex';
+}
+function closePusherModal() {
+  document.getElementById('pusher-modal').style.display = 'none';
+}
+
+async function submitBulkPusher() {
+  const text = document.getElementById('pusher-raw-input').value.trim();
+  if (!text) {
+    showToast("Please enter missionary entries", "error");
+    return;
+  }
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const entries = [];
+
+  for (const line of lines) {
+    const parts = line.split(/[,\t]+/).map(p => p.trim());
+    if (parts.length >= 2) {
+      const email = parts.find(p => p.includes('@')) || '';
+      const nonEmails = parts.filter(p => !p.includes('@'));
+      const name = nonEmails[0] || 'Elder Missionary';
+      const batch = nonEmails[1] || 'August 2026';
+      if (email) entries.push({ title_name: name, batch, email });
+    }
+  }
+
+  if (!entries.length) {
+    showToast("No valid email addresses found in input", "error");
+    return;
+  }
+
+  document.getElementById('btn-submit-push').textContent = '⏳ Importing...';
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "push_missionaries", entries })
+    }).then(r => r.json());
+
+    if (res.ok) {
+      showToast(`Successfully imported ${res.added || entries.length} missionaries!`);
+      closePusherModal();
+      loadRoster(true);
+    } else {
+      showToast(res.error || "Import failed", "error");
+    }
+  } catch (err) {
+    showToast("Network error importing roster", "error");
+  } finally {
+    document.getElementById('btn-submit-push').textContent = '🚀 Import Roster';
+  }
+}
 
 window.renderRoster = () => {
   const cached = LocalStore.get('missionaries', []);
@@ -282,7 +358,6 @@ function changePage(delta) {
   renderPaginatedCards();
 }
 
-// Edit Modal Functions
 function openEditMissionaryModal(email) {
   const m = state.missionaries.find(x => x.email.toLowerCase() === email.toLowerCase());
   if (!m) return;

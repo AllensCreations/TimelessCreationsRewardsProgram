@@ -178,7 +178,7 @@
           <div class="toggle-wrap">
               <div>
                   <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold);">Enable Top 1 &amp; Top 2 Products</div>
-                  <div style="font-size:0.65rem; color:var(--muted);">Side-by-side 2-column comparison with 1.5k+ formatted sales metrics.</div>
+                  <div style="font-size:0.65rem; color:var(--muted);">Side-by-side 2-column showcase with real order auto-detection.</div>
               </div>
               <label class="switch">
                   <input type="checkbox" id="inp-highlight-toggle" onchange="onLiveEdit()">
@@ -187,7 +187,7 @@
           </div>
 
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
-            <button class="btn btn-dark" style="font-size:0.68rem; padding:5px 12px;" onclick="autoDetectTopSales()">⚡ Auto Detect &amp; Format (k)</button>
+            <button class="btn btn-dark" style="font-size:0.68rem; padding:5px 12px;" onclick="autoDetectTopSales()">⚡ Auto Detect Real Sales</button>
             <button class="btn btn-secondary" style="font-size:0.68rem; padding:5px 12px;" onclick="applyTopSalesToAllMonths()">🌐 Apply to All 24 Months</button>
           </div>
 
@@ -329,12 +329,12 @@ let masterTemplateCode = `<!DOCTYPE html>
         <table width="100%" border="0" cellspacing="0" cellpadding="0">
           <tr>
             <td align="center" width="48%" valign="top">
-              <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border: 1px solid #d4c197; border-radius: 3px; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
+              <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
               <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS1_NAME}}</div>
             </td>
             <td width="4%"></td>
             <td align="center" width="48%" valign="top">
-              <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border: 1px solid #d4c197; border-radius: 3px; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
+              <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
               <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS2_NAME}}</div>
             </td>
           </tr>
@@ -407,7 +407,7 @@ let currentTargetInputId = null;
 let currentTargetThumbId = null;
 
 function formatK(num) {
-  if (!num) return "1.5k+ Sold";
+  if (num === null || num === undefined || num === '') return "0 Sold";
   const str = String(num).trim();
   if (str.toLowerCase().includes('k') || str.toLowerCase().includes('m')) return str;
   const digits = parseInt(str.replace(/\D/g, ''), 10);
@@ -498,7 +498,7 @@ function revertImage(inputId, thumbId, defaultUrl) {
 }
 
 async function autoDetectTopSales() {
-  showToast("Detecting live order statistics...");
+  showToast("Detecting real order statistics from database...");
   try {
     const res = await fetch("/api/main?action=get_top_sales").then(r => r.json());
     if (res.ok && res.topSales && res.topSales.length > 0) {
@@ -514,10 +514,21 @@ async function autoDetectTopSales() {
         document.getElementById("inp-highlight-sold-2").value = top2.sold_formatted;
         document.getElementById("inp-highlight-img-2").value = top2.image_url;
         document.getElementById("thumb-hl-2").src = top2.image_url;
+      } else {
+        document.getElementById("inp-highlight-name-2").value = "";
+        document.getElementById("inp-highlight-sold-2").value = "";
       }
       document.getElementById("inp-highlight-toggle").checked = true;
       onLiveEdit();
-      showToast("Auto-detected Top 1 & Top 2 with 1.5k notation!");
+      showToast("Auto-detected real bestselling products!");
+    } else {
+      document.getElementById("inp-highlight-toggle").checked = false;
+      document.getElementById("inp-highlight-name").value = "";
+      document.getElementById("inp-highlight-sold-1").value = "";
+      document.getElementById("inp-highlight-name-2").value = "";
+      document.getElementById("inp-highlight-sold-2").value = "";
+      onLiveEdit();
+      showToast("0 orders in database. Top products showcase automatically turned OFF.");
     }
   } catch(e) {
     showToast("Error detecting top sales", "error");
@@ -630,7 +641,7 @@ function onSelectMonth(m) {
     
     document.getElementById("inp-highlight-name-2").value = data.highlight_label_2 || "";
     document.getElementById("inp-highlight-sold-2").value = data.highlight_sold_2 || "950+ Sold";
-    document.getElementById("inp-highlight-img_2").value = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+    document.getElementById("inp-highlight-img-2").value = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
     document.getElementById("thumb-hl-2").src = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
   } else {
     document.getElementById("inp-highlight-toggle").checked = false;
@@ -805,7 +816,7 @@ function buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) {
             <span style="display: inline-block; background: #555566; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 7.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-bottom: 6px;">
               🥈 #2 POPULAR
             </span>
-            <img src="${p2Img}" style="width: 100%; max-width: 95px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="${p2Name}">
+            <img src="${p2Img}" style="width: 100%; max-width: 95px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #d4c197; display: block;" alt="${p2Name}">
             <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10.5px; font-weight: bold; color: #1a1a1a; line-height: 1.2;">${p2Name}</div>
             <div style="font-size: 9px; color: #8c7e5d; font-weight: bold; margin-top: 3px;">⭐ ${formatK(p2Sold)}</div>
           </td>

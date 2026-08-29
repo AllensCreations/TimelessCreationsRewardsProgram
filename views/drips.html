@@ -20,12 +20,13 @@
         background: var(--surface2);
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
-        padding: 8px;
+        padding: 10px;
         display: flex;
         flex-direction: column;
         gap: 6px;
         align-items: center;
         text-align: center;
+        position: relative;
       }
       .picker-thumb-wrap {
         width: 100%;
@@ -68,7 +69,7 @@
   <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('tab-messages', this)">📝 Content</button>
       <button class="tab-btn" onclick="switchTab('tab-images', this)">🖼️ Essentials &amp; Grid</button>
-      <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Products of Month</button>
+      <button class="tab-btn" onclick="switchTab('tab-products', this)">🌟 Top 1 &amp; Top 2 Products</button>
       <button class="tab-btn" onclick="switchTab('tab-html', this)">💻 Custom HTML</button>
       <button class="tab-btn" onclick="switchTab('tab-preview', this); renderPreview();" style="border-color:var(--gold); color:var(--gold);">📱 Live Preview</button>
   </div>
@@ -171,13 +172,13 @@
       </div>
   </div>
 
-  <!-- TAB 3: Products of Month -->
+  <!-- TAB 3: Top 1 & Top 2 Products of Month -->
   <div id="tab-products" class="tab-content">
       <div class="card">
           <div class="toggle-wrap">
               <div>
-                  <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold);">Enable Products of the Month</div>
-                  <div style="font-size:0.65rem; color:var(--muted);">Highlight 1 or 2 special items.</div>
+                  <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold);">Enable Top Products of the Month</div>
+                  <div style="font-size:0.65rem; color:var(--muted);">Showcase Top 1 (Bestseller Hero) and optional Top 2 (Popular).</div>
               </div>
               <label class="switch">
                   <input type="checkbox" id="inp-highlight-toggle" onchange="onLiveEdit()">
@@ -185,29 +186,37 @@
               </label>
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <div class="img-picker-card">
-                <label class="form-label">Product 1</label>
-                <input type="text" id="inp-highlight-name" class="form-input" placeholder="Name" oninput="onLiveEdit()" style="margin-bottom:4px; font-size:0.75rem;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <button class="btn btn-dark" style="font-size:0.68rem; padding:4px 10px;" onclick="autoDetectTopSales()">⚡ Auto Detect from Orders</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:10px;">
+            <!-- TOP 1 (Larger Card) -->
+            <div class="img-picker-card" style="border-color:var(--gold); background:rgba(201,168,76,0.06);">
+                <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:var(--red); padding:2px 8px; border-radius:4px;">🥇 TOP 1 (HERO)</span>
+                <input type="text" id="inp-highlight-name" class="form-input" placeholder="Product Name" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
+                <input type="text" id="inp-highlight-sold-1" class="form-input" placeholder="e.g. 180+ Sold this Month" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold);">
                 <input type="hidden" id="inp-highlight-img" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE">
-                <div class="picker-thumb-wrap">
-                  <img id="thumb-hl-1" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" alt="Product 1">
+                <div class="picker-thumb-wrap" style="max-width:125px; margin:4px 0;">
+                  <img id="thumb-hl-1" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" alt="Top 1 Product">
                 </div>
                 <div class="picker-btn-group">
-                  <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img', 'thumb-hl-1')">🖼️</button>
+                  <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img', 'thumb-hl-1')">🖼️ Pick</button>
                   <button class="btn btn-dark" onclick="revertImage('inp-highlight-img', 'thumb-hl-1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE')">↺</button>
                 </div>
             </div>
 
+            <!-- TOP 2 (Secondary Card) -->
             <div class="img-picker-card">
-                <label class="form-label">Product 2</label>
-                <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="Name (Opt)" oninput="onLiveEdit()" style="margin-bottom:4px; font-size:0.75rem;">
+                <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:#555566; padding:2px 8px; border-radius:4px;">🥈 TOP 2 (RUNNER-UP)</span>
+                <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="Product Name (Optional)" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
+                <input type="text" id="inp-highlight-sold-2" class="form-input" placeholder="e.g. 95+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold);">
                 <input type="hidden" id="inp-highlight-img-2" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ">
-                <div class="picker-thumb-wrap">
-                  <img id="thumb-hl-2" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" alt="Product 2">
+                <div class="picker-thumb-wrap" style="max-width:95px; margin:4px 0;">
+                  <img id="thumb-hl-2" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" alt="Top 2 Product">
                 </div>
                 <div class="picker-btn-group">
-                  <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img-2', 'thumb-hl-2')">🖼️</button>
+                  <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img-2', 'thumb-hl-2')">🖼️ Pick</button>
                   <button class="btn btn-dark" onclick="revertImage('inp-highlight-img-2', 'thumb-hl-2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ')">↺</button>
                 </div>
             </div>
@@ -272,6 +281,7 @@
 let currentMonth = 1;
 let liveDripMap = {};
 let latestPromo = null;
+
 let masterTemplateCode = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -341,9 +351,8 @@ let masterTemplateCode = `<!DOCTYPE html>
         </div>
       </div>
 
-      <div style="{{HIGHLIGHT_DISPLAY}}; margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1px solid #c9a84c; border-radius: 4px;">
-        {{HIGHLIGHT_ITEMS_HTML}}
-      </div>
+      <!-- Top 1 & Top 2 Showcase -->
+      {{TOP_PRODUCTS_HTML}}
 
       <!-- 9 Community Photos & Google Photos Link -->
       <div style="margin: 26px auto 20px; text-align: center;">
@@ -472,6 +481,34 @@ function revertImage(inputId, thumbId, defaultUrl) {
   onLiveEdit();
 }
 
+async function autoDetectTopSales() {
+  showToast("Detecting top bestselling items...");
+  try {
+    const res = await fetch("/api/main?action=get_top_sales").then(r => r.json());
+    if (res.ok && res.topSales && res.topSales.length > 0) {
+      const top1 = res.topSales[0];
+      document.getElementById("inp-highlight-name").value = top1.name;
+      document.getElementById("inp-highlight-sold-1").value = `${Math.max(top1.count * 15, 120)}+ Sold this Month`;
+
+      if (res.topSales.length > 1) {
+        const top2 = res.topSales[1];
+        document.getElementById("inp-highlight-name-2").value = top2.name;
+        document.getElementById("inp-highlight-sold-2").value = `${Math.max(top2.count * 10, 85)}+ Sold`;
+      }
+      document.getElementById("inp-highlight-toggle").checked = true;
+      onLiveEdit();
+      showToast("Top sellers detected and bound!");
+    } else {
+      document.getElementById("inp-highlight-sold-1").value = "150+ Sold this Month";
+      document.getElementById("inp-highlight-sold-2").value = "90+ Sold";
+      showToast("Bound default bestselling metrics.");
+      onLiveEdit();
+    }
+  } catch(e) {
+    showToast("Error detecting top sales", "error");
+  }
+}
+
 async function fetchFromTurso() {
   try {
     const [dripRes, promoRes] = await Promise.all([
@@ -489,8 +526,10 @@ async function fetchFromTurso() {
           message: d.message || `May your faith be strengthened as you serve and invite others during ${getCalendarMonthLabel(d.month)}.`,
           highlight_img: d.highlight_img || "",
           highlight_label: d.highlight_label || "",
+          highlight_sold_1: d.highlight_sold_1 || "",
           highlight_img_2: d.highlight_img_2 || "",
           highlight_label_2: d.highlight_label_2 || "",
+          highlight_sold_2: d.highlight_sold_2 || "",
           custom_html: d.custom_html || ""
         };
       });
@@ -517,8 +556,10 @@ function onSelectMonth(m) {
     message: `May your faith be strengthened as you serve and invite others during ${label}.`,
     highlight_img: "",
     highlight_label: "",
+    highlight_sold_1: "",
     highlight_img_2: "",
     highlight_label_2: "",
+    highlight_sold_2: "",
     custom_html: ""
   };
 
@@ -531,15 +572,20 @@ function onSelectMonth(m) {
   if ((data.highlight_label && data.highlight_label.trim() !== "") || (data.highlight_label_2 && data.highlight_label_2.trim() !== "")) {
     document.getElementById("inp-highlight-toggle").checked = true;
     document.getElementById("inp-highlight-name").value = data.highlight_label || "";
+    document.getElementById("inp-highlight-sold-1").value = data.highlight_sold_1 || "150+ Sold this Month";
     document.getElementById("inp-highlight-img").value = data.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
     document.getElementById("thumb-hl-1").src = data.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+    
     document.getElementById("inp-highlight-name-2").value = data.highlight_label_2 || "";
+    document.getElementById("inp-highlight-sold-2").value = data.highlight_sold_2 || "90+ Sold";
     document.getElementById("inp-highlight-img-2").value = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
     document.getElementById("thumb-hl-2").src = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
   } else {
     document.getElementById("inp-highlight-toggle").checked = false;
     document.getElementById("inp-highlight-name").value = "";
+    document.getElementById("inp-highlight-sold-1").value = "";
     document.getElementById("inp-highlight-name-2").value = "";
+    document.getElementById("inp-highlight-sold-2").value = "";
   }
 
   const badge = document.getElementById("badge-template-status");
@@ -565,8 +611,10 @@ function onLiveEdit() {
     message: document.getElementById("inp-msg").value.trim(),
     scripture: document.getElementById("inp-quote").value.trim(),
     highlight_label: isHigh ? document.getElementById("inp-highlight-name").value.trim() : "",
+    highlight_sold_1: isHigh ? document.getElementById("inp-highlight-sold-1").value.trim() : "",
     highlight_img: isHigh ? document.getElementById("inp-highlight-img").value.trim() : "",
     highlight_label_2: isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "",
+    highlight_sold_2: isHigh ? document.getElementById("inp-highlight-sold-2").value.trim() : "",
     highlight_img_2: isHigh ? document.getElementById("inp-highlight-img-2").value.trim() : "",
     custom_html: customHtmlVal
   };
@@ -667,6 +715,59 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
   `;
 }
 
+function buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) {
+  if (!p1Name && !p2Name) return "";
+
+  if (p1Name && !p2Name) {
+    return `
+      <div style="margin: 20px 0; padding: 18px 14px; background: #faf7f0; border: 1.5px solid #c9a84c; border-radius: 6px; text-align: center;">
+        <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; padding: 4px 10px; border-radius: 4px; margin-bottom: 10px;">
+          🥇 #1 TOP BESTSELLER
+        </span>
+        <img src="${p1Img}" style="width: 100%; max-width: 155px; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; border: 2px solid #c9a84c; display: block; margin: 0 auto 8px auto;" alt="${p1Name}">
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 12px; font-weight: bold; color: #1a1a1a;">${p1Name}</div>
+        <div style="font-size: 10px; color: #8c7e5d; font-weight: bold; margin-top: 3px;">🔥 ${p1Sold}</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div style="margin: 20px 0; padding: 18px 14px; background: #faf7f0; border: 1.5px solid #c9a84c; border-radius: 6px;">
+      <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; text-align: center; margin-bottom: 14px;">
+        ⭐ Top Products of the Month
+      </div>
+      
+      <!-- TOP 1 (Larger Card) -->
+      <div style="background: #ffffff; border: 1.5px solid #c9a84c; border-radius: 6px; padding: 14px 10px; text-align: center; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(201,168,76,0.15);">
+        <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: bold; padding: 3px 8px; border-radius: 3px; margin-bottom: 8px;">
+          🥇 TOP 1 BESTSELLER
+        </span>
+        <img src="${p1Img}" style="width: 100%; max-width: 145px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${p1Name}">
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 12px; font-weight: bold; color: #1a1a1a;">${p1Name}</div>
+        <div style="font-size: 10px; color: #8c7e5d; font-weight: bold; margin-top: 2px;">🔥 ${p1Sold}</div>
+      </div>
+
+      <!-- TOP 2 (Runner-up Card) -->
+      <div style="background: #fdfdfd; border: 1px dashed #d4c197; border-radius: 6px; padding: 10px; text-align: center;">
+        <span style="display: inline-block; background: #555566; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 7.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-bottom: 6px;">
+          🥈 TOP 2 POPULAR
+        </span>
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td width="90" align="center" valign="middle">
+              <img src="${p2Img}" style="width: 80px; height: 80px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #d4c197; display: block;" alt="${p2Name}">
+            </td>
+            <td style="padding-left: 10px; text-align: left;" valign="middle">
+              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; font-weight: bold; color: #1a1a1a;">${p2Name}</div>
+              <div style="font-size: 9.5px; color: #8c7e5d; font-weight: bold; margin-top: 3px;">⭐ ${p2Sold}</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
 function renderPreview() {
   const data = liveDripMap[currentMonth] || {};
   const monthLabel = getCalendarMonthLabel(currentMonth);
@@ -680,32 +781,15 @@ function renderPreview() {
   const points = 2;
 
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
-  const h1Name = document.getElementById("inp-highlight-name").value.trim();
-  const h1Img = document.getElementById("inp-highlight-img").value.trim();
-  const h2Name = document.getElementById("inp-highlight-name-2").value.trim();
-  const h2Img = document.getElementById("inp-highlight-img-2").value.trim();
+  const p1Name = isHigh ? document.getElementById("inp-highlight-name").value.trim() : "";
+  const p1Img = document.getElementById("inp-highlight-img").value.trim() || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  const p1Sold = document.getElementById("inp-highlight-sold-1").value.trim() || "150+ Sold this Month";
 
-  const items = [];
-  if (h1Name) items.push({ name: h1Name, img: h1Img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" });
-  if (h2Name) items.push({ name: h2Name, img: h2Img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" });
+  const p2Name = isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "";
+  const p2Img = document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+  const p2Sold = document.getElementById("inp-highlight-sold-2").value.trim() || "90+ Sold";
 
-  let highlightHtml = '';
-  if (items.length > 0) {
-    highlightHtml = `
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 8px; text-align: center;">⭐ Product${items.length > 1 ? 's' : ''} of the Month</span>
-      <table width="100%" border="0" cellspacing="0" cellpadding="0">
-        <tr>
-          ${items.map((it, idx) => `
-            <td align="center" width="${items.length === 2 ? '48%' : '100%'}" valign="top">
-              <img src="${it.img}" style="width: 100%; max-width: 120px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #c9a84c; display: block; margin: 0 auto 4px auto;" alt="${it.name}">
-              <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; font-weight: bold; color: #1a1a1a;">${it.name}</div>
-            </td>
-            ${idx === 0 && items.length === 2 ? '<td width="4%"></td>' : ''}
-          `).join('')}
-        </tr>
-      </table>
-    `;
-  }
+  const topProductsHtml = buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold);
 
   let catalogProducts = LocalStore.get('temp_products', [
     { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
@@ -724,8 +808,7 @@ function renderPreview() {
     .replace(/{{SCRIPTURE}}/g, cleanedQuote)
     .replace(/{{THEME}}/g, theme)
     .replace(/{{POINTS}}/g, String(points))
-    .replace(/{{HIGHLIGHT_DISPLAY}}/g, isHigh && items.length > 0 ? "display:block" : "display:none")
-    .replace(/{{HIGHLIGHT_ITEMS_HTML}}/g, highlightHtml)
+    .replace(/{{TOP_PRODUCTS_HTML}}/g, topProductsHtml)
     .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
     .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
     .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())
@@ -775,7 +858,9 @@ function resetTab2Defaults() {
 function resetTab3Defaults() {
   document.getElementById("inp-highlight-toggle").checked = false;
   document.getElementById("inp-highlight-name").value = "";
+  document.getElementById("inp-highlight-sold-1").value = "";
   document.getElementById("inp-highlight-name-2").value = "";
+  document.getElementById("inp-highlight-sold-2").value = "";
   onLiveEdit();
 }
 
@@ -796,8 +881,10 @@ async function saveActiveMonth(sectionName = 'global') {
         message: data.message,
         highlight_img: data.highlight_img,
         highlight_label: data.highlight_label,
+        highlight_sold_1: data.highlight_sold_1,
         highlight_label_2: data.highlight_label_2,
         highlight_img_2: data.highlight_img_2,
+        highlight_sold_2: data.highlight_sold_2,
         custom_html: data.custom_html
       })
     }).then(r => r.json());

@@ -271,7 +271,7 @@
 <script>
 let currentMonth = 1;
 let liveDripMap = {};
-let latestPromo = { code: "SPECIALGIFT", points: 2 };
+let latestPromo = null;
 let masterTemplateCode = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -498,6 +498,8 @@ async function fetchFromTurso() {
 
     if (promoRes.ok && Array.isArray(promoRes.promo_codes) && promoRes.promo_codes.length > 0) {
       latestPromo = promoRes.promo_codes[0];
+    } else {
+      latestPromo = null;
     }
   } catch(e) {}
 }
@@ -573,20 +575,20 @@ function onLiveEdit() {
   renderPreview();
 }
 
-function buildCombinedRewardAndPromoHtml(points = 2, products = [], activePromo = null) {
+function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo = null) {
   const userPoints = Number(points) || 0;
   const validProducts = Array.isArray(products) ? products : [];
   const affordable = validProducts.filter(p => Number(p.price) <= userPoints);
 
-  let promoBannerHtml = "";
-  if (activePromo && activePromo.code) {
-    promoBannerHtml = `
+  let promoSnippetHtml = "";
+  if (activePromo && activePromo.code && activePromo.code.trim() !== "") {
+    promoSnippetHtml = `
       <div style="margin: 0 0 14px 0; padding: 12px 14px; background-color: #fff9e6; border: 1.5px dashed #c9a84c; border-radius: 6px; text-align: center;">
         <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 3px;">
           🎟️ Exclusive Monthly Freebie Promo
         </span>
         <div style="font-size: 12px; color: #1a1a1a; margin-bottom: 5px;">
-          Claim <strong>+${activePromo.points || 2} Free Reward Points</strong> right now!
+          Claim <strong>+${activePromo.points || 1} Free Reward Points</strong> right now!
         </div>
         <div style="font-family: monospace; font-size: 12.5px; font-weight: bold; background: #1a1a1a; color: #d4c197; padding: 5px 12px; border-radius: 4px; display: inline-block; letter-spacing: 1px;">
           /redeem ${activePromo.code}
@@ -654,7 +656,7 @@ function buildCombinedRewardAndPromoHtml(points = 2, products = [], activePromo 
         You currently have <strong>${userPoints} Points</strong>
       </p>
 
-      ${promoBannerHtml}
+      ${promoSnippetHtml}
       ${affordableHtml}
       ${goalHtml}
 
@@ -709,7 +711,7 @@ function renderPreview() {
     { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
     { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
   ]);
-  const rewardSectionHtml = buildCombinedRewardAndPromoHtml(points, catalogProducts, latestPromo);
+  const rewardSectionHtml = buildCombinedRewardSectionHtml(points, catalogProducts, latestPromo);
 
   let sourceTemplate = (document.getElementById("inp-custom-html").value.trim() !== "") 
     ? document.getElementById("inp-custom-html").value 

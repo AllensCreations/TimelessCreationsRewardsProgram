@@ -2,7 +2,7 @@ import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { runSql } from './lib/db.js';
-import { renderMonthlyDripTemplate, sendOTPEmail, sendReceiptEmail, sendThankYouEmail, sendOrderStatusEmail } from './lib/mailer.js';
+import { renderMonthlyDripTemplate, sendOTPEmail, sendThankYouEmail, sendOrderStatusEmail } from './lib/mailer.js';
 import { checkDashboardRateLimit } from './lib/bot.js';
 import { isRateLimited, verifyFbSignature } from './lib/security.js';
 import { handleBotMessage } from './lib/botHandler.js';

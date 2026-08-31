@@ -9,7 +9,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 - **Runtime**: Node.js (ES Modules / ESM) on Vercel Serverless & Termux (Android arm64).
 - **Database**: Turso (libSQL) via pure HTTPS `/v2/pipeline` protocol (zero native C++ dependencies).
 - **CDN**: ImgBB API with SHA-256 encrypted `.webp` naming and Turso `cdn_gallery` persistence.
-- **Mailer**: Brevo API for 24-month drip emails, OTP codes, and POS purchase receipts.
+- **Mailer**: Brevo API for 24-month drip emails, OTP codes, and notifications.
 - **Bot Engine**: Meta Messenger Graph API v19.0+ with pure Mathematical Unicode typography.
 
 ---
@@ -50,7 +50,7 @@ Comprehensive system architecture, endpoint registry, database schema, and live 
 * **`api/cdn.js`**: ImgBB direct image uploader, catalog viewer, and deletion handler.
 * **`lib/db.js`**: Universal SQL runner with pure HTTP pipeline (`runSql`, `queryTurso`, `query`, `execute`).
 * **`lib/bot.js`**: Unicode string formatters, carousel builder, and atomic rate limiter.
-* **`lib/mailer.js`**: Brevo 9-grid drip emailer and receipt dispatcher.
+* **`lib/mailer.js`**: Brevo 9-grid drip emailer and notification dispatcher.
 
 ---
 

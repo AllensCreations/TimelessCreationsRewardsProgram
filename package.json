@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node test-master.js",
+    "test:templates": "node test-templates.js",
     "test:html": "node test-html.js",
     "build": "mkdir -p public/assets && cp -r views/* public/ 2>/dev/null || true && cp -r assets/* public/assets/ 2>/dev/null || true",
     "prune": "node -r dotenv/config -e \"import('./lib/dbPruner.js').then(m => m.runDatabaseMaintenance())\"",

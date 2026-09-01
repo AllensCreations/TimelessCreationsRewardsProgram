@@ -3,48 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Completed & Thank You | Timeless Creations</title>
+  <title>{{TITLE}} | Timeless Creations</title>
   <style>
-    body { background-color: #1a1610; font-family: Georgia, 'Times New Roman', serif; margin: 0; padding: 0; }
-    .email-shell { max-width: 460px; width: 100%; margin: 32px auto; background-color: #faf7f0; border: 1px solid #d6c9a8; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-    .header { background: linear-gradient(135deg, #2c221e, #1a1610); color: #d4b07a; padding: 28px 20px; text-align: center; }
-    .body-content { padding: 32px 24px; color: #2c221e; line-height: 1.7; font-size: 14px; text-align: center; }
-    .cta-button { display: inline-block; background-color: #1c1208; color: #d4b07a !important; padding: 12px 28px; text-decoration: none; font-weight: bold; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-top: 16px; border-radius: 4px; }
-    .footer { background-color: #0e0c08; padding: 20px; text-align: center; color: rgba(255,255,255,0.4); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+    body { margin: 0; padding: 0; background-color: #1a1610; font-family: Georgia, 'Times New Roman', serif; -webkit-font-smoothing: antialiased; }
+    .email-shell { max-width: 460px; width: 100%; margin: 24px auto; background-color: #faf7f0; border: 1px solid #d6c9a8; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+    .header { background: linear-gradient(135deg, #2c221e, #1a1610); color: #d4b07a; padding: 26px 20px; text-align: center; }
+    .body-content { padding: 30px 24px; color: #2c221e; line-height: 1.7; font-size: 14px; text-align: center; }
+    .summary-card { background: #fdfbf8; border: 2px dashed #b8955a; padding: 18px 20px; border-radius: 6px; margin: 20px 0; text-align: left; }
+    .btn-gold { display: inline-block; background-color: #1c1208; color: #d4b07a !important; padding: 11px 20px; text-decoration: none; font-weight: bold; font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px; margin: 4px; font-family: 'Helvetica', Arial, sans-serif; }
+    .btn-outline { display: inline-block; background-color: #ffffff; color: #1c1208 !important; border: 1.5px solid #1c1208; padding: 10px 18px; text-decoration: none; font-weight: bold; font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px; margin: 4px; font-family: 'Helvetica', Arial, sans-serif; }
+    .footer { background-color: #0e0c08; padding: 18px 20px; text-align: center; color: rgba(255,255,255,0.45); font-size: 9.5px; letter-spacing: 1px; text-transform: uppercase; font-family: 'Helvetica', Arial, sans-serif; }
   </style>
 </head>
-<body>
+<body style="margin:0;padding:0;background-color:#1a1610;">
   <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#1a1610;">
     <tr>
-      <td align="center" style="padding: 20px;">
+      <td align="center" style="padding: 20px 10px;">
         <table class="email-shell" border="0" cellspacing="0" cellpadding="0" width="460">
           <tr>
             <td class="header">
-              <div style="font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #b8955a; margin-bottom: 6px;">Timeless Creations Rewards</div>
-              <div style="font-size: 22px; font-weight: bold; font-family: 'Syne', sans-serif;">Thank You for Your Order! ✨</div>
+              <div style="font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #b8955a; margin-bottom: 6px; font-family: 'Helvetica', Arial, sans-serif;">Timeless Creations • {{DATE}}</div>
+              <div style="font-size: 22px; font-weight: bold;">{{TITLE}}</div>
             </td>
           </tr>
           <tr>
             <td class="body-content">
-              <p style="margin-top: 0;">Hello <strong>{{NAME}}</strong>,</p>
-              <p>Your order <strong>{{ORDER_ID}}</strong> has been successfully marked as <strong>COMPLETED</strong> and prepared for dispatch!</p>
+              <p style="margin-top: 0; font-size: 16px;">Hello <strong>{{NAME}}</strong>,</p>
+              <p style="color: #444; font-size: 13.5px;">
+                {{MESSAGE}}
+              </p>
               
-              <div style="background: #f6f1e6; border: 1px dashed #b8955a; padding: 16px; border-radius: 6px; margin: 20px 0; text-align: left;">
-                <div style="font-size: 11px; font-weight: bold; color: #8b1a1a; margin-bottom: 4px; text-transform: uppercase;">📦 Fulfillment Summary:</div>
-                <div style="font-size: 13px; color: #3a2e14;">• Item / Package: <strong>{{ITEM}}</strong></div>
-                <div style="font-size: 13px; color: #3a2e14; margin-top: 4px;">• Status: <strong>Ready for Dispatch</strong></div>
+              <div class="summary-card">
+                <div style="font-size: 10.5px; font-weight: bold; color: #8b1a1a; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Helvetica', Arial, sans-serif;">📦 Fulfillment Summary:</div>
+                <div style="font-size: 13px; color: #2c221e; padding: 3px 0;">• <strong>Order ID:</strong> <span style="font-family: monospace; font-size: 14px; font-weight: bold; color: #8b1a1a;">{{ORDER_ID}}</span></div>
+                <div style="font-size: 13px; color: #2c221e; padding: 3px 0;">• <strong>Item / Package:</strong> <strong>{{ITEM}}</strong></div>
+                <div style="font-size: 13px; color: #2c221e; padding: 3px 0;">• <strong>Status:</strong> <span style="color: #16a34a; font-weight: bold;">{{STATUS}}</span></div>
               </div>
 
-              <p style="font-style: italic; color: #7a6030; font-size: 13px;">
-                "Please take a screenshot of this receipt and send it to <strong>m.me/Timelesscreations.06</strong> alongside your preferred delivery address or notes if you haven't already!"
+              <p style="font-style: italic; color: #7a6030; font-size: 13px; line-height: 1.6; margin-bottom: 22px;">
+                Thank you for your dedicated missionary service and for trusting Timeless Creations! If you have any questions or need further assistance, feel free to chat with us anytime.
               </p>
 
-              <a href="https://m.me/Timelesscreations.06" class="cta-button" target="_blank">Chat with Support →</a>
+              <div>
+                <a href="https://m.me/timeless.creations.06" class="btn-gold" target="_blank">Chat with Store Support →</a>
+                <a href="https://m.me/TimelessCreationsRP" class="btn-outline" target="_blank">Rewards Bot Dashboard →</a>
+              </div>
             </td>
           </tr>
           <tr>
             <td class="footer">
-              Timeless Creations • Supporting Missionaries Across the Philippines
+              Supporting Members &amp; Missionaries Across the Philippines • Since 2025
             </td>
           </tr>
         </table>

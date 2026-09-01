@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CDN Media Gallery | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #181822;
+      --border: rgba(255,255,255,0.08);
+      --gold: #c9a84c;
+      --gold-dim: rgba(201,168,76,0.15);
+      --green: #4caf82;
+      --red: #e05c5c;
+      --text: #e8e6f0;
+      --muted: #716e88;
+      --radius: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+    .container { max-width: 1180px; margin: 20px auto; padding: 0 16px 60px; }
+    
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .header-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-color: rgba(201,168,76,0.25);
+    }
+    .dropzone {
+      border: 2px dashed rgba(201,168,76,0.35);
+      border-radius: var(--radius);
+      background: var(--surface2);
+      padding: 26px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dropzone:hover { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+    
+    .compression-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--surface2);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .gallery-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .gallery-item:hover { transform: translateY(-3px); border-color: var(--gold); }
+    .img-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #08080d;
+      overflow: hidden;
+      position: relative;
+    }
+    .img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .meta-body {
+      padding: 12px;
+      font-size: 0.68rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+    .btn-action {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .btn-action:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-delete { color: var(--red); border-color: rgba(224,92,92,0.25); }
+    .btn-delete:hover { background: var(--red); color: #fff; }
+    
+    .error-banner {
+      background: rgba(224,92,92,0.12);
+      border: 1px solid rgba(224,92,92,0.3);
+      color: var(--red);
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card header-banner">
+    <div>
+      <h2 style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.3rem;">🖼️ CDN Media Hub</h2>
+      <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">
+        Strict 1:1 WebP compression • Auto 8-char randomized encrypted naming • jsDelivr caching
+      </p>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <a href="/settings.html" class="btn btn-secondary" style="font-size:0.75rem;">⚙️ Settings</a>
+      <button class="btn btn-gold" onclick="fetchGalleryItems(true)" style="font-size:0.75rem;">↻ Force Sync Turso</button>
+    </div>
+  </div>
+
+  <div id="error-box" class="error-banner"></div>
+
+  <!-- Compression Options & Uploader -->
+  <div class="card">
+    <div class="compression-toolbar">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">⚡ Target File Size:</span>
+        <select id="target-kb-select" class="form-select" style="width:200px; padding:6px 10px; font-size:0.72rem; color:var(--gold);">
+          <option value="50" selected>⚡ &lt; 50 KB (Ultra-light)</option>
+          <option value="100">⚖️ &lt; 100 KB (Balanced WebP)</option>
+          <option value="150">💎 &lt; 150 KB (High Quality)</option>
+          <option value="300">🌟 HQ 600x600 (Best Crisp)</option>
+        </select>
+      </div>
+      <div style="font-size:0.68rem; color:var(--muted);">
+        🔒 Auto-named: <code style="color:var(--green);" id="preview-encrypted-name">k8f2x9a1.webp</code>
+      </div>
+    </div>
+
+    <div class="dropzone" id="drop-area" onclick="document.getElementById('file-input').click()">
+      <div style="font-size:2.2rem; margin-bottom:6px;">☁️</div>
+      <div style="font-weight:bold; color:var(--gold); font-size:0.85rem;">Click to upload or drag &amp; drop images</div>
+      <div style="font-size:0.7rem; color:var(--muted); margin-top:4px;">Strictly converted to WebP with target size compression</div>
+      <input type="file" id="file-input" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
+    </div>
+    <div id="upload-progress" style="margin-top:12px; font-size:0.72rem; color:var(--gold); display:none;"></div>
+  </div>
+
+  <!-- Gallery List -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <h3 style="font-size:0.95rem; color:var(--gold);">Cached CDN Assets (<span id="asset-count">0</span>)</h3>
+      <input type="text" id="filter-input" placeholder="Search filenames..." class="form-input" style="width:220px; padding:6px 10px; font-size:0.7rem;" oninput="filterGallery(this.value)">
+    </div>
+    <div class="gallery-grid" id="gallery-container">
+      <div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">Loading gallery assets...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let galleryItems = [];
+
+function generateEncryptedName() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const bytes = new Uint8Array(8);
+  window.crypto.getRandomValues(bytes);
+  for (let i = 0; i < 8; i++) {
+    result += chars[bytes[i] % chars.length];
+  }
+  return result + '.webp';
+}
+
+setInterval(() => {
+  const el = document.getElementById('preview-encrypted-name');
+  if (el) el.textContent = generateEncryptedName();
+}, 2500);
+
+async function fetchGalleryItems(force = false) {
+  const container = document.getElementById('gallery-container');
+  const errorBox = document.getElementById('error-box');
+  errorBox.style.display = 'none';
+
+  // 1. Check local cache first to avoid calling Turso
+  const cached = LocalStore.get('tcrp_cdn_gallery', null);
+  if (cached && !force) {
+    galleryItems = cached;
+    document.getElementById('asset-count').textContent = galleryItems.length;
+    renderGallery(galleryItems);
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/main?action=cdn_list');
+    const data = await res.json();
+    if (data.ok) {
+      galleryItems = data.gallery || data.items || [];
+      LocalStore.set('tcrp_cdn_gallery', galleryItems);
+      document.getElementById('asset-count').textContent = galleryItems.length;
+      renderGallery(galleryItems);
+    } else {
+      showError(data.error || "Failed to load CDN gallery items");
+      container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--red); padding:20px;">${data.error || 'Failed to connect'}</div>`;
+    }
+  } catch (err) {
+    showError("Network error connecting to /api/main: " + err.message);
+    container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--red); padding:20px;">Connection Failed: ${err.message}</div>`;
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  box.textContent = "⚠️ " + msg;
+  box.style.display = 'block';
+}
+
+function renderGallery(items) {
+  const container = document.getElementById('gallery-container');
+  if (!items.length) {
+    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No hosted assets yet. Upload one above!</div>';
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <div class="gallery-item">
+      <div class="img-wrap">
+        <img src="${item.direct_url}" alt="${item.filename}" loading="lazy" onerror="this.src='https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'">
+      </div>
+      <div class="meta-body">
+        <div style="font-weight:bold; color:var(--gold); word-break:break-all;" title="${item.filename}">${item.filename}</div>
+        <div style="color:var(--muted); font-size:0.62rem;">
+          ${item.compressed_kb ? `${item.compressed_kb} KB` : 'Optimized'} • WebP Strict
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+          <button class="btn-action" onclick="copyText('${item.direct_url}', 'CDN URL Copied!')">🔗 Copy Direct URL</button>
+          <button class="btn-action btn-delete" onclick="deleteAsset(${item.id})">🗑️ Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterGallery(q) {
+  const clean = (q || '').toLowerCase().trim();
+  const filtered = galleryItems.filter(i => (i.filename || '').toLowerCase().includes(clean));
+  renderGallery(filtered);
+}
+
+function copyText(str, successMsg) {
+  navigator.clipboard.writeText(str).then(() => {
+    if (typeof showToast === 'function') showToast(successMsg);
+    else alert(successMsg);
+  });
+}
+
+async function deleteAsset(id) {
+  if (!confirm("Remove this asset from your CDN gallery record?")) return;
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cdn_delete', id })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      if (typeof showToast === 'function') showToast("Asset record deleted.");
+      fetchGalleryItems(true);
+    } else {
+      alert(d.error || "Failed to delete");
+    }
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+}
+
+// Progressive target size compressor
+function compressToTargetWebP(file, targetKb = 50, size = 600) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let dim = size;
+        canvas.width = dim;
+        canvas.height = dim;
+        const ctx = canvas.getContext('2d');
+        
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, dim, dim);
+
+        let quality = 0.92;
+        let base64Data = canvas.toDataURL('image/webp', quality);
+        let compressedKb = Math.round((base64Data.length * 0.75) / 1024);
+
+        while (compressedKb > targetKb && quality > 0.18) {
+          quality -= 0.08;
+          base64Data = canvas.toDataURL('image/webp', quality);
+          compressedKb = Math.round((base64Data.length * 0.75) / 1024);
+        }
+
+        if (compressedKb > targetKb) {
+          dim = Math.max(300, Math.floor(dim * 0.8));
+          canvas.width = dim;
+          canvas.height = dim;
+          ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, dim, dim);
+          base64Data = canvas.toDataURL('image/webp', 0.65);
+          compressedKb = Math.round((base64Data.length * 0.75) / 1024);
+        }
+
+        resolve({ base64Data, compressedKb });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFiles(files) {
+  if (!files || !files.length) return;
+  const prog = document.getElementById('upload-progress');
+  const targetKb = parseInt(document.getElementById('target-kb-select').value, 10) || 50;
+  prog.style.display = 'block';
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const encryptedName = generateEncryptedName();
+    prog.textContent = `⏳ Compressing & uploading (${i + 1}/${files.length}) -> ${encryptedName}...`;
+    
+    try {
+      const originalKb = Math.round(file.size / 1024);
+      const { base64Data, compressedKb } = await compressToTargetWebP(file, targetKb, 600);
+
+      const res = await fetch('/api/main', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'cdn_upload',
+          filename: encryptedName,
+          targetSize: `webp_${compressedKb}kb`,
+          originalKb,
+          compressedKb,
+          base64Data
+        })
+      });
+
+      const d = await res.json();
+      if (!d.ok) {
+        showError(d.error || "GitHub commit failed. Verify your token in Settings.");
+      }
+    } catch (err) {
+      showError(`Failed to upload ${file.name}: ${err.message}`);
+    }
+  }
+
+  prog.style.display = 'none';
+  fetchGalleryItems(true);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof initAppLayout === 'function') initAppLayout('gallery', 'CDN Media Gallery');
+  fetchGalleryItems();
+});
+</script>
+</body>
+</html>

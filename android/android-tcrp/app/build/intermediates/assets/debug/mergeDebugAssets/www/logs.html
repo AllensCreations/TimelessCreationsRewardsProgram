@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>System Logs & Telemetry | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
+  <style>
+    .filters-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .filter-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
+    .filter-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); font-weight: 700; }
+    .search-box { flex: 1; min-width: 200px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
+    .search-box:focus { border-color: var(--gold); }
+
+    .badge { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: inline-block; }
+    .badge-info { background: rgba(76,175,130,0.15); color: var(--green); border: 1px solid rgba(76,175,130,0.3); }
+    .badge-warn { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+    .badge-error { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
+    .badge-turso { background: rgba(92,141,224,0.15); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
+    .badge-dispatch { background: rgba(201,168,76,0.25); color: #fff; border: 1px solid var(--gold); }
+
+    /* Mobile Responsive Card Feed */
+    .log-stream-container { display: flex; flex-direction: column; gap: 8px; }
+    .log-entry-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .log-entry-header { display: flex; justify-content: space-between; align-items: center; }
+    .log-entry-msg { font-size: 0.75rem; color: var(--text); word-break: break-word; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card" style="border-color:var(--border-gold); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.3rem;">📜 System Logs &amp; Audit Stream</h2>
+      <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Real-time event feed, dispatches, database triggers, and audit logs.</p>
+    </div>
+    <button class="btn btn-gold" onclick="loadDetailedLogs()">↻ Refresh Telemetry</button>
+  </div>
+
+  <div class="filters-bar">
+    <input type="text" class="search-box" id="log-search" placeholder="Search logs or email recipients..." oninput="renderLogs()"/>
+    <button class="filter-btn active" onclick="setFilter('ALL', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('DISPATCH', this)">✉️ Dispatches</button>
+    <button class="filter-btn" onclick="setFilter('INFO', this)">Info</button>
+    <button class="filter-btn" onclick="setFilter('WARN', this)">Warnings</button>
+    <button class="filter-btn" onclick="setFilter('ERROR', this)">Errors</button>
+    <button class="filter-btn" onclick="setFilter('TURSO', this)">Turso SQL</button>
+  </div>
+
+  <div class="log-stream-container" id="logs-container">
+    <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">Connecting to log telemetry stream...</div>
+  </div>
+</div>
+
+<script>
+let allLogs = [];
+let currentFilter = 'ALL';
+
+window.loadDetailedLogs = loadDetailedLogs;
+async function loadDetailedLogs() {
+  try {
+    const res = await fetch('/api/main?action=get_system_logs&limit=150');
+    const data = await res.json();
+    if (data.ok) {
+      allLogs = data.logs || [];
+      renderLogs();
+    }
+  } catch(e) {
+    showToast("Failed to fetch system logs", "error");
+  }
+}
+
+function setFilter(level, btn) {
+  currentFilter = level;
+  document.querySelectorAll('.filters-bar .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLogs();
+}
+
+function renderLogs() {
+  const container = document.getElementById('logs-container');
+  const query = document.getElementById('log-search').value.toLowerCase().trim();
+
+  let filtered = allLogs.filter(l => {
+    const lvl = (l.level || 'INFO').toUpperCase();
+    const isDispatch = (l.message || '').includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
+    const matchLevel = currentFilter === 'ALL' 
+      ? true 
+      : (currentFilter === 'DISPATCH' ? isDispatch : lvl === currentFilter);
+    const matchQuery = !query || (l.message || '').toLowerCase().includes(query);
+    return matchLevel && matchQuery;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No matching log entries found.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(l => {
+    const lvl = (l.level || 'INFO').toUpperCase();
+    const isDispatch = (l.message || '').includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
+    let badgeCls = 'badge-info';
+    let label = lvl;
+
+    if (isDispatch) { badgeCls = 'badge-dispatch'; label = '✉️ DISPATCH'; }
+    else if (lvl === 'WARN') badgeCls = 'badge-warn';
+    else if (lvl === 'ERROR') badgeCls = 'badge-error';
+    else if (lvl === 'TURSO') badgeCls = 'badge-turso';
+
+    const formattedTime = l.created_at ? new Date(l.created_at).toLocaleString() : 'Just now';
+
+    return `
+      <div class="log-entry-card">
+        <div class="log-entry-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge ${badgeCls}">${label}</span>
+            <span style="font-size:0.65rem; color:var(--muted); font-family:'DM Mono',monospace;">#${l.id}</span>
+          </div>
+          <span style="color:var(--muted); font-size:0.65rem; font-family:'DM Mono',monospace;">${formattedTime}</span>
+        </div>
+        <div class="log-entry-msg">${escapeHtml(l.message)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  initAppLayout('logs', 'System Logs');
+  loadDetailedLogs();
+  setInterval(loadDetailedLogs, 10000);
+});
+</script>
+</body>
+</html>

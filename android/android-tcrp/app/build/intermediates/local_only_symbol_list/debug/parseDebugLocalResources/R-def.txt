@@ -1,0 +1,10 @@
+R_DEF: Internal format may change without notice
+local
+color colorAccent
+color colorPrimary
+color colorPrimaryDark
+mipmap ic_launcher
+mipmap ic_maskable
+string appName
+string launcherName
+style AppTheme

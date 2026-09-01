@@ -13,6 +13,24 @@ const LocalStore = {
   }
 };
 
+const REMOTE_API_SERVER = (function() {
+  if (typeof window !== 'undefined') {
+    return LocalStore.get('remote_server_url', 'https://timelesscreationsrewardsprogram.vercel.app');
+  }
+  return 'https://timelesscreationsrewardsprogram.vercel.app';
+})();
+
+if (typeof window !== 'undefined' && window.fetch) {
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = function(input, init) {
+    if (typeof input === 'string' && input.startsWith('/api/')) {
+      const serverUrl = LocalStore.get('remote_server_url', 'https://timelesscreationsrewardsprogram.vercel.app');
+      return originalFetch(`${serverUrl.replace(/\/$/, '')}${input}`, init);
+    }
+    return originalFetch(input, init);
+  };
+}
+
 function showToast(message, type = "success") {
   let container = document.getElementById("toast-container");
   if (!container) {

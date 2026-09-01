@@ -115,55 +115,20 @@
 
 <div class="container">
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Invoice</button>
+    <button class="tab-btn active" onclick="switchNavTab('create-tab', this)">🧾 Create Order Summary</button>
     <button class="tab-btn" onclick="switchNavTab('transactions-tab', this)">📜 Active Transactions (<span id="active-trans-badge">0</span>)</button>
     <button class="tab-btn" onclick="switchNavTab('archives-tab', this)">📦 Delivered Archives (<span id="archive-badge">0</span>)</button>
     <button class="tab-btn" onclick="switchNavTab('products-tab', this)">⚙️ Cash POS Catalog</button>
   </div>
 
-  <!-- TAB 1: Create Invoice -->
+  <!-- TAB 1: Create Order Summary -->
   <div class="tab-pane active" id="create-tab">
     <div class="grid-layout">
       <div>
-        <div class="card">
-          <h3 style="font-size:0.95rem; color:var(--gold); margin-bottom:10px;">1. Customer Information</h3>
-          <div class="mode-switch-row">
-            <button class="mode-switch-btn active" id="mode-db-btn" onclick="switchRecipientMode('db')">🔍 Registered Missionary</button>
-            <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom Customer</button>
-          </div>
-
-          <div id="recipient-db-box">
-            <div class="form-group">
-              <input type="text" class="form-input" id="missionary-search" placeholder="Type name or email to filter..." oninput="filterMissionaryDropdown(this.value)" style="margin-bottom:6px;"/>
-              <select id="missionary-select" class="form-select" onchange="handleMissionarySelect()">
-                <option value="">-- Choose Missionary --</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Phone Number (Optional)</label>
-              <input type="text" class="form-input" id="db-phone-input" placeholder="e.g. 09123456789" oninput="handleDbPhoneInput()"/>
-            </div>
-          </div>
-
-          <div id="recipient-custom-box" style="display:none;">
-            <div class="form-group">
-              <label class="form-label">Customer Full Name</label>
-              <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Sister Maria Santos or John Doe" oninput="handleCustomInput()"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email Address</label>
-              <input type="email" class="form-input" id="custom-email-input" placeholder="customer@example.com" oninput="handleCustomInput()"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Phone Number</label>
-              <input type="text" class="form-input" id="custom-phone-input" placeholder="e.g. 09123456789" oninput="handleCustomInput()"/>
-            </div>
-          </div>
-        </div>
-
+        <!-- Section 1: Items & Pricing -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h3 style="font-size:0.95rem; color:var(--gold);">2. Items &amp; Pricing</h3>
+            <h3 style="font-size:0.95rem; color:var(--gold);">1. Items &amp; Pricing</h3>
             <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addItemRow()">+ Add Item</button>
           </div>
 
@@ -196,20 +161,58 @@
               <span id="calc-grand-total">₱0.00</span>
             </div>
           </div>
+        </div>
 
-          <button class="btn btn-gold" id="generate-btn" style="width:100%; margin-top:14px;" onclick="submitInvoice()">🧾 Save &amp; Finalize Invoice (<span id="btn-target-tc-id">TC100001</span>)</button>
+        <!-- Section 2: Optional Collapsible Customer Tag (Internal Record Only) -->
+        <div class="card" style="margin-top:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleCustomerTagSection()">
+            <div>
+              <h3 style="font-size:0.85rem; color:var(--gold);">🏷️ Customer Tag <span style="font-size:0.68rem; color:var(--muted); font-weight:normal;">(Optional • Internal Record Only)</span></h3>
+              <p style="font-size:0.65rem; color:var(--muted); margin-top:2px;">Will not appear on the generated Order Summary slip.</p>
+            </div>
+            <span id="customer-tag-toggle-icon" style="font-size:0.8rem; color:var(--gold);">▼</span>
+          </div>
+
+          <div id="customer-tag-body" style="display:none; margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">
+            <div class="mode-switch-row">
+              <button class="mode-switch-btn active" id="mode-db-btn" onclick="switchRecipientMode('db')">🔍 Registered Missionary</button>
+              <button class="mode-switch-btn" id="mode-custom-btn" onclick="switchRecipientMode('custom')">✏️ Custom Customer</button>
+            </div>
+
+            <div id="recipient-db-box">
+              <div class="form-group">
+                <input type="text" class="form-input" id="missionary-search" placeholder="Type name or email to filter..." oninput="filterMissionaryDropdown(this.value)" style="margin-bottom:6px;"/>
+                <select id="missionary-select" class="form-select" onchange="handleMissionarySelect()">
+                  <option value="">-- Optional: Choose Missionary --</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="recipient-custom-box" style="display:none;">
+              <div class="form-group">
+                <label class="form-label">Customer Name (Optional)</label>
+                <input type="text" class="form-input" id="custom-name-input" placeholder="e.g. Sister Maria Santos or Walk-in" oninput="handleCustomInput()"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email Address (Optional)</label>
+                <input type="email" class="form-input" id="custom-email-input" placeholder="customer@example.com" oninput="handleCustomInput()"/>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-gold" id="generate-btn" style="width:100%; margin-top:14px;" onclick="submitInvoice()">🧾 Save &amp; Generate Order Summary (<span id="btn-target-tc-id">TC100001</span>)</button>
         </div>
       </div>
 
       <!-- Live Preview -->
       <div class="preview-wrapper">
         <div class="card" style="padding:12px;">
-          <h4 style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; text-transform:uppercase;">✦ Live Invoice Preview</h4>
+          <h4 style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; text-transform:uppercase;">✦ Live Order Summary Preview</h4>
           <div class="invoice-preview-card" id="invoice-node">
             <div>
               <div class="inv-header">
                 <div>
-                  <div class="inv-title-large">INVOICE</div>
+                  <div class="inv-title-large">ORDER SUMMARY</div>
                   <div style="font-size:0.65rem; color:#b8955a; font-style:italic;">✨ Timeless Creations ✨</div>
                 </div>
                 <div style="text-align:right;">
@@ -218,13 +221,7 @@
                 </div>
               </div>
 
-              <div class="inv-meta">
-                <div><strong>Bill To:</strong> <span id="prev-name">Elder / Sister [Name]</span></div>
-                <div><strong>Email:</strong> <span id="prev-email">customer@example.com</span></div>
-                <div><strong>Phone:</strong> <span id="prev-phone">—</span></div>
-              </div>
-
-              <div style="max-height:180px; overflow-y:auto; margin-bottom:10px;">
+              <div style="max-height:220px; overflow-y:auto; margin-bottom:10px;">
                 <table class="inv-table">
                   <thead>
                     <tr>
@@ -251,8 +248,8 @@
                   <span>Discount:</span>
                   <span id="prev-discount">-₱0.00</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.92rem; font-weight:800; color:#8b1a1a; border-top:1px solid #f1e4cb; padding-top:4px; margin-top:4px;">
-                  <span>Total Amount:</span>
+                <div style="display:flex; justify-content:space-between; font-size:0.95rem; font-weight:800; color:#8b1a1a; border-top:1px solid #f1e4cb; padding-top:4px; margin-top:4px;">
+                  <span>Grand Total:</span>
                   <span id="prev-total">₱0.00</span>
                 </div>
               </div>
@@ -274,7 +271,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:0.95rem; color:var(--gold);">📜 Active Transactions &amp; Claims</h3>
-          <p style="font-size:0.68rem; color:var(--muted);">All created invoices are numbered in sequential order (TC######).</p>
+          <p style="font-size:0.68rem; color:var(--muted);">All created orders are numbered in sequential order (TC######).</p>
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="loadData()">🔄 Sync</button>
       </div>
@@ -327,24 +324,19 @@
   </div>
 </div>
 
-<!-- Hidden Offscreen Render Node for Downloading Any Transaction's Invoice -->
+<!-- Hidden Offscreen Render Node for Downloading Any Transaction's Order Summary -->
 <div style="position:absolute; left:-9999px; top:-9999px;">
   <div class="invoice-preview-card" id="render-invoice-card" style="width:400px; padding:20px;">
     <div>
       <div class="inv-header">
         <div>
-          <div class="inv-title-large">INVOICE</div>
+          <div class="inv-title-large">ORDER SUMMARY</div>
           <div style="font-size:0.65rem; color:#b8955a; font-style:italic;">✨ Timeless Creations ✨</div>
         </div>
         <div style="text-align:right;">
           <div class="inv-id" id="dl-inv-id">TC100001</div>
           <div style="font-size:0.62rem; color:#a8a29e;" id="dl-inv-date">Today</div>
         </div>
-      </div>
-
-      <div class="inv-meta">
-        <div><strong>Bill To:</strong> <span id="dl-inv-name">Customer</span></div>
-        <div><strong>Email:</strong> <span id="dl-inv-email">customer@example.com</span></div>
       </div>
 
       <table class="inv-table" style="margin-bottom:12px;">
@@ -363,7 +355,7 @@
     <div>
       <div style="border-top:1px solid #e7d8b8; padding-top:6px; font-size:0.68rem; font-family:'DM Mono',monospace;">
         <div style="display:flex; justify-content:space-between; font-size:0.95rem; font-weight:800; color:#8b1a1a; border-top:1px solid #f1e4cb; padding-top:4px; margin-top:4px;">
-          <span>Total Amount:</span>
+          <span>Grand Total:</span>
           <span id="dl-inv-total">₱0.00</span>
         </div>
       </div>
@@ -546,11 +538,11 @@ function buildCardListHtml(list, emptyText) {
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
             <span><strong style="color:var(--muted);">• TOTAL:</strong> <span style="color:var(--gold); font-weight:bold;">${item.totalDisplay}</span></span>
-            <span><strong style="color:var(--muted);">• Email:</strong> ${item.email}</span>
+            ${item.name && item.name !== 'Customer' ? `<span><strong style="color:var(--muted);">• Tag:</strong> ${item.name}</span>` : ''}
           </div>
 
           <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end; flex-wrap:wrap;">
-            <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="downloadSpecificInvoice('${itemDataEscaped}')">📥 Download Invoice</button>
+            <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="downloadSpecificInvoice('${itemDataEscaped}')">📥 Download Slip</button>
             <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
             <button class="btn-danger" style="padding:5px 8px; font-size:0.68rem; border-radius:4px;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
           </div>
@@ -565,8 +557,6 @@ function downloadSpecificInvoice(encodedData) {
     const item = JSON.parse(decodeURIComponent(encodedData));
     document.getElementById('dl-inv-id').textContent = item.id;
     document.getElementById('dl-inv-date').textContent = new Date(item.raw.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    document.getElementById('dl-inv-name').textContent = item.name;
-    document.getElementById('dl-inv-email').textContent = item.email;
     document.getElementById('dl-inv-total').textContent = item.totalDisplay;
 
     const tbody = document.getElementById('dl-inv-body');
@@ -582,13 +572,13 @@ function downloadSpecificInvoice(encodedData) {
     const targetNode = document.getElementById('render-invoice-card');
     html2canvas(targetNode, { scale: 2 }).then(canvas => {
       const link = document.createElement('a');
-      link.download = `Invoice-${item.id}-${item.name.replace(/\s+/g, '_')}.png`;
+      link.download = `OrderSummary-${item.id}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      showToast(`Invoice ${item.id} downloaded!`);
+      showToast(`Order Summary ${item.id} downloaded!`);
     });
   } catch (e) {
-    showToast("Error rendering invoice download", "error");
+    showToast("Error rendering order summary download", "error");
   }
 }
 
@@ -637,27 +627,17 @@ async function deleteTransaction(id, isOrder, name) {
   }
 }
 
-function syncLiveInvoicePreview() {
-  let name = "Elder / Sister [Name]";
-  let email = "customer@example.com";
-  let phone = "—";
-
-  if (recipientMode === 'db') {
-    const m = missionaries.find(x => x.email === document.getElementById('missionary-select').value);
-    if (m) {
-      name = m.name;
-      email = m.email;
-      phone = document.getElementById('db-phone-input').value.trim() || '—';
-    }
-  } else {
-    name = document.getElementById('custom-name-input').value.trim() || "Customer [Name]";
-    email = document.getElementById('custom-email-input').value.trim() || "customer@example.com";
-    phone = document.getElementById('custom-phone-input').value.trim() || "—";
+function toggleCustomerTagSection() {
+  const body = document.getElementById('customer-tag-body');
+  const icon = document.getElementById('customer-tag-toggle-icon');
+  if (body) {
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    if (icon) icon.textContent = isHidden ? '▲' : '▼';
   }
+}
 
-  document.getElementById('prev-name').textContent = name;
-  document.getElementById('prev-email').textContent = email;
-  document.getElementById('prev-phone').textContent = phone;
+function syncLiveInvoicePreview() {
   recalculateTotal();
 }
 
@@ -675,7 +655,7 @@ function switchRecipientMode(mode) {
 
 function populateMissionarySelect(list) {
   const sel = document.getElementById('missionary-select');
-  sel.innerHTML = '<option value="">-- Choose Missionary --</option>' + 
+  sel.innerHTML = '<option value="">-- Optional: Choose Missionary --</option>' + 
     list.map(m => `<option value="${m.email}">${m.name} (${m.email})</option>`).join('');
 }
 
@@ -773,18 +753,28 @@ function recalculateTotal() {
 }
 
 async function submitInvoice() {
-  let customerName = recipientMode === 'db' ? missionaries.find(x => x.email === document.getElementById('missionary-select').value)?.name || 'Missionary' : document.getElementById('custom-name-input').value.trim();
-  let customerEmail = recipientMode === 'db' ? document.getElementById('missionary-select').value : document.getElementById('custom-email-input').value.trim();
+  let customerName = 'Customer';
+  let customerEmail = '';
 
-  if (!customerName) {
-    showToast("Please provide customer name.", "error");
-    return;
+  if (recipientMode === 'db') {
+    const selectedEmail = document.getElementById('missionary-select')?.value;
+    const m = missionaries.find(x => x.email === selectedEmail);
+    if (m) {
+      customerName = m.name;
+      customerEmail = m.email;
+    }
+  } else {
+    const customName = document.getElementById('custom-name-input')?.value.trim();
+    const customEmail = document.getElementById('custom-email-input')?.value.trim();
+    if (customName) customerName = customName;
+    if (customEmail) customerEmail = customEmail;
   }
 
   const items = [];
   let subtotal = 0;
   document.querySelectorAll('#items-container .item-card-row').forEach(r => {
-    const name = r.querySelector('.item-select').value;
+    const selectEl = r.querySelector('.item-select');
+    const name = selectEl ? selectEl.value : "Item";
     const qty = parseInt(r.querySelector('.item-qty').value, 10) || 1;
     const price = parseFloat(r.querySelector('.item-price').value) || 0;
     const rowSubtotal = qty * price;
@@ -793,14 +783,14 @@ async function submitInvoice() {
   });
 
   if (items.length === 0) {
-    showToast("Please add items.", "error");
+    showToast("Please add at least one item.", "error");
     return;
   }
 
   const discountType = document.getElementById('discount-type').value;
   const discountVal = parseFloat(document.getElementById('discount-val').value) || 0;
   let discountAmount = discountType === 'percent' ? (subtotal * (discountVal / 100)) : discountVal;
-  const totalAmount = subtotal - discountAmount;
+  const totalAmount = Math.max(0, subtotal - discountAmount);
   const invId = nextAvailableTcId;
 
   try {
@@ -822,11 +812,11 @@ async function submitInvoice() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Invoice ${invId} saved to active transactions!`);
+      showToast(`Order Summary ${invId} saved to active transactions!`);
       loadData();
     }
   } catch(e) {
-    showToast("Error saving invoice", "error");
+    showToast("Error saving order summary", "error");
   }
 }
 
@@ -937,20 +927,28 @@ async function saveProductSettings() {
 function downloadInvoiceImage() {
   html2canvas(document.getElementById('invoice-node'), { scale: 2 }).then(canvas => {
     const link = document.createElement('a');
-    link.download = `Invoice-${nextAvailableTcId}.png`;
+    link.download = `OrderSummary-${nextAvailableTcId}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-    showToast(`Invoice ${nextAvailableTcId} downloaded!`);
+    showToast(`Order Summary ${nextAvailableTcId} downloaded!`);
   });
 }
 
 function copyInvoiceText() {
-  const text = `🧾 TIMELESS CREATIONS INVOICE\nID: ${document.getElementById('prev-inv-id').textContent}\nBill To: ${document.getElementById('prev-name').textContent}\nTotal: ${document.getElementById('prev-total').textContent}`;
-  navigator.clipboard.writeText(text).then(() => showToast("Invoice text copied!"));
+  const items = [];
+  document.querySelectorAll('#items-container .item-card-row').forEach(r => {
+    const selectEl = r.querySelector('.item-select');
+    const name = selectEl ? selectEl.value : "Item";
+    const qty = r.querySelector('.item-qty')?.value || 1;
+    const price = r.querySelector('.item-price')?.value || 0;
+    items.push(`• ${qty}x ${name} - ₱${(qty * price).toFixed(2)}`);
+  });
+  const text = `🧾 TIMELESS CREATIONS - ORDER SUMMARY\nRef: ${document.getElementById('prev-inv-id').textContent}\nDate: ${document.getElementById('prev-date').textContent}\n\nItems:\n${items.join('\n')}\n\nTotal: ${document.getElementById('prev-total').textContent}`;
+  navigator.clipboard.writeText(text).then(() => showToast("Order Summary text copied!"));
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  initAppLayout('invoicing', 'Invoicing & Transactions');
+  initAppLayout('invoicing', 'Order Summary & Transactions');
   document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   loadData();
 });

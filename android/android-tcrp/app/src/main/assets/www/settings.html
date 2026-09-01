@@ -134,12 +134,14 @@ function initMonthPicker() {
   const sel = document.getElementById("test-drip-month");
   if (!sel) return;
   sel.innerHTML = "";
+  const currentM = new Date().getMonth() + 1;
   for (let i = 1; i <= 24; i++) {
     const opt = document.createElement("option");
     opt.value = i;
-    opt.textContent = `M${i}`;
+    opt.textContent = `${getCalendarMonthLabel(i)} (M${i})`;
     sel.appendChild(opt);
   }
+  sel.value = currentM;
 }
 
 async function loadSettings() {
@@ -253,10 +255,11 @@ async function sendTestEmail() {
   btn.disabled = true;
 
   try {
+    const currentMonthNumber = new Date().getMonth() + 1;
     const data = await fetch("/api/main", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "test_email", email: input, template_type: templateType, month: Number(month) || 1 })
+      body: JSON.stringify({ action: "test_email", email: input, template_type: templateType, month: Number(month) || currentMonthNumber })
     }).then(r => r.json());
 
     consoleBox.textContent += JSON.stringify(data, null, 2);

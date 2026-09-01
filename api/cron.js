@@ -60,12 +60,12 @@ export default async function handler(req, res) {
     const errors = [];
 
     for (const m of dueMissionaries) {
-      const nextMonth = (Number(m.months_sent) || 0) + 1;
+      const currentCalendarMonth = new Date().getMonth() + 1;
       const isSister = (m.cohort || '').toLowerCase().includes('sister');
       const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
 
       try {
-        const result = await sendDripEmail(m.email, nextMonth, recipientName);
+        const result = await sendDripEmail(m.email, currentCalendarMonth, recipientName);
 
         if (result?.ok) {
           await runSql(`
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
           await runSql(`
             INSERT INTO system_logs (level, message, created_at)
             VALUES ('DISPATCH', ?, CURRENT_TIMESTAMP)
-          `, [`[EMAIL_DISPATCH] M${nextMonth} sent to ${m.name} (${m.email})`]);
+          `, [`[EMAIL_DISPATCH] M${currentCalendarMonth} (${new Date().toLocaleString('en-US', { month: 'long' })}) sent to ${m.name} (${m.email})`]);
 
           sentCount++;
         } else {

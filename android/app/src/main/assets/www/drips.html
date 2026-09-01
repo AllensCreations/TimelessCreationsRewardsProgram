@@ -279,7 +279,7 @@
 </div>
 
 <script>
-let currentMonth = 1;
+let currentMonth = new Date().getMonth() + 1;
 let liveDripMap = {};
 let latestPromo = null;
 
@@ -443,6 +443,7 @@ function initSelector() {
     opt.textContent = `${getCalendarMonthLabel(i)} (M${i})`;
     sel.appendChild(opt);
   }
+  sel.value = currentMonth;
 }
 
 async function openGalleryModal(inputId, thumbId) {
@@ -962,7 +963,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   initAppLayout('drips', '24-Month Drips');
   initSelector();
   await fetchFromTurso();
-  onSelectMonth(1);
+  onSelectMonth(currentMonth);
 });
 </script>
 </body>

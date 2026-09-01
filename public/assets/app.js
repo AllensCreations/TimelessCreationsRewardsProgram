@@ -57,7 +57,7 @@ const NAV_ITEMS = [
   { key: 'dashboard', label: '📊 Dashboard', url: '/index.html' },
   { key: 'missionaries', label: '👥 Missionaries', url: '/missionaries.html' },
   { key: 'pusher', label: '➕ Add Batch', url: '/pusher.html' },
-  { key: 'invoicing', label: '🧾 Invoicing & POS', url: '/invoicing.html' },
+  { key: 'invoicing', label: '🧾 Order Summary & POS', url: '/invoicing.html' },
   { key: 'drips', label: '💌 24M Drips', url: '/drips.html' },
   { key: 'messengerbot', label: '🎁 Bot Rewards', url: '/messengerbot.html' },
   { key: 'gallery', label: '🖼️ CDN Gallery', url: '/gallery.html' },
@@ -133,3 +133,13 @@ async function triggerGlobalRefresh() {
     isRefreshing = false;
   }
 }
+
+function getCalendarMonthLabel(monthIndex) {
+  const calendarNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const idx = (Number(monthIndex) - 1) % 12;
+  return calendarNames[idx < 0 ? (idx + 12) % 12 : idx];
+}
+

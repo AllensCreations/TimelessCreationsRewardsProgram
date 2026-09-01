@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { JSDOM, VirtualConsole } from 'jsdom';
 
 console.log("🔍 Running Automated HTML & UI Integrity Verification...\n");
 
@@ -15,23 +14,16 @@ let failed = 0;
 // Standalone or plain-text policy documents that do not require full app CSS/JS layout
 const PLAIN_TEXT_EXEMPTIONS = ['privacy.html', 'terms.html', 'about.html', 'sw.js'];
 
-// Virtual console to suppress noisy JSDOM CSS parse notices
-const virtualConsole = new VirtualConsole();
-virtualConsole.on("error", (err) => {
-  if (err.message && err.message.includes("Could not parse CSS stylesheet")) return;
-  console.error("  ⚠️ DOM Warning:", err.message);
-});
-
 files.forEach(file => {
   const filePath = path.join(viewsDir, file);
   const content = fs.readFileSync(filePath, 'utf8');
 
   try {
-    const dom = new JSDOM(content, { virtualConsole });
-    const doc = dom.window.document;
+    const hasHead = /<head[\s>]/i.test(content) && /<\/head>/i.test(content);
+    const hasBody = /<body[\s>]/i.test(content) && /<\/body>/i.test(content);
 
     // Check basic valid HTML structure
-    if (!doc.head || !doc.body) {
+    if (!hasHead || !hasBody) {
       throw new Error("Missing required <head> or <body> tags.");
     }
 
@@ -42,13 +34,9 @@ files.forEach(file => {
     }
 
     // Check for deprecated legacy routes
-    const anchors = Array.from(doc.querySelectorAll('a[href]'));
-    const brokenRoutes = anchors
-      .map(a => a.getAttribute('href'))
-      .filter(h => h === '/highlight.html' || h === '/rewards.html');
-
-    if (brokenRoutes.length > 0) {
-      throw new Error(`Contains deprecated navigation link: ${brokenRoutes.join(', ')}`);
+    const brokenRouteMatches = content.match(/href=["']\/(highlight|rewards)\.html["']/gi);
+    if (brokenRouteMatches && brokenRouteMatches.length > 0) {
+      throw new Error(`Contains deprecated navigation link: ${brokenRouteMatches.join(', ')}`);
     }
 
     console.log(`  ✅ [PASS] ${file}`);

@@ -1,6 +1,9 @@
 node_modules/
 .env
+.env*
 .DS_Store
 .vercel/
 .vercel
-.env*
+test-output/
+codebase_archives/
+*.tar.gz

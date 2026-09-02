@@ -327,9 +327,9 @@ function showConfirmWarningModal({
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.0.1";
-const CURRENT_APP_VERSION_CODE = 2;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260902_a8d8b8f";
+const CURRENT_APP_VERSION = "1.1.0";
+const CURRENT_APP_VERSION_CODE = 3;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_1";
 
 async function checkDeploymentUpdate(isManual = false) {
   try {

@@ -327,22 +327,53 @@ function showConfirmWarningModal({
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.2.0";
-const CURRENT_APP_VERSION_CODE = 4;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_2";
+const CURRENT_APP_VERSION = "1.3.0";
+const CURRENT_APP_VERSION_CODE = 5;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_3";
+
+function getApiBaseUrl() {
+  if (typeof window !== 'undefined' && (
+    window.location.host === 'appassets.androidplatform.net' ||
+    window.location.protocol === 'file:' ||
+    !window.location.host
+  )) {
+    return 'https://timelesscreationsrewardsprogram.vercel.app';
+  }
+  return '';
+}
 
 async function checkDeploymentUpdate(isManual = false) {
   try {
-    const res = await fetch('/api/main?action=get_version&t=' + Date.now());
-    if (!res.ok) return;
-    const remote = await res.json();
-    if (!remote || !remote.ok) return;
+    const apiBase = getApiBaseUrl();
+    let remote = null;
+
+    try {
+      const res = await fetch(apiBase + '/api/main?action=get_version&t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) remote = await res.json();
+    } catch (_) {}
+
+    if (!remote || !remote.ok) {
+      try {
+        const ghRes = await fetch('https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/Appversion/public/version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
+          if (ghData && ghData.version) {
+            remote = { ok: true, ...ghData };
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!remote || !remote.ok) {
+      if (isManual) showToast("Offline or remote server unreachable.", "info");
+      return;
+    }
 
     const storedDeployId = LocalStore.get('tcrp_last_deployment_id', CURRENT_DEPLOYMENT_ID);
     const isNewDeploy = remote.deployment_id && remote.deployment_id !== storedDeployId && remote.deployment_id !== CURRENT_DEPLOYMENT_ID;
 
     // 1. Web / OTA Deployment Live Update
-    if (isNewDeploy) {
+    if (isNewDeploy && window.location.host !== 'appassets.androidplatform.net') {
       LocalStore.set('tcrp_last_deployment_id', remote.deployment_id);
       showToast("✨ New deployment live! Refreshing views...", "info");
       setTimeout(() => {
@@ -358,11 +389,13 @@ async function checkDeploymentUpdate(isManual = false) {
       window.AndroidBridge !== undefined
     ));
 
-    const storedApkVersion = LocalStore.get('tcrp_installed_version_code', CURRENT_APP_VERSION_CODE);
-    if (isAndroidApp && remote.version_code > storedApkVersion) {
+    const storedApkVersion = Number(LocalStore.get('tcrp_installed_version_code', CURRENT_APP_VERSION_CODE)) || CURRENT_APP_VERSION_CODE;
+    const remoteCode = Number(remote.version_code) || 0;
+
+    if (remoteCode > storedApkVersion || (isManual && remoteCode > CURRENT_APP_VERSION_CODE)) {
       const confirmed = await showConfirmWarningModal({
-        title: `📱 New App Update (v${remote.version})!`,
-        message: `An updated Android build is available.<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
+        title: `📱 New App Update Available (v${remote.version})!`,
+        message: `A new Android build is available.<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
         confirmText: "📥 Download & Install APK",
         cancelText: "Remind Me Later",
         isDanger: false,
@@ -370,9 +403,12 @@ async function checkDeploymentUpdate(isManual = false) {
       });
 
       if (confirmed) {
-        LocalStore.set('tcrp_installed_version_code', remote.version_code);
-        window.location.href = remote.apk_url || '/TimelessRewards.apk';
+        LocalStore.set('tcrp_installed_version_code', remoteCode);
+        const targetUrl = remote.github_apk_url || remote.apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk';
+        window.location.href = targetUrl;
       }
+    } else if (isManual) {
+      showToast(`✓ You are running the latest version (${CURRENT_APP_VERSION})`);
     }
   } catch (_) {}
 }

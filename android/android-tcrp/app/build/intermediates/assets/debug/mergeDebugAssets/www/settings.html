@@ -61,7 +61,7 @@
         <h3 style="font-size:0.95rem; color:var(--gold);">📱 Android App &amp; System Updates</h3>
         <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Fast hybrid offline/online runtime with automatic OTA deployment synchronization.</p>
       </div>
-      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);" id="app-version-badge">v1.2.0 (Build 2026.09.02)</span>
+      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);" id="app-version-badge">v1.3.0 (Build 2026.09.02)</span>
     </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
@@ -232,12 +232,37 @@ async function checkUpdatesManually() {
   }
 
   try {
-    const res = await fetch('/api/main?action=get_version&t=' + Date.now());
-    const data = await res.json();
-    if (data.ok && msgEl) {
-      msgEl.style.color = 'var(--green)';
-      msgEl.textContent = `✓ System is running latest deployment (${data.version} - ${data.deployment_id}).`;
-      showToast("System is up to date!");
+    const apiBase = (typeof getApiBaseUrl === 'function') ? getApiBaseUrl() : (window.location.host === 'appassets.androidplatform.net' ? 'https://timelesscreationsrewardsprogram.vercel.app' : '');
+    let remote = null;
+
+    try {
+      const res = await fetch(apiBase + '/api/main?action=get_version&t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) remote = await res.json();
+    } catch (_) {}
+
+    if (!remote || !remote.ok) {
+      try {
+        const ghRes = await fetch('https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/Appversion/public/version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (ghRes.ok) remote = await ghRes.json();
+      } catch (_) {}
+    }
+
+    if (remote && (remote.ok || remote.version)) {
+      if (msgEl) {
+        msgEl.style.color = 'var(--green)';
+        msgEl.textContent = `✓ Latest live release: v${remote.version} (${remote.deployment_id || 'OTA Build'}).`;
+      }
+      if (typeof checkDeploymentUpdate === 'function') {
+        checkDeploymentUpdate(true);
+      } else {
+        showToast(`Live Version: v${remote.version}`);
+      }
+    } else {
+      if (msgEl) {
+        msgEl.style.color = 'var(--muted)';
+        msgEl.textContent = '✓ Offline mode active. Using cached assets.';
+      }
+      showToast("Offline or remote server unreachable", "info");
     }
   } catch(e) {
     if (msgEl) {

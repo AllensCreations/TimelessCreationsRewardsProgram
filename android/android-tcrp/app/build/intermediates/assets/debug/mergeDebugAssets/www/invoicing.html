@@ -326,53 +326,63 @@
 
 <!-- Edit Transaction Modal -->
 <div id="edit-transaction-modal" class="modal-overlay" style="display:none; z-index:9500;">
-  <div class="modal-content" style="max-width:480px; text-align:left;">
+  <div class="modal-content" style="max-width:520px; text-align:left; max-height:90vh; display:flex; flex-direction:column;">
     <div class="modal-header-row">
-      <div class="modal-title-text" style="font-size:1.05rem; color:var(--gold);">✏️ Edit Transaction Details</div>
+      <div class="modal-title-text" style="font-size:1.05rem; color:var(--gold);">✏️ Edit Purchased Products &amp; Details</div>
       <button onclick="closeEditModal()" class="modal-close-btn">✕</button>
     </div>
 
     <input type="hidden" id="edit-trx-is-order" value="false">
     
-    <div style="margin-bottom:12px;">
-      <label class="form-label">Transaction Reference ID</label>
-      <input type="text" id="edit-trx-id" class="form-input" readonly style="opacity:0.75; font-family:'DM Mono',monospace; cursor:not-allowed;">
+    <div style="overflow-y:auto; padding-right:4px; margin-bottom:12px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label class="form-label">Reference ID</label>
+          <input type="text" id="edit-trx-id" class="form-input" readonly style="opacity:0.75; font-family:'DM Mono',monospace; cursor:not-allowed;">
+        </div>
+        <div>
+          <label class="form-label">Transaction Status</label>
+          <select id="edit-trx-status" class="form-select">
+            <option value="PENDING">PENDING</option>
+            <option value="PAID">PAID</option>
+            <option value="READY FOR PICKUP">READY FOR PICKUP</option>
+            <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option>
+            <option value="DELIVERED">DELIVERED</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label class="form-label">Customer / Recipient Name</label>
+          <input type="text" id="edit-trx-name" class="form-input" placeholder="Customer Name">
+        </div>
+        <div>
+          <label class="form-label">Email Address</label>
+          <input type="email" id="edit-trx-email" class="form-input" placeholder="customer@example.com">
+        </div>
+      </div>
+
+      <!-- Line Items Section -->
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label class="form-label" style="margin:0; color:var(--gold); font-size:0.8rem; font-weight:700;">📦 Purchased Products (Line Items)</label>
+          <button type="button" class="btn btn-secondary" style="padding:3px 8px; font-size:0.68rem;" onclick="addEditModalItemRow()">+ Add Product</button>
+        </div>
+
+        <div id="edit-modal-items-container" style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Dynamically populated item rows -->
+        </div>
+
+        <!-- Calculated Subtotal Summary -->
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border); padding-top:8px; margin-top:10px;">
+          <span style="font-size:0.72rem; color:var(--muted);" id="edit-trx-amount-label">Grand Total:</span>
+          <span id="edit-modal-calc-total" style="font-size:0.95rem; font-weight:800; color:var(--gold);">₱0.00</span>
+        </div>
+      </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-      <div>
-        <label class="form-label">Customer / Recipient Name</label>
-        <input type="text" id="edit-trx-name" class="form-input" placeholder="Customer Name">
-      </div>
-      <div>
-        <label class="form-label">Email Address</label>
-        <input type="email" id="edit-trx-email" class="form-input" placeholder="customer@example.com">
-      </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-      <div>
-        <label class="form-label">Order / Transaction Status</label>
-        <select id="edit-trx-status" class="form-select">
-          <option value="PENDING">PENDING</option>
-          <option value="PAID">PAID</option>
-          <option value="READY FOR PICKUP">READY FOR PICKUP</option>
-          <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option>
-          <option value="DELIVERED">DELIVERED</option>
-        </select>
-      </div>
-      <div>
-        <label class="form-label" id="edit-trx-amount-label">Total Amount / Value</label>
-        <input type="text" id="edit-trx-amount" class="form-input" placeholder="₱0.00">
-      </div>
-    </div>
-
-    <div style="margin-bottom:16px;">
-      <label class="form-label">Items Summary / Notes</label>
-      <textarea id="edit-trx-items" class="form-input" rows="3" placeholder="Item descriptions..."></textarea>
-    </div>
-
-    <div style="display:flex; justify-content:flex-end; gap:10px;">
+    <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:10px;">
       <button type="button" class="btn btn-dark" onclick="closeEditModal()">Cancel</button>
       <button type="button" class="btn btn-gold" id="btn-save-edit-trx" onclick="saveEditTransaction()">💾 Save Changes</button>
     </div>
@@ -642,6 +652,115 @@ function downloadSpecificInvoice(encodedData) {
 
 let currentEditingItem = null;
 
+function addEditModalItemRow(defaultName = "", defaultQty = 1, defaultPrice = 0) {
+  const container = document.getElementById('edit-modal-items-container');
+  if (!container) return;
+
+  const isOrder = document.getElementById('edit-trx-is-order')?.value === 'true';
+  const div = document.createElement('div');
+  div.className = 'edit-modal-item-row';
+  div.style.cssText = "background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:6px;";
+
+  const matchedProduct = (productCatalog || []).find(p => p.name === defaultName);
+  const isCustom = defaultName && !matchedProduct;
+
+  const optionsHtml = (productCatalog || []).map(p => {
+    const isSelected = p.name === defaultName;
+    return `<option value="${p.name}" data-price="${p.price}" ${isSelected ? 'selected' : ''}>${p.name} (₱${Number(p.price).toFixed(2)})</option>`;
+  }).join('');
+
+  div.innerHTML = `
+    <div style="display:flex; gap:6px; align-items:center;">
+      <select class="form-select edit-item-select" style="flex:1; font-size:0.75rem; display:${isCustom ? 'none' : 'block'};" onchange="handleEditModalProductSelect(this)">
+        <option value="">-- Choose Preset Product --</option>
+        ${optionsHtml}
+        <option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ Type Custom Product...</option>
+      </select>
+      <input type="text" class="form-input edit-item-custom-name" value="${isCustom ? defaultName : ''}" placeholder="Type product name (e.g. Ring, Extra Item)..." style="flex:1; font-size:0.75rem; padding:5px 8px; display:${isCustom ? 'block' : 'none'};" oninput="recalculateEditModalTotal()"/>
+      <button type="button" class="btn btn-secondary" style="padding:4px 7px; font-size:0.65rem;" onclick="toggleEditItemMode(this)">${isCustom ? '📋 Presets' : '✏️ Custom'}</button>
+      <button type="button" class="btn-danger" style="padding:4px 7px; font-size:0.65rem; border-radius:4px;" onclick="this.closest('.edit-modal-item-row').remove(); recalculateEditModalTotal();">✕</button>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
+        <input type="number" class="form-input edit-item-qty" value="${defaultQty}" min="1" style="width:55px; padding:4px; text-align:center; font-size:0.72rem;" oninput="recalculateEditModalTotal()"/>
+      </div>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span style="font-size:0.68rem; color:var(--muted);">${isOrder ? 'Pts:' : '₱:'}</span>
+        <input type="number" class="form-input edit-item-price" value="${defaultPrice}" min="0" style="width:75px; padding:4px; text-align:center; font-size:0.72rem;" oninput="recalculateEditModalTotal()"/>
+      </div>
+      <span class="edit-item-row-subtotal" style="font-size:0.75rem; font-weight:bold; color:var(--gold);">${isOrder ? defaultPrice + ' Pts' : '₱' + (defaultPrice * defaultQty).toFixed(2)}</span>
+    </div>
+  `;
+
+  container.appendChild(div);
+  recalculateEditModalTotal();
+}
+
+function handleEditModalProductSelect(selectEl) {
+  const row = selectEl.closest('.edit-modal-item-row');
+  if (!row) return;
+
+  if (selectEl.value === '__custom__') {
+    selectEl.style.display = 'none';
+    const customInput = row.querySelector('.edit-item-custom-name');
+    if (customInput) {
+      customInput.style.display = 'block';
+      customInput.focus();
+    }
+    const toggleBtn = row.querySelector('button.btn-secondary');
+    if (toggleBtn) toggleBtn.textContent = '📋 Presets';
+    return;
+  }
+
+  const opt = selectEl.options[selectEl.selectedIndex];
+  const price = opt?.getAttribute('data-price') || 0;
+  const priceInput = row.querySelector('.edit-item-price');
+  if (priceInput && Number(price) > 0) priceInput.value = price;
+  recalculateEditModalTotal();
+}
+
+function toggleEditItemMode(btn) {
+  const row = btn.closest('.edit-modal-item-row');
+  if (!row) return;
+  const selectEl = row.querySelector('.edit-item-select');
+  const customInput = row.querySelector('.edit-item-custom-name');
+
+  if (selectEl.style.display === 'none') {
+    selectEl.style.display = 'block';
+    customInput.style.display = 'none';
+    btn.textContent = '✏️ Custom';
+  } else {
+    selectEl.style.display = 'none';
+    customInput.style.display = 'block';
+    customInput.focus();
+    btn.textContent = '📋 Presets';
+  }
+  recalculateEditModalTotal();
+}
+
+function recalculateEditModalTotal() {
+  const isOrder = document.getElementById('edit-trx-is-order')?.value === 'true';
+  let total = 0;
+  const rows = document.querySelectorAll('#edit-modal-items-container .edit-modal-item-row');
+
+  rows.forEach(r => {
+    const qty = Math.max(1, parseInt(r.querySelector('.edit-item-qty')?.value, 10) || 1);
+    const price = Math.max(0, parseFloat(r.querySelector('.edit-item-price')?.value) || 0);
+    const subtotal = qty * price;
+    total += subtotal;
+    const subEl = r.querySelector('.edit-item-row-subtotal');
+    if (subEl) {
+      subEl.textContent = isOrder ? `${subtotal} Pts` : `₱${subtotal.toFixed(2)}`;
+    }
+  });
+
+  const totalEl = document.getElementById('edit-modal-calc-total');
+  if (totalEl) {
+    totalEl.textContent = isOrder ? `${total} Points` : `₱${total.toFixed(2)}`;
+  }
+}
+
 function openEditModal(id, isOrder) {
   const isOrd = (isOrder === true || isOrder === 'true');
   let item = null;
@@ -650,12 +769,17 @@ function openEditModal(id, isOrder) {
     const list = (typeof orders !== 'undefined' ? orders : (typeof ordersCache !== 'undefined' ? ordersCache : [])) || [];
     const rawOrder = list.find(o => String(o.order_id) === String(id));
     if (rawOrder) {
+      let parsedItems = [];
+      try { parsedItems = JSON.parse(rawOrder.items_json || '[]'); } catch (_) {}
+      if (!parsedItems.length) {
+        parsedItems = [{ name: rawOrder.item || 'Reward Item', qty: 1, price: rawOrder.points_cost || 0 }];
+      }
       item = {
         id: rawOrder.order_id,
         name: rawOrder.name || 'Recipient',
         email: rawOrder.email || '',
         status: (rawOrder.status || 'PENDING').toUpperCase(),
-        itemsText: rawOrder.item || '',
+        itemsList: parsedItems,
         amount: `${rawOrder.points_cost || 0}`,
         isOrder: true,
         raw: rawOrder
@@ -665,19 +789,17 @@ function openEditModal(id, isOrder) {
     const list = (typeof cashInvoices !== 'undefined' ? cashInvoices : (typeof invoicesCache !== 'undefined' ? invoicesCache : [])) || [];
     const rawInv = list.find(i => String(i.invoice_id) === String(id));
     if (rawInv) {
-      let itemsStr = "Custom Order";
-      try {
-        const parsed = JSON.parse(rawInv.items_json);
-        itemsStr = parsed.map(i => `${i.qty}x ${i.name} (₱${Number(i.price).toFixed(2)})`).join('\n');
-      } catch(_) {
-        itemsStr = rawInv.name || "Custom Order";
+      let parsedItems = [];
+      try { parsedItems = JSON.parse(rawInv.items_json || '[]'); } catch (_) {}
+      if (!parsedItems.length) {
+        parsedItems = [{ name: rawInv.name || "Custom Order", qty: 1, price: rawInv.total_amount || 0 }];
       }
       item = {
         id: rawInv.invoice_id,
         name: rawInv.name || 'Customer',
         email: rawInv.email || '',
         status: (rawInv.status || 'PENDING').toUpperCase(),
-        itemsText: itemsStr,
+        itemsList: parsedItems,
         amount: `${Number(rawInv.total_amount || 0).toFixed(2)}`,
         isOrder: false,
         raw: rawInv
@@ -696,10 +818,19 @@ function openEditModal(id, isOrder) {
   document.getElementById('edit-trx-name').value = item.name;
   document.getElementById('edit-trx-email').value = item.email;
   document.getElementById('edit-trx-status').value = item.status;
-  document.getElementById('edit-trx-amount').value = item.amount;
-  document.getElementById('edit-trx-amount-label').textContent = item.isOrder ? 'Points Cost' : 'Total Amount (₱)';
-  document.getElementById('edit-trx-items').value = item.itemsText;
+  document.getElementById('edit-trx-amount-label').textContent = item.isOrder ? 'Total Points Value:' : 'Grand Total:';
 
+  // Render individual product rows in modal
+  const itemsContainer = document.getElementById('edit-modal-items-container');
+  itemsContainer.innerHTML = '';
+  (item.itemsList || []).forEach(it => {
+    addEditModalItemRow(it.name, it.qty || 1, it.price || 0);
+  });
+  if (!item.itemsList || item.itemsList.length === 0) {
+    addEditModalItemRow('Custom Order', 1, Number(item.amount) || 0);
+  }
+
+  recalculateEditModalTotal();
   document.getElementById('edit-transaction-modal').style.display = 'flex';
 }
 
@@ -715,8 +846,35 @@ async function saveEditTransaction() {
   const name = document.getElementById('edit-trx-name').value.trim();
   const email = document.getElementById('edit-trx-email').value.trim();
   const status = document.getElementById('edit-trx-status').value;
-  const itemsText = document.getElementById('edit-trx-items').value.trim();
-  const amountVal = document.getElementById('edit-trx-amount').value.replace(/[^0-9.]/g, '');
+
+  const rows = document.querySelectorAll('#edit-modal-items-container .edit-modal-item-row');
+  const lineItems = [];
+  let calculatedTotal = 0;
+
+  rows.forEach(r => {
+    const selectEl = r.querySelector('.edit-item-select');
+    const customInput = r.querySelector('.edit-item-custom-name');
+    let itemName = "Product";
+
+    if (selectEl && selectEl.style.display !== 'none' && selectEl.selectedIndex > 0 && selectEl.value !== '__custom__') {
+      itemName = selectEl.value;
+    } else if (customInput && customInput.value.trim()) {
+      itemName = customInput.value.trim();
+    } else if (selectEl && selectEl.value && selectEl.value !== '__custom__') {
+      itemName = selectEl.value;
+    }
+
+    const qty = Math.max(1, parseInt(r.querySelector('.edit-item-qty')?.value, 10) || 1);
+    const price = Math.max(0, parseFloat(r.querySelector('.edit-item-price')?.value) || 0);
+    const rowSubtotal = qty * price;
+    calculatedTotal += rowSubtotal;
+    lineItems.push({ name: itemName, qty, price });
+  });
+
+  if (lineItems.length === 0) {
+    showToast("Please include at least one product in the transaction.", "error");
+    return;
+  }
 
   const saveBtn = document.getElementById('btn-save-edit-trx');
   saveBtn.disabled = true;
@@ -731,18 +889,19 @@ async function saveEditTransaction() {
         name,
         email,
         status,
-        items_json: [{ name: itemsText || 'Reward Item', qty: 1, price: 0 }]
+        points_cost: calculatedTotal,
+        items_json: lineItems
       };
     } else {
-      const numAmt = parseFloat(amountVal) || Number(currentEditingItem.raw.total_amount || 0);
       payload = {
         action: 'update_invoice',
         invoice_id: id,
         name,
         email,
         status,
-        total_amount: numAmt,
-        items_json: [{ name: itemsText || 'Custom Order', qty: 1, price: numAmt }]
+        subtotal: calculatedTotal,
+        total_amount: calculatedTotal,
+        items_json: lineItems
       };
     }
 
@@ -754,7 +913,7 @@ async function saveEditTransaction() {
     const data = await res.json();
 
     if (data.ok) {
-      showToast("✓ Transaction details updated successfully!");
+      showToast("✓ Products and transaction updated successfully!");
       closeEditModal();
       loadData();
     } else {

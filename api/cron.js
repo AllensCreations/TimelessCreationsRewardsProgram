@@ -14,8 +14,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const powerSetting = (await runSql("SELECT value FROM system_settings WHERE key = 'power_state'"))[0];
-    const isOffline = (powerSetting?.value || 'ONLINE').toUpperCase() === 'OFFLINE';
+    const [rowSettings, rowConfig] = await Promise.all([
+      runSql("SELECT value FROM system_settings WHERE key = 'power_state'").catch(() => []),
+      runSql("SELECT value FROM system_config WHERE key = 'power_state'").catch(() => [])
+    ]);
+    const powerVal = rowSettings?.[0]?.value || rowConfig?.[0]?.value;
+    const isOffline = powerVal && String(powerVal).toUpperCase() === 'OFFLINE';
 
     if (isOffline) {
       await runSql("INSERT INTO system_logs (level, message, created_at) VALUES ('INFO', 'Cron triggered but aborted: System power state is OFFLINE', CURRENT_TIMESTAMP)");

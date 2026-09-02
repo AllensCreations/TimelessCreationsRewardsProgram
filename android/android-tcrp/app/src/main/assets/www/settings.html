@@ -144,17 +144,20 @@ function initMonthPicker() {
 async function loadSettings() {
   const btn = document.getElementById("power-toggle-btn");
   if (!btn) return;
+  // Initialize with local cache immediately
+  const cached = LocalStore.get('tcrp_power_state', 'online');
+  currentPowerState = cached;
+  updatePowerButtonUI(currentPowerState);
+
   try {
     const res = await fetch("/api/main?action=health_check&t=" + Date.now()).then(r => r.json());
-    const state = (res.power_state || res.status || (res.is_online ? "ONLINE" : "OFFLINE")).toUpperCase();
-    currentPowerState = state === "ONLINE" ? "online" : "offline";
-    LocalStore.set('tcrp_power_state', currentPowerState);
-    updatePowerButtonUI(currentPowerState);
-  } catch(e) {
-    const cached = LocalStore.get('tcrp_power_state', 'online');
-    currentPowerState = cached;
-    updatePowerButtonUI(currentPowerState);
-  }
+    if (res && res.power_state) {
+      const serverState = res.power_state.toLowerCase();
+      currentPowerState = serverState;
+      LocalStore.set('tcrp_power_state', currentPowerState);
+      updatePowerButtonUI(currentPowerState);
+    }
+  } catch(e) {}
   loadCdnSettings();
 }
 
@@ -192,7 +195,7 @@ async function togglePowerDirect() {
     btn.textContent = `⏳ Switching to ${nextState.toUpperCase()}...`;
   }
 
-  // Optimistically update local cache and UI
+  // Optimistically set local cache and UI
   currentPowerState = nextState;
   LocalStore.set('tcrp_power_state', nextState);
   updatePowerButtonUI(nextState);
@@ -205,7 +208,11 @@ async function togglePowerDirect() {
     });
     const data = await res.json();
     if (data && data.ok) {
-      showToast(`✓ Master system power switched to ${nextState.toUpperCase()}!`);
+      const resolved = (data.power_state || data.state || nextState).toLowerCase();
+      currentPowerState = resolved;
+      LocalStore.set('tcrp_power_state', resolved);
+      updatePowerButtonUI(resolved);
+      showToast(`✓ Master system power locked to ${resolved.toUpperCase()}!`);
     } else {
       showToast(`Master system switched to ${nextState.toUpperCase()} locally.`);
     }
@@ -213,7 +220,6 @@ async function togglePowerDirect() {
     showToast(`Saved locally: System is ${nextState.toUpperCase()}`);
   } finally {
     if (btn) btn.disabled = false;
-    loadSettings();
   }
 }
 

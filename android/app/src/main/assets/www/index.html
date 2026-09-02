@@ -115,6 +115,9 @@
   <div class="cockpit-header">
     <div>
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+        <a href="/settings.html" id="cockpit-power-badge" class="status-badge-live" style="text-decoration:none;" title="Click to manage power in Settings">
+          <div class="status-dot" id="cockpit-power-dot"></div> <span id="cockpit-power-text">⚡ Master: ONLINE</span>
+        </a>
         <div class="status-badge-live"><div class="status-dot"></div> Turso DB &amp; API Active</div>
         <div class="status-badge-live" style="border-color:rgba(78, 170, 255, 0.4); background:rgba(78, 170, 255, 0.12); color:#4eaaff;"><div class="status-dot" style="background:#4eaaff; box-shadow:0 0 8px #4eaaff;"></div> 🇵🇭 Asia/Manila (UTC+8)</div>
         <span style="font-size:0.68rem; color:var(--gold); font-family:'DM Mono',monospace; font-weight:700;" id="current-pht-time">--:--:-- PHT</span>
@@ -225,6 +228,30 @@ function renderFromCache() {
         <span style="color:var(--muted); white-space:nowrap; font-size:0.62rem;">${l.created_at ? formatPhtShortTime(l.created_at) : ''}</span>
       </div>
     `).join('');
+  }
+
+  const pState = (cachedPayload.stats?.power_state || LocalStore.get('tcrp_power_state', 'online')).toUpperCase();
+  updateDashboardPowerBadge(pState);
+}
+
+function updateDashboardPowerBadge(state) {
+  const badge = document.getElementById('cockpit-power-badge');
+  const dot = document.getElementById('cockpit-power-dot');
+  const text = document.getElementById('cockpit-power-text');
+  if (!badge || !text) return;
+  const isOnline = state === 'ONLINE';
+  if (isOnline) {
+    badge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+    badge.style.background = 'rgba(34, 197, 94, 0.12)';
+    badge.style.color = 'var(--green)';
+    if (dot) { dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)'; }
+    text.textContent = '⚡ Master: ONLINE';
+  } else {
+    badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+    badge.style.background = 'rgba(239, 68, 68, 0.12)';
+    badge.style.color = '#ff6b6b';
+    if (dot) { dot.style.background = '#ff6b6b'; dot.style.boxShadow = '0 0 8px #ff6b6b'; }
+    text.textContent = '💤 Master: OFFLINE';
   }
 }
 

@@ -145,33 +145,57 @@ async function loadSettings() {
   const btn = document.getElementById("power-toggle-btn");
   if (!btn) return;
   try {
-    const res = await fetch("/api/main?action=health_check").then(r => r.json());
-    if (res.ok) {
-      currentPowerState = "online";
-      btn.className = "btn btn-gold";
-      btn.textContent = "⚡ System: ONLINE (Click to Sleep)";
-    } else {
-      currentPowerState = "offline";
-      btn.className = "btn btn-dark";
-      btn.textContent = "💤 System: OFFLINE (Click to Wake)";
-    }
-  } catch(e) {}
+    const res = await fetch("/api/main?action=health_check&t=" + Date.now()).then(r => r.json());
+    const state = (res.power_state || res.status || (res.is_online ? "ONLINE" : "OFFLINE")).toUpperCase();
+    currentPowerState = state === "ONLINE" ? "online" : "offline";
+    LocalStore.set('tcrp_power_state', currentPowerState);
+    updatePowerButtonUI(currentPowerState);
+  } catch(e) {
+    const cached = LocalStore.get('tcrp_power_state', 'online');
+    currentPowerState = cached;
+    updatePowerButtonUI(currentPowerState);
+  }
   loadCdnSettings();
+}
+
+function updatePowerButtonUI(state) {
+  const btn = document.getElementById("power-toggle-btn");
+  if (!btn) return;
+  if (state === "online") {
+    btn.className = "btn btn-gold";
+    btn.style.boxShadow = "0 0 15px rgba(201,168,76,0.3)";
+    btn.innerHTML = "⚡ Master System: <strong style='color:#fff;'>ONLINE</strong> (Active • Click to Switch Offline)";
+  } else {
+    btn.className = "btn btn-dark";
+    btn.style.boxShadow = "none";
+    btn.innerHTML = "💤 Master System: <strong style='color:var(--gold);'>OFFLINE</strong> (Paused • Click to Switch Online)";
+  }
 }
 
 async function togglePowerDirect() {
   const nextState = currentPowerState === "online" ? "offline" : "online";
   const confirmed = await showConfirmWarningModal({
-    title: nextState === "online" ? "⚡ Activate System (ONLINE)?" : "💤 Switch System to OFFLINE?",
+    title: nextState === "online" ? "⚡ Switch System to ONLINE?" : "💤 Switch System to OFFLINE?",
     message: nextState === "online" 
-      ? "This will resume all automated email drips, cron jobs, and background telemetry." 
-      : "This will pause automated background drip dispatching while keeping manual operations active.",
-    confirmText: nextState === "online" ? "Yes, Turn ONLINE" : "Yes, Turn OFFLINE",
+      ? "This will activate all background automated email drips, cron jobs, and real-time syncing." 
+      : "This will pause background automated drips and scheduled crons while keeping manual operations active.",
+    confirmText: nextState === "online" ? "Yes, Activate ONLINE" : "Yes, Pause to OFFLINE",
     cancelText: "Cancel",
     isDanger: nextState === "offline"
   });
 
   if (!confirmed) return;
+
+  const btn = document.getElementById("power-toggle-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = `⏳ Switching to ${nextState.toUpperCase()}...`;
+  }
+
+  // Optimistically update local cache and UI
+  currentPowerState = nextState;
+  LocalStore.set('tcrp_power_state', nextState);
+  updatePowerButtonUI(nextState);
 
   try {
     const res = await fetch("/api/main", {
@@ -180,12 +204,16 @@ async function togglePowerDirect() {
       body: JSON.stringify({ action: "toggle_power", state: nextState })
     });
     const data = await res.json();
-    if (data.ok) {
-      showToast(`System power state switched to ${nextState.toUpperCase()}`);
-      loadSettings();
+    if (data && data.ok) {
+      showToast(`✓ Master system power switched to ${nextState.toUpperCase()}!`);
+    } else {
+      showToast(`Master system switched to ${nextState.toUpperCase()} locally.`);
     }
   } catch(e) {
-    showToast("Error updating power state", "error");
+    showToast(`Saved locally: System is ${nextState.toUpperCase()}`);
+  } finally {
+    if (btn) btn.disabled = false;
+    loadSettings();
   }
 }
 

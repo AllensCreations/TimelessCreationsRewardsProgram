@@ -70,7 +70,7 @@ function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
   header.className = 'app-header';
   header.innerHTML = `
     <div class="header-inner">
-      <div style="display:flex; align-items:center; gap:12px;">
+      <div class="header-branding">
         <button class="hamburger-btn" onclick="toggleMobileDrawer()" aria-label="Toggle Navigation">☰</button>
         <a href="/index.html" class="brand-title">✨ Timeless Creations <span>• ${pageTitle}</span></a>
       </div>
@@ -79,7 +79,7 @@ function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
           <a href="${item.url}" class="nav-pill ${item.key === activeKey ? 'active' : ''}">${item.label}</a>
         `).join('')}
       </nav>
-      <button onclick="triggerGlobalRefresh()" class="btn btn-dark" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">↻ Sync</button>
+      <button onclick="triggerGlobalRefresh()" class="btn btn-dark" style="padding:6px 12px; font-size:0.75rem; min-height:34px; flex-shrink:0;">↻ Sync</button>
     </div>
   `;
   document.body.prepend(header);
@@ -142,4 +142,66 @@ function getCalendarMonthLabel(monthIndex) {
   const idx = (Number(monthIndex) - 1) % 12;
   return calendarNames[idx < 0 ? (idx + 12) % 12 : idx];
 }
+
+/**
+ * HTML Protection Lock Engine
+ * Disables right-click context menu, image drag-saving, and download shortcuts
+ */
+function initHtmlProtection() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  // 1. Disable Right-Click (except inside editable input/textarea)
+  document.addEventListener('contextmenu', (e) => {
+    const tag = (e.target.tagName || '').toUpperCase();
+    const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable;
+    if (!isEditable) {
+      e.preventDefault();
+      return false;
+    }
+  }, { capture: true });
+
+  // 2. Disable Image / Link Dragging
+  document.addEventListener('dragstart', (e) => {
+    const tag = (e.target.tagName || '').toUpperCase();
+    if (tag === 'IMG' || tag === 'A') {
+      e.preventDefault();
+      return false;
+    }
+  }, { capture: true });
+
+  // 3. Disable Save / Source / DevTools Shortcut Keys
+  document.addEventListener('keydown', (e) => {
+    const key = e.key ? e.key.toLowerCase() : '';
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+    // Block Ctrl+S / Cmd+S (Save Page)
+    if (isCtrlOrCmd && key === 's') {
+      e.preventDefault();
+      showToast("🔒 Page saving is disabled.", "error");
+      return false;
+    }
+
+    // Block Ctrl+U / Cmd+U (View Source)
+    if (isCtrlOrCmd && key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+
+    // Block F12 / Ctrl+Shift+I / Cmd+Option+I (Inspect)
+    if (e.key === 'F12' || (isCtrlOrCmd && e.shiftKey && (key === 'i' || key === 'c' || key === 'j'))) {
+      e.preventDefault();
+      return false;
+    }
+  }, { capture: true });
+}
+
+// Auto-activate HTML protection lock on page load
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHtmlProtection);
+  } else {
+    initHtmlProtection();
+  }
+}
+
 

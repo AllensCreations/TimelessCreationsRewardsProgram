@@ -63,6 +63,8 @@ code, pre, .mono-font { font-family: 'DM Mono', monospace; }
   top: 0;
   z-index: 900;
   padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .header-inner {
   max-width: 1200px;
@@ -71,17 +73,49 @@ code, pre, .mono-font { font-family: 'DM Mono', monospace; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+.header-branding {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 .brand-title {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   color: var(--gold);
   letter-spacing: 0.5px;
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  flex-shrink: 1;
+  text-decoration: none;
 }
-.brand-title span { color: #fff; font-size: 0.75rem; font-family: 'DM Sans', sans-serif; opacity: 0.7; }
+.brand-title span {
+  color: #fff;
+  font-size: 0.75rem;
+  font-family: 'DM Sans', sans-serif;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .brand-title {
+    font-size: 0.88rem;
+  }
+  .brand-title span {
+    font-size: 0.68rem;
+  }
+}
 
 .hamburger-btn {
   background: var(--surface2);
@@ -332,3 +366,141 @@ code, pre, .mono-font { font-family: 'DM Mono', monospace; }
   gap: 8px;
 }
 .toast-error { border-color: var(--red); color: #ffb4b4; }
+
+/* ==========================================================================
+   HTML CONTENT PROTECTION LOCK (Anti-Right Click, Anti-Drag, Anti-Copy)
+   ========================================================================== */
+body, .card, .app-header, .drawer-panel, .year-card {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+img {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  pointer-events: auto;
+}
+
+/* Allow text selection specifically for editable inputs, outputs, and tables */
+input, textarea, select, .form-input, .form-select, .console-box, .trx-card, code, pre, .inv-table, .user-selectable, [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* ==========================================================================
+   WHOLE YEAR DISPATCH CHECKER (Collapsible by Year)
+   ========================================================================== */
+.year-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.year-card:hover {
+  border-color: var(--border-gold);
+}
+.year-header-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  user-select: none;
+}
+.year-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.year-title-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+.year-total-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: rgba(201,168,76,0.14);
+  color: var(--gold);
+  border: 1px solid rgba(201,168,76,0.3);
+}
+.year-toggle-arrow {
+  color: var(--gold);
+  font-size: 0.8rem;
+  transition: transform 0.25s ease;
+}
+.year-card.open .year-toggle-arrow {
+  transform: rotate(180deg);
+}
+.year-body-collapse {
+  display: none;
+  padding: 0 16px 16px 16px;
+  border-top: 1px dashed var(--border);
+}
+.year-card.open .year-body-collapse {
+  display: block;
+}
+.months-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.month-tile {
+  background: #0d0e15;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 64px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.month-tile.active-month {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.08);
+}
+.month-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.month-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #fff;
+}
+.month-count-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: bold;
+  color: var(--gold);
+}
+.month-bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.month-bar-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+

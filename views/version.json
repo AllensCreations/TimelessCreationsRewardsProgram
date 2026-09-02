@@ -1,9 +1,9 @@
 {
-  "version": "1.4.0",
-  "version_code": 6,
-  "deployment_id": "deploy_20260902_v1_4",
-  "build_timestamp": "2026-09-02T12:06:00Z",
+  "version": "1.5.0",
+  "version_code": 7,
+  "deployment_id": "deploy_20260902_v1_5",
+  "build_timestamp": "2026-09-02T12:12:00Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "v1.4.0: Single Edit Button, Product-Only Edit Scope, Permanently Embedded Locked Reward Items"
+  "changelog": "v1.5.0: 7-Day Delivered Permanent Lock Policy, delivered transactions immutable after 7 days, locked rewards & single edit buttons"
 }

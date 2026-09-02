@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS `orders` (
 	`item` text,
 	`points_cost` integer,
 	`status` text DEFAULT 'PENDING',
-	`created_at` text DEFAULT CURRENT_TIMESTAMP
+	`created_at` text DEFAULT CURRENT_TIMESTAMP,
+	`delivered_at` text
 );
 
 CREATE TABLE IF NOT EXISTS `product_catalog` (
@@ -87,7 +88,8 @@ CREATE TABLE IF NOT EXISTS `cash_invoices` (
 	`discount_amount` real DEFAULT 0,
 	`total_amount` real DEFAULT 0,
 	`status` text DEFAULT 'PENDING',
-	`created_at` text DEFAULT CURRENT_TIMESTAMP
+	`created_at` text DEFAULT CURRENT_TIMESTAMP,
+	`delivered_at` text
 );
 
 CREATE TABLE IF NOT EXISTS `system_config` (

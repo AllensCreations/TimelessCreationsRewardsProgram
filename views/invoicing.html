@@ -543,8 +543,22 @@ function buildCardListHtml(list, emptyText) {
   list.sort((a, b) => new Date(b.raw.created_at || 0) - new Date(a.raw.created_at || 0));
 
   return list.map(item => {
+    const isDelivered = item.status === 'DELIVERED';
     const isPaid = item.status === 'PAID' || item.status === 'COMPLETED';
-    const statusClass = isPaid ? 'paid' : (item.status === 'DELIVERED' ? 'paid' : 'pending');
+    const statusClass = isPaid ? 'paid' : (isDelivered ? 'paid' : 'pending');
+
+    let isDeliveredLocked = false;
+    let graceDaysRemaining = 7;
+
+    if (isDelivered) {
+      const deliveryTs = new Date(item.raw.delivered_at || item.raw.created_at || Date.now()).getTime();
+      const elapsedDays = (Date.now() - deliveryTs) / (1000 * 60 * 60 * 24);
+      if (elapsedDays >= 7) {
+        isDeliveredLocked = true;
+      } else {
+        graceDaysRemaining = Math.max(1, Math.ceil(7 - elapsedDays));
+      }
+    }
 
     const itemsFormatted = item.items.map(i => {
       const priceStr = i.price > 0 ? `₱${Number(i.price * i.qty).toFixed(2)}` : `Free Reward`;
@@ -554,17 +568,21 @@ function buildCardListHtml(list, emptyText) {
     const itemDataEscaped = encodeURIComponent(JSON.stringify(item));
 
     return `
-      <div class="trx-card">
+      <div class="trx-card ${isDeliveredLocked ? 'locked-delivered' : ''}">
         <div class="trx-card-row-top">
           <div class="trx-inv-no">${item.id}</div>
           <div>
-            <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
-              <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
-              <option value="PAID" ${isPaid ? 'selected' : ''}>PAID</option>
-              <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
-              <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
-              <option value="DELIVERED" ${item.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
-            </select>
+            ${isDeliveredLocked ? `
+              <span class="badge" style="background:rgba(22,101,52,0.3); color:#86efac; border:1px solid #166534; font-size:0.65rem; padding:4px 8px;">🔒 DELIVERED (7d Locked)</span>
+            ` : `
+              <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
+                <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                <option value="PAID" ${isPaid ? 'selected' : ''}>PAID</option>
+                <option value="READY FOR PICKUP" ${item.status === 'READY FOR PICKUP' ? 'selected' : ''}>READY FOR PICKUP</option>
+                <option value="OUT FOR DELIVERY" ${item.status === 'OUT FOR DELIVERY' ? 'selected' : ''}>OUT FOR DELIVERY</option>
+                <option value="DELIVERED" ${item.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
+              </select>
+            `}
           </div>
         </div>
 
@@ -588,10 +606,20 @@ function buildCardListHtml(list, emptyText) {
             ${item.name && item.name !== 'Customer' ? `<span><strong style="color:var(--muted);">• Tag:</strong> ${item.name}</span>` : ''}
           </div>
 
+          ${isDeliveredLocked ? `
+            <div style="font-size:0.65rem; color:#86efac; margin-top:6px;">🔒 Permanently archived (delivered &gt; 7 days ago, cannot be modified).</div>
+          ` : (isDelivered ? `
+            <div style="font-size:0.65rem; color:var(--gold); margin-top:6px;">🚚 Delivered (Editable for ${graceDaysRemaining} more day${graceDaysRemaining > 1 ? 's' : ''}).</div>
+          ` : '')}
+
           <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end; flex-wrap:wrap;">
             <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="downloadSpecificInvoice('${itemDataEscaped}')">📥 Download Slip</button>
-            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit Products</button>
-            <button class="btn-danger" style="padding:5px 8px; font-size:0.68rem; border-radius:4px;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
+            ${isDeliveredLocked ? `
+              <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem; min-height:30px; opacity:0.5; cursor:not-allowed;" disabled title="Permanently locked after 7 days">🔒 Locked</button>
+            ` : `
+              <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit Products</button>
+              <button class="btn-danger" style="padding:5px 8px; font-size:0.68rem; border-radius:4px;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
+            `}
           </div>
         </div>
       </div>

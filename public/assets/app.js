@@ -327,9 +327,9 @@ function showConfirmWarningModal({
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.4.0";
-const CURRENT_APP_VERSION_CODE = 6;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_4";
+const CURRENT_APP_VERSION = "1.5.0";
+const CURRENT_APP_VERSION_CODE = 7;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_5";
 
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && (

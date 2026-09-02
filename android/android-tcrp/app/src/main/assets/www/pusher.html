@@ -64,10 +64,42 @@
     </div>
     <button class="btn btn-gold" id="push-csv-btn" style="display:none; width:100%; margin-top:12px;" onclick="pushCsvEntries()">🚀 Push CSV to Database</button>
   </div>
+
+  <!-- Recent Additions & Bulk History Card -->
+  <div class="card" style="margin-top: 14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <h3 style="font-size:0.95rem; color:var(--gold); margin:0;">📋 Recent Additions &amp; Bulk Push History</h3>
+        <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Live feed of recently added missionaries and imported cohort batches.</p>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <span class="badge badge-gold" id="history-total-chip" style="font-size:0.7rem;">0 Registered</span>
+        <button class="btn btn-secondary" onclick="loadPushHistory(true)" style="padding:4px 10px; font-size:0.72rem;">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Search & Filter Row -->
+    <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
+      <input type="text" id="history-search-input" class="form-input" placeholder="🔍 Search recent additions by name, email, or batch..." oninput="filterHistoryList()" style="flex:2; font-size:0.75rem; padding:8px 12px; min-width:180px;"/>
+      <select id="history-cohort-filter" class="form-input" onchange="filterHistoryList()" style="flex:1; font-size:0.75rem; min-width:120px;">
+        <option value="all">All Cohorts</option>
+        <option value="elder">Elders Only</option>
+        <option value="sister">Sisters Only</option>
+      </select>
+    </div>
+
+    <!-- History List Feed -->
+    <div id="history-list-container" style="display:flex; flex-direction:column; gap:8px;">
+      <div style="text-align:center; padding:24px; color:var(--muted); font-size:0.75rem;">
+        ⏳ Loading recent additions history...
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 let parsedCsvData = [];
+let pushHistoryData = [];
 
 function toTitleCase(str) {
   if (!str) return '';
@@ -142,6 +174,7 @@ async function pushManualEntries() {
       showToast(`Successfully added ${data.added} missionaries!`);
       document.getElementById('manual-rows').innerHTML = '';
       addManualRow();
+      loadPushHistory();
     } else {
       showToast(data.error || "Failed to push", "error");
     }
@@ -175,21 +208,136 @@ function handleFileSelect(event) {
 
 async function pushCsvEntries() {
   if (parsedCsvData.length === 0) return;
-  const res = await fetch('/api/main?action=push_missionaries', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ entries: parsedCsvData })
-  });
-  const data = await res.json();
-  if (data.ok) {
-    showToast(`Imported ${data.added} CSV records!`);
-    document.getElementById('push-csv-btn').style.display = 'none';
+  const btn = document.getElementById('push-csv-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Importing CSV...';
   }
+
+  try {
+    const res = await fetch('/api/main?action=push_missionaries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries: parsedCsvData })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`✓ Successfully imported ${data.added} CSV records!`);
+      document.getElementById('push-csv-btn').style.display = 'none';
+      document.getElementById('file-label').textContent = '📁 Tap to select CSV file';
+      parsedCsvData = [];
+      loadPushHistory();
+    } else {
+      showToast(data.error || "Failed to import CSV", "error");
+    }
+  } catch(e) {
+    showToast("Network error: " + e.message, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🚀 Push CSV to Database';
+    }
+  }
+}
+
+async function loadPushHistory(showNotification = false) {
+  const container = document.getElementById('history-list-container');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/main?action=push_missionaries&limit=60&t=' + Date.now()).then(r => r.json());
+    if (res && res.ok) {
+      pushHistoryData = res.history || [];
+      const totalChip = document.getElementById('history-total-chip');
+      if (totalChip) {
+        totalChip.textContent = `${res.total || pushHistoryData.length} Total (${res.elders || 0} Elders • ${res.sisters || 0} Sisters)`;
+      }
+      renderHistoryList(pushHistoryData);
+      if (showNotification) showToast("✓ Recent additions history refreshed");
+    } else {
+      container.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted);">No recent additions recorded yet.</div>`;
+    }
+  } catch(e) {
+    container.innerHTML = `<div style="text-align:center; padding:16px; color:#ff6b6b;">Failed to load history: ${e.message}</div>`;
+  }
+}
+
+function renderHistoryList(items) {
+  const container = document.getElementById('history-list-container');
+  if (!container) return;
+
+  if (!items || items.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px 12px; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius-sm);">
+        <div style="font-size:1.5rem; margin-bottom:4px;">📭</div>
+        <div style="font-size:0.8rem; font-weight:600;">No matching missionaries found</div>
+        <div style="font-size:0.7rem; margin-top:2px;">Use the forms above to add new missionaries to the roster.</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map((m) => {
+    const isSister = (m.cohort || '').toLowerCase() === 'sister' || (m.name || '').toLowerCase().startsWith('sister');
+    const cohortBadge = isSister 
+      ? `<span class="badge" style="background:rgba(239,68,68,0.12); color:#ff6b6b; border:1px solid rgba(239,68,68,0.3); font-size:0.65rem; padding:2px 6px;">Sister (${m.max_months || 18} Mo)</span>`
+      : `<span class="badge" style="background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-size:0.65rem; padding:2px 6px;">Elder (${m.max_months || 24} Mo)</span>`;
+    
+    const displayName = m.full_name || m.name || `${m.last_name || ''} ${m.first_name || ''}`.trim() || 'Missionary';
+    const refCode = m.referral_code ? `<span class="badge" style="background:rgba(201,168,76,0.12); color:var(--gold); border:1px solid var(--border-gold); font-family:'DM Mono',monospace; font-size:0.65rem;">Code: ${m.referral_code}</span>` : '';
+    const pointsBadge = `<span style="font-size:0.68rem; color:var(--gold); font-weight:600;">⭐ ${m.points || 0} pts</span>`;
+
+    return `
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:10px; min-width:200px;">
+          <div style="width:32px; height:32px; border-radius:50%; background:rgba(201,168,76,0.1); border:1px solid var(--border-gold); display:flex; align-items:center; justify-content:center; font-size:0.9rem;">
+            ${isSister ? '🌸' : '👔'}
+          </div>
+          <div>
+            <div style="font-size:0.82rem; font-weight:700; color:var(--foreground); display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span>${displayName}</span>
+              ${cohortBadge}
+            </div>
+            <div style="font-size:0.7rem; color:var(--muted); font-family:'DM Mono',monospace; margin-top:2px;">
+              ✉️ ${m.email}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span class="badge badge-dark" style="font-size:0.68rem; padding:3px 8px;">🗓️ ${m.batch_month || 'Batch'}</span>
+          ${refCode}
+          ${pointsBadge}
+          <a href="/missionaries.html" class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem; text-decoration:none;" title="View in Roster">View ➔</a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterHistoryList() {
+  const q = (document.getElementById('history-search-input')?.value || '').toLowerCase().trim();
+  const cohort = document.getElementById('history-cohort-filter')?.value || 'all';
+
+  const filtered = pushHistoryData.filter(m => {
+    const isSister = (m.cohort || '').toLowerCase() === 'sister' || (m.name || '').toLowerCase().startsWith('sister');
+    if (cohort === 'elder' && isSister) return false;
+    if (cohort === 'sister' && !isSister) return false;
+
+    if (!q) return true;
+    const nameMatch = (m.name || '').toLowerCase().includes(q) || (m.full_name || '').toLowerCase().includes(q);
+    const emailMatch = (m.email || '').toLowerCase().includes(q);
+    const batchMatch = (m.batch_month || '').toLowerCase().includes(q);
+    const refMatch = (m.referral_code || '').toLowerCase().includes(q);
+    return nameMatch || emailMatch || batchMatch || refMatch;
+  });
+
+  renderHistoryList(filtered);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   initAppLayout('pusher', 'Add Missionaries');
   addManualRow();
+  loadPushHistory();
 });
 </script>
 </body>

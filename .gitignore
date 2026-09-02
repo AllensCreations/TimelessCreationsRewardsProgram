@@ -7,3 +7,5 @@ node_modules/
 test-output/
 codebase_archives/
 *.tar.gz
+.agents/
+

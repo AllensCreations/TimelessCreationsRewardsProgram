@@ -3,44 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Delivered • Thank You | Timeless Creations</title>
+  <title>Package Delivered • Timeless Creations</title>
 </head>
-<body style="font-family:'Garamond', Georgia, serif; background-color:#f9f7f2; color:#1a1a1a; margin:0; padding:20px 10px;">
+<body style="margin:0; padding:0; background-color:#1a1610; font-family:Georgia, 'Times New Roman', serif; -webkit-font-smoothing:antialiased;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#1a1610; margin:0; padding:24px 0;">
+    <tr>
+      <td align="center" style="padding:0 12px;">
+        <table border="0" cellspacing="0" cellpadding="0" width="100%" style="max-width:460px; width:100%; background-color:#faf7f0; border:1px solid #d6c9a8; border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.45);">
+          <tr>
+            <td style="background:linear-gradient(135deg, #2c221e, #1a1610); background-color:#2c221e; color:#d4b07a; padding:28px 20px 22px; text-align:center;">
+              <div style="font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#b8955a; margin-bottom:6px; font-family:'Helvetica', Arial, sans-serif; font-weight:bold;">Timeless Creations • {{DATE}}</div>
+              <div style="font-size:22px; font-weight:bold; color:#d4b07a; font-family:Georgia, 'Times New Roman', serif; margin:0;">Package Delivered 🚚</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 24px; color:#2c221e; line-height:1.7; font-size:14px; text-align:center; font-family:Georgia, 'Times New Roman', serif; background-color:#faf7f0;">
+              <div style="display:inline-block; background-color:#16a34a; color:#ffffff; font-family:'Helvetica', Arial, sans-serif; font-size:9.5px; font-weight:bold; text-transform:uppercase; letter-spacing:2px; padding:5px 14px; border-radius:99px; margin-bottom:14px;">
+                ✓ Successfully Delivered
+              </div>
+              <p style="margin:0 0 12px; font-size:16px; color:#2c221e;">Hello <strong>{{NAME}}</strong>,</p>
+              <p style="color:#444444; font-size:13.5px; line-height:1.6; margin:0 0 16px;">
+                We are delighted to confirm that your order <strong>{{ORDER_ID}}</strong> has arrived and was successfully delivered!
+              </p>
+              
+              <div style="background-color:#fdfbf8; border:2px dashed #b8955a; padding:18px 20px; border-radius:6px; margin:20px 0; text-align:left;">
+                <div style="font-size:10.5px; font-weight:bold; color:#8b1a1a; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-family:'Helvetica', Arial, sans-serif;">📦 Delivery Summary:</div>
+                <div style="font-size:13.5px; color:#2c221e; padding:4px 0;">• <strong>Order ID:</strong> <span style="font-family:'Courier New', Courier, monospace; font-size:15px; font-weight:bold; color:#8b1a1a;">{{ORDER_ID}}</span></div>
+                <div style="font-size:13.5px; color:#2c221e; padding:4px 0;">• <strong>Package Item(s):</strong> <strong>{{ITEM}}</strong></div>
+                <div style="font-size:13.5px; color:#2c221e; padding:4px 0;">• <strong>Status:</strong> <span style="color:#16a34a; font-weight:bold;">{{STATUS}}</span></div>
+                <div style="font-size:13.5px; color:#2c221e; padding:4px 0;">• <strong>Delivery Date:</strong> <strong>{{DATE}}</strong></div>
+              </div>
 
-<div style="max-width:460px; width:100%; margin:0 auto; background:#ffffff; border:1px solid #e0d6bc; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.05); overflow:hidden;">
-  <div style="padding:30px 20px 15px; text-align:center; background:#ffffff;">
-    <h1 style="font-size:22px; letter-spacing:4px; text-transform:uppercase; font-weight:300; margin:0; color:#1a1a1a;">Timeless Creations</h1>
-    <div style="font-family:'Helvetica', Arial, sans-serif; font-size:8.5px; letter-spacing:1.5px; color:#8c7e5d; margin-top:6px; text-transform:uppercase;">Supporting Members &amp; Missionaries Across the Philippines</div>
-  </div>
+              <p style="font-style:italic; color:#7a6030; font-size:13px; line-height:1.6; margin:0 0 24px;">
+                May these creations inspire you in your sacred missionary service across the Philippines. Thank you for your continued trust in Timeless Creations!
+              </p>
 
-  <div style="padding:20px 24px; line-height:1.6; text-align:center;">
-    <div style="display:inline-block; background:#16a34a; color:#ffffff; font-family:'Helvetica', Arial, sans-serif; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:2px; padding:6px 14px; border-radius:99px; margin-bottom:14px;">✓ Package Delivered</div>
-    <h2 style="font-size:19px; color:#8b1a1a; margin:0 0 10px 0;">Thank You for Ordering!</h2>
-    <p style="font-size:14px; color:#444; margin-bottom:14px;">
-      Hello <strong>{{NAME}}</strong>,<br>
-      We are delighted to confirm that your order <strong>{{ORDER_ID}}</strong> has been successfully delivered!
-    </p>
-
-    <div style="background:#fdfaf3; border:1px solid #c9a84c; border-radius:6px; padding:16px; margin:18px 0; text-align:left; font-size:13px;">
-      <div style="font-weight:bold; color:#8b1a1a; margin-bottom:6px; text-transform:uppercase; font-size:11px;">Package Summary:</div>
-      <div>📦 <strong>Items:</strong> {{ITEM}}</div>
-      <div>🆔 <strong>Order ID:</strong> {{ORDER_ID}}</div>
-      <div>⚡ <strong>Status:</strong> <span style="color:#16a34a; font-weight:bold;">DELIVERED</span></div>
-    </div>
-
-    <p style="font-size:13px; color:#555; font-style:italic;">
-      May these creations inspire you in your sacred service and missionary work. Thank you for trusting Timeless Creations!
-    </p>
-
-    <a href="https://m.me/timeless.creations.06" style="display:inline-block; background:#1a1a1a; color:#d4c197 !important; text-decoration:none; font-family:'Helvetica', Arial, sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:1.5px; font-weight:bold; padding:12px 24px; border-radius:4px; margin-top:14px;" target="_blank">Message Us in Messenger</a>
-  </div>
-
-  <div style="padding:24px 20px; background:#1a1a1a; color:#ffffff; text-align:center; font-size:10px;">
-    <div style="color:#d4c197; letter-spacing:3px; font-size:11px; text-transform:uppercase; margin-bottom:4px;">Timeless Creations</div>
-    <div style="opacity:0.5;">Crafted with devotion • Philippines</div>
-  </div>
-</div>
-
+              <div>
+                <a href="https://m.me/timeless.creations.06" style="display:inline-block; background-color:#1c1208; color:#d4b07a !important; padding:12px 22px; text-decoration:none; font-weight:bold; font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; border-radius:4px; margin:4px; font-family:'Helvetica', Arial, sans-serif;" target="_blank">Message Support on Messenger →</a>
+                <a href="https://m.me/TimelessCreationsRP" style="display:inline-block; background-color:#ffffff; color:#1c1208 !important; border:1.5px solid #1c1208; padding:11px 20px; text-decoration:none; font-weight:bold; font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; border-radius:4px; margin:4px; font-family:'Helvetica', Arial, sans-serif;" target="_blank">Rewards Dashboard →</a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#0e0c08; padding:20px; text-align:center; color:rgba(255,255,255,0.45); font-size:9.5px; letter-spacing:1px; text-transform:uppercase; font-family:'Helvetica', Arial, sans-serif;">
+              Supporting Members &amp; Missionaries Across the Philippines • Since 2025
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 

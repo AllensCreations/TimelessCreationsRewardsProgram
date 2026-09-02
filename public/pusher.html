@@ -42,8 +42,11 @@
 
   <div class="card">
     <div class="form-group">
-      <label class="form-label">Target Cohort / Batch Month</label>
-      <input type="text" id="global-batch-input" class="form-input" value="August 2026"/>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <label class="form-label" style="margin:0;">Target Cohort / Batch Month</label>
+        <span id="pusher-batch-first-month-preview" style="font-size:0.68rem; color:var(--gold); font-weight:bold;">1st Month: September 2026</span>
+      </div>
+      <input type="text" id="global-batch-input" class="form-input" value="August 2026" oninput="updatePusherBatchPreview(this.value)"/>
     </div>
   </div>
 
@@ -262,6 +265,13 @@ async function loadPushHistory(showNotification = false) {
   }
 }
 
+function updatePusherBatchPreview(val) {
+  const el = document.getElementById('pusher-batch-first-month-preview');
+  if (!el) return;
+  const info = getFirstMonthInfo(val || 'August 2026');
+  el.textContent = `1st Month: ${info.firstMonthDisplay}`;
+}
+
 function renderHistoryList(items) {
   const container = document.getElementById('history-list-container');
   if (!container) return;
@@ -286,6 +296,7 @@ function renderHistoryList(items) {
     const displayName = m.full_name || m.name || `${m.last_name || ''} ${m.first_name || ''}`.trim() || 'Missionary';
     const refCode = m.referral_code ? `<span class="badge" style="background:rgba(201,168,76,0.12); color:var(--gold); border:1px solid var(--border-gold); font-family:'DM Mono',monospace; font-size:0.65rem;">Code: ${m.referral_code}</span>` : '';
     const pointsBadge = `<span style="font-size:0.68rem; color:var(--gold); font-weight:600;">⭐ ${m.points || 0} pts</span>`;
+    const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
 
     return `
       <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -304,7 +315,7 @@ function renderHistoryList(items) {
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span class="badge badge-dark" style="font-size:0.68rem; padding:3px 8px;">🗓️ ${m.batch_month || 'Batch'}</span>
+          <span class="badge badge-dark" style="font-size:0.68rem; padding:3px 8px;" title="1st Month: ${batchInfo.firstMonthDisplay}">🗓️ ${batchInfo.batchDisplay} (1st Mo: ${batchInfo.firstMonthName})</span>
           ${refCode}
           ${pointsBadge}
           <a href="/missionaries.html" class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem; text-decoration:none;" title="View in Roster">View ➔</a>

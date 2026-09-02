@@ -50,28 +50,32 @@ function formatStrictMMMMYYYY(rawDate) {
   return str;
 }
 
-// Calculate elapsed months from batch month to current date
+// Calculate elapsed mission months from batch month to current date
+// Rule: If batch is August (Month 8), 1st Month is September (Month 9).
 function computeMonthsSent(batchMonthStr, maxMonths) {
   if (!batchMonthStr) return 0;
   const s = batchMonthStr.toLowerCase();
   
-  let startMonth = 0;
+  let batchMonth = 0;
   for (const [name, num] of Object.entries(MONTH_MAP)) {
     if (s.includes(name)) {
-      startMonth = num;
+      batchMonth = num;
       break;
     }
   }
-  if (!startMonth) return 0;
+  if (!batchMonth) return 0;
 
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
 
   const yearMatch = s.match(/\b(20\d\d)\b/);
-  const startYear = yearMatch ? parseInt(yearMatch[1], 10) : currentYear;
+  const batchYear = yearMatch ? parseInt(yearMatch[1], 10) : currentYear;
 
-  const elapsed = (currentYear - startYear) * 12 + (currentMonth - startMonth);
+  const firstMonthNum = (batchMonth % 12) + 1;
+  const firstMonthYear = (batchMonth === 12) ? batchYear + 1 : batchYear;
+
+  const elapsed = (currentYear - firstMonthYear) * 12 + (currentMonth - firstMonthNum) + 1;
   return Math.max(0, Math.min(elapsed, maxMonths));
 }
 

@@ -139,8 +139,11 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Batch Month</label>
-        <input type="text" id="edit-m-batch" class="form-input" placeholder="August 2026">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="form-label" style="margin:0;">Batch Month</label>
+          <span id="edit-m-first-month-preview" style="font-size:0.65rem; color:var(--gold); font-weight:bold;">1st Month: September 2026</span>
+        </div>
+        <input type="text" id="edit-m-batch" class="form-input" placeholder="August 2026" oninput="updateEditBatchPreview(this.value)">
       </div>
     </div>
 
@@ -358,15 +361,24 @@ function changePage(delta) {
   renderPaginatedCards();
 }
 
+function updateEditBatchPreview(val) {
+  const el = document.getElementById('edit-m-first-month-preview');
+  if (!el) return;
+  const info = getFirstMonthInfo(val || 'August 2026');
+  el.textContent = `1st Month: ${info.firstMonthDisplay}`;
+}
+
 function openEditMissionaryModal(email) {
   const m = state.missionaries.find(x => x.email.toLowerCase() === email.toLowerCase());
   if (!m) return;
 
+  const batchVal = m.batch_month || 'August 2026';
   document.getElementById('edit-m-original-email').value = m.email;
   document.getElementById('edit-m-name').value = m.name || '';
   document.getElementById('edit-m-email').value = m.email || '';
   document.getElementById('edit-m-cohort').value = (m.cohort || '').toLowerCase().includes('sister') ? 'sister' : 'elder';
-  document.getElementById('edit-m-batch').value = m.batch_month || 'August 2026';
+  document.getElementById('edit-m-batch').value = batchVal;
+  updateEditBatchPreview(batchVal);
   document.getElementById('edit-m-points').value = m.points || 0;
   document.getElementById('edit-m-code').value = m.referral_code || '';
   document.getElementById('edit-m-status').value = m.status || 'active';
@@ -523,6 +535,8 @@ function renderPaginatedCards() {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
     const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
     const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
+    const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
+    const currentMissionMonth = calculateMissionMonth(m.batch_month || 'August 2026', totalMonths);
     const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
     return `
@@ -543,7 +557,8 @@ function renderPaginatedCards() {
 
         <div class="card-details">
           <div>🏷️ <strong>Referral Code:</strong> ${m.referral_code || 'N/A'}</div>
-          <div>📩 <strong>Dispatches Sent:</strong> ${sentCount} of ${totalMonths} months (${m.batch_month || 'August 2026'})</div>
+          <div>📩 <strong>Dispatches:</strong> ${sentCount} of ${totalMonths} months (Progress: Month ${currentMissionMonth})</div>
+          <div>📅 <strong>Batch:</strong> ${batchInfo.batchDisplay} (1st Month: <span style="color:var(--gold); font-weight:600;">${batchInfo.firstMonthDisplay}</span>)</div>
           ${m.last_sent_at ? `<div>🕒 <strong>Last Dispatched:</strong> ${formatPhtDate(m.last_sent_at)}</div>` : ''}
           <div>⚡ <strong>Status:</strong> <span style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span></div>
           <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:8px;">

@@ -208,6 +208,64 @@ function formatPhtShortTime(dateVal) {
 }
 
 /**
+ * Batch Month to 1st Month Calculation Helper
+ * Rule: If batch is August 2026, 1st Month is September 2026.
+ */
+function getFirstMonthInfo(batchMonthStr) {
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  if (!batchMonthStr || typeof batchMonthStr !== 'string') {
+    return {
+      batchMonthName: "August",
+      batchYear: 2026,
+      batchDisplay: "August 2026",
+      firstMonthName: "September",
+      firstMonthYear: 2026,
+      firstMonthDisplay: "September 2026",
+      firstMonthNum: 9
+    };
+  }
+
+  const str = batchMonthStr.toLowerCase().trim();
+  let batchMonthIdx = -1;
+  for (let i = 0; i < monthNames.length; i++) {
+    if (str.includes(monthNames[i].toLowerCase())) {
+      batchMonthIdx = i;
+      break;
+    }
+  }
+  if (batchMonthIdx === -1) batchMonthIdx = 7; // Default to August
+
+  const yearMatch = batchMonthStr.match(/\b(20\d\d)\b/);
+  const now = new Date();
+  const batchYear = yearMatch ? parseInt(yearMatch[1], 10) : now.getFullYear();
+
+  const firstMonthIdx = (batchMonthIdx + 1) % 12;
+  const firstMonthYear = (batchMonthIdx === 11) ? batchYear + 1 : batchYear;
+
+  return {
+    batchMonthName: monthNames[batchMonthIdx],
+    batchYear: batchYear,
+    batchDisplay: `${monthNames[batchMonthIdx]} ${batchYear}`,
+    firstMonthName: monthNames[firstMonthIdx],
+    firstMonthYear: firstMonthYear,
+    firstMonthDisplay: `${monthNames[firstMonthIdx]} ${firstMonthYear}`,
+    firstMonthNum: firstMonthIdx + 1
+  };
+}
+
+function calculateMissionMonth(batchMonthStr, maxMonths = 24, targetDate = new Date()) {
+  const info = getFirstMonthInfo(batchMonthStr);
+  const targetYear = targetDate.getFullYear();
+  const targetMonth = targetDate.getMonth() + 1;
+
+  const elapsed = (targetYear - info.firstMonthYear) * 12 + (targetMonth - info.firstMonthNum) + 1;
+  return Math.max(0, Math.min(elapsed, maxMonths));
+}
+
+/**
  * HTML Protection Lock Engine
  * Disables right-click context menu, image drag-saving, and download shortcuts
  */
@@ -327,9 +385,9 @@ function showConfirmWarningModal({
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.5.0";
-const CURRENT_APP_VERSION_CODE = 7;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_5";
+const CURRENT_APP_VERSION = "1.6.0";
+const CURRENT_APP_VERSION_CODE = 8;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_6";
 
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && (

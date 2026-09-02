@@ -627,6 +627,16 @@ function buildCardListHtml(list, emptyText) {
   }).join('');
 }
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function downloadSpecificInvoice(encodedData) {
   try {
     const item = JSON.parse(decodeURIComponent(encodedData));
@@ -646,11 +656,37 @@ function downloadSpecificInvoice(encodedData) {
 
     const targetNode = document.getElementById('render-invoice-card');
     html2canvas(targetNode, { scale: 2 }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = `OrderSummary-${item.id}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      showToast(`Order Summary ${item.id} downloaded!`);
+      const filename = `OrderSummary-${item.id}.png`;
+      const dataUrl = canvas.toDataURL('image/png');
+
+      if (window.AndroidBridge && typeof window.AndroidBridge.saveBase64File === 'function') {
+        window.AndroidBridge.saveBase64File(dataUrl, filename, "image/png");
+        showToast(`✓ Order Summary ${item.id} saved to Pictures!`);
+        return;
+      }
+
+      // Standard browser download
+      canvas.toBlob(blob => {
+        if (!blob) {
+          const link = document.createElement('a');
+          link.download = filename;
+          link.href = dataUrl;
+          link.click();
+          showToast(`✓ Order Summary ${item.id} downloaded!`);
+          return;
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = blobUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+        showToast(`✓ Order Summary ${item.id} downloaded!`);
+      }, 'image/png');
+    }).catch(err => {
+      showToast("Error generating slip image", "error");
     });
   } catch (e) {
     showToast("Error rendering order summary download", "error");

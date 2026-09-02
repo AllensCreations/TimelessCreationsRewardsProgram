@@ -208,6 +208,19 @@ function formatPhtShortTime(dateVal) {
 }
 
 /**
+ * Global HTML Escaper
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Batch Month to 1st Month Calculation Helper
  * Rule: If batch is August 2026, 1st Month is September 2026.
  */
@@ -385,9 +398,9 @@ function showConfirmWarningModal({
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.6.0";
-const CURRENT_APP_VERSION_CODE = 8;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_6";
+const CURRENT_APP_VERSION = "1.7.0";
+const CURRENT_APP_VERSION_CODE = 9;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_7";
 
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && (

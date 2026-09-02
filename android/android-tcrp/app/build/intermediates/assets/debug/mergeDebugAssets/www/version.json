@@ -1,9 +1,9 @@
 {
-  "version": "1.6.0",
-  "version_code": 8,
-  "deployment_id": "deploy_20260902_v1_6",
-  "build_timestamp": "2026-09-02T12:24:00Z",
+  "version": "1.7.0",
+  "version_code": 9,
+  "deployment_id": "deploy_20260902_v1_7",
+  "build_timestamp": "2026-09-02T13:17:00Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "v1.6.0: Missionary Batch Progression (Batch August -> 1st Month September), 7-Day Delivered Lock Policy & Locked Rewards"
+  "changelog": "v1.7.0: Fix Invoicing Delete Button & Android Slip Download Permission Engine with MediaStore & AndroidBridge"
 }

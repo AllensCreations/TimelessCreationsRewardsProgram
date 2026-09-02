@@ -31,21 +31,6 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 	`last_otp_at` integer DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS `bot_hourly_views` (
-	`psid` text,
-	`hour_key` text,
-	`view_count` integer DEFAULT 1,
-	PRIMARY KEY(`psid`, `hour_key`)
-);
-
-CREATE TABLE IF NOT EXISTS `hashed_audit_identities` (
-	`identity_hash` text PRIMARY KEY,
-	`type` text,
-	`welcome_granted` integer DEFAULT 1,
-	`referral_awarded` integer DEFAULT 1,
-	`created_at` text DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS `orders` (
 	`order_id` text PRIMARY KEY,
 	`psid` text,

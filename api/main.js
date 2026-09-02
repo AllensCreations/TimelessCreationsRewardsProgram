@@ -8,11 +8,20 @@ import { handleDripAction } from '../lib/handlers/dripHandler.js';
 import { handleInvoiceAction } from '../lib/handlers/invoiceHandler.js';
 import { handleCdnAction } from '../lib/handlers/cdnHandler.js';
 import { handleBotApiAction } from '../lib/handlers/botApiHandler.js';
+import { requireAdmin } from '../lib/auth.js';
+
+const MUTATING_ADMIN_ACTIONS = new Set([
+  'save_products', 'sync_catalog', 'update_order_status', 'update_order', 'delete_order',
+  'update_missionary', 'update_missionary_points', 'delete_missionary', 'push_missionaries',
+  'save_promo_code', 'delete_promo_code', 'save_drip', 'apply_top_sales_all_months',
+  'update_invoice_status', 'update_invoice', 'delete_invoice', 'create_invoice',
+  'save_cdn_config', 'delete', 'cdn_delete', 'toggle_power', 'setup_messenger_profile'
+]);
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-admin-key");
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
@@ -26,6 +35,11 @@ export default async function handler(req, res) {
       bodyData = req.body || {};
     }
     if (bodyData.action) action = bodyData.action;
+  }
+
+  const adminSecret = process.env.ADMIN_API_KEY || process.env.ADMIN_SECRET;
+  if (adminSecret && MUTATING_ADMIN_ACTIONS.has(action)) {
+    if (!requireAdmin(req, res)) return;
   }
 
   try {

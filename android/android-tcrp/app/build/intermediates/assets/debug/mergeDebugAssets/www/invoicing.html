@@ -324,50 +324,32 @@
   </div>
 </div>
 
-<!-- Edit Transaction Modal -->
+<!-- Edit Transaction Modal (Product-Only Focused) -->
 <div id="edit-transaction-modal" class="modal-overlay" style="display:none; z-index:9500;">
   <div class="modal-content" style="max-width:520px; text-align:left; max-height:90vh; display:flex; flex-direction:column;">
     <div class="modal-header-row">
-      <div class="modal-title-text" style="font-size:1.05rem; color:var(--gold);">✏️ Edit Purchased Products &amp; Details</div>
+      <div class="modal-title-text" style="font-size:1.05rem; color:var(--gold);">✏️ Edit Purchased Products</div>
       <button onclick="closeEditModal()" class="modal-close-btn">✕</button>
     </div>
 
     <input type="hidden" id="edit-trx-is-order" value="false">
+    <input type="hidden" id="edit-trx-id" value="">
     
     <div style="overflow-y:auto; padding-right:4px; margin-bottom:12px; display:flex; flex-direction:column; gap:10px;">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div>
-          <label class="form-label">Reference ID</label>
-          <input type="text" id="edit-trx-id" class="form-input" readonly style="opacity:0.75; font-family:'DM Mono',monospace; cursor:not-allowed;">
+      <!-- Read-Only Transaction Context Header -->
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-family:'DM Mono',monospace; font-weight:bold; color:var(--gold); font-size:0.85rem;" id="edit-trx-id-badge">TC100001</span>
+          <span style="font-size:0.75rem; color:var(--text); font-weight:600;" id="edit-trx-name-badge">Customer</span>
         </div>
-        <div>
-          <label class="form-label">Transaction Status</label>
-          <select id="edit-trx-status" class="form-select">
-            <option value="PENDING">PENDING</option>
-            <option value="PAID">PAID</option>
-            <option value="READY FOR PICKUP">READY FOR PICKUP</option>
-            <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option>
-            <option value="DELIVERED">DELIVERED</option>
-          </select>
-        </div>
+        <span class="badge" style="font-size:0.65rem;" id="edit-trx-status-badge">PENDING</span>
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div>
-          <label class="form-label">Customer / Recipient Name</label>
-          <input type="text" id="edit-trx-name" class="form-input" placeholder="Customer Name">
-        </div>
-        <div>
-          <label class="form-label">Email Address</label>
-          <input type="email" id="edit-trx-email" class="form-input" placeholder="customer@example.com">
-        </div>
-      </div>
-
-      <!-- Line Items Section -->
+      <!-- Line Items Section (Only Products Can Be Edited) -->
       <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <label class="form-label" style="margin:0; color:var(--gold); font-size:0.8rem; font-weight:700;">📦 Purchased Products (Line Items)</label>
-          <button type="button" class="btn btn-secondary" style="padding:3px 8px; font-size:0.68rem;" onclick="addEditModalItemRow()">+ Add Product</button>
+          <button type="button" class="btn btn-secondary" style="padding:3px 8px; font-size:0.68rem;" onclick="addEditModalItemRow('', 1, 0, false)">+ Add Product</button>
         </div>
 
         <div id="edit-modal-items-container" style="display:flex; flex-direction:column; gap:8px;">
@@ -574,10 +556,7 @@ function buildCardListHtml(list, emptyText) {
     return `
       <div class="trx-card">
         <div class="trx-card-row-top">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <div class="trx-inv-no">${item.id}</div>
-            <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.65rem; height:24px; line-height:1;" onclick="event.stopPropagation(); openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
-          </div>
+          <div class="trx-inv-no">${item.id}</div>
           <div>
             <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
               <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
@@ -611,7 +590,7 @@ function buildCardListHtml(list, emptyText) {
 
           <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end; flex-wrap:wrap;">
             <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="downloadSpecificInvoice('${itemDataEscaped}')">📥 Download Slip</button>
-            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
+            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditModal('${item.id}', ${item.isOrder})">✏️ Edit Products</button>
             <button class="btn-danger" style="padding:5px 8px; font-size:0.68rem; border-radius:4px;" onclick="deleteTransaction('${item.id}', ${item.isOrder}, '${item.name}')">🗑️</button>
           </div>
         </div>
@@ -652,46 +631,74 @@ function downloadSpecificInvoice(encodedData) {
 
 let currentEditingItem = null;
 
-function addEditModalItemRow(defaultName = "", defaultQty = 1, defaultPrice = 0) {
+function addEditModalItemRow(defaultName = "", defaultQty = 1, defaultPrice = 0, isLocked = false) {
   const container = document.getElementById('edit-modal-items-container');
   if (!container) return;
 
   const isOrder = document.getElementById('edit-trx-is-order')?.value === 'true';
   const div = document.createElement('div');
   div.className = 'edit-modal-item-row';
-  div.style.cssText = "background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:6px;";
+  div.setAttribute('data-locked', isLocked ? 'true' : 'false');
+  div.style.cssText = isLocked 
+    ? "background:rgba(201,168,76,0.08); border:1px solid var(--border-gold); border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:6px;"
+    : "background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:6px;";
 
-  const matchedProduct = (productCatalog || []).find(p => p.name === defaultName);
-  const isCustom = defaultName && !matchedProduct;
-
-  const optionsHtml = (productCatalog || []).map(p => {
-    const isSelected = p.name === defaultName;
-    return `<option value="${p.name}" data-price="${p.price}" ${isSelected ? 'selected' : ''}>${p.name} (₱${Number(p.price).toFixed(2)})</option>`;
-  }).join('');
-
-  div.innerHTML = `
-    <div style="display:flex; gap:6px; align-items:center;">
-      <select class="form-select edit-item-select" style="flex:1; font-size:0.75rem; display:${isCustom ? 'none' : 'block'};" onchange="handleEditModalProductSelect(this)">
-        <option value="">-- Choose Preset Product --</option>
-        ${optionsHtml}
-        <option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ Type Custom Product...</option>
-      </select>
-      <input type="text" class="form-input edit-item-custom-name" value="${isCustom ? defaultName : ''}" placeholder="Type product name (e.g. Ring, Extra Item)..." style="flex:1; font-size:0.75rem; padding:5px 8px; display:${isCustom ? 'block' : 'none'};" oninput="recalculateEditModalTotal()"/>
-      <button type="button" class="btn btn-secondary" style="padding:4px 7px; font-size:0.65rem;" onclick="toggleEditItemMode(this)">${isCustom ? '📋 Presets' : '✏️ Custom'}</button>
-      <button type="button" class="btn-danger" style="padding:4px 7px; font-size:0.65rem; border-radius:4px;" onclick="this.closest('.edit-modal-item-row').remove(); recalculateEditModalTotal();">✕</button>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-      <div style="display:flex; align-items:center; gap:4px;">
-        <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
-        <input type="number" class="form-input edit-item-qty" value="${defaultQty}" min="1" style="width:55px; padding:4px; text-align:center; font-size:0.72rem;" oninput="recalculateEditModalTotal()"/>
+  if (isLocked) {
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+        <div style="font-size:0.78rem; font-weight:bold; color:var(--gold); display:flex; align-items:center; gap:6px;">
+          <span>🎁 ${defaultName || 'Redeemed Reward Item'}</span>
+        </div>
+        <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold); font-size:0.65rem;">🔒 Redeemed Reward (Permanent)</span>
       </div>
-      <div style="display:flex; align-items:center; gap:4px;">
-        <span style="font-size:0.68rem; color:var(--muted);">${isOrder ? 'Pts:' : '₱:'}</span>
-        <input type="number" class="form-input edit-item-price" value="${defaultPrice}" min="0" style="width:75px; padding:4px; text-align:center; font-size:0.72rem;" oninput="recalculateEditModalTotal()"/>
+      <input type="hidden" class="edit-item-locked-name" value="${defaultName || 'Redeemed Reward'}">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
+          <span style="font-size:0.75rem; font-weight:bold; color:var(--text);">1</span>
+          <input type="hidden" class="edit-item-qty" value="1"/>
+        </div>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:0.68rem; color:var(--muted);">Cost:</span>
+          <span style="font-size:0.75rem; font-weight:bold; color:var(--gold);">${defaultPrice || 0} Points</span>
+          <input type="hidden" class="edit-item-price" value="${defaultPrice || 0}"/>
+        </div>
+        <span class="edit-item-row-subtotal" style="font-size:0.75rem; font-weight:bold; color:var(--gold);">${defaultPrice || 0} Pts (Free)</span>
       </div>
-      <span class="edit-item-row-subtotal" style="font-size:0.75rem; font-weight:bold; color:var(--gold);">${isOrder ? defaultPrice + ' Pts' : '₱' + (defaultPrice * defaultQty).toFixed(2)}</span>
-    </div>
-  `;
+    `;
+  } else {
+    const matchedProduct = (productCatalog || []).find(p => p.name === defaultName);
+    const isCustom = defaultName && !matchedProduct;
+
+    const optionsHtml = (productCatalog || []).map(p => {
+      const isSelected = p.name === defaultName;
+      return `<option value="${p.name}" data-price="${p.price}" ${isSelected ? 'selected' : ''}>${p.name} (₱${Number(p.price).toFixed(2)})</option>`;
+    }).join('');
+
+    div.innerHTML = `
+      <div style="display:flex; gap:6px; align-items:center;">
+        <select class="form-select edit-item-select" style="flex:1; font-size:0.75rem; display:${isCustom ? 'none' : 'block'};" onchange="handleEditModalProductSelect(this)">
+          <option value="">-- Choose Preset Product --</option>
+          ${optionsHtml}
+          <option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ Type Custom Product...</option>
+        </select>
+        <input type="text" class="form-input edit-item-custom-name" value="${isCustom ? defaultName : ''}" placeholder="Type product name (e.g. Ring, Extra Item)..." style="flex:1; font-size:0.75rem; padding:5px 8px; display:${isCustom ? 'block' : 'none'};" oninput="recalculateEditModalTotal()"/>
+        <button type="button" class="btn btn-secondary" style="padding:4px 7px; font-size:0.65rem;" onclick="toggleEditItemMode(this)">${isCustom ? '📋 Presets' : '✏️ Custom'}</button>
+        <button type="button" class="btn-danger" style="padding:4px 7px; font-size:0.65rem; border-radius:4px;" onclick="this.closest('.edit-modal-item-row').remove(); recalculateEditModalTotal();">✕</button>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:0.68rem; color:var(--muted);">Qty:</span>
+          <input type="number" class="form-input edit-item-qty" value="${defaultQty}" min="1" style="width:55px; padding:4px; text-align:center; font-size:0.72rem;" oninput="recalculateEditModalTotal()"/>
+        </div>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:0.68rem; color:var(--muted);">${isOrder ? '₱ Extra:' : '₱:'}</span>
+          <input type="number" class="form-input edit-item-price" value="${defaultPrice}" min="0" style="width:75px; padding:4px; text-align:center; font-size:0.72rem;" oninput="recalculateEditModalTotal()"/>
+        </div>
+        <span class="edit-item-row-subtotal" style="font-size:0.75rem; font-weight:bold; color:var(--gold);">₱${(defaultPrice * defaultQty).toFixed(2)}</span>
+      </div>
+    `;
+  }
 
   container.appendChild(div);
   recalculateEditModalTotal();
@@ -741,23 +748,34 @@ function toggleEditItemMode(btn) {
 
 function recalculateEditModalTotal() {
   const isOrder = document.getElementById('edit-trx-is-order')?.value === 'true';
-  let total = 0;
+  let totalCash = 0;
+  let pointsTotal = 0;
   const rows = document.querySelectorAll('#edit-modal-items-container .edit-modal-item-row');
 
   rows.forEach(r => {
-    const qty = Math.max(1, parseInt(r.querySelector('.edit-item-qty')?.value, 10) || 1);
-    const price = Math.max(0, parseFloat(r.querySelector('.edit-item-price')?.value) || 0);
-    const subtotal = qty * price;
-    total += subtotal;
-    const subEl = r.querySelector('.edit-item-row-subtotal');
-    if (subEl) {
-      subEl.textContent = isOrder ? `${subtotal} Pts` : `₱${subtotal.toFixed(2)}`;
+    const isLocked = r.getAttribute('data-locked') === 'true';
+    if (isLocked) {
+      const pts = parseFloat(r.querySelector('.edit-item-price')?.value) || 0;
+      pointsTotal += pts;
+    } else {
+      const qty = Math.max(1, parseInt(r.querySelector('.edit-item-qty')?.value, 10) || 1);
+      const price = Math.max(0, parseFloat(r.querySelector('.edit-item-price')?.value) || 0);
+      const subtotal = qty * price;
+      totalCash += subtotal;
+      const subEl = r.querySelector('.edit-item-row-subtotal');
+      if (subEl) {
+        subEl.textContent = `₱${subtotal.toFixed(2)}`;
+      }
     }
   });
 
   const totalEl = document.getElementById('edit-modal-calc-total');
   if (totalEl) {
-    totalEl.textContent = isOrder ? `${total} Points` : `₱${total.toFixed(2)}`;
+    if (isOrder) {
+      totalEl.textContent = totalCash > 0 ? `${pointsTotal} Points + ₱${totalCash.toFixed(2)}` : `${pointsTotal} Points (Free Reward)`;
+    } else {
+      totalEl.textContent = `₱${totalCash.toFixed(2)}`;
+    }
   }
 }
 
@@ -771,16 +789,18 @@ function openEditModal(id, isOrder) {
     if (rawOrder) {
       let parsedItems = [];
       try { parsedItems = JSON.parse(rawOrder.items_json || '[]'); } catch (_) {}
-      if (!parsedItems.length) {
-        parsedItems = [{ name: rawOrder.item || 'Reward Item', qty: 1, price: rawOrder.points_cost || 0 }];
-      }
+      
+      const primaryRewardName = rawOrder.item || 'Free Reward Item';
+      const extraItems = parsedItems.filter(i => !i.name.includes(primaryRewardName) && i.price > 0);
+
       item = {
         id: rawOrder.order_id,
         name: rawOrder.name || 'Recipient',
         email: rawOrder.email || '',
         status: (rawOrder.status || 'PENDING').toUpperCase(),
-        itemsList: parsedItems,
-        amount: `${rawOrder.points_cost || 0}`,
+        primaryReward: primaryRewardName,
+        pointsCost: rawOrder.points_cost || 0,
+        extraItems: extraItems,
         isOrder: true,
         raw: rawOrder
       };
@@ -815,19 +835,34 @@ function openEditModal(id, isOrder) {
   currentEditingItem = item;
   document.getElementById('edit-trx-is-order').value = item.isOrder ? 'true' : 'false';
   document.getElementById('edit-trx-id').value = item.id;
-  document.getElementById('edit-trx-name').value = item.name;
-  document.getElementById('edit-trx-email').value = item.email;
-  document.getElementById('edit-trx-status').value = item.status;
-  document.getElementById('edit-trx-amount-label').textContent = item.isOrder ? 'Total Points Value:' : 'Grand Total:';
+  
+  // Set clean read-only summary badges
+  const idBadge = document.getElementById('edit-trx-id-badge');
+  if (idBadge) idBadge.textContent = item.id;
+  const nameBadge = document.getElementById('edit-trx-name-badge');
+  if (nameBadge) nameBadge.textContent = item.name + (item.email ? ` (${item.email})` : '');
+  const statusBadge = document.getElementById('edit-trx-status-badge');
+  if (statusBadge) {
+    statusBadge.textContent = item.status;
+    statusBadge.className = `badge ${item.status === 'PAID' || item.status === 'DELIVERED' ? 'paid' : 'pending'}`;
+  }
 
   // Render individual product rows in modal
   const itemsContainer = document.getElementById('edit-modal-items-container');
   itemsContainer.innerHTML = '';
-  (item.itemsList || []).forEach(it => {
-    addEditModalItemRow(it.name, it.qty || 1, it.price || 0);
-  });
-  if (!item.itemsList || item.itemsList.length === 0) {
-    addEditModalItemRow('Custom Order', 1, Number(item.amount) || 0);
+
+  if (item.isOrder) {
+    // 1. Permanently embedded locked reward item
+    addEditModalItemRow(item.primaryReward, 1, item.pointsCost, true);
+    // 2. Any additional purchased products
+    (item.extraItems || []).forEach(it => {
+      addEditModalItemRow(it.name, it.qty || 1, it.price || 0, false);
+    });
+  } else {
+    // Cash Invoices: all line items are editable
+    (item.itemsList || []).forEach(it => {
+      addEditModalItemRow(it.name, it.qty || 1, it.price || 0, false);
+    });
   }
 
   recalculateEditModalTotal();
@@ -843,32 +878,37 @@ async function saveEditTransaction() {
   if (!currentEditingItem) return;
   const isOrder = document.getElementById('edit-trx-is-order').value === 'true';
   const id = document.getElementById('edit-trx-id').value;
-  const name = document.getElementById('edit-trx-name').value.trim();
-  const email = document.getElementById('edit-trx-email').value.trim();
-  const status = document.getElementById('edit-trx-status').value;
 
   const rows = document.querySelectorAll('#edit-modal-items-container .edit-modal-item-row');
   const lineItems = [];
-  let calculatedTotal = 0;
+  let calculatedCashTotal = 0;
+  let primaryRewardName = currentEditingItem.primaryReward || '';
+  let pointsCost = currentEditingItem.pointsCost || 0;
 
   rows.forEach(r => {
-    const selectEl = r.querySelector('.edit-item-select');
-    const customInput = r.querySelector('.edit-item-custom-name');
-    let itemName = "Product";
+    const isLocked = r.getAttribute('data-locked') === 'true';
+    if (isLocked) {
+      const lockedName = r.querySelector('.edit-item-locked-name')?.value || primaryRewardName;
+      lineItems.push({ name: `🎁 ${lockedName} (Free Reward)`, qty: 1, price: 0 });
+    } else {
+      const selectEl = r.querySelector('.edit-item-select');
+      const customInput = r.querySelector('.edit-item-custom-name');
+      let itemName = "Product";
 
-    if (selectEl && selectEl.style.display !== 'none' && selectEl.selectedIndex > 0 && selectEl.value !== '__custom__') {
-      itemName = selectEl.value;
-    } else if (customInput && customInput.value.trim()) {
-      itemName = customInput.value.trim();
-    } else if (selectEl && selectEl.value && selectEl.value !== '__custom__') {
-      itemName = selectEl.value;
+      if (selectEl && selectEl.style.display !== 'none' && selectEl.selectedIndex > 0 && selectEl.value !== '__custom__') {
+        itemName = selectEl.value;
+      } else if (customInput && customInput.value.trim()) {
+        itemName = customInput.value.trim();
+      } else if (selectEl && selectEl.value && selectEl.value !== '__custom__') {
+        itemName = selectEl.value;
+      }
+
+      const qty = Math.max(1, parseInt(r.querySelector('.edit-item-qty')?.value, 10) || 1);
+      const price = Math.max(0, parseFloat(r.querySelector('.edit-item-price')?.value) || 0);
+      const rowSubtotal = qty * price;
+      calculatedCashTotal += rowSubtotal;
+      lineItems.push({ name: itemName, qty, price });
     }
-
-    const qty = Math.max(1, parseInt(r.querySelector('.edit-item-qty')?.value, 10) || 1);
-    const price = Math.max(0, parseFloat(r.querySelector('.edit-item-price')?.value) || 0);
-    const rowSubtotal = qty * price;
-    calculatedTotal += rowSubtotal;
-    lineItems.push({ name: itemName, qty, price });
   });
 
   if (lineItems.length === 0) {
@@ -886,21 +926,15 @@ async function saveEditTransaction() {
       payload = {
         action: 'update_order',
         order_id: id,
-        name,
-        email,
-        status,
-        points_cost: calculatedTotal,
+        points_cost: pointsCost,
         items_json: lineItems
       };
     } else {
       payload = {
         action: 'update_invoice',
         invoice_id: id,
-        name,
-        email,
-        status,
-        subtotal: calculatedTotal,
-        total_amount: calculatedTotal,
+        subtotal: calculatedCashTotal,
+        total_amount: calculatedCashTotal,
         items_json: lineItems
       };
     }

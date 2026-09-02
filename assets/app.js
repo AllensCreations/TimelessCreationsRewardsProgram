@@ -395,12 +395,64 @@ function showConfirmWarningModal({
 }
 
 /**
+ * TCRPSync Engine (Stale-While-Revalidate & Offline-First Local Cache)
+ * Provides 0ms instantaneous page rendering backed by silent background API revalidation
+ */
+const TCRPSync = {
+  get(key, defaultVal = null) {
+    const entry = LocalStore.get('tcrp_sync_' + key, null);
+    return entry && entry.data ? entry.data : defaultVal;
+  },
+  set(key, val) {
+    LocalStore.set('tcrp_sync_' + key, { data: val, cachedAt: Date.now() });
+  },
+  getCachedData(key) {
+    const entry = LocalStore.get('tcrp_sync_' + key, null);
+    if (!entry) return null;
+    return entry.data || null;
+  },
+  async fetchWithCache(url, options = {}, { cacheKey, onCached, onFresh } = {}) {
+    const key = cacheKey || url;
+    const cachedEntry = LocalStore.get('tcrp_sync_' + key, null);
+    
+    // 1. Instant 0ms Render from Local Cache
+    if (cachedEntry && cachedEntry.data) {
+      if (typeof onCached === 'function') {
+        try { onCached(cachedEntry.data, cachedEntry.cachedAt); } catch(e) {}
+      }
+    }
+
+    // 2. Silent Background Revalidation
+    try {
+      const res = await fetch(url, options);
+      if (res.ok) {
+        const fresh = await res.json();
+        LocalStore.set('tcrp_sync_' + key, { data: fresh, cachedAt: Date.now() });
+        if (typeof onFresh === 'function') {
+          try { onFresh(fresh, Date.now()); } catch(e) {}
+        }
+        return fresh;
+      }
+    } catch (err) {
+      // Network failure: cached data already served
+      console.warn('[TCRPSync] Background sync failed, using local cache:', err);
+    }
+    return cachedEntry ? cachedEntry.data : null;
+  },
+  invalidate(key) {
+    try {
+      localStorage.removeItem('tcrp_sync_' + key);
+    } catch (_) {}
+  }
+};
+
+/**
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.7.0";
-const CURRENT_APP_VERSION_CODE = 9;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_7";
+const CURRENT_APP_VERSION = "1.8.0";
+const CURRENT_APP_VERSION_CODE = 10;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_8";
 
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && (
@@ -435,8 +487,17 @@ async function checkDeploymentUpdate(isManual = false) {
       } catch (_) {}
     }
 
+    const msgEl = typeof document !== 'undefined' ? document.getElementById('update-status-msg') : null;
+
     if (!remote || !remote.ok) {
-      if (isManual) showToast("Offline or remote server unreachable.", "info");
+      if (isManual) {
+        showToast("Offline or remote server unreachable.", "info");
+        if (msgEl) {
+          msgEl.style.display = 'block';
+          msgEl.style.color = 'var(--muted)';
+          msgEl.textContent = '✓ Offline mode active. Using cached assets.';
+        }
+      }
       return;
     }
 
@@ -454,20 +515,19 @@ async function checkDeploymentUpdate(isManual = false) {
     }
 
     // 2. Native Android APK In-App Update Prompt
-    const isAndroidApp = (typeof window !== 'undefined' && (
-      window.location.host === 'appassets.androidplatform.net' ||
-      navigator.userAgent.includes('TCRP-Android') ||
-      window.AndroidBridge !== undefined
-    ));
-
     const storedApkVersion = Number(LocalStore.get('tcrp_installed_version_code', CURRENT_APP_VERSION_CODE)) || CURRENT_APP_VERSION_CODE;
     const remoteCode = Number(remote.version_code) || 0;
 
     if (remoteCode > storedApkVersion || (isManual && remoteCode > CURRENT_APP_VERSION_CODE)) {
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.color = 'var(--gold)';
+        msgEl.textContent = `🚀 New version available: v${remote.version} (Code ${remoteCode})`;
+      }
       const confirmed = await showConfirmWarningModal({
         title: `📱 New App Update Available (v${remote.version})!`,
-        message: `A new Android build is available.<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
-        confirmText: "📥 Download & Install APK",
+        message: `A new build is available.<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
+        confirmText: "🚀 Update / Download Now",
         cancelText: "Remind Me Later",
         isDanger: false,
         icon: "🚀"
@@ -479,7 +539,12 @@ async function checkDeploymentUpdate(isManual = false) {
         window.location.href = targetUrl;
       }
     } else if (isManual) {
-      showToast(`✓ You are running the latest version (${CURRENT_APP_VERSION})`);
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.color = 'var(--green)';
+        msgEl.textContent = `✓ You're at the latest version! (v${CURRENT_APP_VERSION} - Up to date)`;
+      }
+      showToast(`✓ You're at the latest version! (v${CURRENT_APP_VERSION})`, "success");
     }
   } catch (_) {}
 }

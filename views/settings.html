@@ -61,19 +61,15 @@
         <h3 style="font-size:0.95rem; color:var(--gold);">📱 Android App &amp; System Updates</h3>
         <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Fast hybrid offline/online runtime with automatic OTA deployment synchronization.</p>
       </div>
-      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);" id="app-version-badge">v1.7.0 (Build 2026.09.02)</span>
+      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);" id="app-version-badge">v1.8.0 (Build 2026.09.02)</span>
     </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-      <a href="/TimelessRewards.apk" download class="btn btn-gold" style="flex:1; min-width:180px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
-        <span>📥 Download Latest APK</span>
-      </a>
-      <a href="https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk" target="_blank" class="btn btn-secondary" style="flex:1; min-width:180px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
-        <span>🌐 GitHub APK Mirror</span>
-      </a>
-      <button class="btn btn-dark" onclick="checkUpdatesManually()" style="min-width:140px;">↻ Check Updates</button>
+      <button class="btn btn-gold" id="btn-check-updates" onclick="checkUpdatesManually()" style="flex:1; min-width:200px; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span>🔍 Check for Updates</span>
+      </button>
     </div>
-    <div id="update-status-msg" style="font-size:0.72rem; color:var(--green); margin-top:10px; display:none;"></div>
+    <div id="update-status-msg" style="font-size:0.75rem; color:var(--green); margin-top:10px; display:none; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:6px; padding:10px 14px;"></div>
   </div>
 
   <!-- CDN Setup -->
@@ -231,44 +227,10 @@ async function checkUpdatesManually() {
     msgEl.textContent = '⏳ Checking for latest deployment and APK updates...';
   }
 
-  try {
-    const apiBase = (typeof getApiBaseUrl === 'function') ? getApiBaseUrl() : (window.location.host === 'appassets.androidplatform.net' ? 'https://timelesscreationsrewardsprogram.vercel.app' : '');
-    let remote = null;
-
-    try {
-      const res = await fetch(apiBase + '/api/main?action=get_version&t=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) remote = await res.json();
-    } catch (_) {}
-
-    if (!remote || !remote.ok) {
-      try {
-        const ghRes = await fetch('https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/Appversion/public/version.json?t=' + Date.now(), { cache: 'no-store' });
-        if (ghRes.ok) remote = await ghRes.json();
-      } catch (_) {}
-    }
-
-    if (remote && (remote.ok || remote.version)) {
-      if (msgEl) {
-        msgEl.style.color = 'var(--green)';
-        msgEl.textContent = `✓ Latest live release: v${remote.version} (${remote.deployment_id || 'OTA Build'}).`;
-      }
-      if (typeof checkDeploymentUpdate === 'function') {
-        checkDeploymentUpdate(true);
-      } else {
-        showToast(`Live Version: v${remote.version}`);
-      }
-    } else {
-      if (msgEl) {
-        msgEl.style.color = 'var(--muted)';
-        msgEl.textContent = '✓ Offline mode active. Using cached assets.';
-      }
-      showToast("Offline or remote server unreachable", "info");
-    }
-  } catch(e) {
-    if (msgEl) {
-      msgEl.style.color = 'var(--muted)';
-      msgEl.textContent = '✓ Offline mode active. Using cached assets.';
-    }
+  if (typeof checkDeploymentUpdate === 'function') {
+    await checkDeploymentUpdate(true);
+  } else {
+    showToast("Update service initializing...", "info");
   }
 }
 

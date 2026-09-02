@@ -430,6 +430,25 @@ function switchNavTab(tabId, btn) {
 
 window.loadData = loadData;
 async function loadData() {
+  // 1. Instant 0ms render from Local Cache
+  if (typeof TCRPSync !== 'undefined') {
+    const cachedState = TCRPSync.get('invoicing_state', null);
+    if (cachedState) {
+      if (cachedState.missionaries) missionaries = cachedState.missionaries;
+      if (cachedState.cashInvoices) cashInvoices = cachedState.cashInvoices;
+      if (cachedState.productCatalog) productCatalog = cachedState.productCatalog;
+      if (cachedState.orders) orders = cachedState.orders;
+      if (cachedState.nextAvailableTcId) nextAvailableTcId = cachedState.nextAvailableTcId;
+
+      document.getElementById('prev-inv-id').textContent = nextAvailableTcId;
+      document.getElementById('btn-target-tc-id').textContent = nextAvailableTcId;
+      populateMissionarySelect(missionaries);
+      renderTransactionsWireframeCards();
+      renderProductSettings();
+    }
+  }
+
+  // 2. Background Revalidation
   try {
     const [mRes, invRes, prodRes, ordRes, tcRes] = await Promise.all([
       fetch('/api/main?action=get_missionaries').then(r => r.json()).catch(() => ({})),
@@ -439,17 +458,32 @@ async function loadData() {
       fetch('/api/main?action=get_next_invoice_id').then(r => r.json()).catch(() => ({}))
     ]);
 
-    missionaries = mRes.missionaries || [];
-    cashInvoices = invRes.invoices || [];
-    productCatalog = prodRes.products || [
-      { name: "Standard Missionary Strap", price: 150, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
-      { name: "Customized Nametag", price: 250, image_url: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" },
-      { name: "Scripture Cover Set", price: 450, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
-    ];
-    orders = ordRes.orders || [];
+    if (mRes.missionaries) missionaries = mRes.missionaries;
+    if (invRes.invoices) cashInvoices = invRes.invoices;
+    if (prodRes.products && prodRes.products.length > 0) {
+      productCatalog = prodRes.products;
+    } else if (!productCatalog || productCatalog.length === 0) {
+      productCatalog = [
+        { name: "Standard Missionary Strap", price: 150, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
+        { name: "Customized Nametag", price: 250, image_url: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" },
+        { name: "Scripture Cover Set", price: 450, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
+      ];
+    }
+    if (ordRes.orders) orders = ordRes.orders;
 
     if (tcRes.ok && tcRes.next_id) {
       nextAvailableTcId = tcRes.next_id;
+    }
+
+    // Save to Local Cache for next 0ms launch
+    if (typeof TCRPSync !== 'undefined') {
+      TCRPSync.set('invoicing_state', {
+        missionaries,
+        cashInvoices,
+        productCatalog,
+        orders,
+        nextAvailableTcId
+      });
     }
 
     document.getElementById('prev-inv-id').textContent = nextAvailableTcId;
@@ -463,7 +497,7 @@ async function loadData() {
       addItemRow(productCatalog[0].name, productCatalog[0].price, 1);
     }
   } catch (err) {
-    showToast("Failed to load inventory data", "error");
+    console.warn("Failed to refresh background inventory data, active local cache retained", err);
   }
 }
 

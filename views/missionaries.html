@@ -251,13 +251,14 @@ async function loadRoster(force = false) {
   const container = document.getElementById('roster-container');
   const cached = LocalStore.get('missionaries', null);
 
-  if (cached && !force) {
+  // 1. Instant 0ms render from cache
+  if (cached && Array.isArray(cached) && cached.length > 0) {
     state.missionaries = cached;
     document.getElementById('roster-count').textContent = cached.length.toLocaleString();
     applyFilterAndRender();
-    return;
   }
 
+  // 2. Silent background sync
   try {
     const res = await fetch("/api/main?action=get_missionaries");
     const data = await res.json();
@@ -266,11 +267,11 @@ async function loadRoster(force = false) {
       LocalStore.set('missionaries', state.missionaries);
       document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
       applyFilterAndRender();
-    } else {
+    } else if (!cached || cached.length === 0) {
       container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">No missionaries found.</div>';
     }
   } catch (err) {
-    if (!cached) {
+    if (!cached || cached.length === 0) {
       container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red); font-size:0.8rem;">Error loading missionaries.</div>';
     }
   }

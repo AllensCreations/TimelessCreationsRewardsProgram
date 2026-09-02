@@ -193,6 +193,17 @@ public class LauncherActivity extends AppCompatActivity {
             }
         });
 
+        // Handle Native APK and File Downloads
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
+            } catch (Exception e) {
+                Toast.makeText(LauncherActivity.this, "Unable to start download", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         // Load root index.html with full CSS styling
         webView.loadUrl("https://appassets.androidplatform.net/index.html");
     }

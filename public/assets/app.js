@@ -323,5 +323,75 @@ function showConfirmWarningModal({
   });
 }
 
+/**
+ * Automated Internal Deployment Update & APK In-App Updater
+ * Automatically polls for new deployments and APK updates every 60s
+ */
+const CURRENT_APP_VERSION = "1.0.1";
+const CURRENT_APP_VERSION_CODE = 2;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260902_a8d8b8f";
+
+async function checkDeploymentUpdate(isManual = false) {
+  try {
+    const res = await fetch('/api/main?action=get_version&t=' + Date.now());
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (!remote || !remote.ok) return;
+
+    const storedDeployId = LocalStore.get('tcrp_last_deployment_id', CURRENT_DEPLOYMENT_ID);
+    const isNewDeploy = remote.deployment_id && remote.deployment_id !== storedDeployId && remote.deployment_id !== CURRENT_DEPLOYMENT_ID;
+
+    // 1. Web / OTA Deployment Live Update
+    if (isNewDeploy) {
+      LocalStore.set('tcrp_last_deployment_id', remote.deployment_id);
+      showToast("✨ New deployment live! Refreshing views...", "info");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1800);
+      return;
+    }
+
+    // 2. Native Android APK In-App Update Prompt
+    const isAndroidApp = (typeof window !== 'undefined' && (
+      window.location.host === 'appassets.androidplatform.net' ||
+      navigator.userAgent.includes('TCRP-Android') ||
+      window.AndroidBridge !== undefined
+    ));
+
+    const storedApkVersion = LocalStore.get('tcrp_installed_version_code', CURRENT_APP_VERSION_CODE);
+    if (isAndroidApp && remote.version_code > storedApkVersion) {
+      const confirmed = await showConfirmWarningModal({
+        title: `📱 New App Update (v${remote.version})!`,
+        message: `An updated Android build is available.<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
+        confirmText: "📥 Download & Install APK",
+        cancelText: "Remind Me Later",
+        isDanger: false,
+        icon: "🚀"
+      });
+
+      if (confirmed) {
+        LocalStore.set('tcrp_installed_version_code', remote.version_code);
+        window.location.href = remote.apk_url || '/TimelessRewards.apk';
+      }
+    }
+  } catch (_) {}
+}
+
+function initAutoUpdateChecker() {
+  // Check 3 seconds after page load
+  setTimeout(() => checkDeploymentUpdate(false), 3000);
+  // Recurring check every 60 seconds
+  setInterval(() => checkDeploymentUpdate(false), 60000);
+}
+
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAutoUpdateChecker);
+  } else {
+    initAutoUpdateChecker();
+  }
+}
+
+
 
 

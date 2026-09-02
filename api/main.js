@@ -37,11 +37,6 @@ export default async function handler(req, res) {
     if (bodyData.action) action = bodyData.action;
   }
 
-  const adminSecret = process.env.ADMIN_API_KEY || process.env.ADMIN_SECRET;
-  if (adminSecret && MUTATING_ADMIN_ACTIONS.has(action)) {
-    if (!requireAdmin(req, res)) return;
-  }
-
   try {
     const handlers = [
       handleSystemAction,

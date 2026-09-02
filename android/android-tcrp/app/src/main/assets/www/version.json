@@ -1,0 +1,9 @@
+{
+  "version": "1.0.1",
+  "version_code": 2,
+  "deployment_id": "deploy_20260902_a8d8b8f",
+  "build_timestamp": "2026-09-02T08:50:00Z",
+  "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
+  "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
+  "changelog": "Philippine Standard Time, Whole Year Checker, Invoicing Edit modal, Fast Offline & Online support, Direct Power Toggle"
+}

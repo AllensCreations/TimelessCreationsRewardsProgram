@@ -47,12 +47,36 @@
 <body>
 
 <div class="container">
+  <!-- Master System Power Switch -->
   <div class="card" style="border-color: var(--border-gold);">
     <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold); margin-bottom:4px;">⚡ Master System Power Switch</div>
-    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Controls automated drip emails and cron jobs. Protected by 3-Round CAPTCHA.</div>
-    <button id="power-toggle-btn" class="btn btn-dark" onclick="startPowerCaptcha()">⏳ Loading Status...</button>
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Controls automated drip emails, cron dispatching, and live sync operations. Click below to toggle instantly.</div>
+    <button id="power-toggle-btn" class="btn btn-dark" onclick="togglePowerDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">⏳ Loading Status...</button>
   </div>
 
+  <!-- Android App & Live Updates Management -->
+  <div class="card" style="border-color: rgba(201,168,76,0.3);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <h3 style="font-size:0.95rem; color:var(--gold);">📱 Android App &amp; System Updates</h3>
+        <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Fast hybrid offline/online runtime with automatic OTA deployment synchronization.</p>
+      </div>
+      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);" id="app-version-badge">v1.0.1 (Build 2026.09.02)</span>
+    </div>
+    
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+      <a href="/TimelessRewards.apk" download class="btn btn-gold" style="flex:1; min-width:180px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <span>📥 Download Latest APK</span>
+      </a>
+      <a href="https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk" target="_blank" class="btn btn-secondary" style="flex:1; min-width:180px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <span>🌐 GitHub APK Mirror</span>
+      </a>
+      <button class="btn btn-dark" onclick="checkUpdatesManually()" style="min-width:140px;">↻ Check Updates</button>
+    </div>
+    <div id="update-status-msg" style="font-size:0.72rem; color:var(--green); margin-top:10px; display:none;"></div>
+  </div>
+
+  <!-- CDN Setup -->
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
       <h3 style="font-size:0.95rem; color:var(--gold);">⚡ jsDelivr &amp; GitHub CDN Setup</h3>
@@ -67,6 +91,7 @@
     </div>
   </div>
 
+  <!-- Brevo Email Tester -->
   <div class="card">
     <h3 style="font-size:0.95rem; color:var(--gold); margin-bottom:6px;">✉️ Live Brevo Email Tester</h3>
     <p style="font-size:0.72rem; color:var(--muted); margin-bottom:12px;">Dispatches production templates from noreply.timelesscreations.ph@gmail.com.</p>
@@ -99,38 +124,8 @@
   </div>
 </div>
 
-<!-- Beautiful Dark-Gold CAPTCHA Modal -->
-<div id="captcha-modal" class="modal-overlay">
-  <div class="modal-content" id="captcha-box" style="text-align:center;">
-    <div class="modal-header-row">
-      <div class="modal-title-text">Face Verification</div>
-      <button onclick="closeCaptchaModal()" class="modal-close-btn">✕</button>
-    </div>
-    <div style="font-size:0.78rem; color:var(--text); margin-bottom:8px;" id="captcha-round-title">Round 1 of 3: Tap the correct face</div>
-    
-    <div class="progress-bar-wrap">
-      <div class="progress-dot active" id="p-dot-1"></div>
-      <div class="progress-dot" id="p-dot-2"></div>
-      <div class="progress-dot" id="p-dot-3"></div>
-    </div>
-
-    <div class="captcha-arena" id="captcha-arena-container"></div>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-      <span style="font-size:0.68rem; color:var(--muted);" id="captcha-difficulty-label">Easy</span>
-      <button class="btn btn-dark" onclick="closeCaptchaModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <script>
 let currentPowerState = "offline";
-let captchaRound = 1;
-
-const CAPTCHA_IMAGES = [
-  { id: "correct", src: "https://i.postimg.cc/mgjRv9Dy/IMG-7154.jpg", isHandsome: true },
-  { id: "wrong1", src: "https://i.postimg.cc/9X92WK05/images.webp", isHandsome: false },
-  { id: "wrong2", src: "https://i.postimg.cc/s21Fb0qk/images-(1).webp", isHandsome: false }
-];
 
 function initMonthPicker() {
   const sel = document.getElementById("test-drip-month");
@@ -164,6 +159,60 @@ async function loadSettings() {
   loadCdnSettings();
 }
 
+async function togglePowerDirect() {
+  const nextState = currentPowerState === "online" ? "offline" : "online";
+  const confirmed = await showConfirmWarningModal({
+    title: nextState === "online" ? "⚡ Activate System (ONLINE)?" : "💤 Switch System to OFFLINE?",
+    message: nextState === "online" 
+      ? "This will resume all automated email drips, cron jobs, and background telemetry." 
+      : "This will pause automated background drip dispatching while keeping manual operations active.",
+    confirmText: nextState === "online" ? "Yes, Turn ONLINE" : "Yes, Turn OFFLINE",
+    cancelText: "Cancel",
+    isDanger: nextState === "offline"
+  });
+
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggle_power", state: nextState })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`System power state switched to ${nextState.toUpperCase()}`);
+      loadSettings();
+    }
+  } catch(e) {
+    showToast("Error updating power state", "error");
+  }
+}
+
+async function checkUpdatesManually() {
+  const msgEl = document.getElementById('update-status-msg');
+  if (msgEl) {
+    msgEl.style.display = 'block';
+    msgEl.style.color = 'var(--gold)';
+    msgEl.textContent = '⏳ Checking for latest deployment and APK updates...';
+  }
+
+  try {
+    const res = await fetch('/api/main?action=get_version&t=' + Date.now());
+    const data = await res.json();
+    if (data.ok && msgEl) {
+      msgEl.style.color = 'var(--green)';
+      msgEl.textContent = `✓ System is running latest deployment (${data.version} - ${data.deployment_id}).`;
+      showToast("System is up to date!");
+    }
+  } catch(e) {
+    if (msgEl) {
+      msgEl.style.color = 'var(--muted)';
+      msgEl.textContent = '✓ Offline mode active. Using cached assets.';
+    }
+  }
+}
+
 async function loadCdnSettings() {
   try {
     const d = await fetch("/api/main?action=get_cdn_config").then(r => r.json());
@@ -193,55 +242,6 @@ async function saveCdnSettings() {
     }).then(r => r.json());
     if (d.ok) showToast("CDN configuration saved!");
   } catch (err) { showToast("Error saving: " + err.message, "error"); }
-}
-
-function startPowerCaptcha() {
-  captchaRound = 1;
-  renderCaptchaRound();
-  document.getElementById("captcha-modal").style.display = "flex";
-}
-
-function closeCaptchaModal() {
-  document.getElementById("captcha-modal").style.display = "none";
-}
-
-function renderCaptchaRound() {
-  const arena = document.getElementById("captcha-arena-container");
-  const title = document.getElementById("captcha-round-title");
-  document.getElementById("p-dot-1").className = captchaRound >= 1 ? "progress-dot active" : "progress-dot";
-  document.getElementById("p-dot-2").className = captchaRound >= 2 ? "progress-dot active" : "progress-dot";
-  document.getElementById("p-dot-3").className = captchaRound >= 3 ? "progress-dot active" : "progress-dot";
-
-  title.innerHTML = `Round ${captchaRound} of 3: Tap the real face`;
-  const shuffled = [...CAPTCHA_IMAGES].sort(() => Math.random() - 0.5);
-  arena.innerHTML = shuffled.map(item => `
-    <div class="captcha-card" onclick="handleCaptchaPick(${item.isHandsome})">
-      <img src="${item.src}" alt="Face">
-    </div>
-  `).join('');
-}
-
-async function handleCaptchaPick(isHandsome) {
-  if (!isHandsome) {
-    showToast("Incorrect face! Restarting.", "error");
-    captchaRound = 1;
-    renderCaptchaRound();
-    return;
-  }
-  if (captchaRound < 3) {
-    captchaRound++;
-    renderCaptchaRound();
-  } else {
-    closeCaptchaModal();
-    const nextState = currentPowerState === "online" ? "offline" : "online";
-    await fetch("/api/main", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "toggle_power", state: nextState })
-    });
-    showToast(`System power switched to ${nextState.toUpperCase()}`);
-    loadSettings();
-  }
 }
 
 async function sendTestEmail() {

@@ -529,6 +529,7 @@ function renderPaginatedCards() {
         <div class="card-details">
           <div>🏷️ <strong>Referral Code:</strong> ${m.referral_code || 'N/A'}</div>
           <div>📩 <strong>Dispatches Sent:</strong> ${sentCount} of ${totalMonths} months (${m.batch_month || 'August 2026'})</div>
+          ${m.last_sent_at ? `<div>🕒 <strong>Last Dispatched:</strong> ${formatPhtDate(m.last_sent_at)}</div>` : ''}
           <div>⚡ <strong>Status:</strong> <span style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span></div>
           <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditMissionaryModal('${m.email}')">✏️ Edit</button>

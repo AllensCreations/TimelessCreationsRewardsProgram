@@ -556,7 +556,7 @@ function downloadSpecificInvoice(encodedData) {
   try {
     const item = JSON.parse(decodeURIComponent(encodedData));
     document.getElementById('dl-inv-id').textContent = item.id;
-    document.getElementById('dl-inv-date').textContent = new Date(item.raw.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('dl-inv-date').textContent = formatPhtDate(item.raw.created_at || Date.now(), false);
     document.getElementById('dl-inv-total').textContent = item.totalDisplay;
 
     const tbody = document.getElementById('dl-inv-body');

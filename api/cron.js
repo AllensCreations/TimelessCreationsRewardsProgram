@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       WHERE status = 'active'
         AND LOWER(cohort) = 'elder'
         AND months_sent < max_months
-        AND (next_send_date <= date('now') OR next_send_date IS NULL OR last_sent_at IS NULL)
+        AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL OR last_sent_at IS NULL)
       ORDER BY 
         CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
         last_sent_at ASC,
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       WHERE status = 'active'
         AND LOWER(cohort) = 'sister'
         AND months_sent < max_months
-        AND (next_send_date <= date('now') OR next_send_date IS NULL OR last_sent_at IS NULL)
+        AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL OR last_sent_at IS NULL)
       ORDER BY 
         CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
         last_sent_at ASC,

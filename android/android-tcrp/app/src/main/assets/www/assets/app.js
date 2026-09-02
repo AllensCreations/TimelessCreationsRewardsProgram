@@ -144,6 +144,70 @@ function getCalendarMonthLabel(monthIndex) {
 }
 
 /**
+ * Universal Philippine Standard Time (PST/PHT, UTC+8) Helpers
+ */
+function getPhtDate() {
+  return new Date(Date.now() + 8 * 3600 * 1000);
+}
+
+function formatPhtDate(dateVal, includeSeconds = true) {
+  if (!dateVal) return '--';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (!dateVal.endsWith('Z') && !dateVal.includes('+')) {
+        d = new Date(dateVal.replace(' ', 'T') + 'Z');
+      } else {
+        d = new Date(dateVal);
+      }
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) d = new Date(dateVal);
+
+    return d.toLocaleString('en-US', {
+      timeZone: 'Asia/Manila',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: includeSeconds ? '2-digit' : undefined,
+      hour12: true
+    }) + ' PHT';
+  } catch {
+    return String(dateVal);
+  }
+}
+
+function formatPhtShortTime(dateVal) {
+  if (!dateVal) return '--';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (!dateVal.endsWith('Z') && !dateVal.includes('+')) {
+        d = new Date(dateVal.replace(' ', 'T') + 'Z');
+      } else {
+        d = new Date(dateVal);
+      }
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) d = new Date(dateVal);
+
+    return d.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Manila',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    }) + ' PHT';
+  } catch {
+    return String(dateVal);
+  }
+}
+
+/**
  * HTML Protection Lock Engine
  * Disables right-click context menu, image drag-saving, and download shortcuts
  */

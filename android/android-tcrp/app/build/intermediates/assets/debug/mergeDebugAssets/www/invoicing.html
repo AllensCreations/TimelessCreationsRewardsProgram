@@ -324,6 +324,61 @@
   </div>
 </div>
 
+<!-- Edit Transaction Modal -->
+<div id="edit-transaction-modal" class="modal-overlay" style="display:none; z-index:9500;">
+  <div class="modal-content" style="max-width:480px; text-align:left;">
+    <div class="modal-header-row">
+      <div class="modal-title-text" style="font-size:1.05rem; color:var(--gold);">✏️ Edit Transaction Details</div>
+      <button onclick="closeEditModal()" class="modal-close-btn">✕</button>
+    </div>
+
+    <input type="hidden" id="edit-trx-is-order" value="false">
+    
+    <div style="margin-bottom:12px;">
+      <label class="form-label">Transaction Reference ID</label>
+      <input type="text" id="edit-trx-id" class="form-input" readonly style="opacity:0.75; font-family:'DM Mono',monospace; cursor:not-allowed;">
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+      <div>
+        <label class="form-label">Customer / Recipient Name</label>
+        <input type="text" id="edit-trx-name" class="form-input" placeholder="Customer Name">
+      </div>
+      <div>
+        <label class="form-label">Email Address</label>
+        <input type="email" id="edit-trx-email" class="form-input" placeholder="customer@example.com">
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+      <div>
+        <label class="form-label">Order / Transaction Status</label>
+        <select id="edit-trx-status" class="form-select">
+          <option value="PENDING">PENDING</option>
+          <option value="PAID">PAID</option>
+          <option value="READY FOR PICKUP">READY FOR PICKUP</option>
+          <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option>
+          <option value="DELIVERED">DELIVERED</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label" id="edit-trx-amount-label">Total Amount / Value</label>
+        <input type="text" id="edit-trx-amount" class="form-input" placeholder="₱0.00">
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label class="form-label">Items Summary / Notes</label>
+      <textarea id="edit-trx-items" class="form-input" rows="3" placeholder="Item descriptions..."></textarea>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button type="button" class="btn btn-dark" onclick="closeEditModal()">Cancel</button>
+      <button type="button" class="btn btn-gold" id="btn-save-edit-trx" onclick="saveEditTransaction()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- Hidden Offscreen Render Node for Downloading Any Transaction's Order Summary -->
 <div style="position:absolute; left:-9999px; top:-9999px;">
   <div class="invoice-preview-card" id="render-invoice-card" style="width:400px; padding:20px;">
@@ -556,7 +611,7 @@ function downloadSpecificInvoice(encodedData) {
   try {
     const item = JSON.parse(decodeURIComponent(encodedData));
     document.getElementById('dl-inv-id').textContent = item.id;
-    document.getElementById('dl-inv-date').textContent = new Date(item.raw.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('dl-inv-date').textContent = formatPhtDate(item.raw.created_at || Date.now(), false);
     document.getElementById('dl-inv-total').textContent = item.totalDisplay;
 
     const tbody = document.getElementById('dl-inv-body');
@@ -582,8 +637,142 @@ function downloadSpecificInvoice(encodedData) {
   }
 }
 
+let currentEditingItem = null;
+
+function openEditModal(id, isOrder) {
+  const isOrd = Boolean(isOrder);
+  let item = null;
+
+  if (isOrd) {
+    const rawOrder = (ordersCache || []).find(o => String(o.order_id) === String(id));
+    if (rawOrder) {
+      item = {
+        id: rawOrder.order_id,
+        name: rawOrder.name || 'Recipient',
+        email: rawOrder.email || '',
+        status: (rawOrder.status || 'PENDING').toUpperCase(),
+        itemsText: rawOrder.item || '',
+        amount: `${rawOrder.points_cost || 0} Points`,
+        isOrder: true,
+        raw: rawOrder
+      };
+    }
+  } else {
+    const rawInv = (invoicesCache || []).find(i => String(i.invoice_id) === String(id));
+    if (rawInv) {
+      let itemsStr = "Custom Order";
+      try {
+        const parsed = JSON.parse(rawInv.items_json);
+        itemsStr = parsed.map(i => `${i.qty}x ${i.name} (₱${Number(i.price).toFixed(2)})`).join('\n');
+      } catch(_) {
+        itemsStr = rawInv.name || "Custom Order";
+      }
+      item = {
+        id: rawInv.invoice_id,
+        name: rawInv.name || 'Customer',
+        email: rawInv.email || '',
+        status: (rawInv.status || 'PENDING').toUpperCase(),
+        itemsText: itemsStr,
+        amount: `₱${Number(rawInv.total_amount || 0).toFixed(2)}`,
+        isOrder: false,
+        raw: rawInv
+      };
+    }
+  }
+
+  if (!item) {
+    showToast("Transaction not found in local cache.", "error");
+    return;
+  }
+
+  currentEditingItem = item;
+  document.getElementById('edit-trx-is-order').value = item.isOrder ? 'true' : 'false';
+  document.getElementById('edit-trx-id').value = item.id;
+  document.getElementById('edit-trx-name').value = item.name;
+  document.getElementById('edit-trx-email').value = item.email;
+  document.getElementById('edit-trx-status').value = item.status;
+  document.getElementById('edit-trx-amount').value = item.amount;
+  document.getElementById('edit-trx-amount-label').textContent = item.isOrder ? 'Points Cost' : 'Total Amount (₱)';
+  document.getElementById('edit-trx-items').value = item.itemsText;
+
+  document.getElementById('edit-transaction-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-transaction-modal').style.display = 'none';
+  currentEditingItem = null;
+}
+
+async function saveEditTransaction() {
+  if (!currentEditingItem) return;
+  const isOrder = document.getElementById('edit-trx-is-order').value === 'true';
+  const id = document.getElementById('edit-trx-id').value;
+  const name = document.getElementById('edit-trx-name').value.trim();
+  const email = document.getElementById('edit-trx-email').value.trim();
+  const status = document.getElementById('edit-trx-status').value;
+  const itemsText = document.getElementById('edit-trx-items').value.trim();
+  const amountVal = document.getElementById('edit-trx-amount').value.replace(/[^0-9.]/g, '');
+
+  const saveBtn = document.getElementById('btn-save-edit-trx');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '⏳ Saving...';
+
+  try {
+    let payload = {};
+    if (isOrder) {
+      payload = {
+        action: 'update_order',
+        order_id: id,
+        name,
+        email,
+        status,
+        items_json: [{ name: itemsText || 'Reward Item', qty: 1, price: 0 }]
+      };
+    } else {
+      const numAmt = parseFloat(amountVal) || Number(currentEditingItem.raw.total_amount || 0);
+      payload = {
+        action: 'update_invoice',
+        invoice_id: id,
+        name,
+        email,
+        status,
+        total_amount: numAmt,
+        items_json: [{ name: itemsText || 'Custom Order', qty: 1, price: numAmt }]
+      };
+    }
+
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      showToast("✓ Transaction details updated successfully!");
+      closeEditModal();
+      loadData();
+    } else {
+      showToast(data.message || "Failed to update transaction", "error");
+    }
+  } catch(err) {
+    showToast("Network error updating transaction", "error");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = '💾 Save Changes';
+  }
+}
+
 async function updateStatus(id, isOrder, newStatus) {
-  if (!confirm(`Confirm status change to [${newStatus}] for ${id}? Notification will be dispatched.`)) {
+  const confirmed = await showConfirmWarningModal({
+    title: "Confirm Status Transition",
+    message: `Are you sure you want to change status to <strong>[${newStatus}]</strong> for transaction <code>#${id}</code>?<br><br>An automated email notification will be dispatched to the customer.`,
+    confirmText: `Yes, Set to ${newStatus}`,
+    cancelText: "Cancel",
+    isDanger: false
+  });
+
+  if (!confirmed) {
     renderTransactionsWireframeCards();
     return;
   }
@@ -598,8 +787,10 @@ async function updateStatus(id, isOrder, newStatus) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Status updated to ${newStatus}!`);
+      showToast(`✓ Status updated to ${newStatus}!`);
       loadData();
+    } else {
+      showToast(data.message || "Error updating status", "error");
     }
   } catch(e) {
     showToast("Error updating status", "error");
@@ -607,7 +798,15 @@ async function updateStatus(id, isOrder, newStatus) {
 }
 
 async function deleteTransaction(id, isOrder, name) {
-  if (!confirm(`Permanently delete transaction for ${name}?`)) return;
+  const confirmed = await showConfirmWarningModal({
+    title: "Permanently Delete Transaction?",
+    message: `Are you sure you want to delete transaction <code>#${id}</code> for <strong>${escapeHtml(name)}</strong>?<br><br><span style="color:#ff6b6b;">⚠️ This action is irreversible and will remove this record permanently.</span>`,
+    confirmText: "Delete Record",
+    cancelText: "Keep Record",
+    isDanger: true
+  });
+
+  if (!confirmed) return;
   const actionName = isOrder ? 'delete_order' : 'delete_invoice';
   const idKey = isOrder ? 'order_id' : 'invoice_id';
 
@@ -619,8 +818,10 @@ async function deleteTransaction(id, isOrder, name) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`Deleted ${id}`);
+      showToast(`✓ Deleted ${id}`);
       loadData();
+    } else {
+      showToast(data.message || "Error deleting record", "error");
     }
   } catch(e) {
     showToast("Error deleting record", "error");

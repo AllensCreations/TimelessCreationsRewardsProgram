@@ -450,7 +450,14 @@ async function promptBulkDelete() {
     showToast("No missionaries selected.", "error");
     return;
   }
-  if (!confirm(`Delete ${state.selectedEmails.size} selected missionaries?`)) return;
+  const confirmed = await showConfirmWarningModal({
+    title: "Bulk Delete Missionaries?",
+    message: `Are you sure you want to delete <strong>${state.selectedEmails.size}</strong> selected missionaries?<br><br><span style="color:#ff6b6b;">⚠️ This action will permanently remove these missionaries and their point balances.</span>`,
+    confirmText: `Delete ${state.selectedEmails.size} Missionaries`,
+    cancelText: "Cancel",
+    isDanger: true
+  });
+  if (!confirmed) return;
 
   for (const email of state.selectedEmails) {
     try {
@@ -468,7 +475,15 @@ async function promptBulkDelete() {
 }
 
 async function deleteMissionary(email, name) {
-  if (!confirm(`Permanently remove ${name} (${email})?`)) return;
+  const confirmed = await showConfirmWarningModal({
+    title: "Remove Missionary Profile?",
+    message: `Are you sure you want to permanently remove <strong>${name}</strong> (<code>${email}</code>) from the active roster?<br><br><span style="color:#ff6b6b;">⚠️ This action cannot be undone.</span>`,
+    confirmText: "Remove Missionary",
+    cancelText: "Keep Profile",
+    isDanger: true
+  });
+  if (!confirmed) return;
+
   try {
     const res = await fetch("/api/main", {
       method: "POST",
@@ -529,6 +544,7 @@ function renderPaginatedCards() {
         <div class="card-details">
           <div>🏷️ <strong>Referral Code:</strong> ${m.referral_code || 'N/A'}</div>
           <div>📩 <strong>Dispatches Sent:</strong> ${sentCount} of ${totalMonths} months (${m.batch_month || 'August 2026'})</div>
+          ${m.last_sent_at ? `<div>🕒 <strong>Last Dispatched:</strong> ${formatPhtDate(m.last_sent_at)}</div>` : ''}
           <div>⚡ <strong>Status:</strong> <span style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span></div>
           <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditMissionaryModal('${m.email}')">✏️ Edit</button>

@@ -8,30 +8,22 @@
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js"></script>
     <style>
-      .rewards-preview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 14px;
-        margin-top: 14px;
-      }
-      .reward-catalog-card {
+      .reward-prod-setting-row {
         background: var(--surface2);
         border: 1px solid var(--border);
-        border-radius: var(--radius);
-        overflow: hidden;
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        margin-bottom: 10px;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        gap: 8px;
       }
-      .reward-img-box {
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        background: #08080d;
-        overflow: hidden;
-        border-bottom: 1px solid var(--border);
+      .item-card-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
       }
-      .reward-img-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
-      .reward-info-pad { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; justify-content: space-between; }
 
       /* Mobile-Friendly Collapsible Promo Code Cards */
       .promo-card {
@@ -77,28 +69,30 @@
     <button class="btn btn-dark" style="margin-left:auto; padding:6px 12px; font-size:0.72rem;" onclick="syncPersistentMenu()">📱 Sync FB Menu</button>
   </div>
 
-  <!-- Rewards Tab -->
+  <!-- TAB 1: Reward Catalog (Matching invoicing.html Cash POS Catalog UI) -->
   <div id="pane-rewards">
-    <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-color:var(--border-gold);">
+    <div class="card" style="border-color: var(--border-gold);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div>
-            <h3 style="font-family:'Syne',sans-serif; font-size:1.05rem; color:var(--gold); margin-bottom:2px;">Messenger Reward Catalog Carousel</h3>
-            <p style="font-size:0.7rem; color:var(--muted);">Visual preview of items missionaries see and can claim in Facebook Messenger.</p>
+          <h3 style="font-size:0.95rem; color:var(--gold);">🎁 Reward Catalog (Points Pricing &amp; Images)</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Configure reward products, point costs, and CDN graphics displayed in the Messenger bot.</p>
         </div>
-        <button class="btn btn-gold" onclick="openProductModal()">+ Add New Reward</button>
-    </div>
-
-    <div class="rewards-preview-grid" id="products-grid">
-        <div style="color:var(--muted); font-size:0.75rem;">Loading rewards catalog...</div>
+        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addNewRewardSetting()">+ Add Reward</button>
+      </div>
+      <div id="rewards-settings-container">
+        <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">Loading rewards catalog...</div>
+      </div>
+      <button class="btn btn-gold" style="width:100%; margin-top:14px;" onclick="saveRewardSettings()">💾 Save Rewards to Turso</button>
     </div>
   </div>
 
-  <!-- Promo Codes Tab -->
+  <!-- TAB 2: Promo Codes Tab -->
   <div id="pane-promos" style="display:none;">
     <div class="card" style="border-color: var(--border-gold);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
         <div>
-          <h3 style="font-size:1.05rem; color:var(--gold); margin-bottom:2px;">🎟️ Freebie Promo Codes</h3>
-          <p style="font-size:0.7rem; color:var(--muted);">Tap any promo card to expand details and copy snippets.</p>
+          <h3 style="font-size:0.95rem; color:var(--gold); margin-bottom:2px;">🎟️ Freebie Promo Codes</h3>
+          <p style="font-size:0.68rem; color:var(--muted);">Tap any promo card to expand details and copy snippets.</p>
         </div>
         <button class="btn btn-gold" onclick="openPromoModal()">+ Create Promo</button>
       </div>
@@ -108,34 +102,6 @@
       </div>
     </div>
   </div>
-</div>
-
-<!-- Modal Popup for Reward Item -->
-<div class="modal-overlay" id="product-modal">
-    <div class="modal-content">
-        <div class="modal-header-row">
-            <div class="modal-title-text" id="modal-heading">Add Reward Item</div>
-            <button onclick="closeProductModal()" class="modal-close-btn">✕</button>
-        </div>
-        <input type="hidden" id="modal-item-index">
-        <div class="form-group"><label class="form-label">Reward Item Name</label><input type="text" id="modal-prod-name" class="form-input" placeholder="e.g. Temple Keychain"></div>
-        <div class="form-group"><label class="form-label">Cost in Points</label><input type="number" id="modal-prod-price" class="form-input" placeholder="e.g. 6"></div>
-        <div class="form-group" style="text-align:center;">
-            <label class="form-label" style="text-align:left;">Reward Image (1:1 Square)</label>
-            <input type="hidden" id="modal-prod-img" value="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png">
-            <div style="width:120px; height:120px; margin:8px auto; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
-              <img id="modal-preview-box" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" style="width:100%; height:100%; object-fit:cover;" alt="Preview">
-            </div>
-            <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-              <button type="button" class="btn btn-gold" style="padding:6px 12px; font-size:0.7rem;" onclick="openBotGalleryPicker()">🖼️ Choose from Gallery</button>
-              <button type="button" class="btn btn-dark" style="padding:6px 12px; font-size:0.7rem;" onclick="revertBotDefault()">↺ Default</button>
-            </div>
-        </div>
-        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
-            <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
-            <button class="btn btn-gold" onclick="applyModalChanges()">✓ Apply Item</button>
-        </div>
-    </div>
 </div>
 
 <!-- Modal Popup for Promo Code -->
@@ -155,25 +121,22 @@
     </div>
 </div>
 
-<!-- Gallery Picker Sub-Modal -->
-<div class="modal-overlay" id="bot-gallery-modal" style="z-index:1300;">
+<!-- Modal Image Picker for Reward Products (Matching invoicing.html pos-gallery-modal) -->
+<div class="modal-overlay" id="reward-gallery-modal" style="z-index:1300;">
   <div class="modal-content" style="max-width:480px;">
     <div class="modal-header-row">
       <div class="modal-title-text">Pick Reward Graphic</div>
-      <button onclick="document.getElementById('bot-gallery-modal').style.display='none'" class="modal-close-btn">✕</button>
+      <button onclick="document.getElementById('reward-gallery-modal').style.display='none'" class="modal-close-btn">✕</button>
     </div>
-    <div class="modal-grid" id="bot-gallery-grid"></div>
+    <div class="modal-grid" id="reward-gallery-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(85px, 1fr)); gap:8px; max-height:45vh; overflow-y:auto;"></div>
   </div>
 </div>
 
-<div class="save-banner" id="save-banner">
-    <span style="font-size:0.72rem; color:var(--gold); font-weight:bold;">⚡ Unsaved local catalog edits</span>
-    <button class="btn btn-gold" id="btn-sync-turso" onclick="saveAllToTurso()">💾 Save to Turso</button>
-</div>
-
 <script>
-let localItems = [];
+let rewardCatalog = [];
 let promoCodesList = [];
+let currentRewardTargetImgInput = null;
+let currentRewardTargetThumb = null;
 
 async function syncPersistentMenu() {
   showToast("Syncing Persistent Menu with Meta...");
@@ -190,6 +153,7 @@ function switchBotTab(tab) {
     document.getElementById('pane-promos').style.display = 'none';
     document.getElementById('tab-rewards-btn').className = 'tab-btn active';
     document.getElementById('tab-promos-btn').className = 'tab-btn';
+    loadRewardData();
   } else {
     document.getElementById('pane-rewards').style.display = 'none';
     document.getElementById('pane-promos').style.display = 'block';
@@ -199,51 +163,128 @@ function switchBotTab(tab) {
   }
 }
 
-function markDirty() {
-  document.getElementById("save-banner").style.display = "flex";
-  LocalStore.set('temp_products', localItems);
-}
-
-async function loadInitialData(forceFetch = false) {
-  const cached = LocalStore.get('temp_products', null);
-  if (cached && !forceFetch) {
-    localItems = cached;
-    renderGrid();
-    return;
-  }
+async function loadRewardData() {
   try {
     const res = await fetch("/api/main?action=get_products&type=reward").then(r => r.json());
     if (res.ok) {
-      localItems = res.products || [];
-      LocalStore.set('temp_products', localItems);
-      renderGrid();
+      rewardCatalog = res.products || [];
+      renderRewardSettings();
     }
-  } catch(e) {}
+  } catch(e) {
+    showToast("Error loading rewards", "error");
+  }
 }
 
-function renderGrid() {
-  const grid = document.getElementById("products-grid");
-  if (!localItems.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No reward products. Click "+ Add New Reward" above.</div>';
+function renderRewardSettings() {
+  const container = document.getElementById('rewards-settings-container');
+  if (!rewardCatalog.length) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No reward products configured yet. Click "+ Add Reward" above.</div>';
     return;
   }
-  grid.innerHTML = localItems.map((p, idx) => `
-    <div class="reward-catalog-card">
-      <div class="reward-img-box">
-        <img src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" alt="${p.name}" loading="lazy">
+  container.innerHTML = rewardCatalog.map((p, idx) => `
+    <div class="reward-prod-setting-row">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div style="width:50px; height:50px; border-radius:6px; overflow:hidden; border:1px solid var(--border); flex-shrink:0; background:#08080d;">
+          <img id="reward-thumb-${idx}" src="${p.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width:100%; height:100%; object-fit:cover;" alt="Reward Product">
+        </div>
+        <div style="flex:1;">
+          <input type="text" class="form-input r-name" value="${p.name}" placeholder="Reward Item Name" style="font-weight:bold; font-size:0.8rem; margin-bottom:4px;"/>
+          <input type="text" class="form-input r-img" id="reward-img-${idx}" value="${p.image_url || ''}" placeholder="Image Direct URL" oninput="document.getElementById('reward-thumb-${idx}').src=this.value" style="font-size:0.68rem;"/>
+        </div>
       </div>
-      <div class="reward-info-pad">
-        <div>
-          <div style="font-weight:bold; font-size:0.88rem; margin-bottom:4px; font-family:'Syne',sans-serif;">${p.name}</div>
-          <div style="color:var(--gold); font-size:0.75rem; font-weight:bold;">⭐ Cost: ${p.price || 0} Points</div>
+      <div class="item-card-controls">
+        <button type="button" class="btn btn-gold" style="padding:4px 8px; font-size:0.65rem;" onclick="openRewardGalleryPicker('reward-img-${idx}', 'reward-thumb-${idx}')">🖼️ Pick from CDN</button>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:0.68rem; color:var(--muted);">Points Cost:</span>
+          <input type="number" class="form-input r-price" value="${p.price}" min="0" style="width:75px; text-align:center; padding:4px 6px;"/>
         </div>
-        <div style="display:flex; gap:6px; margin-top:10px;">
-          <button class="btn btn-dark" style="flex:1; padding:6px; font-size:0.68rem;" onclick="openProductModal(${idx})">✏️ Edit</button>
-          <button class="btn-danger" style="padding:6px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteLocalItem(${idx})">🗑️</button>
-        </div>
+        <button class="btn-danger" style="padding:5px 8px; border-radius:4px;" onclick="this.closest('.reward-prod-setting-row').remove()">✕</button>
       </div>
     </div>
   `).join('');
+}
+
+function addNewRewardSetting() {
+  const container = document.getElementById('rewards-settings-container');
+  if (container.querySelector('div[style*="text-align:center"]')) {
+    container.innerHTML = '';
+  }
+  const idx = Date.now();
+  const div = document.createElement('div');
+  div.className = 'reward-prod-setting-row';
+  div.innerHTML = `
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div style="width:50px; height:50px; border-radius:6px; overflow:hidden; border:1px solid var(--border); flex-shrink:0; background:#08080d;">
+        <img id="reward-thumb-${idx}" src="https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" style="width:100%; height:100%; object-fit:cover;" alt="Reward Product">
+      </div>
+      <div style="flex:1;">
+        <input type="text" class="form-input r-name" placeholder="New Reward Item Name" style="font-weight:bold; font-size:0.8rem; margin-bottom:4px;"/>
+        <input type="text" class="form-input r-img" id="reward-img-${idx}" placeholder="Image Direct URL" oninput="document.getElementById('reward-thumb-${idx}').src=this.value" style="font-size:0.68rem;"/>
+      </div>
+    </div>
+    <div class="item-card-controls">
+      <button type="button" class="btn btn-gold" style="padding:4px 8px; font-size:0.65rem;" onclick="openRewardGalleryPicker('reward-img-${idx}', 'reward-thumb-${idx}')">🖼️ Pick from CDN</button>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:0.68rem; color:var(--muted);">Points Cost:</span>
+        <input type="number" class="form-input r-price" value="6" min="0" style="width:75px; text-align:center; padding:4px 6px;"/>
+      </div>
+      <button class="btn-danger" style="padding:5px 8px; border-radius:4px;" onclick="this.closest('.reward-prod-setting-row').remove()">✕</button>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function openRewardGalleryPicker(inputId, thumbId) {
+  currentRewardTargetImgInput = inputId;
+  currentRewardTargetThumb = thumbId;
+  const modal = document.getElementById("reward-gallery-modal");
+  const grid = document.getElementById("reward-gallery-grid");
+  modal.style.display = "flex";
+
+  const items = LocalStore.get('tcrp_cdn_gallery', []);
+  if (!items.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted); font-size:0.75rem;">No images in CDN gallery. Upload in CDN Media Hub.</div>';
+    return;
+  }
+  grid.innerHTML = items.map(it => `
+    <div style="width:100%; aspect-ratio:1/1; border:1px solid var(--border); border-radius:4px; overflow:hidden; cursor:pointer;" onclick="selectRewardImage('${it.direct_url}')">
+      <img src="${it.direct_url}" style="width:100%; height:100%; object-fit:cover; display:block;" alt="${it.filename || 'CDN Image'}">
+    </div>
+  `).join('');
+}
+
+function selectRewardImage(url) {
+  if (currentRewardTargetImgInput) document.getElementById(currentRewardTargetImgInput).value = url;
+  if (currentRewardTargetThumb) document.getElementById(currentRewardTargetThumb).src = url;
+  document.getElementById("reward-gallery-modal").style.display = "none";
+}
+
+async function saveRewardSettings() {
+  const rows = document.querySelectorAll('#rewards-settings-container .reward-prod-setting-row');
+  const updated = [];
+  rows.forEach(r => {
+    const name = r.querySelector('.r-name').value.trim();
+    const price = parseInt(r.querySelector('.r-price').value, 10) || 0;
+    const image_url = r.querySelector('.r-img').value.trim() || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png';
+    if (name) updated.push({ name, price, image_url, type: 'reward' });
+  });
+
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'sync_catalog', type: 'reward', products: updated })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Reward catalog saved to Turso!");
+      rewardCatalog = updated;
+    } else {
+      showToast("Error saving rewards: " + (data.error || "Failed"), "error");
+    }
+  } catch(e) {
+    showToast("Error saving rewards", "error");
+  }
 }
 
 async function loadPromoCodes() {
@@ -321,100 +362,9 @@ async function deletePromo(code) {
   loadPromoCodes();
 }
 
-function openProductModal(idx = null) {
-  if (idx !== null && localItems[idx]) {
-    const p = localItems[idx];
-    document.getElementById("modal-item-index").value = idx;
-    document.getElementById("modal-prod-name").value = p.name || "";
-    document.getElementById("modal-prod-price").value = p.price || 0;
-    document.getElementById("modal-prod-img").value = p.image_url || "";
-    document.getElementById("modal-preview-box").src = p.image_url || "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
-    document.getElementById("modal-heading").textContent = "Edit Reward Item";
-  } else {
-    document.getElementById("modal-item-index").value = "";
-    document.getElementById("modal-prod-name").value = "";
-    document.getElementById("modal-prod-price").value = "";
-    document.getElementById("modal-prod-img").value = "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
-    document.getElementById("modal-preview-box").src = "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
-    document.getElementById("modal-heading").textContent = "Add New Reward Item";
-  }
-  document.getElementById("product-modal").style.display = "flex";
-}
-
-function closeProductModal() { document.getElementById("product-modal").style.display = "none"; }
-
-function openBotGalleryPicker() {
-  const modal = document.getElementById("bot-gallery-modal");
-  const grid = document.getElementById("bot-gallery-grid");
-  modal.style.display = "flex";
-
-  const items = LocalStore.get('tcrp_cdn_gallery', []);
-  if (!items.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted); font-size:0.75rem;">No images in CDN gallery yet.</div>';
-    return;
-  }
-  grid.innerHTML = items.map(it => `
-    <div class="modal-img-card" onclick="selectBotImage('${it.direct_url}')" title="${it.filename}">
-      <img src="${it.direct_url}" alt="${it.filename}" loading="lazy">
-    </div>
-  `).join('');
-}
-
-function selectBotImage(url) {
-  document.getElementById("modal-prod-img").value = url;
-  document.getElementById("modal-preview-box").src = url;
-  document.getElementById("bot-gallery-modal").style.display = "none";
-}
-
-function revertBotDefault() {
-  const def = "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png";
-  document.getElementById("modal-prod-img").value = def;
-  document.getElementById("modal-preview-box").src = def;
-}
-
-function applyModalChanges() {
-  const idx = document.getElementById("modal-item-index").value;
-  const name = document.getElementById("modal-prod-name").value.trim();
-  const price = parseInt(document.getElementById("modal-prod-price").value, 10) || 0;
-  const image_url = document.getElementById("modal-prod-img").value.trim();
-
-  if (!name) { showToast("Reward name required", "error"); return; }
-
-  if (idx !== "") localItems[Number(idx)] = { name, price, image_url };
-  else localItems.push({ name, price, image_url });
-
-  closeProductModal();
-  renderGrid();
-  markDirty();
-}
-
-function deleteLocalItem(idx) {
-  localItems.splice(idx, 1);
-  renderGrid();
-  markDirty();
-}
-
-async function saveAllToTurso() {
-  const btn = document.getElementById("btn-sync-turso");
-  btn.textContent = "⏳ Syncing...";
-  try {
-    const res = await fetch("/api/main", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "sync_catalog", type: "reward", products: localItems })
-    }).then(r => r.json());
-
-    if (res.ok) {
-      document.getElementById("save-banner").style.display = "none";
-      btn.textContent = "💾 Save to Turso";
-      showToast("Reward catalog saved to Turso!");
-    }
-  } catch(e) { btn.textContent = "💾 Save to Turso"; }
-}
-
 window.addEventListener("DOMContentLoaded", () => {
   initAppLayout('messengerbot', 'Bot Rewards');
-  loadInitialData();
+  loadRewardData();
 });
 </script>
 </body>

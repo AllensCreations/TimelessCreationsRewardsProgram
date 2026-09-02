@@ -107,14 +107,6 @@
       justify-content: space-between;
       gap: 10px;
     }
-
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
-    .cal-day-header { font-size: 0.62rem; text-align: center; color: var(--muted); text-transform: uppercase; font-weight: 700; padding: 4px 0; }
-    .cal-cell { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; min-height: 50px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; }
-    .cal-cell.today { border-color: var(--gold); box-shadow: 0 0 10px rgba(201,168,76,0.2) inset; }
-    .cal-cell.has-activity { background: rgba(201,168,76,0.14); border-color: rgba(201,168,76,0.4); }
-    .cal-num { font-size: 0.7rem; color: var(--muted); font-weight: bold; }
-    .cal-count { font-size: 0.6rem; font-weight: bold; color: var(--gold); align-self: flex-end; }
   </style>
 </head>
 <body>
@@ -122,9 +114,10 @@
 <div class="container">
   <div class="cockpit-header">
     <div>
-      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
         <div class="status-badge-live"><div class="status-dot"></div> Turso DB &amp; API Active</div>
-        <span style="font-size:0.68rem; color:var(--muted); font-family:'DM Mono',monospace;" id="current-utc-time">--</span>
+        <div class="status-badge-live" style="border-color:rgba(78, 170, 255, 0.4); background:rgba(78, 170, 255, 0.12); color:#4eaaff;"><div class="status-dot" style="background:#4eaaff; box-shadow:0 0 8px #4eaaff;"></div> 🇵🇭 Asia/Manila (UTC+8)</div>
+        <span style="font-size:0.68rem; color:var(--gold); font-family:'DM Mono',monospace; font-weight:700;" id="current-pht-time">--:--:-- PHT</span>
       </div>
       <h1 style="color:var(--gold); font-size:1.4rem; margin-bottom:2px;">Timeless Creations Cockpit</h1>
       <p style="font-size:0.78rem; color:var(--muted);">Centralized control station for missionary dispatches, POS invoicing, and rewards.</p>
@@ -160,11 +153,11 @@
       <div class="stat-val" id="stat-missionaries">--</div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">Dispatched Today</div>
+      <div class="stat-label">Dispatched Today (PHT)</div>
       <div class="stat-val" id="stat-sent-today" style="color:var(--green);">0</div>
     </div>
     <div class="stat-card blue">
-      <div class="stat-label">Sent This Month</div>
+      <div class="stat-label">Sent This Month (PHT)</div>
       <div class="stat-val" id="stat-sent-month" style="color:var(--blue);">0</div>
     </div>
     <div class="stat-card">
@@ -174,20 +167,22 @@
   </div>
 
   <div style="display:grid; grid-template-columns:1fr; gap:16px;">
+    <!-- Whole Year Dispatch Checker (Collapsible by Year with Hypothetical Forecast) -->
     <div class="card" style="margin-bottom:0;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div>
-          <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">Monthly Drip Dispatch Heatmap</div>
-          <div style="font-size:0.68rem; color:var(--muted);">Visual distribution of emails sent out this month.</div>
+          <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">📅 Whole Year Dispatch Checker &amp; Roster Forecast</div>
+          <div style="font-size:0.68rem; color:var(--muted);">Overview of actual dispatches sent vs hypothetical active roster capacity per month (PHT).</div>
         </div>
-        <span id="cal-month-name" style="font-size:0.72rem; color:#fff; font-weight:bold; background:var(--surface2); padding:4px 10px; border-radius:6px; border:1px solid var(--border);"></span>
       </div>
-      <div class="calendar-grid" id="calendar-grid"></div>
+      <div id="yearly-checker-container">
+        <div style="text-align:center; padding:20px; color:var(--muted); font-size:0.75rem;">Loading yearly telemetry &amp; forecast breakdown...</div>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:0;">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;">
-        <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">⚡ Live System Activity Stream</div>
+        <div style="font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:bold; color:var(--gold);">⚡ Live System Activity Stream (PHT)</div>
         <a href="/logs.html" style="font-size:0.68rem; color:var(--gold);">View Full Logs ↗</a>
       </div>
       <div class="log-ticker-box" id="log-ticker-container">
@@ -198,7 +193,11 @@
 </div>
 
 <script>
-let dashboardState = { dailyStats: {} };
+let dashboardState = { 
+  yearlyStats: {},
+  activeRosterCount: 0,
+  monthlyTarget: 0
+};
 
 window.renderFromCache = renderFromCache;
 function renderFromCache() {
@@ -211,8 +210,11 @@ function renderFromCache() {
   document.getElementById("stat-sent-today").textContent = (s.emails_today || 0).toLocaleString();
   document.getElementById("stat-sent-month").textContent = (s.emails_month || 0).toLocaleString();
 
-  dashboardState.dailyStats = cachedPayload.daily_stats || {};
-  renderCalendar();
+  dashboardState.yearlyStats = cachedPayload.yearly_dispatch_history || {};
+  dashboardState.activeRosterCount = cachedPayload.active_roster_count || s.active_missionaries || 0;
+  dashboardState.monthlyTarget = cachedPayload.monthly_hypothetical_target || s.hypothetical_monthly_target || dashboardState.activeRosterCount;
+
+  renderYearlyChecker(dashboardState.yearlyStats, dashboardState.monthlyTarget);
 
   const logs = cachedPayload.recent_logs || [];
   const ticker = document.getElementById("log-ticker-container");
@@ -220,60 +222,131 @@ function renderFromCache() {
     ticker.innerHTML = logs.slice(0, 6).map(l => `
       <div class="log-ticker-item">
         <span style="color:#e8e6f0; word-break:break-all;">${l.message}</span>
-        <span style="color:var(--muted); white-space:nowrap; font-size:0.62rem;">${l.created_at ? l.created_at.slice(11, 19) : ''}</span>
+        <span style="color:var(--muted); white-space:nowrap; font-size:0.62rem;">${l.created_at ? formatPhtShortTime(l.created_at) : ''}</span>
       </div>
     `).join('');
   }
 }
 
-function renderCalendar() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  
-  const monthEl = document.getElementById('cal-month-name');
-  if (monthEl) monthEl.textContent = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-
-  const container = document.getElementById('calendar-grid');
+function renderYearlyChecker(yearlyHistory = {}, hypotheticalTarget = 0) {
+  const container = document.getElementById('yearly-checker-container');
   if (!container) return;
-  container.innerHTML = '';
 
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  daysOfWeek.forEach(d => {
-    const el = document.createElement('div');
-    el.className = 'cal-day-header';
-    el.textContent = d;
-    container.appendChild(el);
-  });
+  const phtNow = getPhtDate();
+  const currentYear = phtNow.getFullYear();
+  const currentMonthNum = phtNow.getMonth() + 1;
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const totalDays = new Date(year, month + 1, 0).getDate();
-  const todayDate = now.getDate();
+  const years = Object.keys(yearlyHistory).length > 0 ? Object.keys(yearlyHistory).sort((a, b) => b - a) : [String(currentYear)];
+  const targetPerMonth = Math.max(Number(hypotheticalTarget) || 0, 1);
+  const annualProjectedTarget = targetPerMonth * 12;
 
-  for (let i = 0; i < firstDay; i++) {
-    const emptyCell = document.createElement('div');
-    emptyCell.style.opacity = '0.04';
-    emptyCell.className = 'cal-cell';
-    container.appendChild(emptyCell);
-  }
+  const monthNames = [
+    { num: 1, name: "January", short: "Jan" },
+    { num: 2, name: "February", short: "Feb" },
+    { num: 3, name: "March", short: "Mar" },
+    { num: 4, name: "April", short: "Apr" },
+    { num: 5, name: "May", short: "May" },
+    { num: 6, name: "June", short: "Jun" },
+    { num: 7, name: "July", short: "Jul" },
+    { num: 8, name: "August", short: "Aug" },
+    { num: 9, name: "September", short: "Sep" },
+    { num: 10, name: "October", short: "Oct" },
+    { num: 11, name: "November", short: "Nov" },
+    { num: 12, name: "December", short: "Dec" }
+  ];
 
-  for (let day = 1; day <= totalDays; day++) {
-    const cell = document.createElement('div');
-    const dayStr = String(day).padStart(2, '0');
-    const monthStr = String(month + 1).padStart(2, '0');
-    const fullDateKey = `${year}-${monthStr}-${dayStr}`;
+  container.innerHTML = years.map((yr, idx) => {
+    const yrData = yearlyHistory[yr] || {};
+    let yrActualTotal = 0;
+    for (let m = 1; m <= 12; m++) {
+      yrActualTotal += Number(yrData[m] || 0);
+    }
 
-    const count = dashboardState.dailyStats[fullDateKey] || 0;
-    cell.className = `cal-cell ${day === todayDate ? 'today' : ''} ${count > 0 ? 'has-activity' : ''}`;
-    cell.innerHTML = `<div class="cal-num">${day}</div>${count > 0 ? `<div class="cal-count">✉ ${count}</div>` : ''}`;
-    container.appendChild(cell);
-  }
+    const isCurrentYear = String(yr) === String(currentYear);
+    const isOpen = idx === 0 || isCurrentYear;
+    const yearProgressPct = Math.min(100, Math.round((yrActualTotal / annualProjectedTarget) * 100));
+
+    const monthsHtml = monthNames.map(m => {
+      const actualCount = Number(yrData[m.num] || 0);
+      const isCurrentMonth = isCurrentYear && (currentMonthNum === m.num);
+      const isPastMonth = isCurrentYear ? (m.num < currentMonthNum) : (Number(yr) < currentYear);
+      
+      const pctOfTarget = Math.min(100, Math.round((actualCount / targetPerMonth) * 100));
+
+      let badgeContent = '';
+      let subStatus = '';
+
+      if (actualCount > 0) {
+        badgeContent = `${actualCount} / ${targetPerMonth} Sent`;
+        subStatus = `${pctOfTarget}% of Roster`;
+      } else if (isCurrentMonth) {
+        badgeContent = `0 / ${targetPerMonth} Sent`;
+        subStatus = `Active Month (PHT)`;
+      } else if (isPastMonth) {
+        badgeContent = `0 Sent`;
+        subStatus = `Past Month`;
+      } else {
+        badgeContent = `Est. ${targetPerMonth}`;
+        subStatus = `Projected Capacity`;
+      }
+
+      return `
+        <div class="month-tile ${isCurrentMonth ? 'active-month' : ''}">
+          <div class="month-tile-top">
+            <span class="month-name">${m.short} ${isCurrentMonth ? '<span style="color:var(--gold); font-size:0.6rem;">★</span>' : ''}</span>
+            <span class="month-count-badge">${badgeContent}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.62rem; color:var(--muted);">
+            <span>${m.name}</span>
+            <span style="color:${isCurrentMonth ? 'var(--gold)' : 'var(--muted)'}; font-size:0.58rem; font-weight:600;">${subStatus}</span>
+          </div>
+          <div class="month-bar-wrap">
+            <div class="month-bar-fill" style="width:${actualCount > 0 ? Math.max(pctOfTarget, 10) : 0}%; ${actualCount > 0 ? '' : 'opacity:0;'}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="year-card ${isOpen ? 'open' : ''}" id="year-card-${yr}">
+        <button type="button" class="year-header-btn" onclick="toggleYearAccordion('${yr}')">
+          <div class="year-title-wrap">
+            <span class="year-title-text">🗓️ ${yr} Overview</span>
+            <span class="year-total-badge">${yrActualTotal} Sent / ${annualProjectedTarget} Projected Target (${yearProgressPct}%)</span>
+          </div>
+          <span class="year-toggle-arrow">▼</span>
+        </button>
+        <div class="year-body-collapse">
+          <div class="months-grid">
+            ${monthsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
+function toggleYearAccordion(year) {
+  const card = document.getElementById(`year-card-${year}`);
+  if (card) card.classList.toggle('open');
+}
+
+// Live Philippine Standard Time Clock
 setInterval(() => {
-  const t = document.getElementById('current-utc-time');
-  if (t) t.textContent = new Date().toUTCString().slice(17, 25) + " UTC";
+  const t = document.getElementById('current-pht-time');
+  if (t) t.textContent = formatPhtShortTime(new Date());
 }, 1000);
+
+// Silent 45-second background telemetry sync
+setInterval(async () => {
+  try {
+    const res = await fetch("/api/main?action=get_stats").then(r => r.json()).catch(() => ({}));
+    if (res && res.ok) {
+      LocalStore.set('stats_payload', res);
+      renderFromCache();
+    }
+  } catch (_) {}
+}, 45000);
 
 window.addEventListener("tcrp:data-synced", renderFromCache);
 window.addEventListener("DOMContentLoaded", () => {

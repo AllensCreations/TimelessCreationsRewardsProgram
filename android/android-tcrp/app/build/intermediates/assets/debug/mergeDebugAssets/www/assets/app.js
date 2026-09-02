@@ -70,7 +70,7 @@ function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
   header.className = 'app-header';
   header.innerHTML = `
     <div class="header-inner">
-      <div style="display:flex; align-items:center; gap:12px;">
+      <div class="header-branding">
         <button class="hamburger-btn" onclick="toggleMobileDrawer()" aria-label="Toggle Navigation">☰</button>
         <a href="/index.html" class="brand-title">✨ Timeless Creations <span>• ${pageTitle}</span></a>
       </div>
@@ -79,7 +79,7 @@ function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
           <a href="${item.url}" class="nav-pill ${item.key === activeKey ? 'active' : ''}">${item.label}</a>
         `).join('')}
       </nav>
-      <button onclick="triggerGlobalRefresh()" class="btn btn-dark" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">↻ Sync</button>
+      <button onclick="triggerGlobalRefresh()" class="btn btn-dark" style="padding:6px 12px; font-size:0.75rem; min-height:34px; flex-shrink:0;">↻ Sync</button>
     </div>
   `;
   document.body.prepend(header);
@@ -142,4 +142,186 @@ function getCalendarMonthLabel(monthIndex) {
   const idx = (Number(monthIndex) - 1) % 12;
   return calendarNames[idx < 0 ? (idx + 12) % 12 : idx];
 }
+
+/**
+ * Universal Philippine Standard Time (PST/PHT, UTC+8) Helpers
+ */
+function getPhtDate() {
+  return new Date(Date.now() + 8 * 3600 * 1000);
+}
+
+function formatPhtDate(dateVal, includeSeconds = true) {
+  if (!dateVal) return '--';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (!dateVal.endsWith('Z') && !dateVal.includes('+')) {
+        d = new Date(dateVal.replace(' ', 'T') + 'Z');
+      } else {
+        d = new Date(dateVal);
+      }
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) d = new Date(dateVal);
+
+    return d.toLocaleString('en-US', {
+      timeZone: 'Asia/Manila',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: includeSeconds ? '2-digit' : undefined,
+      hour12: true
+    }) + ' PHT';
+  } catch {
+    return String(dateVal);
+  }
+}
+
+function formatPhtShortTime(dateVal) {
+  if (!dateVal) return '--';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (!dateVal.endsWith('Z') && !dateVal.includes('+')) {
+        d = new Date(dateVal.replace(' ', 'T') + 'Z');
+      } else {
+        d = new Date(dateVal);
+      }
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) d = new Date(dateVal);
+
+    return d.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Manila',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    }) + ' PHT';
+  } catch {
+    return String(dateVal);
+  }
+}
+
+/**
+ * HTML Protection Lock Engine
+ * Disables right-click context menu, image drag-saving, and download shortcuts
+ */
+function initHtmlProtection() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  // 1. Disable Right-Click (except inside editable input/textarea)
+  document.addEventListener('contextmenu', (e) => {
+    const tag = (e.target.tagName || '').toUpperCase();
+    const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable;
+    if (!isEditable) {
+      e.preventDefault();
+      return false;
+    }
+  }, { capture: true });
+
+  // 2. Disable Image / Link Dragging
+  document.addEventListener('dragstart', (e) => {
+    const tag = (e.target.tagName || '').toUpperCase();
+    if (tag === 'IMG' || tag === 'A') {
+      e.preventDefault();
+      return false;
+    }
+  }, { capture: true });
+
+  // 3. Disable Save / Source / DevTools Shortcut Keys
+  document.addEventListener('keydown', (e) => {
+    const key = e.key ? e.key.toLowerCase() : '';
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+    // Block Ctrl+S / Cmd+S (Save Page)
+    if (isCtrlOrCmd && key === 's') {
+      e.preventDefault();
+      showToast("🔒 Page saving is disabled.", "error");
+      return false;
+    }
+
+    // Block Ctrl+U / Cmd+U (View Source)
+    if (isCtrlOrCmd && key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+
+    // Block F12 / Ctrl+Shift+I / Cmd+Option+I (Inspect)
+    if (e.key === 'F12' || (isCtrlOrCmd && e.shiftKey && (key === 'i' || key === 'c' || key === 'j'))) {
+      e.preventDefault();
+      return false;
+    }
+  }, { capture: true });
+}
+
+// Auto-activate HTML protection lock on page load
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHtmlProtection);
+  } else {
+    initHtmlProtection();
+  }
+}
+
+/**
+ * Universal Dark-Gold Warning & Confirmation Modal
+ * Replaces native browser confirm() / alert() with a rich glassmorphism UI dialog
+ */
+function showConfirmWarningModal({
+  title = "⚠️ Warning Confirmation",
+  message = "Are you sure you want to proceed with this action?",
+  confirmText = "Yes, Proceed",
+  cancelText = "Cancel",
+  isDanger = false,
+  icon = null
+} = {}) {
+  return new Promise((resolve) => {
+    let overlay = document.getElementById('universal-warning-modal');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'universal-warning-modal';
+      overlay.className = 'warning-modal-overlay';
+      document.body.appendChild(overlay);
+    }
+
+    const defaultIcon = isDanger ? '🚨' : '⚠️';
+    const displayIcon = icon || defaultIcon;
+
+    overlay.innerHTML = `
+      <div class="warning-modal-card">
+        <div class="warning-icon-badge ${isDanger ? 'danger' : ''}">${displayIcon}</div>
+        <div class="warning-title-text ${isDanger ? 'danger' : ''}">${title}</div>
+        <div class="warning-msg-text">${message}</div>
+        <div class="warning-actions-row">
+          <button type="button" id="warn-modal-cancel-btn" class="btn btn-dark">${cancelText}</button>
+          <button type="button" id="warn-modal-confirm-btn" class="btn ${isDanger ? 'btn-danger' : 'btn-gold'}">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    overlay.classList.add('open');
+
+    const handleConfirm = () => {
+      overlay.classList.remove('open');
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      overlay.classList.remove('open');
+      resolve(false);
+    };
+
+    const confirmBtn = document.getElementById('warn-modal-confirm-btn');
+    const cancelBtn = document.getElementById('warn-modal-cancel-btn');
+    if (confirmBtn) confirmBtn.onclick = handleConfirm;
+    if (cancelBtn) cancelBtn.onclick = handleCancel;
+  });
+}
+
+
 

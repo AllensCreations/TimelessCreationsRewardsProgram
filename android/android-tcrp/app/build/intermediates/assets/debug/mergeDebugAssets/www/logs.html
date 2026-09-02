@@ -50,6 +50,7 @@
   <div class="filters-bar">
     <input type="text" class="search-box" id="log-search" placeholder="Search logs or email recipients..." oninput="renderLogs()"/>
     <button class="filter-btn active" onclick="setFilter('ALL', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('TODAY', this)">📅 Today (PHT)</button>
     <button class="filter-btn" onclick="setFilter('DISPATCH', this)">✉️ Dispatches</button>
     <button class="filter-btn" onclick="setFilter('INFO', this)">Info</button>
     <button class="filter-btn" onclick="setFilter('WARN', this)">Warnings</button>
@@ -90,13 +91,23 @@ function setFilter(level, btn) {
 function renderLogs() {
   const container = document.getElementById('logs-container');
   const query = document.getElementById('log-search').value.toLowerCase().trim();
+  const phtTodayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila' });
 
   let filtered = allLogs.filter(l => {
     const lvl = (l.level || 'INFO').toUpperCase();
     const isDispatch = (l.message || '').includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
-    const matchLevel = currentFilter === 'ALL' 
-      ? true 
-      : (currentFilter === 'DISPATCH' ? isDispatch : lvl === currentFilter);
+    const phtFormattedTime = formatPhtDate(l.created_at);
+    const isToday = phtFormattedTime.includes(phtTodayStr);
+
+    let matchLevel = true;
+    if (currentFilter === 'TODAY') {
+      matchLevel = isToday;
+    } else if (currentFilter === 'DISPATCH') {
+      matchLevel = isDispatch;
+    } else if (currentFilter !== 'ALL') {
+      matchLevel = (lvl === currentFilter);
+    }
+
     const matchQuery = !query || (l.message || '').toLowerCase().includes(query);
     return matchLevel && matchQuery;
   });
@@ -117,7 +128,7 @@ function renderLogs() {
     else if (lvl === 'ERROR') badgeCls = 'badge-error';
     else if (lvl === 'TURSO') badgeCls = 'badge-turso';
 
-    const formattedTime = l.created_at ? new Date(l.created_at).toLocaleString() : 'Just now';
+    const formattedTime = l.created_at ? formatPhtDate(l.created_at) : 'Just now';
 
     return `
       <div class="log-entry-card">
@@ -126,7 +137,7 @@ function renderLogs() {
             <span class="badge ${badgeCls}">${label}</span>
             <span style="font-size:0.65rem; color:var(--muted); font-family:'DM Mono',monospace;">#${l.id}</span>
           </div>
-          <span style="color:var(--muted); font-size:0.65rem; font-family:'DM Mono',monospace;">${formattedTime}</span>
+          <span style="color:var(--gold); font-size:0.65rem; font-family:'DM Mono',monospace;">${formattedTime}</span>
         </div>
         <div class="log-entry-msg">${escapeHtml(l.message)}</div>
       </div>

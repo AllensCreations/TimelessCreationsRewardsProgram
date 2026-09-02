@@ -268,4 +268,60 @@ if (typeof window !== 'undefined') {
   }
 }
 
+/**
+ * Universal Dark-Gold Warning & Confirmation Modal
+ * Replaces native browser confirm() / alert() with a rich glassmorphism UI dialog
+ */
+function showConfirmWarningModal({
+  title = "⚠️ Warning Confirmation",
+  message = "Are you sure you want to proceed with this action?",
+  confirmText = "Yes, Proceed",
+  cancelText = "Cancel",
+  isDanger = false,
+  icon = null
+} = {}) {
+  return new Promise((resolve) => {
+    let overlay = document.getElementById('universal-warning-modal');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'universal-warning-modal';
+      overlay.className = 'warning-modal-overlay';
+      document.body.appendChild(overlay);
+    }
+
+    const defaultIcon = isDanger ? '🚨' : '⚠️';
+    const displayIcon = icon || defaultIcon;
+
+    overlay.innerHTML = `
+      <div class="warning-modal-card">
+        <div class="warning-icon-badge ${isDanger ? 'danger' : ''}">${displayIcon}</div>
+        <div class="warning-title-text ${isDanger ? 'danger' : ''}">${title}</div>
+        <div class="warning-msg-text">${message}</div>
+        <div class="warning-actions-row">
+          <button type="button" id="warn-modal-cancel-btn" class="btn btn-dark">${cancelText}</button>
+          <button type="button" id="warn-modal-confirm-btn" class="btn ${isDanger ? 'btn-danger' : 'btn-gold'}">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    overlay.classList.add('open');
+
+    const handleConfirm = () => {
+      overlay.classList.remove('open');
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      overlay.classList.remove('open');
+      resolve(false);
+    };
+
+    const confirmBtn = document.getElementById('warn-modal-confirm-btn');
+    const cancelBtn = document.getElementById('warn-modal-cancel-btn');
+    if (confirmBtn) confirmBtn.onclick = handleConfirm;
+    if (cancelBtn) cancelBtn.onclick = handleCancel;
+  });
+}
+
+
 

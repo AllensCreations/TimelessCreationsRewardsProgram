@@ -564,7 +564,10 @@ function buildCardListHtml(list, emptyText) {
     return `
       <div class="trx-card">
         <div class="trx-card-row-top">
-          <div class="trx-inv-no">${item.id}</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="trx-inv-no">${item.id}</div>
+            <button class="btn btn-secondary" style="padding:3px 8px; font-size:0.65rem; height:24px; line-height:1;" onclick="event.stopPropagation(); openEditModal('${item.id}', ${item.isOrder})">✏️ Edit</button>
+          </div>
           <div>
             <select class="status-select ${statusClass}" onchange="updateStatus('${item.id}', ${item.isOrder}, this.value)">
               <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
@@ -640,11 +643,12 @@ function downloadSpecificInvoice(encodedData) {
 let currentEditingItem = null;
 
 function openEditModal(id, isOrder) {
-  const isOrd = Boolean(isOrder);
+  const isOrd = (isOrder === true || isOrder === 'true');
   let item = null;
 
   if (isOrd) {
-    const rawOrder = (ordersCache || []).find(o => String(o.order_id) === String(id));
+    const list = (typeof orders !== 'undefined' ? orders : (typeof ordersCache !== 'undefined' ? ordersCache : [])) || [];
+    const rawOrder = list.find(o => String(o.order_id) === String(id));
     if (rawOrder) {
       item = {
         id: rawOrder.order_id,
@@ -652,13 +656,14 @@ function openEditModal(id, isOrder) {
         email: rawOrder.email || '',
         status: (rawOrder.status || 'PENDING').toUpperCase(),
         itemsText: rawOrder.item || '',
-        amount: `${rawOrder.points_cost || 0} Points`,
+        amount: `${rawOrder.points_cost || 0}`,
         isOrder: true,
         raw: rawOrder
       };
     }
   } else {
-    const rawInv = (invoicesCache || []).find(i => String(i.invoice_id) === String(id));
+    const list = (typeof cashInvoices !== 'undefined' ? cashInvoices : (typeof invoicesCache !== 'undefined' ? invoicesCache : [])) || [];
+    const rawInv = list.find(i => String(i.invoice_id) === String(id));
     if (rawInv) {
       let itemsStr = "Custom Order";
       try {
@@ -673,7 +678,7 @@ function openEditModal(id, isOrder) {
         email: rawInv.email || '',
         status: (rawInv.status || 'PENDING').toUpperCase(),
         itemsText: itemsStr,
-        amount: `₱${Number(rawInv.total_amount || 0).toFixed(2)}`,
+        amount: `${Number(rawInv.total_amount || 0).toFixed(2)}`,
         isOrder: false,
         raw: rawInv
       };

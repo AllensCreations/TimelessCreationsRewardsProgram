@@ -1,9 +1,9 @@
 {
-  "version": "1.1.0",
-  "version_code": 3,
-  "deployment_id": "deploy_20260902_v1_1",
-  "build_timestamp": "2026-09-02T11:15:00Z",
+  "version": "1.2.0",
+  "version_code": 4,
+  "deployment_id": "deploy_20260902_v1_2",
+  "build_timestamp": "2026-09-02T11:42:00Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "v1.1.0: Recent Bulk Additions History Feed, Unused Database Tables Cleaned, Permanent Online/Offline Persistence"
+  "changelog": "v1.2.0: Fixed Invoicing Edit Transaction Button, Live Direct Edit Modal, Enhanced Backend Update Handlers"
 }

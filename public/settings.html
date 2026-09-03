@@ -64,6 +64,16 @@
     <button id="bot-maintenance-btn" class="btn btn-dark" onclick="toggleBotMaintenanceDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">⏳ Loading Status...</button>
   </div>
 
+  <!-- Turso Database Cleanup & Optimization -->
+  <div class="card" style="border-color: rgba(201,168,76,0.3);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:8px;">
+      <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">🗄️ Turso Database Maintenance & Table Pruning</div>
+      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);">TURSO LIB-SQL</span>
+    </div>
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Consolidates settings tables, drops duplicate legacy tables (system_config, names, bot_hourly_views), prunes expired rate limits, and optimizes SQLite indices.</div>
+    <button id="db-maintenance-btn" class="btn btn-dark" onclick="runDatabaseMaintenanceDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">🧹 Run Database Pruning & Table Cleanup</button>
+  </div>
+
   <!-- Android App & Live Updates Management -->
   <div class="card" style="border-color: rgba(201,168,76,0.3);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
@@ -332,6 +342,28 @@ async function checkUpdatesManually() {
     await checkDeploymentUpdate(true);
   } else {
     showToast("Update service initializing...", "info");
+  }
+}
+
+async function runDatabaseMaintenanceDirect() {
+  const btn = document.getElementById('db-maintenance-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Running Database Cleanup...'; }
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'run_maintenance' })
+    });
+    const data = await res.json();
+    if (data && data.ok) {
+      showToast('✓ Database pruning & table cleanup complete!');
+    } else {
+      showToast(`⚠️ Maintenance error: ${data?.error || 'Unknown error'}`, 'error');
+    }
+  } catch(e) {
+    showToast('⚠️ Could not connect to server.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🧹 Run Database Pruning & Table Cleanup'; }
   }
 }
 

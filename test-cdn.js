@@ -12,7 +12,7 @@ async function testGitHubCdnConnection() {
   let token = process.env.CDN_GITHUB_TOKEN;
 
   try {
-    const configRows = await runSql("SELECT key, value FROM system_config WHERE key LIKE 'cdn_%'");
+    const configRows = await runSql("SELECT key, value FROM system_settings WHERE key LIKE 'cdn_%'");
     const dbConfig = {};
     (configRows || []).forEach(r => { dbConfig[r.key] = r.value; });
 

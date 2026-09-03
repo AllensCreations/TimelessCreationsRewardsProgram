@@ -92,14 +92,10 @@ CREATE TABLE IF NOT EXISTS `cash_invoices` (
 	`delivered_at` text
 );
 
-CREATE TABLE IF NOT EXISTS `system_config` (
-	`key` text PRIMARY KEY,
-	`value` text
-);
-
 CREATE TABLE IF NOT EXISTS `system_settings` (
 	`key` text PRIMARY KEY,
-	`value` text
+	`value` text,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS `system_logs` (

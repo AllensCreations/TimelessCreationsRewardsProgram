@@ -14,11 +14,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [rowSettings, rowConfig] = await Promise.all([
-      runSql("SELECT value FROM system_settings WHERE key = 'power_state'").catch(() => []),
-      runSql("SELECT value FROM system_config WHERE key = 'power_state'").catch(() => [])
-    ]);
-    const powerVal = rowSettings?.[0]?.value || rowConfig?.[0]?.value;
+    const rowSettings = await runSql("SELECT value FROM system_settings WHERE key = 'power_state'").catch(() => []);
+    const powerVal = rowSettings?.[0]?.value;
     const isOffline = powerVal && String(powerVal).toUpperCase() === 'OFFLINE';
 
     if (isOffline) {

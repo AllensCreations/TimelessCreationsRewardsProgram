@@ -54,6 +54,16 @@
     <button id="power-toggle-btn" class="btn btn-dark" onclick="togglePowerDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">⏳ Loading Status...</button>
   </div>
 
+  <!-- Messenger Bot Maintenance Mode Switch -->
+  <div class="card" style="border-color: var(--border-gold);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:8px;">
+      <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">🤖 Messenger Bot Maintenance Mode</div>
+      <span class="badge" id="bot-maintenance-badge" style="background:rgba(46,204,113,0.15); color:#2ecc71; border:1px solid rgba(46,204,113,0.4);">● OPERATIONAL</span>
+    </div>
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Controls public availability of the Facebook Messenger bot. When maintenance mode is active, incoming messages receive an automated maintenance notice instead of executing commands.</div>
+    <button id="bot-maintenance-btn" class="btn btn-dark" onclick="toggleBotMaintenanceDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">⏳ Loading Status...</button>
+  </div>
+
   <!-- Android App & Live Updates Management -->
   <div class="card" style="border-color: rgba(201,168,76,0.3);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
@@ -122,6 +132,7 @@
 
 <script>
 let currentPowerState = "offline";
+let currentBotMaintenanceState = "OFF";
 
 function initMonthPicker() {
   const sel = document.getElementById("test-drip-month");
@@ -145,6 +156,10 @@ async function loadSettings() {
   currentPowerState = cached;
   updatePowerButtonUI(currentPowerState);
 
+  const cachedBotMaint = LocalStore.get('tcrp_bot_maintenance_state', 'OFF');
+  currentBotMaintenanceState = cachedBotMaint;
+  updateBotMaintenanceButtonUI(currentBotMaintenanceState);
+
   try {
     const res = await fetch("/api/main?action=health_check&t=" + Date.now()).then(r => r.json());
     if (res && res.power_state) {
@@ -152,6 +167,12 @@ async function loadSettings() {
       currentPowerState = serverState;
       LocalStore.set('tcrp_power_state', currentPowerState);
       updatePowerButtonUI(currentPowerState);
+    }
+    if (res && res.bot_maintenance) {
+      const serverBotMaint = res.bot_maintenance.toUpperCase();
+      currentBotMaintenanceState = serverBotMaint;
+      LocalStore.set('tcrp_bot_maintenance_state', currentBotMaintenanceState);
+      updateBotMaintenanceButtonUI(currentBotMaintenanceState);
     }
   } catch(e) {}
   loadCdnSettings();
@@ -168,6 +189,38 @@ function updatePowerButtonUI(state) {
     btn.className = "btn btn-dark";
     btn.style.boxShadow = "none";
     btn.innerHTML = "💤 Master System: <strong style='color:var(--gold);'>OFFLINE</strong> (Paused • Click to Switch Online)";
+  }
+}
+
+function updateBotMaintenanceButtonUI(state) {
+  const btn = document.getElementById("bot-maintenance-btn");
+  const badge = document.getElementById("bot-maintenance-badge");
+  if (!btn) return;
+  const isMaint = (state || "").toUpperCase() === "ON";
+  if (isMaint) {
+    btn.className = "btn btn-gold";
+    btn.style.background = "#c0392b";
+    btn.style.borderColor = "#e74c3c";
+    btn.style.boxShadow = "0 0 15px rgba(231,76,60,0.3)";
+    btn.innerHTML = "🛠️ Messenger Bot: <strong style='color:#fff;'>MAINTENANCE ACTIVE</strong> (Click to Restore Normal Service)";
+    if (badge) {
+      badge.style.background = "rgba(231,76,60,0.2)";
+      badge.style.color = "#ff6b6b";
+      badge.style.borderColor = "rgba(231,76,60,0.5)";
+      badge.textContent = "🛠️ MAINTENANCE ACTIVE";
+    }
+  } else {
+    btn.className = "btn btn-dark";
+    btn.style.background = "";
+    btn.style.borderColor = "";
+    btn.style.boxShadow = "none";
+    btn.innerHTML = "🤖 Messenger Bot: <strong style='color:var(--gold);'>OPERATIONAL</strong> (Normal • Click to Switch to Maintenance)";
+    if (badge) {
+      badge.style.background = "rgba(46,204,113,0.15)";
+      badge.style.color = "#2ecc71";
+      badge.style.borderColor = "rgba(46,204,113,0.4)";
+      badge.textContent = "● OPERATIONAL";
+    }
   }
 }
 
@@ -214,6 +267,54 @@ async function togglePowerDirect() {
     }
   } catch(e) {
     showToast(`Saved locally: System is ${nextState.toUpperCase()}`);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function toggleBotMaintenanceDirect() {
+  const nextState = currentBotMaintenanceState === "ON" ? "OFF" : "ON";
+  const confirmed = await showConfirmWarningModal({
+    title: nextState === "ON" ? "🛠️ Activate Messenger Bot Maintenance Mode?" : "🤖 Restore Messenger Bot to Operational?",
+    message: nextState === "ON"
+      ? "When Maintenance Mode is active, all incoming Messenger interactions will receive an automated maintenance notice instead of standard bot processing."
+      : "This will restore standard interactive Messenger bot features, onboarding, point redemptions, and catalog browsing.",
+    confirmText: nextState === "ON" ? "Yes, Enable Maintenance" : "Yes, Restore Bot",
+    cancelText: "Cancel",
+    isDanger: nextState === "ON"
+  });
+
+  if (!confirmed) return;
+
+  const btn = document.getElementById("bot-maintenance-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = `⏳ Switching to ${nextState === "ON" ? "MAINTENANCE" : "OPERATIONAL"}...`;
+  }
+
+  // Optimistically set local cache and UI
+  currentBotMaintenanceState = nextState;
+  LocalStore.set('tcrp_bot_maintenance_state', nextState);
+  updateBotMaintenanceButtonUI(nextState);
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggle_bot_maintenance", state: nextState })
+    });
+    const data = await res.json();
+    if (data && data.ok) {
+      const resolved = (data.bot_maintenance || data.state || nextState).toUpperCase();
+      currentBotMaintenanceState = resolved;
+      LocalStore.set('tcrp_bot_maintenance_state', resolved);
+      updateBotMaintenanceButtonUI(resolved);
+      showToast(`✓ Messenger bot is now ${resolved === "ON" ? "in MAINTENANCE MODE" : "OPERATIONAL"}!`);
+    } else {
+      showToast(`Messenger bot switched to ${nextState} locally.`);
+    }
+  } catch(e) {
+    showToast(`Saved locally: Bot is ${nextState}`);
   } finally {
     if (btn) btn.disabled = false;
   }

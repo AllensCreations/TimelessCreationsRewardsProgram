@@ -15,7 +15,7 @@ const MUTATING_ADMIN_ACTIONS = new Set([
   'update_missionary', 'update_missionary_points', 'delete_missionary', 'push_missionaries',
   'save_promo_code', 'delete_promo_code', 'save_drip', 'apply_top_sales_all_months',
   'update_invoice_status', 'update_invoice', 'delete_invoice', 'create_invoice',
-  'save_cdn_config', 'delete', 'cdn_delete', 'toggle_power', 'setup_messenger_profile'
+  'save_cdn_config', 'delete', 'cdn_delete', 'toggle_power', 'toggle_bot_maintenance', 'setup_messenger_profile'
 ]);
 
 export default async function handler(req, res) {

@@ -1,0 +1,105 @@
+name: Build and Release Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Auto-Increment Version (+0.1)
+        id: versioning
+        run: |
+          set -e
+          GRADLE_FILE="android/android-tcrp/app/build.gradle"
+          CURRENT_VERSION=$(grep 'versionName' $GRADLE_FILE | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          CURRENT_CODE=$(grep 'versionCode' $GRADLE_FILE | head -1 | tr -dc '0-9')
+          
+          NEW_CODE=$((CURRENT_CODE + 1))
+
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          NEW_MINOR=$((MINOR + 1))
+          NEW_VERSION="${MAJOR}.${NEW_MINOR}.0"
+
+          echo "Bumping version: $CURRENT_VERSION (Code $CURRENT_CODE) -> $NEW_VERSION (Code $NEW_CODE)"
+
+          sed -i "s/versionCode .*/versionCode $NEW_CODE/" $GRADLE_FILE
+          sed -i "s/versionName .*/versionName \"$NEW_VERSION\"/" $GRADLE_FILE
+
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          UPDATE_JSON="{\n  \"version\": \"$NEW_VERSION\",\n  \"version_code\": $NEW_CODE,\n  \"deployment_id\": \"deploy_$(date -u +%Y%m%d)_v${MAJOR}_${NEW_MINOR}\",\n  \"build_timestamp\": \"$TIMESTAMP\",\n  \"apk_url\": \"https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk\",\n  \"github_apk_url\": \"https://github.com/${{ github.repository }}/raw/Appversion/public/TimelessRewards.apk\",\n  \"changelog\": \"v$NEW_VERSION: Automated CI deployment build $NEW_CODE\"\n}"
+          
+          echo -e "$UPDATE_JSON" > views/version.json
+          mkdir -p public
+          echo -e "$UPDATE_JSON" > public/version.json
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "new_code=$NEW_CODE" >> $GITHUB_OUTPUT
+
+      - name: Grant Execute Permission to Gradle
+        run: chmod +x android/android-tcrp/gradlew
+
+      - name: Build Android APK with Gradle
+        run: |
+          cd android/android-tcrp
+          ./gradlew assembleRelease || ./gradlew assembleDebug
+
+      - name: Stage APK Files
+        run: |
+          mkdir -p public android
+          APK_PATH=$(find android/android-tcrp/app/build/outputs/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: No APK file generated!" && exit 1
+          fi
+          echo "Found compiled APK at $APK_PATH"
+          cp "$APK_PATH" public/TimelessRewards.apk
+          cp "$APK_PATH" "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
+
+      - name: Commit and Push to Appversion Branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git checkout -B Appversion
+          git add -f views/version.json public/version.json android/android-tcrp/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
+          git commit -m "chore(release): bump version to v${{ steps.versioning.outputs.new_version }} (Build ${{ steps.versioning.outputs.new_code }}) [skip ci]"
+          git push origin Appversion --force
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.versioning.outputs.new_version }}"
+          name: "Timeless Rewards v${{ steps.versioning.outputs.new_version }} (Build ${{ steps.versioning.outputs.new_code }})"
+          body: |
+            ## 🎁 Timeless Rewards v${{ steps.versioning.outputs.new_version }}
+            - **Build Code**: `${{ steps.versioning.outputs.new_code }}`
+            - **Branch**: `Appversion`
+            - **Direct APK**: [Download TimelessRewards.apk](https://github.com/${{ github.repository }}/raw/Appversion/public/TimelessRewards.apk)
+          files: |
+            public/TimelessRewards.apk
+            android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

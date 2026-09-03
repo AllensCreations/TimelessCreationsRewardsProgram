@@ -59,6 +59,14 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "new_code=$NEW_CODE" >> $GITHUB_OUTPUT
 
+      - name: Clean Invalid Gradle Overrides & SDK Paths
+        run: |
+          # Remove stale local.properties containing machine-specific sdk.dir
+          find android -name "local.properties" -delete || true
+          
+          # Remove any hardcoded aapt2 override from gradle.properties files
+          find android -name "gradle.properties" -exec sed -i '/aapt2FromMavenOverride/d' {} + || true
+
       - name: Grant Execute Permission to Gradle
         run: chmod +x android/android-tcrp/gradlew
 

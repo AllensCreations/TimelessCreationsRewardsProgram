@@ -575,10 +575,15 @@ async function applyTopSalesToAllMonths() {
 
 async function fetchFromTurso() {
   try {
-    const [dripRes, promoRes] = await Promise.all([
+    const [dripRes, promoRes, rewardsVisRes] = await Promise.all([
       fetch("/api/main?action=get_drips").then(r => r.json()).catch(() => ({})),
-      fetch("/api/main?action=get_promo_codes").then(r => r.json()).catch(() => ({}))
+      fetch("/api/main?action=get_promo_codes").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_drip_rewards_visibility").then(r => r.json()).catch(() => ({}))
     ]);
+
+    if (rewardsVisRes.ok && rewardsVisRes.visible !== undefined) {
+      LocalStore.set('drip_rewards_visible', rewardsVisRes.visible);
+    }
 
     if (dripRes.ok && Array.isArray(dripRes.drips)) {
       dripRes.drips.forEach(d => {
@@ -854,7 +859,8 @@ function renderPreview() {
     { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
     { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
   ]);
-  const rewardSectionHtml = buildCombinedRewardSectionHtml(points, catalogProducts, latestPromo);
+  const isRewardsCategoryVisible = LocalStore.get('drip_rewards_visible', true);
+  const rewardSectionHtml = isRewardsCategoryVisible ? buildCombinedRewardSectionHtml(points, catalogProducts, latestPromo) : '';
 
   let sourceTemplate = (document.getElementById("inp-custom-html").value.trim() !== "") 
     ? document.getElementById("inp-custom-html").value 

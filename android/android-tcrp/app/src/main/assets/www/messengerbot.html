@@ -58,6 +58,23 @@
         color: var(--muted);
       }
       .promo-card.open .promo-details-collapse { display: flex; }
+
+      .toggle-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface2);
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        margin-bottom: 14px;
+      }
+      .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+      .switch input { opacity: 0; width: 0; height: 0; }
+      .slider { position: absolute; cursor: pointer; inset: 0; background-color: #2a2a38; transition: .3s; border-radius: 24px; border: 1px solid var(--border); }
+      .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--muted); transition: .3s; border-radius: 50%; }
+      input:checked + .slider { background-color: var(--gold-dim); border-color: var(--gold); }
+      input:checked + .slider:before { transform: translateX(20px); background-color: var(--gold); }
     </style>
 </head>
 <body>
@@ -79,6 +96,19 @@
         </div>
         <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="addNewRewardSetting()">+ Add Reward</button>
       </div>
+
+      <!-- Toggle: Show/Hide Reward Category in Monthly Drip Template -->
+      <div class="toggle-wrap">
+        <div>
+          <div style="font-weight:700; font-size:0.85rem; color:var(--gold);">Monthly Drip Reward Category</div>
+          <div style="font-size:0.68rem; color:var(--muted);" id="toggle-drip-rewards-status-text">Show or hide the Reward Catalog category in the Monthly Drip template.</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-drip-rewards" checked onchange="toggleMonthlyDripRewardCategory(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
       <div id="rewards-settings-container">
         <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">Loading rewards catalog...</div>
       </div>
@@ -164,14 +194,51 @@ function switchBotTab(tab) {
 }
 
 async function loadRewardData() {
+  const cachedVisible = LocalStore.get('drip_rewards_visible', true);
+  setDripRewardsToggleUI(cachedVisible);
+
   try {
     const res = await fetch("/api/main?action=get_products&type=reward").then(r => r.json());
     if (res.ok) {
       rewardCatalog = res.products || [];
       renderRewardSettings();
+      if (res.drip_rewards_visible !== undefined) {
+        setDripRewardsToggleUI(res.drip_rewards_visible);
+      }
     }
   } catch(e) {
     showToast("Error loading rewards", "error");
+  }
+}
+
+function setDripRewardsToggleUI(visible) {
+  const isVisible = visible !== false && visible !== 'false';
+  const toggle = document.getElementById('toggle-drip-rewards');
+  if (toggle) toggle.checked = isVisible;
+  LocalStore.set('drip_rewards_visible', isVisible);
+  const statusText = document.getElementById('toggle-drip-rewards-status-text');
+  if (statusText) {
+    statusText.textContent = isVisible
+      ? 'Reward Catalog category is VISIBLE in the Monthly Drip template.'
+      : 'Reward Catalog category is HIDDEN from the Monthly Drip template.';
+  }
+}
+
+async function toggleMonthlyDripRewardCategory(isChecked) {
+  setDripRewardsToggleUI(isChecked);
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set_drip_rewards_visibility', visible: isChecked })
+    }).then(r => r.json());
+    if (res.ok) {
+      showToast(isChecked ? "✓ Reward category unhidden in Monthly Drip" : "✓ Reward category hidden from Monthly Drip");
+    } else {
+      showToast("Notice: " + (res.error || "Failed to update"), "error");
+    }
+  } catch (e) {
+    showToast("Error updating drip category visibility", "error");
   }
 }
 
@@ -269,15 +336,22 @@ async function saveRewardSettings() {
     if (name) updated.push({ name, price, image_url, type: 'reward' });
   });
 
+  const isRewardsCategoryVisible = document.getElementById('toggle-drip-rewards')?.checked ?? true;
+
   try {
     const res = await fetch('/api/main', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'sync_catalog', type: 'reward', products: updated })
+      body: JSON.stringify({ 
+        action: 'sync_catalog', 
+        type: 'reward', 
+        products: updated,
+        drip_rewards_visible: isRewardsCategoryVisible
+      })
     });
     const data = await res.json();
     if (data.ok) {
-      showToast("Reward catalog saved to Turso!");
+      showToast("Reward catalog & drip settings saved to Turso!");
       rewardCatalog = updated;
     } else {
       showToast("Error saving rewards: " + (data.error || "Failed"), "error");

@@ -8,4 +8,7 @@ test-output/
 codebase_archives/
 *.tar.gz
 .agents/
+android/app/build/
+android/build/
+android/.gradle/
 

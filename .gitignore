@@ -11,4 +11,11 @@ codebase_archives/
 android/app/build/
 android/build/
 android/.gradle/
-
+android/android-tcrp/build/
+android/android-tcrp/app/build/
+android/android-tcrp/.gradle/
+**/build/
+**/.gradle/
+**/local.properties
+**/assets/**/*.apk
+*.apk.idsig

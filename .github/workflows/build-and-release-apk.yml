@@ -3,7 +3,7 @@ name: Build and Release Android APK
 on:
   push:
     branches:
-      - main
+      - Appversion
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
@@ -46,18 +51,22 @@ jobs:
 
           echo "Bumping version: $CURRENT_VERSION (Code $CURRENT_CODE) -> $NEW_VERSION (Code $NEW_CODE)"
 
-          sed -i "s/versionCode .*/versionCode $NEW_CODE/" $GRADLE_FILE
-          sed -i "s/versionName .*/versionName \"$NEW_VERSION\"/" $GRADLE_FILE
+          sed -i "s/versionCode .*/versionCode $NEW_CODE/" android/android-tcrp/app/build.gradle
+          sed -i "s/versionName .*/versionName \"$NEW_VERSION\"/" android/android-tcrp/app/build.gradle
+          sed -i "s/versionCode .*/versionCode $NEW_CODE/" android/app/build.gradle
+          sed -i "s/versionName .*/versionName \"$NEW_VERSION\"/" android/app/build.gradle
 
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           UPDATE_JSON="{\n  \"version\": \"$NEW_VERSION\",\n  \"version_code\": $NEW_CODE,\n  \"deployment_id\": \"deploy_$(date -u +%Y%m%d)_v${MAJOR}_${NEW_MINOR}\",\n  \"build_timestamp\": \"$TIMESTAMP\",\n  \"apk_url\": \"https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk\",\n  \"github_apk_url\": \"https://github.com/${{ github.repository }}/raw/Appversion/public/TimelessRewards.apk\",\n  \"changelog\": \"v$NEW_VERSION: Automated CI deployment build $NEW_CODE\"\n}"
           
           echo -e "$UPDATE_JSON" > views/version.json
-          mkdir -p public
-          echo -e "$UPDATE_JSON" > public/version.json
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "new_code=$NEW_CODE" >> $GITHUB_OUTPUT
+
+      - name: Sync Web Assets
+        run: |
+          node scripts/sync-assets.js
 
       - name: Clean Invalid Gradle Overrides & SDK Paths
         run: |
@@ -73,7 +82,8 @@ jobs:
       - name: Build Android APK with Gradle
         run: |
           cd android/android-tcrp
-          ./gradlew assembleRelease || ./gradlew assembleDebug
+          rm -rf app/build/outputs/apk
+          ./gradlew assembleRelease
 
       - name: Stage APK Files
         run: |
@@ -91,10 +101,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git checkout -B Appversion
-          git add -f views/version.json public/version.json android/android-tcrp/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
+          git checkout Appversion
+          git add -f views/version.json public/version.json android/android-tcrp/app/build.gradle android/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
           git commit -m "chore(release): bump version to v${{ steps.versioning.outputs.new_version }} (Build ${{ steps.versioning.outputs.new_code }}) [skip ci]"
-          git push origin Appversion --force
+          git push origin Appversion
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

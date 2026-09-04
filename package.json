@@ -9,7 +9,8 @@
     "test": "node test-master.js",
     "test:templates": "node test-templates.js",
     "test:html": "node test-html.js",
-    "build": "mkdir -p public/assets && cp -r views/* public/ 2>/dev/null || true && cp -r assets/* public/assets/ 2>/dev/null || true && mkdir -p android/app/src/main/assets/www android/android-tcrp/app/src/main/assets/www 2>/dev/null || true && cp -r public/* android/app/src/main/assets/www/ 2>/dev/null || true && cp -r public/* android/android-tcrp/app/src/main/assets/www/ 2>/dev/null || true",
+    "build": "node scripts/sync-assets.js",
+    "build:apk": "node scripts/sync-assets.js && cd android/android-tcrp && ./gradlew assembleRelease",
     "prune": "node -r dotenv/config -e \"import('./lib/dbPruner.js').then(m => m.runDatabaseMaintenance())\"",
     "organize": "mkdir -p codebase_archives && mv -f *_codebase.txt codebase_archives/ 2>/dev/null || true"
   },

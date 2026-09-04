@@ -1,7 +1,7 @@
 # 🎁 Timeless Creations Rewards Program (TCRP)
 
-[![Version](https://img.shields.io/badge/Version-v1.8.0-gold.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/tree/Appversion)
-[![Android APK](https://img.shields.io/badge/Android%20APK-Build%2010-blue.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk)
+[![Version](https://img.shields.io/badge/Version-v2.0.0-gold.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/tree/Appversion)
+[![Android APK](https://img.shields.io/badge/Android%20APK-Build%2012-blue.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk)
 [![Runtime](https://img.shields.io/badge/Runtime-Node.js%20(ESM)%20%7C%20Android%20WebView-darkgreen.svg)](https://nodejs.org/)
 [![Database](https://img.shields.io/badge/Database-Turso%20libSQL-blueviolet.svg)](https://turso.tech/)
 [![Tests](https://img.shields.io/badge/Auditor%20Tests-502%20Passed%20(100%25)-brightgreen.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram)
@@ -14,9 +14,9 @@
 
 | Distribution Channel | Target Link | Format |
 | :--- | :--- | :--- |
-| **🌐 GitHub Direct APK Mirror** | [📥 Download TimelessRewards.apk (v1.8.0)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk) | Standalone Android APK (3.6 MB) |
+| **🌐 GitHub Direct APK Mirror** | [📥 Download TimelessRewards.apk (v2.0.0)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk) | Standalone Android APK (2.8 MB) |
 | **⚡ Live Production Web Host** | [🌐 Open Web Dashboard (Vercel)](https://timelesscreationsrewardsprogram.vercel.app/) | PWA / Mobile-Optimized Web App |
-| **📦 Release Artifacts** | [`android/TimelessRewards-v1.8.apk`](android/TimelessRewards-v1.8.apk) | Version 1.8.0 (Build Code 10) |
+| **📦 Release Artifacts** | [`android/TimelessRewards-v2.0.0.apk`](android/TimelessRewards-v2.0.0.apk) | Version 2.0.0 (Build Code 12) |
 
 ---
 

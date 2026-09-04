@@ -450,9 +450,9 @@ const TCRPSync = {
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.8.0";
-const CURRENT_APP_VERSION_CODE = 10;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260902_v1_8";
+const CURRENT_APP_VERSION = "1.9.0";
+const CURRENT_APP_VERSION_CODE = 11;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260904_v1_9";
 
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && (
@@ -471,7 +471,15 @@ async function checkDeploymentUpdate(isManual = false) {
     let remote = null;
 
     try {
-      const res = await fetch(apiBase + '/api/main?action=get_version&t=' + Date.now(), { cache: 'no-store' });
+      const q = new URLSearchParams({
+        action: 'get_version',
+        client_version: CURRENT_APP_VERSION,
+        client_version_code: String(CURRENT_APP_VERSION_CODE),
+        t: String(Date.now())
+      });
+      if (isManual) q.set('force', 'true');
+
+      const res = await fetch(apiBase + '/api/main?' + q.toString(), { cache: 'no-store' });
       if (res.ok) remote = await res.json();
     } catch (_) {}
 
@@ -488,17 +496,23 @@ async function checkDeploymentUpdate(isManual = false) {
     }
 
     const msgEl = typeof document !== 'undefined' ? document.getElementById('update-status-msg') : null;
+    const badgeEl = typeof document !== 'undefined' ? document.getElementById('app-version-badge') : null;
 
     if (!remote || !remote.ok) {
       if (isManual) {
         showToast("Offline or remote server unreachable.", "info");
         if (msgEl) {
           msgEl.style.display = 'block';
+          msgEl.style.borderColor = 'var(--border)';
           msgEl.style.color = 'var(--muted)';
           msgEl.textContent = '✓ Offline mode active. Using cached assets.';
         }
       }
       return;
+    }
+
+    if (badgeEl) {
+      badgeEl.textContent = `v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE})`;
     }
 
     const storedDeployId = LocalStore.get('tcrp_last_deployment_id', CURRENT_DEPLOYMENT_ID);
@@ -514,19 +528,47 @@ async function checkDeploymentUpdate(isManual = false) {
       return;
     }
 
-    // 2. Native Android APK In-App Update Prompt
+    // 2. Native Android APK In-App Update & Release Link Comparison
     const storedApkVersion = Number(LocalStore.get('tcrp_installed_version_code', CURRENT_APP_VERSION_CODE)) || CURRENT_APP_VERSION_CODE;
-    const remoteCode = Number(remote.version_code) || 0;
+    const remoteCode = Number(remote.version_code) || CURRENT_APP_VERSION_CODE;
+    const remoteVer = remote.version || CURRENT_APP_VERSION;
+    const rel = remote.release || {};
+    const comp = remote.comparison || {
+      is_same: (remoteCode === CURRENT_APP_VERSION_CODE) && (remoteVer === CURRENT_APP_VERSION),
+      has_update: (remoteCode > CURRENT_APP_VERSION_CODE)
+    };
 
-    if (remoteCode > storedApkVersion || (isManual && remoteCode > CURRENT_APP_VERSION_CODE)) {
+    const hasUpdate = comp.has_update || (remoteCode > storedApkVersion) || (isManual && remoteCode > CURRENT_APP_VERSION_CODE);
+    const isSame = comp.is_same || (!hasUpdate && remoteCode === CURRENT_APP_VERSION_CODE);
+
+    if (hasUpdate) {
+      if (badgeEl) {
+        badgeEl.textContent = `Update: v${remoteVer} (Build ${remoteCode})`;
+        badgeEl.style.background = 'rgba(201,168,76,0.2)';
+        badgeEl.style.color = 'var(--gold)';
+      }
       if (msgEl) {
         msgEl.style.display = 'block';
-        msgEl.style.color = 'var(--gold)';
-        msgEl.textContent = `🚀 New version available: v${remote.version} (Code ${remoteCode})`;
+        msgEl.style.borderColor = 'rgba(201,168,76,0.5)';
+        msgEl.style.background = 'rgba(201,168,76,0.08)';
+        msgEl.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+            <strong style="color:var(--gold); font-size:0.82rem;">🚀 New Update Detected in Release Link!</strong>
+            <span style="font-size:0.7rem; color:var(--muted);">${rel.apk_size_formatted || ''}</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text); line-height:1.4;">
+            <div><strong>Release APK:</strong> ${rel.name || (`v${remoteVer} (Build ${remoteCode})`)}</div>
+            <div><strong>Installed APK:</strong> v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE})</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <a href="${remote.apk_url || remote.direct_apk_url || remote.github_apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk'}" class="btn btn-sm btn-gold" style="text-decoration:none; padding:4px 12px; font-size:0.75rem;">⬇️ Download Release APK</a>
+            ${remote.release_url ? `<a href="${remote.release_url}" target="_blank" rel="noopener" class="btn btn-sm" style="background:rgba(255,255,255,0.08); color:var(--text); text-decoration:none; padding:4px 10px; font-size:0.75rem; border:1px solid var(--border);">🔗 Release Link</a>` : ''}
+          </div>
+        `;
       }
       const confirmed = await showConfirmWarningModal({
-        title: `📱 New App Update Available (v${remote.version})!`,
-        message: `A new build is available.<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
+        title: `📱 New App Update Available (v${remoteVer})!`,
+        message: `A new build is available in the Release Link.<br><br><strong>Release:</strong> ${rel.name || ('v' + remoteVer + ' (Build ' + remoteCode + ')')}<br><strong>File Size:</strong> ${rel.apk_size_formatted || '44.4 MB'}<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
         confirmText: "🚀 Update / Download Now",
         cancelText: "Remind Me Later",
         isDanger: false,
@@ -535,16 +577,52 @@ async function checkDeploymentUpdate(isManual = false) {
 
       if (confirmed) {
         LocalStore.set('tcrp_installed_version_code', remoteCode);
-        const targetUrl = remote.github_apk_url || remote.apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk';
+        const targetUrl = remote.apk_url || remote.direct_apk_url || remote.github_apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk';
         window.location.href = targetUrl;
       }
-    } else if (isManual) {
+    } else if (isSame) {
+      if (badgeEl) {
+        badgeEl.textContent = `v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE}) • Up to date`;
+        badgeEl.style.background = 'rgba(74,222,128,0.15)';
+        badgeEl.style.color = 'var(--green)';
+      }
       if (msgEl) {
         msgEl.style.display = 'block';
-        msgEl.style.color = 'var(--green)';
-        msgEl.textContent = `✓ You're at the latest version! (v${CURRENT_APP_VERSION} - Up to date)`;
+        msgEl.style.borderColor = 'rgba(74,222,128,0.3)';
+        msgEl.style.background = 'rgba(74,222,128,0.05)';
+        msgEl.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+            <strong style="color:var(--green); font-size:0.8rem;">✓ APK in Release Link matches Installed APK (Same Build)</strong>
+            <span style="font-size:0.7rem; color:var(--muted);">${rel.apk_size_formatted || '44.4 MB'}</span>
+          </div>
+          <div style="font-size:0.73rem; color:var(--muted); line-height:1.4;">
+            ${comp.status_message || `Installed v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE}) is identical to latest release ${rel.tag_name || ('v' + CURRENT_APP_VERSION)}.`}
+            ${rel.release_url ? ` &bull; <a href="${rel.release_url}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none;">View Release Link ↗</a>` : ''}
+          </div>
+        `;
       }
-      showToast(`✓ You're at the latest version! (v${CURRENT_APP_VERSION})`, "success");
+      if (isManual) {
+        showToast(`✓ Release APK is identical to installed build v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE})!`, "success");
+      }
+    } else {
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.borderColor = 'var(--border)';
+        msgEl.style.background = 'rgba(255,255,255,0.03)';
+        msgEl.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--gold);">ℹ️ Build Comparison</span>
+            <span style="font-size:0.7rem; color:var(--muted);">${rel.apk_size_formatted || ''}</span>
+          </div>
+          <div style="font-size:0.73rem; color:var(--muted); line-height:1.4;">
+            ${comp.status_message || `Installed build: v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE}). Release: v${remoteVer} (Build ${remoteCode}).`}
+            ${rel.release_url ? ` &bull; <a href="${rel.release_url}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none;">View Release Link ↗</a>` : ''}
+          </div>
+        `;
+      }
+      if (isManual) {
+        showToast(`Installed: v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE}) • Release: v${remoteVer}`, "info");
+      }
     }
   } catch (_) {}
 }

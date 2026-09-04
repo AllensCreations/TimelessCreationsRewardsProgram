@@ -450,9 +450,9 @@ const TCRPSync = {
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-const CURRENT_APP_VERSION = "1.9.0";
-const CURRENT_APP_VERSION_CODE = 11;
-const CURRENT_DEPLOYMENT_ID = "deploy_20260904_v1_9";
+const CURRENT_APP_VERSION = "2.0.0";
+const CURRENT_APP_VERSION_CODE = 12;
+const CURRENT_DEPLOYMENT_ID = "deploy_20260904_v2_0";
 
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && (

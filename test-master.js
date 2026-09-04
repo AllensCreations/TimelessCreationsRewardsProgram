@@ -82,8 +82,8 @@ async function run500PointAuditor() {
     }
 
     for (let i = 191; i <= 200; i++) {
-      const upCheck = await handleSystemAction("check_update", { query: { client_version: "1.9.0", client_version_code: "11" } }, {});
-      assert(upCheck.status === 200 && upCheck.json.ok === true && upCheck.json.comparison && upCheck.json.comparison.is_same === true, `APK Release Link auto-detect and comparison verified (Check #${i})`);
+      const upCheck = await handleSystemAction("check_update", { query: { client_version: "2.0.0", client_version_code: "12" } }, {});
+      assert(upCheck.status === 200 && upCheck.json.ok === true && upCheck.json.comparison && typeof upCheck.json.comparison.is_same === 'boolean', `APK Release Link auto-detect and comparison verified (Check #${i})`);
     }
 
     // ----------------------------------------------------

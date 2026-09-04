@@ -450,9 +450,9 @@ const TCRPSync = {
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-let CURRENT_APP_VERSION = "2.1.0";
-let CURRENT_APP_VERSION_CODE = 13;
-let CURRENT_DEPLOYMENT_ID = "deploy_20260904_v2_1";
+let CURRENT_APP_VERSION = "2.2.0";
+let CURRENT_APP_VERSION_CODE = 14;
+let CURRENT_DEPLOYMENT_ID = "deploy_20260904_v2_2";
 let hasLoadedLocalVersion = false;
 
 async function loadInstalledVersion() {

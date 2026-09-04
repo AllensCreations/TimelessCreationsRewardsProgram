@@ -1,9 +1,9 @@
 {
-  "version": "2.2.0",
-  "version_code": 14,
-  "deployment_id": "deploy_20260904_v2_2",
-  "build_timestamp": "2026-09-04T16:08:17Z",
+  "version": "2.3.0",
+  "version_code": 15,
+  "deployment_id": "deploy_20260904_v2_3",
+  "build_timestamp": "2026-09-04T20:01:44Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "v2.2.0: Automated CI deployment build 14"
+  "changelog": "v2.3.0: Automated CI deployment build 15"
 }

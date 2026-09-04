@@ -1,9 +1,9 @@
 {
-  "version": "2.0.0",
-  "version_code": 12,
-  "deployment_id": "deploy_20260904_v2_0",
-  "build_timestamp": "2026-09-04T12:55:00Z",
+  "version": "2.1.0",
+  "version_code": 13,
+  "deployment_id": "deploy_20260904_v2_1",
+  "build_timestamp": "2026-09-04T13:20:30Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "v2.0.0: Timeless Rewards 2.0 - Major update with Release Link APK auto-detection, build comparison, and enhanced reward catalog controls"
+  "changelog": "v2.1.0: Automated CI deployment build 13"
 }

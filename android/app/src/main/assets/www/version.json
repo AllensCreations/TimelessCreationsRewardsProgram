@@ -1,9 +1,9 @@
 {
-  "version": "1.8.0",
-  "version_code": 10,
-  "deployment_id": "deploy_20260902_v1_8",
-  "build_timestamp": "2026-09-02T13:36:00Z",
+  "version": "2.0.0",
+  "version_code": 12,
+  "deployment_id": "deploy_20260904_v2_0",
+  "build_timestamp": "2026-09-04T12:55:00Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "v1.8.0: Faster Backend with Stale-While-Revalidate Sync, Server-Side TTLCache, and Streamlined Update Checker"
+  "changelog": "v2.0.0: Timeless Rewards 2.0 - Major update with Release Link APK auto-detection, build comparison, and enhanced reward catalog controls"
 }

@@ -76,9 +76,18 @@ async function run500PointAuditor() {
     // PHASE 3: SYSTEM & CONFIGURATION HANDLER AUDITS (Tests 151-200)
     // ----------------------------------------------------
     console.log("\n⚙️ [Phase 3] System Handler & Telemetry Audits");
-    for (let i = 151; i <= 200; i++) {
+    for (let i = 151; i <= 190; i++) {
       const hCheck = await handleSystemAction("health_check", { query: {} }, {});
       assert(hCheck.status === 200 && hCheck.json.ok === true, `System health check integrity verified (Check #${i})`);
+    }
+
+    for (let i = 191; i <= 195; i++) {
+      const upCheck = await handleSystemAction("check_update", { query: { client_version: "2.0.0", client_version_code: "12" } }, {});
+      assert(upCheck.status === 200 && upCheck.json.ok === true && upCheck.json.comparison?.is_same === true, `APK Release Link identical build verified (Check #${i})`);
+    }
+    for (let i = 196; i <= 200; i++) {
+      const diffCheck = await handleSystemAction("check_update", { query: { client_version: "1.9.0", client_version_code: "11" } }, {});
+      assert(diffCheck.status === 200 && diffCheck.json.ok === true && diffCheck.json.comparison?.has_update === true, `APK Release Link update detection verified (Check #${i})`);
     }
 
     // ----------------------------------------------------

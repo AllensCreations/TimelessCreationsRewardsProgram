@@ -752,10 +752,10 @@ async function checkDeploymentUpdate(isManual = false) {
       }
 
       const confirmed = await showConfirmWarningModal({
-        title: `📱 New App Update Available (v${remoteVer})!`,
-        message: `A new build is available in the Release Link.<br><br><strong>Release:</strong> ${rel.name || ('v' + remoteVer + ' (Build ' + remoteCode + ')')}<br><strong>File Size:</strong> ${rel.apk_size_formatted || '2.8 MB'}<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
-        confirmText: "🚀 Update / Download Now",
-        cancelText: "Remind Me Later",
+        title: `Update Available (v${remoteVer})`,
+        message: `A new update is ready to install.<br><span style="font-size:0.75rem; color:var(--muted); display:inline-block; margin-top:4px;">Build ${remoteCode} &bull; ${rel.apk_size_formatted || '11.8 MB'}</span>`,
+        confirmText: "Update Now",
+        cancelText: "Later",
         isDanger: false,
         icon: "🚀"
       });

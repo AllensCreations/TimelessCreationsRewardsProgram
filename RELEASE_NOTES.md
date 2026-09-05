@@ -1,15 +1,8 @@
-### 🚀 New Features
-- **Native SQLite Offline Storage Engine**: Added `NativeStorageEngine.java` and `TCRPApplication.java` for persistent hardware/SQLite-backed key-value caching accessible via `AndroidBridge.setCache()` and `AndroidBridge.getCache()`.
-- **Hardware Barcode & QR Scanner Engine**: Integrated ZXing barcode scanner and QR code generator (`IntentIntegrator` & `MultiFormatWriter`) via native Android bridge.
-- **Tactile Haptic Feedback**: Added `AndroidBridge.vibrate(ms)` supporting tactile vibrations on user interactions.
-- **Double-Tap Back Navigation Guard**: Added double-tap back press confirmation in `LauncherActivity.java` to prevent accidental app exits.
-
 ### 🐛 Bug Fixes
-- **Update Modal Loop Suppressed**: Fixed updater logic to never trigger the modal popup when the installed APK matches or exceeds the remote release version.
-- **Stale Cache Prevention**: Added cache-busting timestamp queries to `version.json` to prevent caching issues during update checks.
-- **Binary Upstream Conflict Resolved**: Re-aligned git binary asset tracking to prevent merge conflicts in automated CI builds.
+- **Fixed Touch Scrolling Across All Pages**: Restored native document scrolling by eliminating restrictive `overscroll-behavior-y: none` and global `user-select: none` from `html, body`. Configured proper mobile viewport scrolling (`overflow-y: auto; -webkit-overflow-scrolling: touch;`).
+- **Android WebView Native Scroll Physics**: Enabled vertical scrollbars and overlay styling in `LauncherActivity.java`, while removing desktop-emulation viewport overrides (`setUseWideViewPort`, `setLoadWithOverviewMode`) that were freezing touch drags.
+- **Minimal In-App Update Popup**: Streamlined the update prompt into a clean, compact popup modal without any changelog text clutter, displaying only version, build code, file size, and quick action buttons ("Update Now" / "Later").
 
-### ⚡ Enhancements & Improvements
-- **Embedded Offline Typography**: Bundled local TTF fonts (`DM Mono`, `DM Sans`, `Syne`) to guarantee beautiful typography without external Google Fonts dependencies.
-- **Automated Release Notes Pipeline**: Added `scripts/generate-release-notes.js` and updated CI workflow to automatically categorize features, bugs, and fixes on every release.
-- **Multi-Target Asset Synchronization**: Automated sync script synchronizes web assets across `views/`, `public/`, and both Android build targets.
+### ⚡ Enhancements & Refactors
+- **Compact Dialog Ergonomics**: Redesigned `.warning-modal-card` to a compact 320px card width with refined touch targets and gold accent styling.
+- **Synchronized Asset Bundling**: Re-synchronized web assets and scripts across `views/`, `public/`, and Android asset folders.

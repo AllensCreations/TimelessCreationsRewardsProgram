@@ -82,6 +82,28 @@ public class LauncherActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public String getAppVersion() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (Exception e) {
+                return "2.6.0";
+            }
+        }
+
+        @JavascriptInterface
+        public int getAppVersionCode() {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    return (int) getPackageManager().getPackageInfo(getPackageName(), 0).getLongVersionCode();
+                } else {
+                    return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+                }
+            } catch (Exception e) {
+                return 18;
+            }
+        }
+
+        @JavascriptInterface
         public void vibrate(int milliseconds) {
             runOnUiThread(() -> triggerHapticFeedback(milliseconds));
         }
@@ -169,6 +191,7 @@ public class LauncherActivity extends AppCompatActivity {
         // Force native GPU acceleration pipeline
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setBackgroundColor(Color.parseColor("#0A0A0F"));
+        webView.clearCache(true);
         setContentView(webView);
 
         // Custom PathHandler mapped to root ("/") to seamlessly serve root-relative CSS, JS, fonts, and HTML
@@ -211,14 +234,15 @@ public class LauncherActivity extends AppCompatActivity {
                             Map<String, String> headers = new HashMap<>();
                             headers.put("Access-Control-Allow-Origin", "*");
 
-                            // Aggressively cache static binary fonts, images, scripts, and stylesheets in memory/disk
+                            // Cache only binary fonts, images, and wasm; scripts and stylesheets must revalidate
                             if (assetPath.endsWith(".ttf") || assetPath.endsWith(".woff") || assetPath.endsWith(".woff2") ||
-                                assetPath.endsWith(".css") || assetPath.endsWith(".js") || assetPath.endsWith(".png") ||
-                                assetPath.endsWith(".jpg") || assetPath.endsWith(".jpeg") || assetPath.endsWith(".svg") ||
-                                assetPath.endsWith(".webp") || assetPath.endsWith(".wasm")) {
+                                assetPath.endsWith(".png") || assetPath.endsWith(".jpg") || assetPath.endsWith(".jpeg") ||
+                                assetPath.endsWith(".svg") || assetPath.endsWith(".webp") || assetPath.endsWith(".wasm")) {
                                 headers.put("Cache-Control", "public, max-age=31536000, immutable");
                             } else {
-                                headers.put("Cache-Control", "no-cache");
+                                headers.put("Cache-Control", "no-cache, no-store, must-revalidate");
+                                headers.put("Pragma", "no-cache");
+                                headers.put("Expires", "0");
                             }
 
                             return new WebResourceResponse(mimeType, "UTF-8", 200, "OK", headers, is);

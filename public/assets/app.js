@@ -491,15 +491,18 @@ function showConfirmWarningModal({
       </div>
     `;
 
+    overlay.style.display = 'flex';
     overlay.classList.add('open');
 
     const handleConfirm = () => {
       overlay.classList.remove('open');
+      overlay.style.display = 'none';
       resolve(true);
     };
 
     const handleCancel = () => {
       overlay.classList.remove('open');
+      overlay.style.display = 'none';
       resolve(false);
     };
 
@@ -566,20 +569,33 @@ const TCRPSync = {
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-let CURRENT_APP_VERSION = "2.2.0";
-let CURRENT_APP_VERSION_CODE = 14;
-let CURRENT_DEPLOYMENT_ID = "deploy_20260904_v2_2";
+let CURRENT_APP_VERSION = "2.6.0";
+let CURRENT_APP_VERSION_CODE = 18;
+let CURRENT_DEPLOYMENT_ID = "deploy_20260905_v2_6";
 let hasLoadedLocalVersion = false;
 
 async function loadInstalledVersion() {
   if (hasLoadedLocalVersion) return;
+  if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.getAppVersionCode === 'function') {
+    try {
+      const code = Number(window.AndroidBridge.getAppVersionCode());
+      const ver = String(window.AndroidBridge.getAppVersion() || '').trim();
+      if (code > 0) {
+        CURRENT_APP_VERSION_CODE = code;
+        if (ver) CURRENT_APP_VERSION = ver.replace(/^v/i, '');
+        hasLoadedLocalVersion = true;
+      }
+    } catch (_) {}
+  }
   try {
-    const res = await fetch('/version.json', { cache: 'no-store' });
+    const res = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (data && data.version) {
-        CURRENT_APP_VERSION = String(data.version).replace(/^v/i, '');
-        if (data.version_code) CURRENT_APP_VERSION_CODE = Number(data.version_code);
+        if (!hasLoadedLocalVersion) {
+          CURRENT_APP_VERSION = String(data.version).replace(/^v/i, '');
+          if (data.version_code) CURRENT_APP_VERSION_CODE = Number(data.version_code);
+        }
         if (data.deployment_id) CURRENT_DEPLOYMENT_ID = data.deployment_id;
         hasLoadedLocalVersion = true;
       }

@@ -9,11 +9,20 @@ android {
         applicationId "com.allenscreations.timelessrewards"
         minSdkVersion 21
         targetSdkVersion 34
-        versionCode 16
-        versionName "2.4.0"
+        versionCode 17
+        versionName "2.5.0"
 
         resValue "string", "appName", "Timeless Rewards"
         resValue "string", "launcherName", "Timeless Rewards"
+
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86'
+        }
+    }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
     buildTypes {
         release {
@@ -40,4 +49,16 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.webkit:webkit:1.12.0'
     implementation 'androidx.activity:activity:1.9.3'
+    implementation 'com.google.android.material:material:1.12.0'
+
+    // Native C/C++ SQLite Encrypted Engine (includes multi-ABI .so binaries: arm64-v8a, armeabi-v7a, x86_64, x86)
+    implementation 'net.zetetic:android-database-sqlcipher:4.5.4'
+    implementation 'androidx.sqlite:sqlite:2.4.0'
+
+    // Native Barcode & QR Code Hardware Scanner Engine
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'com.google.zxing:core:3.5.3'
+
+    // Hardware-backed Security & Cryptography
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
 }

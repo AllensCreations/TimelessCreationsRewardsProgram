@@ -56,10 +56,8 @@ jobs:
           sed -i "s/versionCode .*/versionCode $NEW_CODE/" android/app/build.gradle
           sed -i "s/versionName .*/versionName \"$NEW_VERSION\"/" android/app/build.gradle
 
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          UPDATE_JSON="{\n  \"version\": \"$NEW_VERSION\",\n  \"version_code\": $NEW_CODE,\n  \"deployment_id\": \"deploy_$(date -u +%Y%m%d)_v${MAJOR}_${NEW_MINOR}\",\n  \"build_timestamp\": \"$TIMESTAMP\",\n  \"apk_url\": \"https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk\",\n  \"github_apk_url\": \"https://github.com/${{ github.repository }}/raw/Appversion/public/TimelessRewards.apk\",\n  \"changelog\": \"v$NEW_VERSION: Automated CI deployment build $NEW_CODE\"\n}"
-          
-          echo -e "$UPDATE_JSON" > views/version.json
+          # Generate rich changelog with Features, Bug Fixes, and Improvements
+          node scripts/generate-release-notes.js --version "$NEW_VERSION" --code "$NEW_CODE"
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "new_code=$NEW_CODE" >> $GITHUB_OUTPUT
@@ -102,7 +100,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           git checkout Appversion
-          git add -f views/version.json public/version.json android/android-tcrp/app/build.gradle android/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
+          git add -f views/version.json public/version.json CHANGELOG.md android/android-tcrp/app/build.gradle android/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
           git commit -m "chore(release): bump version to v${{ steps.versioning.outputs.new_version }} (Build ${{ steps.versioning.outputs.new_code }}) [skip ci]"
           git push origin Appversion
 
@@ -111,11 +109,7 @@ jobs:
         with:
           tag_name: "v${{ steps.versioning.outputs.new_version }}"
           name: "Timeless Rewards v${{ steps.versioning.outputs.new_version }} (Build ${{ steps.versioning.outputs.new_code }})"
-          body: |
-            ## 🎁 Timeless Rewards v${{ steps.versioning.outputs.new_version }}
-            - **Build Code**: `${{ steps.versioning.outputs.new_code }}`
-            - **Branch**: `Appversion`
-            - **Direct APK**: [Download TimelessRewards.apk](https://github.com/${{ github.repository }}/raw/Appversion/public/TimelessRewards.apk)
+          body_path: RELEASE_BODY.md
           files: |
             public/TimelessRewards.apk
             android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk

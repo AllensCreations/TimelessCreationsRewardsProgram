@@ -1,17 +1,133 @@
+// In-memory instant hashmap cache for 0ms lookups
+const _memCache = new Map();
+
 const LocalStore = {
   get(key, fallback = null) {
+    if (_memCache.has(key)) {
+      return _memCache.get(key);
+    }
     try {
+      // 1. Check ultra-fast native C/C++ SQLite binary cache if running in Android app
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.getCache === 'function') {
+        const nativeVal = window.AndroidBridge.getCache(`tcrp_${key}`);
+        if (nativeVal !== null && nativeVal !== undefined) {
+          const parsed = JSON.parse(nativeVal);
+          _memCache.set(key, parsed);
+          return parsed;
+        }
+      }
+      // 2. Standard DOM localStorage fallback
       const v = localStorage.getItem(`tcrp_${key}`);
-      return v ? JSON.parse(v) : fallback;
+      if (v) {
+        const parsed = JSON.parse(v);
+        _memCache.set(key, parsed);
+        // Write-through to native SQLite binary cache for future instant offline hits
+        if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setCache === 'function') {
+          window.AndroidBridge.setCache(`tcrp_${key}`, v);
+        }
+        return parsed;
+      }
+      return fallback;
     } catch { return fallback; }
   },
   set(key, val) {
-    try { localStorage.setItem(`tcrp_${key}`, JSON.stringify(val)); } catch {}
+    _memCache.set(key, val);
+    try {
+      const jsonStr = JSON.stringify(val);
+      localStorage.setItem(`tcrp_${key}`, jsonStr);
+      // Fast persist into native C/C++ SQLite encrypted binary engine
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setCache === 'function') {
+        window.AndroidBridge.setCache(`tcrp_${key}`, jsonStr);
+      }
+    } catch {}
   },
   remove(key) {
-    try { localStorage.removeItem(`tcrp_${key}`); } catch {}
+    _memCache.delete(key);
+    try {
+      localStorage.removeItem(`tcrp_${key}`);
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.removeCache === 'function') {
+        window.AndroidBridge.removeCache(`tcrp_${key}`);
+      }
+    } catch {}
+  },
+  clear() {
+    _memCache.clear();
+    try {
+      localStorage.clear();
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.clearCache === 'function') {
+        window.AndroidBridge.clearCache();
+      }
+    } catch {}
   }
 };
+
+// Hardware-accelerated native barcode / QR scanner bridge
+window.TCRPScanner = {
+  scan(callback) {
+    if (typeof callback === 'function') {
+      window._nativeBarcodeCallback = callback;
+    }
+    if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.scanBarcode === 'function') {
+      window.AndroidBridge.scanBarcode();
+    } else {
+      const manual = prompt('Enter or scan barcode / QR code:');
+      if (manual && typeof callback === 'function') {
+        callback(manual);
+      }
+    }
+  }
+};
+
+window.onNativeBarcodeScanned = function(code) {
+  if (window._nativeBarcodeCallback) {
+    window._nativeBarcodeCallback(code);
+    window._nativeBarcodeCallback = null;
+  } else {
+    window.dispatchEvent(new CustomEvent('tcrp-barcode-scanned', { detail: { code } }));
+  }
+};
+
+// Hardware-accelerated native QR Code Generator
+window.TCRPQRCode = {
+  generate(text, width = 256, height = 256) {
+    if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.generateQRCode === 'function') {
+      const dataUri = window.AndroidBridge.generateQRCode(text, width, height);
+      if (dataUri) return dataUri;
+    }
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff"/><rect x="10" y="10" width="80" height="80" fill="none" stroke="%23c9a84c" stroke-width="2"/><text x="50" y="55" font-family="sans-serif" font-size="8" text-anchor="middle" fill="%23000">${encodeURIComponent(text.substring(0, 20))}</text></svg>`;
+  }
+};
+
+// Hierarchical Native Hardware Back Navigation Handler
+window.onHardwareBackPressed = function() {
+  // 1. If mobile navigation drawer is open, close it
+  const drawer = document.getElementById('mobile-nav-drawer');
+  if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'block')) {
+    if (typeof toggleMobileDrawer === 'function') toggleMobileDrawer();
+    else { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+    return true;
+  }
+  // 2. If any modal or popup overlay is open, close it
+  const openModals = document.querySelectorAll('.modal.active, .modal.show, [id$="-modal"].open, [id$="-dialog"].open');
+  if (openModals.length > 0) {
+    openModals.forEach(m => {
+      m.classList.remove('active', 'show', 'open');
+      if (m.style.display && m.style.display !== 'none') m.style.display = 'none';
+    });
+    return true;
+  }
+  return false;
+};
+
+// Global tactile micro-haptics on all user taps
+if (typeof window !== 'undefined') {
+  document.addEventListener('pointerdown', (e) => {
+    const target = e.target.closest('button, .btn, .nav-pill, .tab-btn, .qr-chip, input[type="submit"], input[type="checkbox"], input[type="radio"], .card-clickable');
+    if (target && window.AndroidBridge && typeof window.AndroidBridge.vibrate === 'function') {
+      window.AndroidBridge.vibrate(12);
+    }
+  }, { passive: true });
+}
 
 const REMOTE_API_SERVER = (function() {
   if (typeof window !== 'undefined') {

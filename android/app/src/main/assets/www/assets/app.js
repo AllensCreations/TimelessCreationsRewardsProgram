@@ -482,6 +482,82 @@ function calculateMissionMonth(batchMonthStr, maxMonths = 24, targetDate = new D
   return Math.max(0, Math.min(elapsed, maxMonths));
 }
 
+/**
+ * Calculates current drip month and tenure info aligned with current calendar month.
+ */
+function getDripForTargetDate(batchMonthStr, maxMonths = 24, targetDate = new Date()) {
+  const calMonthNum = targetDate.getMonth() + 1;
+  const calYear = targetDate.getFullYear();
+  const calMonthName = MONTH_NAMES_GLOBAL[calMonthNum - 1];
+  const calMonthYear = `${calMonthName} ${calYear}`;
+
+  const curMissionMonth = calculateMissionMonth(batchMonthStr, maxMonths, targetDate);
+  const tenureLabel = curMissionMonth > 0 ? `M${curMissionMonth}` : 'Month 0';
+  const displayLabel = `${calMonthYear} (${tenureLabel})`;
+
+  return {
+    targetCalMonth: calMonthNum,
+    calYear,
+    calMonthName,
+    calMonthYear,
+    curMissionMonth,
+    tenureLabel,
+    displayLabel
+  };
+}
+
+/**
+ * Calculates upcoming drip template and milestone info.
+ * Synchronizes with current calendar month:
+ * - If missionary is behind, upcoming is CURRENT calendar month at milestone M{curMissionMonth}.
+ * - If in Month 0, upcoming is Month 1.
+ * - If up to date, upcoming is next month.
+ */
+function getUpcomingDripInfo(batchMonthStr, monthsSent = 0, maxMonths = 24, targetDate = new Date()) {
+  const sent = Number(monthsSent) || 0;
+  const max = Number(maxMonths) || 24;
+  if (sent >= max) return null;
+
+  const curMissionMonth = calculateMissionMonth(batchMonthStr, max, targetDate);
+  const calMonthNum = targetDate.getMonth() + 1; // 1-12
+  const calYear = targetDate.getFullYear();
+
+  let targetCalMonth;
+  let targetYear;
+  let tenureMonth;
+
+  if (curMissionMonth <= 0) {
+    const m1Info = getMissionMonthInfo(batchMonthStr, 1);
+    targetCalMonth = m1Info.monthNum;
+    targetYear = m1Info.year;
+    tenureMonth = 1;
+  } else if (sent < curMissionMonth) {
+    targetCalMonth = calMonthNum;
+    targetYear = calYear;
+    tenureMonth = curMissionMonth;
+  } else {
+    const nextTenure = Math.max(sent + 1, curMissionMonth + 1);
+    if (nextTenure > max) return null;
+    const nextInfo = getMissionMonthInfo(batchMonthStr, nextTenure);
+    targetCalMonth = nextInfo.monthNum;
+    targetYear = nextInfo.year;
+    tenureMonth = nextTenure;
+  }
+
+  const calMonthName = MONTH_NAMES_GLOBAL[targetCalMonth - 1];
+  const monthYearDisplay = `${calMonthName} ${targetYear}`;
+  const displayLabel = `${monthYearDisplay} (M${tenureMonth})`;
+
+  return {
+    monthNum: targetCalMonth,
+    year: targetYear,
+    monthName: calMonthName,
+    display: monthYearDisplay,
+    tenureMonth,
+    displayLabel
+  };
+}
+
 function getFirstDispatchDate(batchMonthStr, baseDate = new Date()) {
   const info = getFirstMonthInfo(batchMonthStr);
   const y = info.firstMonthYear;

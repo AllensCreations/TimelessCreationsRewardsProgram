@@ -10,6 +10,7 @@ import {
   isMissionaryEligibleForDispatch,
   parseBatchCohort,
   getMissionMonthInfo,
+  getUpcomingDripInfo,
   formatMonthYear
 } from '../lib/utils/batchCalculator.js';
 
@@ -86,6 +87,27 @@ async function runTests() {
 
   const eligibleOct = isMissionaryEligibleForDispatch(mSept, phtOct9, "2026-10-09");
   assert(eligibleOct === true, "September 2026 cohort missionary IS eligible for dispatch in October");
+
+  // ----------------------------------------------------
+  // Test 1b: Calendar-Synchronized Drip & Missed Month Skip
+  // ----------------------------------------------------
+  // April 2026 elder who sent July (3 sent), missed August, evaluated in September 2026
+  const aprilMissedAug = getUpcomingDripInfo("April 2026", 3, 24, phtSept9);
+  assert(aprilMissedAug.monthNum === 9, "Upcoming drip month for missionary who missed August is September (Month 9)");
+  assert(aprilMissedAug.tenureMonth === 5, "Upcoming drip tenure milestone is M5 (September = Month 5 from April)");
+  assert(aprilMissedAug.displayLabel === "September 2026 (M5)", "Upcoming drip display label is 'September 2026 (M5)'");
+
+  // After September is sent (5 sent), upcoming advances to October (M6)
+  const aprilAfterSept = getUpcomingDripInfo("April 2026", 5, 24, phtSept9);
+  assert(aprilAfterSept.monthNum === 10, "After September dispatch, next drip is October (Month 10)");
+  assert(aprilAfterSept.tenureMonth === 6, "After September dispatch, next milestone is M6");
+  assert(aprilAfterSept.displayLabel === "October 2026 (M6)", "Display label after September dispatch is 'October 2026 (M6)'");
+
+  // Brand new September 2026 cohort missionary in September 2026 (Month 0)
+  const sepArrival = getUpcomingDripInfo("September 2026", 0, 24, phtSept9);
+  assert(sepArrival.monthNum === 10, "Arrival month missionary's upcoming drip is October (Month 10)");
+  assert(sepArrival.tenureMonth === 1, "Arrival month missionary's first drip tenure milestone is M1");
+  assert(sepArrival.displayLabel === "October 2026 (M1)", "Arrival month missionary upcoming display label is 'October 2026 (M1)'");
 
   // ----------------------------------------------------
   // Test 2: Brevo Webhook Handling (Suggestion 4)

@@ -439,13 +439,13 @@ function renderDashboardPendingQueue(items) {
         const sentC = Number(m.months_sent) || 0;
         const firstMonthPrefix = bInfo ? `${bInfo.firstMonthYear}-${String(bInfo.firstMonthNum).padStart(2, '0')}` : '2026-09';
         
-        // Next drip calculations using Month 0 formula
-        const nextTenureNum = Math.min(sentC + 1, totalMonths);
-        const nextDripInfo = (typeof getMissionMonthInfo === 'function')
-          ? getMissionMonthInfo(m.batch_month || 'August 2026', nextTenureNum)
-          : { monthNum: bInfo?.firstMonthNum || 9, year: bInfo?.firstMonthYear || 2026, monthName: bInfo?.firstMonthName || 'September', display: bInfo?.firstMonthDisplay || 'September 2026' };
-        const nextMonthNum = nextDripInfo.monthNum;
-        const nextMonthYearDisplay = nextDripInfo.display;
+        // Upcoming drip calculations using Month 0 formula and calendar synchronization
+        const upcomingInfo = (typeof getUpcomingDripInfo === 'function')
+          ? getUpcomingDripInfo(m.batch_month || 'August 2026', sentC, totalMonths)
+          : null;
+        const nextMonthNum = upcomingInfo ? upcomingInfo.monthNum : (m.next_drip ? m.next_drip.month_num : 9);
+        const nextMonthYearDisplay = upcomingInfo ? upcomingInfo.display : (m.next_drip ? m.next_drip.month_year : 'September 2026');
+        const nextTenureNum = upcomingInfo ? upcomingInfo.tenureMonth : (m.next_drip ? m.next_drip.tenure_month : Math.min(sentC + 1, totalMonths));
 
         let effectiveNextSendDate = m.next_send_date;
         if (sentC === 0) {
@@ -469,7 +469,9 @@ function renderDashboardPendingQueue(items) {
         }
 
         const nextDrip = m.next_drip;
-        const nextDripLabel = (nextDrip && nextDrip.display_label) ? nextDrip.display_label : `${nextMonthYearDisplay} (M${nextTenureNum})`;
+        const nextDripLabel = (nextDrip && nextDrip.display_label) 
+          ? nextDrip.display_label 
+          : (upcomingInfo ? upcomingInfo.displayLabel : `${nextMonthYearDisplay} (M${nextTenureNum})`);
 
         let daysUntilNext = Number(m.days_until_next) || 0;
         if (effectiveNextSendDate) {

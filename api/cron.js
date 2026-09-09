@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { runSql } from '../lib/db.js';
 import { sendDripEmail, getCalendarMonthLabel } from '../lib/mailer.js';
 import { cache } from '../lib/cache.js';
-import { getFirstMonthInfo, calculateMissionMonth, isMissionaryEligibleForDispatch, getMissionMonthInfo } from '../lib/utils/batchCalculator.js';
+import { getFirstMonthInfo, calculateMissionMonth, isMissionaryEligibleForDispatch, getMissionMonthInfo, getUpcomingDripInfo } from '../lib/utils/batchCalculator.js';
 
 const inFlightCronDispatches = new Set();
 
@@ -93,21 +93,23 @@ export default async function handler(req, res) {
             return; // Already dispatched today, idempotent skip
           }
 
-          const tenureMonth = (Number(m.months_sent) || 0) + 1;
           const isSister = (m.cohort || '').toLowerCase().includes('sister');
+          const maxMonths = Number(m.max_months) || (isSister ? 18 : 24);
           const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
-          const missionMonth = getMissionMonthInfo(m.batch_month || 'August 2026', tenureMonth);
-          const targetCalMonth = missionMonth.monthNum;
+          const upcoming = getUpcomingDripInfo(m.batch_month || 'August 2026', m.months_sent, maxMonths, phtNow);
+          const targetCalMonth = upcoming ? upcoming.monthNum : (phtNow.getMonth() + 1);
+          const tenureMonth = upcoming ? upcoming.tenureMonth : ((Number(m.months_sent) || 0) + 1);
 
           const result = await sendDripEmail(m.email, targetCalMonth, recipientName);
           if (result?.ok) {
+            const newMonthsSent = Math.max((Number(m.months_sent) || 0) + 1, tenureMonth);
             await runSql(`
               UPDATE missionaries 
-              SET months_sent = months_sent + 1,
+              SET months_sent = ?,
                   last_sent_at = CURRENT_TIMESTAMP,
                   next_send_date = date('now', '+1 month')
               WHERE LOWER(email) = LOWER(?)
-            `, [m.email]);
+            `, [newMonthsSent, m.email]);
 
             const calLabel = getCalendarMonthLabel(targetCalMonth);
             await runSql(`

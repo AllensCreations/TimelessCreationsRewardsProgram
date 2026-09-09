@@ -816,13 +816,13 @@ function renderPaginatedCards() {
     const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
     const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
-    // Next drip calculations using Month 0 formula
-    const nextTenureNum = Math.min(sentCount + 1, totalMonths);
-    const nextDripInfo = (typeof getMissionMonthInfo === 'function')
-      ? getMissionMonthInfo(m.batch_month || 'August 2026', nextTenureNum)
-      : { monthNum: batchInfo.firstMonthNum, year: batchInfo.firstMonthYear, monthName: batchInfo.firstMonthName, display: batchInfo.firstMonthDisplay };
-    const nextMonthNum = nextDripInfo.monthNum;
-    const nextMonthYearDisplay = nextDripInfo.display;
+    // Upcoming drip calculations using Month 0 formula and calendar synchronization
+    const upcomingInfo = (typeof getUpcomingDripInfo === 'function')
+      ? getUpcomingDripInfo(m.batch_month || 'August 2026', sentCount, totalMonths)
+      : null;
+    const nextMonthNum = upcomingInfo ? upcomingInfo.monthNum : (m.next_drip ? m.next_drip.month_num : 9);
+    const nextMonthYearDisplay = upcomingInfo ? upcomingInfo.display : (m.next_drip ? m.next_drip.month_year : 'September 2026');
+    const nextTenureNum = upcomingInfo ? upcomingInfo.tenureMonth : (m.next_drip ? m.next_drip.tenure_month : Math.min(sentCount + 1, totalMonths));
 
     // If sentCount === 0, earliest dispatch CANNOT be prior to batch cohort 1st dispatch month
     const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
@@ -848,12 +848,10 @@ function renderPaginatedCards() {
       }
     }
 
-    let nextDripDisplay = `${nextMonthYearDisplay} (M${nextTenureNum})`;
-    let dripTheme = (state.dripThemeMap && state.dripThemeMap[nextMonthNum]) || 'Encouragement & Points';
-    if (m.next_drip && m.next_drip.display_label) {
-      nextDripDisplay = m.next_drip.display_label;
-      dripTheme = m.next_drip.theme || dripTheme;
-    }
+    let nextDripDisplay = (m.next_drip && m.next_drip.display_label) 
+      ? m.next_drip.display_label 
+      : (upcomingInfo ? upcomingInfo.displayLabel : `${nextMonthYearDisplay} (M${nextTenureNum})`);
+    let dripTheme = (state.dripThemeMap && state.dripThemeMap[nextMonthNum]) || (m.next_drip ? m.next_drip.theme : 'Encouragement & Points');
 
     let lastDispatchedDripDisplay = '<span style="color:var(--muted); font-style:italic;">Never Dispatched (0 Sent)</span>';
     if (sentCount > 0) {

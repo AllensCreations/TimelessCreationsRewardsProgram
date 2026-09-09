@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { runSql } from '../lib/db.js';
-import { sendDripEmail } from '../lib/mailer.js';
+import { sendDripEmail, getCalendarMonthLabel } from '../lib/mailer.js';
 import { cache } from '../lib/cache.js';
 
 export default async function handler(req, res) {
@@ -60,6 +60,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, sentCount: 0, message: "All missionaries are up-to-date." });
     }
 
+    const phtNow = new Date(Date.now() + 8 * 3600 * 1000);
+    const currentCalMonth = phtNow.getMonth() + 1; // 9 for September
+
     let sentCount = 0;
     const errors = [];
     const CONCURRENCY_CHUNK_SIZE = 5; // Dispatches 5 in parallel to complete 45 emails in ~2.5s (safely within Vercel 10s timeout)
@@ -67,12 +70,12 @@ export default async function handler(req, res) {
     for (let i = 0; i < dueMissionaries.length; i += CONCURRENCY_CHUNK_SIZE) {
       const chunk = dueMissionaries.slice(i, i + CONCURRENCY_CHUNK_SIZE);
       await Promise.all(chunk.map(async (m) => {
-        const nextMonthNum = ((Number(m.months_sent) || 0) % 24) + 1;
+        const tenureMonth = (Number(m.months_sent) || 0) + 1;
         const isSister = (m.cohort || '').toLowerCase().includes('sister');
         const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
 
         try {
-          const result = await sendDripEmail(m.email, nextMonthNum, recipientName);
+          const result = await sendDripEmail(m.email, currentCalMonth, recipientName);
           if (result?.ok) {
             await runSql(`
               UPDATE missionaries 
@@ -82,10 +85,11 @@ export default async function handler(req, res) {
               WHERE LOWER(email) = LOWER(?)
             `, [m.email]);
 
+            const calLabel = getCalendarMonthLabel(currentCalMonth);
             await runSql(`
               INSERT INTO system_logs (level, message, created_at)
               VALUES ('DISPATCH', ?, CURRENT_TIMESTAMP)
-            `, [`[EMAIL_DISPATCH] M${nextMonthNum} sent to ${m.name} (${m.email})`]);
+            `, [`[EMAIL_DISPATCH] ${calLabel} (M${tenureMonth}) sent to ${m.name} (${m.email})`]);
 
             sentCount++;
           } else {

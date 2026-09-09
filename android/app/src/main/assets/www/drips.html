@@ -440,7 +440,7 @@ function initSelector() {
   for (let i = 1; i <= 24; i++) {
     const opt = document.createElement("option");
     opt.value = i;
-    opt.textContent = `${getCalendarMonthLabel(i)} (M${i})`;
+    opt.textContent = i <= 12 ? getCalendarMonthLabel(i) : `${getCalendarMonthLabel(i)} (Year 2)`;
     sel.appendChild(opt);
   }
   sel.value = currentMonth;
@@ -615,7 +615,7 @@ async function fetchFromTurso() {
 function onSelectMonth(m) {
   currentMonth = parseInt(m, 10);
   const label = getCalendarMonthLabel(currentMonth);
-  document.getElementById("unsaved-month-label").textContent = `${label} (M${currentMonth})`;
+  document.getElementById("unsaved-month-label").textContent = currentMonth <= 12 ? label : `${label} (Year 2)`;
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,

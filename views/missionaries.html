@@ -635,7 +635,8 @@ function renderPaginatedCards() {
     const isDue = m.schedule_status === 'DUE_TODAY' || m.is_due;
     const isSentToday = m.schedule_status === 'SENT_TODAY';
     const nextDrip = m.next_drip;
-    const nextMonthNum = nextDrip ? nextDrip.month_num : (sentCount + 1);
+    const nextMonthNum = nextDrip ? nextDrip.month_num : 9;
+    const nextDripDisplay = nextDrip?.display_label || `${nextDrip?.calendar_month_label || 'September'} (M${sentCount + 1})`;
 
     let badge = '';
     if (m.is_completed) {
@@ -690,7 +691,7 @@ function renderPaginatedCards() {
             </div>
             <div class="intel-box">
               <span class="intel-label">💌 Upcoming Drip Intel</span>
-              <span class="intel-val">Month ${nextMonthNum}: ${escapeHtml(nextDrip?.theme || 'Encouragement & Points')}</span>
+              <span class="intel-val">${escapeHtml(nextDripDisplay)}: ${escapeHtml(nextDrip?.theme || 'Encouragement & Points')}</span>
             </div>
             <div class="intel-box">
               <span class="intel-label">🏷️ Referral Code</span>
@@ -719,7 +720,7 @@ function renderPaginatedCards() {
 
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button class="btn ${isDue && state.isOnline ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.68rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})">✉️ Send Month ${nextMonthNum}</button>
+              <button class="btn ${isDue && state.isOnline ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.68rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})">✉️ Send ${escapeHtml(nextDripDisplay)}</button>
               <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openPreviewModal('${m.email}', ${nextMonthNum}, '${escapeHtml(m.name)}')">👁️ Preview</button>
               <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openRescheduleModal('${m.email}', '${escapeHtml(m.name)}', '${m.next_send_date || ''}')">📅 Reschedule</button>
             </div>

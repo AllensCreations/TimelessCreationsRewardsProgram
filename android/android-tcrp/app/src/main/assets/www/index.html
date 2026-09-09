@@ -483,7 +483,8 @@ function renderDashboardPendingQueue(items) {
 
         const lastSentStr = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
         const nextEstimatedStr = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : (isDue ? 'Today' : '--');
-        const nextMonthNum = nextDrip ? nextDrip.month_num : (m.months_sent + 1);
+        const nextMonthNum = nextDrip ? nextDrip.month_num : 9;
+        const nextDripLabel = nextDrip?.display_label || `${nextDrip?.calendar_month_label || 'September'} (M${(m.months_sent || 0) + 1})`;
 
         return `
           <div class="queue-card ${isDue && dashboardState.isOnline ? 'due-highlight' : ''}">
@@ -501,7 +502,7 @@ function renderDashboardPendingQueue(items) {
             <!-- Drip details intel box -->
             <div style="background:#0a0b12; padding:8px 10px; border-radius:4px; border:1px solid var(--border); font-size:0.68rem; display:flex; flex-direction:column; gap:2px;">
               <div style="color:var(--gold); font-weight:700;">
-                Next Drip: Month ${nextMonthNum} ${nextDrip?.calendar_month_label ? `(${nextDrip.calendar_month_label})` : ''}
+                Next Drip: ${escapeHtml(nextDripLabel)}
               </div>
               <div style="color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 ${escapeHtml(nextDrip?.theme || 'Missionary Inspiration & Rewards')}

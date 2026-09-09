@@ -92,8 +92,8 @@
     <div id="update-status-msg" style="font-size:0.75rem; color:var(--green); margin-top:10px; display:none; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:6px; padding:10px 14px;"></div>
   </div>
 
-  <!-- CDN Setup -->
-  <div class="card">
+  <!-- CDN Setup (Hidden) -->
+  <div class="card" id="cdn-setup-card" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
       <h3 style="font-size:0.95rem; color:var(--gold);">⚡ jsDelivr &amp; GitHub CDN Setup</h3>
       <button class="btn btn-gold" onclick="saveCdnSettings()">💾 Save Variables</button>
@@ -397,6 +397,15 @@ async function saveCdnSettings() {
     if (d.ok) showToast("CDN configuration saved!");
   } catch (err) { showToast("Error saving: " + err.message, "error"); }
 }
+
+window.toggleCdnSettings = function() {
+  const card = document.getElementById("cdn-setup-card");
+  if (card) {
+    const isHidden = card.style.display === "none";
+    card.style.display = isHidden ? "block" : "none";
+    showToast(isHidden ? "GitHub CDN variables revealed" : "GitHub CDN variables hidden");
+  }
+};
 
 async function sendTestEmail() {
   const input = document.getElementById("test-email-input").value.trim();

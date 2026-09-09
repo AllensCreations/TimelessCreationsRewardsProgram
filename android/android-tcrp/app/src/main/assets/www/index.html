@@ -159,6 +159,14 @@
     </div>
   </div>
 
+  <!-- Power Offline Alert Notice (if offline) -->
+  <div id="offline-banner" style="display:none; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:0.72rem; color:#ff6b6b; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:1.1rem;">💤</span>
+      <span><strong>Master Power is OFFLINE:</strong> Automatic dispatches are paused. Emails will dispatch once Master is switched to ONLINE in <a href="/settings.html" style="color:var(--gold); font-weight:bold; text-decoration:underline;">Settings</a>.</span>
+    </div>
+  </div>
+
   <!-- Prominent Stat Cards -->
   <div class="stat-grid">
     <div class="stat-card gold">
@@ -176,43 +184,6 @@
     <div class="stat-card blue">
       <div class="stat-label">Dispatched This Month</div>
       <div class="stat-val" id="stat-sent-month" style="color:var(--blue);">0</div>
-    </div>
-  </div>
-
-  <!-- Primary Hub: Pending & Scheduled Emails Section -->
-  <div class="card" style="margin-bottom:16px; border-color:var(--border-gold);">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-      <div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:800; color:var(--gold);">⏳ Pending &amp; Scheduled Dispatches (PHT)</span>
-          <span id="dash-due-count-pill" style="font-size:0.65rem; font-weight:800; background:rgba(201,168,76,0.2); border:1px solid var(--gold); color:var(--gold); padding:2px 8px; border-radius:99px;">0 Due Today</span>
-        </div>
-        <div style="font-size:0.70rem; color:var(--muted); margin-top:2px;">
-          Real-time queue of missionary dispatches strictly sorted by soonest next send referencing last sent timestamps.
-        </div>
-      </div>
-      <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-        <div class="tab-bar" style="margin:0; padding:0; display:inline-flex;">
-          <button class="btn btn-gold tab-btn" style="padding:4px 8px; font-size:0.65rem;" onclick="filterDashQueue('all', this)">All Queue</button>
-          <button class="btn btn-dark tab-btn" style="padding:4px 8px; font-size:0.65rem;" onclick="filterDashQueue('due', this)">🔥 Due Today</button>
-          <button class="btn btn-dark tab-btn" style="padding:4px 8px; font-size:0.65rem;" onclick="filterDashQueue('upcoming', this)">⏱️ Next 7 Days</button>
-          <button class="btn btn-dark tab-btn" style="padding:4px 8px; font-size:0.65rem;" onclick="filterDashQueue('sent', this)">✅ Sent Today</button>
-        </div>
-        <a href="/missionaries.html" class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; text-decoration:none;">View Full Roster ↗</a>
-      </div>
-    </div>
-
-    <!-- Power Offline Alert Notice (if offline) -->
-    <div id="offline-banner" style="display:none; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:12px; font-size:0.72rem; color:#ff6b6b; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:1.1rem;">💤</span>
-        <span><strong>Master Power is OFFLINE:</strong> Automatic dispatches are paused. Emails will dispatch once Master is switched to ONLINE in <a href="/settings.html" style="color:var(--gold); font-weight:bold; text-decoration:underline;">Settings</a>.</span>
-      </div>
-    </div>
-
-    <!-- Live Interactive Pending Queue -->
-    <div id="dash-pending-queue-container">
-      <div style="text-align:center; padding:24px; color:var(--muted); font-size:0.75rem;">Loading pending dispatch queue...</div>
     </div>
   </div>
 

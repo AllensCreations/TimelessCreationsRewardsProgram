@@ -301,26 +301,47 @@ function formatPhtDate(dateVal, includeSeconds = true) {
   }
 }
 
-function formatShortDateMMDDYY(dateVal) {
-  if (!dateVal) return 'Never';
-  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
-    const parts = dateVal.slice(0, 10).split('-');
-    const yy = parts[0].slice(-2);
-    const mm = parts[1];
-    const dd = parts[2];
-    return `${mm}/${dd}/${yy}`;
+const MONTH_NAMES_GLOBAL = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+/**
+ * Formats any date / ISO string / timestamp into "MONTH YEAR" format without day (e.g. "April 2026", "September 2026").
+ */
+function formatMonthYear(dateVal, fallback = 'Never') {
+  if (!dateVal) return fallback;
+  if (typeof dateVal === 'string') {
+    const trimmed = dateVal.trim();
+    for (let i = 0; i < MONTH_NAMES_GLOBAL.length; i++) {
+      const mName = MONTH_NAMES_GLOBAL[i];
+      if (trimmed.toLowerCase().startsWith(mName.toLowerCase())) {
+        const yMatch = trimmed.match(/\b(20\d\d)\b/);
+        return yMatch ? `${mName} ${yMatch[1]}` : mName;
+      }
+    }
+    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})/);
+    if (isoMatch) {
+      const y = parseInt(isoMatch[1], 10);
+      const m = parseInt(isoMatch[2], 10);
+      if (m >= 1 && m <= 12) {
+        return `${MONTH_NAMES_GLOBAL[m - 1]} ${y}`;
+      }
+    }
   }
   try {
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return String(dateVal);
     const phtDate = new Date(d.getTime() + (d.getTimezoneOffset() * 60000) + (8 * 3600000));
-    const mm = String(phtDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(phtDate.getDate()).padStart(2, '0');
-    const yy = String(phtDate.getFullYear()).slice(-2);
-    return `${mm}/${dd}/${yy}`;
+    return `${MONTH_NAMES_GLOBAL[phtDate.getMonth()]} ${phtDate.getFullYear()}`;
   } catch (_) {
     return String(dateVal);
   }
+}
+
+// Alias formatShortDateMMDDYY to formatMonthYear for backward-compatible calls
+function formatShortDateMMDDYY(dateVal) {
+  return formatMonthYear(dateVal, 'Never');
 }
 
 function formatPhtShortTime(dateVal) {
@@ -364,61 +385,207 @@ function escapeHtml(str) {
 }
 
 /**
- * Batch Month to 1st Month Calculation Helper
- * Rule: If batch is August 2026, 1st Month is September 2026.
+ * Parses any batch month string into month index (0-11) and year
  */
-function getFirstMonthInfo(batchMonthStr) {
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+function parseBatchCohort(batchMonthStr) {
   if (!batchMonthStr || typeof batchMonthStr !== 'string') {
+    const now = new Date();
     return {
-      batchMonthName: "August",
-      batchYear: 2026,
-      batchDisplay: "August 2026",
-      firstMonthName: "September",
-      firstMonthYear: 2026,
-      firstMonthDisplay: "September 2026",
-      firstMonthNum: 9
+      monthIdx: 7,
+      monthNum: 8,
+      year: 2026,
+      monthName: "August",
+      display: "August 2026"
     };
   }
 
   const str = batchMonthStr.toLowerCase().trim();
-  let batchMonthIdx = -1;
-  for (let i = 0; i < monthNames.length; i++) {
-    if (str.includes(monthNames[i].toLowerCase())) {
-      batchMonthIdx = i;
+  let monthIdx = -1;
+  for (let i = 0; i < MONTH_NAMES_GLOBAL.length; i++) {
+    if (str.includes(MONTH_NAMES_GLOBAL[i].toLowerCase())) {
+      monthIdx = i;
       break;
     }
   }
-  if (batchMonthIdx === -1) batchMonthIdx = 7; // Default to August
+  if (monthIdx === -1) {
+    const isoMatch = str.match(/\b(20\d\d)-(\d{1,2})\b/);
+    if (isoMatch) {
+      const m = parseInt(isoMatch[2], 10);
+      if (m >= 1 && m <= 12) monthIdx = m - 1;
+    }
+  }
+  if (monthIdx === -1) monthIdx = 7;
 
   const yearMatch = batchMonthStr.match(/\b(20\d\d)\b/);
   const now = new Date();
-  const batchYear = yearMatch ? parseInt(yearMatch[1], 10) : now.getFullYear();
-
-  const firstMonthIdx = (batchMonthIdx + 1) % 12;
-  const firstMonthYear = (batchMonthIdx === 11) ? batchYear + 1 : batchYear;
+  const year = yearMatch ? parseInt(yearMatch[1], 10) : now.getFullYear();
 
   return {
-    batchMonthName: monthNames[batchMonthIdx],
-    batchYear: batchYear,
-    batchDisplay: `${monthNames[batchMonthIdx]} ${batchYear}`,
-    firstMonthName: monthNames[firstMonthIdx],
-    firstMonthYear: firstMonthYear,
-    firstMonthDisplay: `${monthNames[firstMonthIdx]} ${firstMonthYear}`,
-    firstMonthNum: firstMonthIdx + 1
+    monthIdx,
+    monthNum: monthIdx + 1,
+    year,
+    monthName: MONTH_NAMES_GLOBAL[monthIdx],
+    display: `${MONTH_NAMES_GLOBAL[monthIdx]} ${year}`
+  };
+}
+
+/**
+ * Formula-based Mission Month Calculator
+ * Month 0: Batch Cohort (Arrival)
+ * Month 1: 1st Drip Dispatch
+ * Month k: Mk Drip Dispatch
+ */
+function getMissionMonthInfo(batchMonthStr, monthIndex = 0) {
+  const base = parseBatchCohort(batchMonthStr);
+  const k = Math.max(0, parseInt(monthIndex, 10) || 0);
+
+  const totalMonths = (base.monthNum - 1) + k;
+  const calMonthNum = (totalMonths % 12) + 1;
+  const calYear = base.year + Math.floor(totalMonths / 12);
+  const calMonthName = MONTH_NAMES_GLOBAL[calMonthNum - 1];
+  const display = `${calMonthName} ${calYear}`;
+
+  return {
+    monthNum: calMonthNum,
+    year: calYear,
+    monthName: calMonthName,
+    display,
+    tenureIndex: k,
+    label: k === 0 ? `${display} (Month 0)` : `${display} (M${k})`
+  };
+}
+
+/**
+ * Batch Month to 1st Month Calculation Helper
+ */
+function getFirstMonthInfo(batchMonthStr) {
+  const m0 = getMissionMonthInfo(batchMonthStr, 0);
+  const m1 = getMissionMonthInfo(batchMonthStr, 1);
+
+  return {
+    batchMonthName: m0.monthName,
+    batchYear: m0.year,
+    batchDisplay: m0.display,
+    firstMonthName: m1.monthName,
+    firstMonthYear: m1.year,
+    firstMonthDisplay: m1.display,
+    firstMonthNum: m1.monthNum
   };
 }
 
 function calculateMissionMonth(batchMonthStr, maxMonths = 24, targetDate = new Date()) {
-  const info = getFirstMonthInfo(batchMonthStr);
+  const base = parseBatchCohort(batchMonthStr);
   const targetYear = targetDate.getFullYear();
   const targetMonth = targetDate.getMonth() + 1;
 
-  const elapsed = (targetYear - info.firstMonthYear) * 12 + (targetMonth - info.firstMonthNum) + 1;
+  const elapsed = (targetYear - base.year) * 12 + (targetMonth - base.monthNum);
   return Math.max(0, Math.min(elapsed, maxMonths));
+}
+
+/**
+ * Calculates current drip month and tenure info aligned with current calendar month.
+ */
+function getDripForTargetDate(batchMonthStr, maxMonths = 24, targetDate = new Date()) {
+  const calMonthNum = targetDate.getMonth() + 1;
+  const calYear = targetDate.getFullYear();
+  const calMonthName = MONTH_NAMES_GLOBAL[calMonthNum - 1];
+  const calMonthYear = `${calMonthName} ${calYear}`;
+
+  const curMissionMonth = calculateMissionMonth(batchMonthStr, maxMonths, targetDate);
+  const tenureLabel = curMissionMonth > 0 ? `M${curMissionMonth}` : 'Month 0';
+  const displayLabel = `${calMonthYear} (${tenureLabel})`;
+
+  return {
+    targetCalMonth: calMonthNum,
+    calYear,
+    calMonthName,
+    calMonthYear,
+    curMissionMonth,
+    tenureLabel,
+    displayLabel
+  };
+}
+
+/**
+ * Calculates upcoming drip template and milestone info.
+ * Synchronizes with current calendar month:
+ * - If missionary is behind, upcoming is CURRENT calendar month at milestone M{curMissionMonth}.
+ * - If in Month 0, upcoming is Month 1.
+ * - If up to date, upcoming is next month.
+ */
+function getUpcomingDripInfo(batchMonthStr, monthsSent = 0, maxMonths = 24, targetDate = new Date()) {
+  const sent = Number(monthsSent) || 0;
+  const max = Number(maxMonths) || 24;
+  if (sent >= max) return null;
+
+  const curMissionMonth = calculateMissionMonth(batchMonthStr, max, targetDate);
+  const calMonthNum = targetDate.getMonth() + 1; // 1-12
+  const calYear = targetDate.getFullYear();
+
+  let targetCalMonth;
+  let targetYear;
+  let tenureMonth;
+
+  if (curMissionMonth <= 0) {
+    const m1Info = getMissionMonthInfo(batchMonthStr, 1);
+    targetCalMonth = m1Info.monthNum;
+    targetYear = m1Info.year;
+    tenureMonth = 1;
+  } else if (sent < curMissionMonth) {
+    targetCalMonth = calMonthNum;
+    targetYear = calYear;
+    tenureMonth = curMissionMonth;
+  } else {
+    const nextTenure = Math.max(sent + 1, curMissionMonth + 1);
+    if (nextTenure > max) return null;
+    const nextInfo = getMissionMonthInfo(batchMonthStr, nextTenure);
+    targetCalMonth = nextInfo.monthNum;
+    targetYear = nextInfo.year;
+    tenureMonth = nextTenure;
+  }
+
+  const calMonthName = MONTH_NAMES_GLOBAL[targetCalMonth - 1];
+  const monthYearDisplay = `${calMonthName} ${targetYear}`;
+  const displayLabel = `${monthYearDisplay} (M${tenureMonth})`;
+
+  return {
+    monthNum: targetCalMonth,
+    year: targetYear,
+    monthName: calMonthName,
+    display: monthYearDisplay,
+    tenureMonth,
+    displayLabel
+  };
+}
+
+function getFirstDispatchDate(batchMonthStr, baseDate = new Date()) {
+  const info = getFirstMonthInfo(batchMonthStr);
+  const y = info.firstMonthYear;
+  const m = info.firstMonthNum;
+  const maxDays = new Date(y, m, 0).getDate();
+  const targetDay = Math.min(Math.max(1, baseDate.getDate()), maxDays);
+  return `${y}-${String(m).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+}
+
+function isMissionaryEligibleForDispatch(m, targetDate = new Date(), todayIso = null) {
+  if (!m) return false;
+  const status = (m.status || 'active').toLowerCase();
+  if (status !== 'active') return false;
+
+  const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+  const maxMonths = Number(m.max_months) || (isSister ? 18 : 24);
+  const monthsSent = Number(m.months_sent) || 0;
+  if (monthsSent >= maxMonths) return false;
+
+  const curMissionMonth = calculateMissionMonth(m.batch_month || 'August 2026', maxMonths, targetDate);
+  if (curMissionMonth <= 0) return false;
+  if (monthsSent >= curMissionMonth) return false;
+
+  const todayStr = todayIso || targetDate.toISOString().slice(0, 10);
+  if (m.last_sent_at && m.last_sent_at.slice(0, 10) === todayStr) return false;
+  if (m.next_send_date && m.next_send_date.slice(0, 10) > todayStr) return false;
+
+  return true;
 }
 
 /**

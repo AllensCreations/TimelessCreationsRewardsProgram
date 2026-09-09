@@ -19,3 +19,4 @@ android/android-tcrp/.gradle/
 **/local.properties
 **/assets/**/*.apk
 *.apk.idsig
+scratch/

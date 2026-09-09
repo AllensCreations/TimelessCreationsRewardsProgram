@@ -55,6 +55,7 @@ copyRecursive(path.join(rootDir, 'assets'), path.join(publicDir, 'assets'), isEx
 for (const wwwDir of targetWwwDirs) {
   copyRecursive(path.join(rootDir, 'views'), wwwDir, isExcluded);
   copyRecursive(path.join(rootDir, 'assets'), path.join(wwwDir, 'assets'), isExcluded);
+    if (fs.existsSync(path.join(publicDir, 'drips'))) { copyRecursive(path.join(publicDir, 'drips'), path.join(wwwDir, 'drips'), isExcluded); }
 
   // Remove any stale TimelessRewards.apk if accidentally present
   const strayApk = path.join(wwwDir, 'TimelessRewards.apk');

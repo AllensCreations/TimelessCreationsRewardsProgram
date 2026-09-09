@@ -8,27 +8,85 @@
   <link rel="stylesheet" href="/assets/app.css?v=2.7.0">
   <script src="/assets/app.js?v=2.7.0"></script>
   <style>
+    /* Responsive Settings Layout */
+    .card {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      word-break: break-word;
+      overflow-x: hidden;
+    }
+    .settings-action-btn {
+      width: 100%;
+      font-size: clamp(0.74rem, 2.5vw, 0.85rem);
+      font-weight: 700;
+      padding: 10px 14px;
+      min-height: 44px;
+      white-space: normal;
+      word-break: break-word;
+      text-align: center;
+      line-height: 1.35;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    .card-header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+    }
+    .tester-grid {
+      display: grid;
+      grid-template-columns: 1fr 130px;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    @media (max-width: 520px) {
+      .tester-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+    .cdn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
     .captcha-arena {
       position: relative;
       width: 100%;
-      height: 160px;
+      min-height: 100px;
+      max-height: 180px;
       background: #08080d;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       margin: 14px 0;
-      overflow: hidden;
+      padding: 10px 8px;
       display: flex;
       justify-content: space-around;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      box-sizing: border-box;
     }
     .captcha-card {
-      width: 75px; height: 75px;
+      width: clamp(52px, 18vw, 75px);
+      height: clamp(52px, 18vw, 75px);
       border-radius: 8px;
       overflow: hidden;
       border: 2px solid var(--border);
       cursor: pointer;
       background: var(--surface2);
       user-select: none;
+      flex-shrink: 0;
     }
     .captcha-card:hover { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.5); }
     .captcha-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -38,9 +96,22 @@
     .progress-dot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.6); }
 
     .console-box {
-      background: #08080d; border: 1px solid var(--border); border-radius: var(--radius-sm);
-      padding: 12px; font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--green);
-      margin-top: 12px; white-space: pre-wrap; display: none; max-height: 240px; overflow-y: auto;
+      background: #08080d;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--green);
+      margin-top: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      display: none;
+      max-height: 240px;
+      overflow-y: auto;
+      box-sizing: border-box;
+      width: 100%;
     }
   </style>
 </head>
@@ -51,32 +122,32 @@
   <div class="card" style="border-color: var(--border-gold);">
     <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold); margin-bottom:4px;">⚡ Master System Power Switch</div>
     <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Controls automated drip emails, cron dispatching, and live sync operations. Click below to toggle instantly.</div>
-    <button id="power-toggle-btn" class="btn btn-dark" onclick="togglePowerDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">⏳ Loading Status...</button>
+    <button id="power-toggle-btn" class="btn btn-dark settings-action-btn" onclick="togglePowerDirect()">⏳ Loading Status...</button>
   </div>
 
   <!-- Messenger Bot Maintenance Mode Switch -->
   <div class="card" style="border-color: var(--border-gold);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:8px;">
+    <div class="card-header-flex">
       <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">🤖 Messenger Bot Maintenance Mode</div>
       <span class="badge" id="bot-maintenance-badge" style="background:rgba(46,204,113,0.15); color:#2ecc71; border:1px solid rgba(46,204,113,0.4);">● OPERATIONAL</span>
     </div>
     <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Controls public availability of the Facebook Messenger bot. When maintenance mode is active, incoming messages receive an automated maintenance notice instead of executing commands.</div>
-    <button id="bot-maintenance-btn" class="btn btn-dark" onclick="toggleBotMaintenanceDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">⏳ Loading Status...</button>
+    <button id="bot-maintenance-btn" class="btn btn-dark settings-action-btn" onclick="toggleBotMaintenanceDirect()">⏳ Loading Status...</button>
   </div>
 
   <!-- Turso Database Cleanup & Optimization -->
   <div class="card" style="border-color: rgba(201,168,76,0.3);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:8px;">
+    <div class="card-header-flex">
       <div style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:bold; color:var(--gold);">🗄️ Turso Database Maintenance & Table Pruning</div>
       <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);">TURSO LIB-SQL</span>
     </div>
     <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Consolidates settings tables, drops duplicate legacy tables (system_config, names, bot_hourly_views), prunes expired rate limits, and optimizes SQLite indices.</div>
-    <button id="db-maintenance-btn" class="btn btn-dark" onclick="runDatabaseMaintenanceDirect()" style="width:100%; font-size:0.85rem; font-weight:700;">🧹 Run Database Pruning & Table Cleanup</button>
+    <button id="db-maintenance-btn" class="btn btn-dark settings-action-btn" onclick="runDatabaseMaintenanceDirect()">🧹 Run Database Pruning &amp; Table Cleanup</button>
   </div>
 
   <!-- Android App & Live Updates Management -->
   <div class="card" style="border-color: rgba(201,168,76,0.3);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+    <div class="card-header-flex" style="margin-bottom:10px;">
       <div>
         <h3 style="font-size:0.95rem; color:var(--gold);">📱 Android App &amp; System Updates</h3>
         <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Fast hybrid offline/online runtime with automatic OTA deployment synchronization.</p>
@@ -85,20 +156,20 @@
     </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-      <button class="btn btn-gold" id="btn-check-updates" onclick="checkUpdatesManually()" style="flex:1; min-width:200px; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <button class="btn btn-gold settings-action-btn" id="btn-check-updates" onclick="checkUpdatesManually()">
         <span>🔍 Check for Updates</span>
       </button>
     </div>
-    <div id="update-status-msg" style="font-size:0.75rem; color:var(--green); margin-top:10px; display:none; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:6px; padding:10px 14px;"></div>
+    <div id="update-status-msg" style="font-size:0.75rem; color:var(--green); margin-top:10px; display:none; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:6px; padding:10px 14px; word-break:break-word;"></div>
   </div>
 
-  <!-- CDN Setup -->
-  <div class="card">
+  <!-- CDN Setup (Hidden) -->
+  <div class="card" id="cdn-setup-card" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
       <h3 style="font-size:0.95rem; color:var(--gold);">⚡ jsDelivr &amp; GitHub CDN Setup</h3>
       <button class="btn btn-gold" onclick="saveCdnSettings()">💾 Save Variables</button>
     </div>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+    <div class="cdn-grid">
       <div class="form-group"><label class="form-label">GitHub Owner</label><input id="set-cdn-owner" class="form-input" placeholder="AllensCreations"></div>
       <div class="form-group"><label class="form-label">Repo Name</label><input id="set-cdn-repo" class="form-input" placeholder="Gallery"></div>
       <div class="form-group"><label class="form-label">Branch</label><input id="set-cdn-branch" class="form-input" value="main"></div>
@@ -117,7 +188,7 @@
       <input type="text" id="test-email-input" class="form-input" value="2ndsalviejomark2019@gmail.com">
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 120px; gap:8px;">
+    <div class="tester-grid">
       <div class="form-group">
         <label class="form-label">Template</label>
         <select id="test-template-select" class="form-select">
@@ -135,7 +206,7 @@
       </div>
     </div>
     
-    <button class="btn btn-gold" id="btn-send-test" onclick="sendTestEmail()" style="width:100%;">🚀 Dispatch Template</button>
+    <button class="btn btn-gold settings-action-btn" id="btn-send-test" onclick="sendTestEmail()">🚀 Dispatch Template</button>
     <div id="test-console" class="console-box"></div>
   </div>
 </div>
@@ -192,11 +263,11 @@ function updatePowerButtonUI(state) {
   const btn = document.getElementById("power-toggle-btn");
   if (!btn) return;
   if (state === "online") {
-    btn.className = "btn btn-gold";
+    btn.className = "btn btn-gold settings-action-btn";
     btn.style.boxShadow = "0 0 15px rgba(201,168,76,0.3)";
     btn.innerHTML = "⚡ Master System: <strong style='color:#fff;'>ONLINE</strong> (Active • Click to Switch Offline)";
   } else {
-    btn.className = "btn btn-dark";
+    btn.className = "btn btn-dark settings-action-btn";
     btn.style.boxShadow = "none";
     btn.innerHTML = "💤 Master System: <strong style='color:var(--gold);'>OFFLINE</strong> (Paused • Click to Switch Online)";
   }
@@ -208,7 +279,7 @@ function updateBotMaintenanceButtonUI(state) {
   if (!btn) return;
   const isMaint = (state || "").toUpperCase() === "ON";
   if (isMaint) {
-    btn.className = "btn btn-gold";
+    btn.className = "btn btn-gold settings-action-btn";
     btn.style.background = "#c0392b";
     btn.style.borderColor = "#e74c3c";
     btn.style.boxShadow = "0 0 15px rgba(231,76,60,0.3)";
@@ -220,7 +291,7 @@ function updateBotMaintenanceButtonUI(state) {
       badge.textContent = "🛠️ MAINTENANCE ACTIVE";
     }
   } else {
-    btn.className = "btn btn-dark";
+    btn.className = "btn btn-dark settings-action-btn";
     btn.style.background = "";
     btn.style.borderColor = "";
     btn.style.boxShadow = "none";
@@ -397,6 +468,15 @@ async function saveCdnSettings() {
     if (d.ok) showToast("CDN configuration saved!");
   } catch (err) { showToast("Error saving: " + err.message, "error"); }
 }
+
+window.toggleCdnSettings = function() {
+  const card = document.getElementById("cdn-setup-card");
+  if (card) {
+    const isHidden = card.style.display === "none";
+    card.style.display = isHidden ? "block" : "none";
+    showToast(isHidden ? "GitHub CDN variables revealed" : "GitHub CDN variables hidden");
+  }
+};
 
 async function sendTestEmail() {
   const input = document.getElementById("test-email-input").value.trim();

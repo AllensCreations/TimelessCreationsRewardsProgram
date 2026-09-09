@@ -136,7 +136,32 @@
           <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold); margin-bottom:10px;">9 Community Archive Photos</div>
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:12px;">
               <script>
-                const defaultGrids = [
+                
+const R2_WORKER_BASE = "https://tcrp.2ndsalviejomark2019.workers.dev";
+function getCdnImageUrl(urlOrPath, fallbackName = "image.jpg") {
+  if (!urlOrPath || typeof urlOrPath !== "string") return R2_WORKER_BASE + "/" + fallbackName;
+  const trimmed = urlOrPath.trim();
+  if (!trimmed) return R2_WORKER_BASE + "/" + fallbackName;
+  if (trimmed.startsWith(R2_WORKER_BASE)) return trimmed;
+
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+    const cleanPath = trimmed.replace(/^\/+/, "");
+    return R2_WORKER_BASE + "/" + cleanPath;
+  }
+
+  let fileKey = "asset";
+  const driveMatch = trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveMatch) {
+    fileKey = "drive_" + driveMatch[1];
+  } else {
+    fileKey = "ext_" + trimmed.replace(/[^a-zA-Z0-9_-]/g, "_").slice(-24);
+  }
+
+  const ext = trimmed.includes(".png") ? ".png" : (trimmed.includes(".webp") ? ".webp" : ".jpg");
+  return R2_WORKER_BASE + "/drips/" + fileKey + ext + "?origin=" + encodeURIComponent(trimmed);
+}
+
+const defaultGrids = [
                   "https://lh3.googleusercontent.com/u/0/d/1ZTR6vYPZu4jMmII6ZmxzIO2jD_Q2qZex",
                   "https://lh3.googleusercontent.com/u/0/d/1x3BSmnhCH0MhEhmFKqfL3gctnljtY_Ky",
                   "https://lh3.googleusercontent.com/u/0/d/1r6i_IK3P2oYjBLlI-ZiX2Vd7Rty2Phrv",
@@ -310,7 +335,7 @@ let masterTemplateCode = `<!DOCTYPE html>
       <h1 class="logo-text">Timeless Creations</h1>
       <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 6px; text-transform: uppercase;">Most Trusted Online LDS Store by Members &amp; Missionaries Across the Philippines</div>
     </div>
-    <img src="https://tcrp.2ndsalviejomark2019.workers.dev/drips/temple_hero.jpg?origin=https%3A%2F%2Flh3.googleusercontent.com%2Fu%2F0%2Fd%2F1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG" alt="Temple" class="temple-img">
+    <img src="{{TEMPLE_IMG}}" alt="Temple" class="temple-img">
     <div class="main-content">
       <div style="font-size: 18px; font-style: italic; margin-bottom: 10px; color: #1a1a1a;">Hello {{NAME}},</div>
       <div style="font-size: 13.5px; color: #333; margin-bottom: 16px;">{{MESSAGE}}</div>
@@ -846,11 +871,11 @@ function renderPreview() {
 
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
   const p1Name = isHigh ? document.getElementById("inp-highlight-name").value.trim() : "";
-  const p1Img = document.getElementById("inp-highlight-img").value.trim() || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  const p1Img = getCdnImageUrl(document.getElementById("inp-highlight-img").value.trim() || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE", "product_1.jpg");
   const p1Sold = document.getElementById("inp-highlight-sold-1").value.trim() || "1.5k+ Sold";
 
   const p2Name = isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "";
-  const p2Img = document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+  const p2Img = getCdnImageUrl(document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ", "product_2.jpg");
   const p2Sold = document.getElementById("inp-highlight-sold-2").value.trim() || "950+ Sold";
 
   const topProductsHtml = buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold);
@@ -868,6 +893,7 @@ function renderPreview() {
 
   let finalHtml = sourceTemplate
     .replace(/{{MONTH}}/g, monthLabel)
+    .replace(/{{TEMPLE_IMG}}/g, getCdnImageUrl(data.temple_img || "https://lh3.googleusercontent.com/u/0/d/1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG", "temple_hero.jpg"))
     .replace(/{{NAME}}/g, name)
     .replace(/{{MESSAGE}}/g, message)
     .replace(/{{SCRIPTURE}}/g, cleanedQuote)
@@ -876,12 +902,13 @@ function renderPreview() {
     .replace(/{{TOP_PRODUCTS_HTML}}/g, topProductsHtml)
     .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
     .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
-    .replace(/{{ESS1_IMG}}/g, document.getElementById("inp-img-ess1").value.trim())
+    .replace(/{{ESS1_IMG}}/g, getCdnImageUrl(document.getElementById("inp-img-ess1").value.trim() || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE", "ess1.jpg"))
     .replace(/{{ESS2_NAME}}/g, document.getElementById("inp-ess2-name").value.trim())
-    .replace(/{{ESS2_IMG}}/g, document.getElementById("inp-img-ess2").value.trim());
+    .replace(/{{ESS2_IMG}}/g, getCdnImageUrl(document.getElementById("inp-img-ess2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ", "ess2.jpg"));
 
   for (let i = 1; i <= 9; i++) {
-    const gImg = document.getElementById(`inp-grid-${i}`)?.value || "";
+    const rawGImg = document.getElementById(`inp-grid-${i}`)?.value || defaultGrids[i-1];
+    const gImg = getCdnImageUrl(rawGImg, `grid${i}.jpg`);
     finalHtml = finalHtml.replace(new RegExp(`{{GRID${i}}}`, 'g'), gImg);
   }
 

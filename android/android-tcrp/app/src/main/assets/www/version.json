@@ -1,9 +1,9 @@
 {
-  "version": "2.27.0",
-  "version_code": 39,
-  "deployment_id": "deploy_20260909_v2_27",
-  "build_timestamp": "2026-09-09T08:06:00.000Z",
+  "version": "2.29.0",
+  "version_code": 41,
+  "deployment_id": "deploy_20260909_v2_29",
+  "build_timestamp": "2026-09-09T08:19:00.000Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "<div style=\"font-weight:600; color:var(--gold,#c9a84c); margin-top:6px; margin-bottom:2px;\">🚀 New Features & Enhancements</div>\n<div style=\"margin-left:8px; margin-bottom:3px; font-size:0.75rem;\">• <strong>TCRP Cloudflare R2 Worker & Bucket Naming:</strong> Configured Worker and R2 bucket naming to `tcrp` across wrangler configs, email templates, and CDN helpers.</div>"
+  "changelog": "<div style=\"font-weight:600; color:var(--gold,#c9a84c); margin-top:6px; margin-bottom:2px;\">🚀 New Features & Enhancements</div>\n<div style=\"margin-left:8px; margin-bottom:3px; font-size:0.75rem;\">• <strong>Universal TCRP R2 CDN Image Routing:</strong> All images across email templates, Drips live previews, Missionary previews, and Brevo live dispatches now route seamlessly through the `tcrp` Cloudflare R2 pull-through CDN.</div>"
 }

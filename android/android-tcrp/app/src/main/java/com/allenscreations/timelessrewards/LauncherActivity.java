@@ -7,11 +7,14 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.view.View;
@@ -38,6 +41,15 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.webkit.WebViewAssetLoader;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -56,6 +68,7 @@ public class LauncherActivity extends AppCompatActivity {
     private String pendingBase64Data = null;
     private String pendingFilename = null;
     private String pendingMimeType = null;
+    private long lastBackPressTime = 0;
 
     public class AndroidBridge {
         @JavascriptInterface
@@ -67,19 +80,118 @@ public class LauncherActivity extends AppCompatActivity {
         public void showToast(String message) {
             runOnUiThread(() -> Toast.makeText(LauncherActivity.this, message, Toast.LENGTH_SHORT).show());
         }
+
+        @JavascriptInterface
+        public String getAppVersion() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (Exception e) {
+                return "2.6.0";
+            }
+        }
+
+        @JavascriptInterface
+        public int getAppVersionCode() {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    return (int) getPackageManager().getPackageInfo(getPackageName(), 0).getLongVersionCode();
+                } else {
+                    return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+                }
+            } catch (Exception e) {
+                return 18;
+            }
+        }
+
+        @JavascriptInterface
+        public void vibrate(int milliseconds) {
+            runOnUiThread(() -> triggerHapticFeedback(milliseconds));
+        }
+
+        @JavascriptInterface
+        public String getCache(String key) {
+            return NativeStorageEngine.getInstance(LauncherActivity.this).get(key);
+        }
+
+        @JavascriptInterface
+        public boolean setCache(String key, String value) {
+            NativeStorageEngine.getInstance(LauncherActivity.this).put(key, value);
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean removeCache(String key) {
+            return NativeStorageEngine.getInstance(LauncherActivity.this).remove(key);
+        }
+
+        @JavascriptInterface
+        public void clearCache() {
+            NativeStorageEngine.getInstance(LauncherActivity.this).clear();
+        }
+
+        @JavascriptInterface
+        public void putCacheBatch(String jsonString) {
+            NativeStorageEngine.getInstance(LauncherActivity.this).putBatch(jsonString);
+        }
+
+        @JavascriptInterface
+        public void scanBarcode() {
+            runOnUiThread(() -> startNativeScanner());
+        }
+
+        @JavascriptInterface
+        public String generateQRCode(String text, int width, int height) {
+            try {
+                int w = (width > 0 && width <= 1024) ? width : 256;
+                int h = (height > 0 && height <= 1024) ? height : 256;
+                BitMatrix bitMatrix = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, w, h);
+                Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
+                for (int x = 0; x < w; x++) {
+                    for (int y = 0; y < h; y++) {
+                        bitmap.setPixel(x, y, bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE);
+                    }
+                }
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                byte[] bytes = baos.toByteArray();
+                return "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP);
+            } catch (Exception e) {
+                return null;
+            }
+        }
     }
 
+    private void triggerHapticFeedback(int ms) {
+        try {
+            int duration = (ms > 0 && ms <= 500) ? ms : 15;
+            Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+            if (vibrator != null && vibrator.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    vibrator.vibrate(duration);
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    @SuppressWarnings("deprecation")
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Customize status bar color to match the dark cockpit theme (#0a0a0f)
+        // Customize status bar and navigation bar to seamless dark cockpit (#0a0a0f)
         Window window = getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.setStatusBarColor(Color.parseColor("#0A0A0F"));
+        window.setNavigationBarColor(Color.parseColor("#0A0A0F"));
 
         webView = new WebView(this);
+        // Force native GPU acceleration pipeline
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        webView.setBackgroundColor(Color.parseColor("#0A0A0F"));
+        webView.clearCache(true);
         setContentView(webView);
 
         // Custom PathHandler mapped to root ("/") to seamlessly serve root-relative CSS, JS, fonts, and HTML
@@ -112,14 +224,27 @@ public class LauncherActivity extends AppCompatActivity {
                             else if (assetPath.endsWith(".json")) mimeType = "application/json";
                             else if (assetPath.endsWith(".png")) mimeType = "image/png";
                             else if (assetPath.endsWith(".jpg") || assetPath.endsWith(".jpeg")) mimeType = "image/jpeg";
+                            else if (assetPath.endsWith(".webp")) mimeType = "image/webp";
                             else if (assetPath.endsWith(".svg")) mimeType = "image/svg+xml";
                             else if (assetPath.endsWith(".woff2")) mimeType = "font/woff2";
                             else if (assetPath.endsWith(".woff")) mimeType = "font/woff";
                             else if (assetPath.endsWith(".ttf")) mimeType = "font/ttf";
+                            else if (assetPath.endsWith(".wasm")) mimeType = "application/wasm";
 
                             Map<String, String> headers = new HashMap<>();
                             headers.put("Access-Control-Allow-Origin", "*");
-                            headers.put("Cache-Control", "no-cache");
+
+                            // Cache only binary fonts, images, and wasm; scripts and stylesheets must revalidate
+                            if (assetPath.endsWith(".ttf") || assetPath.endsWith(".woff") || assetPath.endsWith(".woff2") ||
+                                assetPath.endsWith(".png") || assetPath.endsWith(".jpg") || assetPath.endsWith(".jpeg") ||
+                                assetPath.endsWith(".svg") || assetPath.endsWith(".webp") || assetPath.endsWith(".wasm")) {
+                                headers.put("Cache-Control", "public, max-age=31536000, immutable");
+                            } else {
+                                headers.put("Cache-Control", "no-cache, no-store, must-revalidate");
+                                headers.put("Pragma", "no-cache");
+                                headers.put("Expires", "0");
+                            }
+
                             return new WebResourceResponse(mimeType, "UTF-8", 200, "OK", headers, is);
                         } catch (Exception e) {
                             return null;
@@ -136,10 +261,18 @@ public class LauncherActivity extends AppCompatActivity {
         settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
+        webView.setVerticalScrollBarEnabled(true);
+        webView.setHorizontalScrollBarEnabled(false);
+        webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        webView.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            settings.setSafeBrowsingEnabled(false);
+        }
 
         // Register Android JavascriptInterface Bridge
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
@@ -214,12 +347,27 @@ public class LauncherActivity extends AppCompatActivity {
             }
         });
 
-        // Handle Back Navigation
+        // Hierarchical Back Navigation Interceptor (closes modals/drawers or double-tap to exit)
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (webView != null && webView.canGoBack()) {
-                    webView.goBack();
+                if (webView != null) {
+                    webView.evaluateJavascript("(function(){ if (window.onHardwareBackPressed) { return window.onHardwareBackPressed(); } return false; })()", value -> {
+                        if ("true".equals(value)) {
+                            return;
+                        }
+                        if (webView.canGoBack()) {
+                            webView.goBack();
+                        } else {
+                            long now = System.currentTimeMillis();
+                            if (now - lastBackPressTime < 2000) {
+                                finish();
+                            } else {
+                                lastBackPressTime = now;
+                                Toast.makeText(LauncherActivity.this, "Press back again to exit", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
                 } else {
                     finish();
                 }
@@ -244,6 +392,19 @@ public class LauncherActivity extends AppCompatActivity {
 
         // Load root index.html with full CSS styling
         webView.loadUrl("https://appassets.androidplatform.net/index.html");
+    }
+
+    private void startNativeScanner() {
+        try {
+            IntentIntegrator integrator = new IntentIntegrator(this);
+            integrator.setPrompt("Scan Barcode or QR Code");
+            integrator.setBeepEnabled(true);
+            integrator.setOrientationLocked(false);
+            integrator.setBarcodeImageEnabled(false);
+            integrator.initiateScan();
+        } catch (Exception e) {
+            Toast.makeText(this, "Camera scanner error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void saveBase64ToStorage(String base64Data, String filename, String mimeType) {
@@ -329,6 +490,21 @@ public class LauncherActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        // First check ZXing Barcode scanner result
+        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (scanResult != null) {
+            if (scanResult.getContents() != null) {
+                String barcode = scanResult.getContents();
+                runOnUiThread(() -> {
+                    if (webView != null) {
+                        String js = "if (window.onNativeBarcodeScanned) { window.onNativeBarcodeScanned(" + JSONObject.quote(barcode) + "); }";
+                        webView.evaluateJavascript(js, null);
+                    }
+                });
+            }
+            return;
+        }
+
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
             if (fileUploadCallback != null) {

@@ -1,17 +1,133 @@
+// In-memory instant hashmap cache for 0ms lookups
+const _memCache = new Map();
+
 const LocalStore = {
   get(key, fallback = null) {
+    if (_memCache.has(key)) {
+      return _memCache.get(key);
+    }
     try {
+      // 1. Check ultra-fast native C/C++ SQLite binary cache if running in Android app
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.getCache === 'function') {
+        const nativeVal = window.AndroidBridge.getCache(`tcrp_${key}`);
+        if (nativeVal !== null && nativeVal !== undefined) {
+          const parsed = JSON.parse(nativeVal);
+          _memCache.set(key, parsed);
+          return parsed;
+        }
+      }
+      // 2. Standard DOM localStorage fallback
       const v = localStorage.getItem(`tcrp_${key}`);
-      return v ? JSON.parse(v) : fallback;
+      if (v) {
+        const parsed = JSON.parse(v);
+        _memCache.set(key, parsed);
+        // Write-through to native SQLite binary cache for future instant offline hits
+        if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setCache === 'function') {
+          window.AndroidBridge.setCache(`tcrp_${key}`, v);
+        }
+        return parsed;
+      }
+      return fallback;
     } catch { return fallback; }
   },
   set(key, val) {
-    try { localStorage.setItem(`tcrp_${key}`, JSON.stringify(val)); } catch {}
+    _memCache.set(key, val);
+    try {
+      const jsonStr = JSON.stringify(val);
+      localStorage.setItem(`tcrp_${key}`, jsonStr);
+      // Fast persist into native C/C++ SQLite encrypted binary engine
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setCache === 'function') {
+        window.AndroidBridge.setCache(`tcrp_${key}`, jsonStr);
+      }
+    } catch {}
   },
   remove(key) {
-    try { localStorage.removeItem(`tcrp_${key}`); } catch {}
+    _memCache.delete(key);
+    try {
+      localStorage.removeItem(`tcrp_${key}`);
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.removeCache === 'function') {
+        window.AndroidBridge.removeCache(`tcrp_${key}`);
+      }
+    } catch {}
+  },
+  clear() {
+    _memCache.clear();
+    try {
+      localStorage.clear();
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.clearCache === 'function') {
+        window.AndroidBridge.clearCache();
+      }
+    } catch {}
   }
 };
+
+// Hardware-accelerated native barcode / QR scanner bridge
+window.TCRPScanner = {
+  scan(callback) {
+    if (typeof callback === 'function') {
+      window._nativeBarcodeCallback = callback;
+    }
+    if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.scanBarcode === 'function') {
+      window.AndroidBridge.scanBarcode();
+    } else {
+      const manual = prompt('Enter or scan barcode / QR code:');
+      if (manual && typeof callback === 'function') {
+        callback(manual);
+      }
+    }
+  }
+};
+
+window.onNativeBarcodeScanned = function(code) {
+  if (window._nativeBarcodeCallback) {
+    window._nativeBarcodeCallback(code);
+    window._nativeBarcodeCallback = null;
+  } else {
+    window.dispatchEvent(new CustomEvent('tcrp-barcode-scanned', { detail: { code } }));
+  }
+};
+
+// Hardware-accelerated native QR Code Generator
+window.TCRPQRCode = {
+  generate(text, width = 256, height = 256) {
+    if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.generateQRCode === 'function') {
+      const dataUri = window.AndroidBridge.generateQRCode(text, width, height);
+      if (dataUri) return dataUri;
+    }
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23fff"/><rect x="10" y="10" width="80" height="80" fill="none" stroke="%23c9a84c" stroke-width="2"/><text x="50" y="55" font-family="sans-serif" font-size="8" text-anchor="middle" fill="%23000">${encodeURIComponent(text.substring(0, 20))}</text></svg>`;
+  }
+};
+
+// Hierarchical Native Hardware Back Navigation Handler
+window.onHardwareBackPressed = function() {
+  // 1. If mobile navigation drawer is open, close it
+  const drawer = document.getElementById('mobile-nav-drawer');
+  if (drawer && (drawer.classList.contains('open') || drawer.style.display === 'block')) {
+    if (typeof toggleMobileDrawer === 'function') toggleMobileDrawer();
+    else { drawer.classList.remove('open'); drawer.style.display = 'none'; }
+    return true;
+  }
+  // 2. If any modal or popup overlay is open, close it
+  const openModals = document.querySelectorAll('.modal.active, .modal.show, [id$="-modal"].open, [id$="-dialog"].open');
+  if (openModals.length > 0) {
+    openModals.forEach(m => {
+      m.classList.remove('active', 'show', 'open');
+      if (m.style.display && m.style.display !== 'none') m.style.display = 'none';
+    });
+    return true;
+  }
+  return false;
+};
+
+// Global tactile micro-haptics on all user taps
+if (typeof window !== 'undefined') {
+  document.addEventListener('pointerdown', (e) => {
+    const target = e.target.closest('button, .btn, .nav-pill, .tab-btn, .qr-chip, input[type="submit"], input[type="checkbox"], input[type="radio"], .card-clickable');
+    if (target && window.AndroidBridge && typeof window.AndroidBridge.vibrate === 'function') {
+      window.AndroidBridge.vibrate(12);
+    }
+  }, { passive: true });
+}
 
 const REMOTE_API_SERVER = (function() {
   if (typeof window !== 'undefined') {
@@ -114,13 +230,18 @@ async function triggerGlobalRefresh() {
   showToast("Syncing data with server...");
   
   try {
-    const [statsRes, mRes] = await Promise.all([
+    const [statsRes, mRes, pendingRes] = await Promise.all([
       fetch("/api/main?action=get_stats").then(r => r.json()).catch(() => ({})),
-      fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({}))
+      fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_pending_emails").then(r => r.json()).catch(() => ({}))
     ]);
 
     if (statsRes && statsRes.ok) LocalStore.set('stats_payload', statsRes);
     if (mRes && mRes.ok && Array.isArray(mRes.missionaries)) LocalStore.set('missionaries', mRes.missionaries);
+    if (pendingRes && pendingRes.ok) {
+      LocalStore.set('pending_emails_data', pendingRes);
+      LocalStore.set('missionaries_with_pending_data', pendingRes);
+    }
 
     showToast("✓ Live data updated!");
     window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
@@ -176,6 +297,28 @@ function formatPhtDate(dateVal, includeSeconds = true) {
       hour12: true
     }) + ' PHT';
   } catch {
+    return String(dateVal);
+  }
+}
+
+function formatShortDateMMDDYY(dateVal) {
+  if (!dateVal) return 'Never';
+  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
+    const parts = dateVal.slice(0, 10).split('-');
+    const yy = parts[0].slice(-2);
+    const mm = parts[1];
+    const dd = parts[2];
+    return `${mm}/${dd}/${yy}`;
+  }
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    const phtDate = new Date(d.getTime() + (d.getTimezoneOffset() * 60000) + (8 * 3600000));
+    const mm = String(phtDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(phtDate.getDate()).padStart(2, '0');
+    const yy = String(phtDate.getFullYear()).slice(-2);
+    return `${mm}/${dd}/${yy}`;
+  } catch (_) {
     return String(dateVal);
   }
 }
@@ -375,15 +518,18 @@ function showConfirmWarningModal({
       </div>
     `;
 
+    overlay.style.display = 'flex';
     overlay.classList.add('open');
 
     const handleConfirm = () => {
       overlay.classList.remove('open');
+      overlay.style.display = 'none';
       resolve(true);
     };
 
     const handleCancel = () => {
       overlay.classList.remove('open');
+      overlay.style.display = 'none';
       resolve(false);
     };
 
@@ -450,20 +596,33 @@ const TCRPSync = {
  * Automated Internal Deployment Update & APK In-App Updater
  * Automatically polls for new deployments and APK updates every 60s
  */
-let CURRENT_APP_VERSION = "2.2.0";
-let CURRENT_APP_VERSION_CODE = 14;
-let CURRENT_DEPLOYMENT_ID = "deploy_20260904_v2_2";
+let CURRENT_APP_VERSION = "2.6.0";
+let CURRENT_APP_VERSION_CODE = 18;
+let CURRENT_DEPLOYMENT_ID = "deploy_20260905_v2_6";
 let hasLoadedLocalVersion = false;
 
 async function loadInstalledVersion() {
   if (hasLoadedLocalVersion) return;
+  if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.getAppVersionCode === 'function') {
+    try {
+      const code = Number(window.AndroidBridge.getAppVersionCode());
+      const ver = String(window.AndroidBridge.getAppVersion() || '').trim();
+      if (code > 0) {
+        CURRENT_APP_VERSION_CODE = code;
+        if (ver) CURRENT_APP_VERSION = ver.replace(/^v/i, '');
+        hasLoadedLocalVersion = true;
+      }
+    } catch (_) {}
+  }
   try {
-    const res = await fetch('/version.json', { cache: 'no-store' });
+    const res = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (data && data.version) {
-        CURRENT_APP_VERSION = String(data.version).replace(/^v/i, '');
-        if (data.version_code) CURRENT_APP_VERSION_CODE = Number(data.version_code);
+        if (!hasLoadedLocalVersion) {
+          CURRENT_APP_VERSION = String(data.version).replace(/^v/i, '');
+          if (data.version_code) CURRENT_APP_VERSION_CODE = Number(data.version_code);
+        }
         if (data.deployment_id) CURRENT_DEPLOYMENT_ID = data.deployment_id;
         hasLoadedLocalVersion = true;
       }
@@ -636,10 +795,10 @@ async function checkDeploymentUpdate(isManual = false) {
       }
 
       const confirmed = await showConfirmWarningModal({
-        title: `📱 New App Update Available (v${remoteVer})!`,
-        message: `A new build is available in the Release Link.<br><br><strong>Release:</strong> ${rel.name || ('v' + remoteVer + ' (Build ' + remoteCode + ')')}<br><strong>File Size:</strong> ${rel.apk_size_formatted || '2.8 MB'}<br><br><strong>What's New:</strong> ${remote.changelog || 'Latest improvements and bug fixes.'}`,
-        confirmText: "🚀 Update / Download Now",
-        cancelText: "Remind Me Later",
+        title: `Update Available (v${remoteVer})`,
+        message: `A new update is ready to install.<br><span style="font-size:0.75rem; color:var(--muted); display:inline-block; margin-top:4px;">Build ${remoteCode} &bull; ${rel.apk_size_formatted || '11.8 MB'}</span>`,
+        confirmText: "Update Now",
+        cancelText: "Later",
         isDanger: false,
         icon: "🚀"
       });

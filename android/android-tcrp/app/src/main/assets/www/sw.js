@@ -1,10 +1,14 @@
-const CACHE_NAME = 'tcrp-cache-v5';
+const CACHE_NAME = 'tcrp-cache-v6';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/assets/app.css',
   '/assets/app.js',
+  '/assets/fonts/Syne-Variable.ttf',
+  '/assets/fonts/DMSans-Variable.ttf',
+  '/assets/fonts/DMMono-Regular.ttf',
+  '/assets/fonts/DMMono-Medium.ttf',
   '/pusher.html',
   '/invoicing.html',
   '/claims.html',

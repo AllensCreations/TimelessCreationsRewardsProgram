@@ -1,9 +1,9 @@
 {
-  "version": "2.34.0",
-  "version_code": 46,
-  "deployment_id": "deploy_20260909_v2_34",
-  "build_timestamp": "2026-09-09T08:43:00.000Z",
+  "version": "2.35.0",
+  "version_code": 47,
+  "deployment_id": "deploy_20260909_v2_35",
+  "build_timestamp": "2026-09-09T08:49:00.000Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "<div style=\"font-weight:600; color:var(--gold,#c9a84c); margin-top:6px; margin-bottom:2px;\">🚀 New Features & Enhancements</div>\n<div style=\"margin-left:8px; margin-bottom:3px; font-size:0.75rem;\">• <strong>Direct jsDelivr Image Storage & Failover:</strong> All 13 core email template assets permanently hosted in repository with multi-tier edge fallback.</div>\n<div style=\"margin-left:8px; margin-bottom:3px; font-size:0.75rem;\">• <strong>Synchronized Preview & Rewards Visibility:</strong> Real-time alignment across Drips, Missionaries, Dashboard, and live Brevo dispatches.</div>"
+  "changelog": "<div style=\"font-weight:600; color:var(--gold,#c9a84c); margin-top:6px; margin-bottom:2px;\">🚀 New Features & Enhancements</div>\n<div style=\"margin-left:8px; margin-bottom:3px; font-size:0.75rem;\">• <strong>Direct jsDelivr Image Resolver:</strong> Eliminated nested proxy query loops; all template images resolve directly to high-speed permanent jsDelivr CDN URLs.</div>"
 }

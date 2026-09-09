@@ -171,6 +171,7 @@ function showToast(message, type = "success") {
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: '📊 Dashboard', url: '/index.html' },
+  { key: 'pending', label: '⏳ Pending Emails', url: '/pending-emails.html' },
   { key: 'missionaries', label: '👥 Missionaries', url: '/missionaries.html' },
   { key: 'pusher', label: '➕ Add Batch', url: '/pusher.html' },
   { key: 'invoicing', label: '🧾 Order Summary & POS', url: '/invoicing.html' },

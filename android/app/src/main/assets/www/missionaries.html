@@ -816,6 +816,14 @@ function renderPaginatedCards() {
     const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
     const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
+    // Next drip calculations using Month 0 formula
+    const nextTenureNum = Math.min(sentCount + 1, totalMonths);
+    const nextDripInfo = (typeof getMissionMonthInfo === 'function')
+      ? getMissionMonthInfo(m.batch_month || 'August 2026', nextTenureNum)
+      : { monthNum: batchInfo.firstMonthNum, year: batchInfo.firstMonthYear, monthName: batchInfo.firstMonthName, display: batchInfo.firstMonthDisplay };
+    const nextMonthNum = nextDripInfo.monthNum;
+    const nextMonthYearDisplay = nextDripInfo.display;
+
     // If sentCount === 0, earliest dispatch CANNOT be prior to batch cohort 1st dispatch month
     const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
     let effectiveNextSendDate = m.next_send_date;
@@ -840,31 +848,22 @@ function renderPaginatedCards() {
       }
     }
 
-    let targetCalMonth = batchInfo.firstMonthNum;
-    if (sentCount === 0) {
-      targetCalMonth = batchInfo.firstMonthNum;
-      if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
-        const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
-        if (!isNaN(pm) && pm >= batchInfo.firstMonthNum) targetCalMonth = pm;
-      }
-    } else if (m.next_drip && m.next_drip.month_num) {
-      targetCalMonth = m.next_drip.month_num;
-    } else if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
-      const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
-      if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
-    } else {
-      targetCalMonth = ((batchInfo.firstMonthNum - 1 + sentCount) % 12) + 1;
+    let nextDripDisplay = `${nextMonthYearDisplay} (M${nextTenureNum})`;
+    let dripTheme = (state.dripThemeMap && state.dripThemeMap[nextMonthNum]) || 'Encouragement & Points';
+    if (m.next_drip && m.next_drip.display_label) {
+      nextDripDisplay = m.next_drip.display_label;
+      dripTheme = m.next_drip.theme || dripTheme;
     }
 
-    const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : batchInfo.firstMonthName;
-    const tenureNum = sentCount + 1;
-    const nextMonthNum = targetCalMonth;
-
-    let nextDripDisplay = `${calMonthName} (M${tenureNum})`;
-    let dripTheme = (state.dripThemeMap && state.dripThemeMap[targetCalMonth]) || 'Encouragement & Points';
-    if (m.next_drip && m.next_drip.month_num === targetCalMonth) {
-      nextDripDisplay = m.next_drip.display_label || nextDripDisplay;
-      dripTheme = m.next_drip.theme || dripTheme;
+    let lastDispatchedDripDisplay = '<span style="color:var(--muted); font-style:italic;">None (0 Sent)</span>';
+    if (sentCount > 0) {
+      const lastDripInfo = (typeof getMissionMonthInfo === 'function')
+        ? getMissionMonthInfo(m.batch_month || 'August 2026', sentCount)
+        : null;
+      const lastMonthNum = lastDripInfo ? lastDripInfo.monthNum : (((batchInfo.firstMonthNum - 1 + sentCount - 1) % 12) + 1);
+      const lastMonthYearDisplay = lastDripInfo ? lastDripInfo.display : `${batchInfo.firstMonthName} (M${sentCount})`;
+      const lastTheme = (state.dripThemeMap && state.dripThemeMap[lastMonthNum]) || 'Encouragement & Points';
+      lastDispatchedDripDisplay = `${escapeHtml(lastMonthYearDisplay)} (M${sentCount}): ${escapeHtml(lastTheme)}`;
     }
 
     let daysUntilNext = Number(m.days_until_next) || 0;
@@ -878,21 +877,19 @@ function renderPaginatedCards() {
 
     let badge = '';
     if (m.is_completed) {
-      badge = '<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (24M)</span>';
+      badge = `<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (${totalMonths}M)</span>`;
     } else if (isSentToday) {
-      badge = '<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent Today</span>';
+      badge = `<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
     } else if (!state.isOnline && isDue) {
       badge = '<span style="font-size:0.62rem; color:#ff6b6b; font-weight:bold; background:rgba(239,68,68,0.18); border:1px solid #ff6b6b; padding:2px 7px; border-radius:4px;">💤 Offline Paused</span>';
     } else if (isDue) {
-      badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
+      badge = `<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due (${nextMonthYearDisplay})</span>`;
     } else {
-      const nextDateFmt = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : '';
-      badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${daysUntilNext}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
+      badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextMonthYearDisplay}</span>`;
     }
 
-    const lastSentDisplay = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
-    const nextFormatted = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : (isDue ? 'Today' : '--');
-    const nextSendDisplay = (!state.isOnline && isDue) ? `${nextFormatted} (Paused Offline)` : nextFormatted;
+    const lastSentDisplay = m.last_sent_at ? formatMonthYear(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
+    const nextSendDisplay = m.is_completed ? 'Completed' : ((!state.isOnline && isDue) ? `${nextMonthYearDisplay} (Paused Offline)` : nextMonthYearDisplay);
 
     return `
       <div class="missionary-card ${isDue && state.isOnline ? 'due-highlight' : (!state.isOnline && isDue ? 'offline-paused' : '')}">
@@ -937,11 +934,11 @@ function renderPaginatedCards() {
             </div>
             <div class="intel-box">
               <span class="intel-label">🗓️ Batch Cohort</span>
-              <span class="intel-val">${escapeHtml(batchInfo.batchDisplay)} (1st: <span style="color:var(--gold);">${batchInfo.firstMonthDisplay}</span>)</span>
+              <span class="intel-val">${escapeHtml(batchInfo.batchDisplay)} <span style="color:var(--muted); font-size:0.7rem;">(Month 0)</span> &bull; 1st: <span style="color:var(--gold);">${batchInfo.firstMonthDisplay}</span></span>
             </div>
             <div class="intel-box">
-              <span class="intel-label">⚡ System Status</span>
-              <span class="intel-val" style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span>
+              <span class="intel-label">📬 Last Dispatched Drip Intel</span>
+              <span class="intel-val">${lastDispatchedDripDisplay}</span>
             </div>
           </div>
 
@@ -952,7 +949,7 @@ function renderPaginatedCards() {
               <span><strong>${progressPct}%</strong></span>
             </div>
             <div class="drip-bar-bg">
-              <div class="drip-bar-fill" style="width:${Math.max(progressPct, 4)}%;"></div>
+              <div class="drip-bar-fill" style="width:${progressPct}%;"></div>
             </div>
           </div>
 

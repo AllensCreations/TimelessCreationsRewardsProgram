@@ -7,7 +7,10 @@ import {
   getFirstMonthInfo, 
   calculateMissionMonth, 
   getFirstDispatchDate, 
-  isMissionaryEligibleForDispatch 
+  isMissionaryEligibleForDispatch,
+  parseBatchCohort,
+  getMissionMonthInfo,
+  formatMonthYear
 } from '../lib/utils/batchCalculator.js';
 
 async function runTests() {
@@ -26,16 +29,41 @@ async function runTests() {
   }
 
   // ----------------------------------------------------
-  // Test 1: September 2026 Batch Cohort Rules
+  // Test 1: Month 0 Formula & Month Year Formatting
   // ----------------------------------------------------
-  const sepInfo = getFirstMonthInfo("September 2026");
-  assert(sepInfo.firstMonthNum === 10, "September 2026 batch cohort first dispatch month is 10 (October)");
-  assert(sepInfo.firstMonthName === "October", "September 2026 batch cohort first dispatch month name is October");
-  assert(sepInfo.firstMonthYear === 2026, "September 2026 batch cohort first dispatch year is 2026");
+  // Format Month Year (no day numbers)
+  assert(formatMonthYear("2026-09-09") === "September 2026", "formatMonthYear formats '2026-09-09' to 'September 2026'");
+  assert(formatMonthYear("2026-10-09") === "October 2026", "formatMonthYear formats '2026-10-09' to 'October 2026'");
+  assert(formatMonthYear("April 2026") === "April 2026", "formatMonthYear preserves 'April 2026'");
+  assert(formatMonthYear(null) === "Never", "formatMonthYear handles null as 'Never'");
 
+  // April 2026 Cohort Formula Tests (Month 0 = April 2026)
+  const aprM0 = getMissionMonthInfo("April 2026", 0);
+  assert(aprM0.display === "April 2026" && aprM0.monthNum === 4 && aprM0.year === 2026, "April 2026 Month 0 is April 2026");
+  const aprM1 = getMissionMonthInfo("April 2026", 1);
+  assert(aprM1.display === "May 2026" && aprM1.monthNum === 5 && aprM1.year === 2026, "April 2026 Month 1 (M1) is May 2026");
+  const aprM5 = getMissionMonthInfo("April 2026", 5);
+  assert(aprM5.display === "September 2026" && aprM5.monthNum === 9 && aprM5.year === 2026, "April 2026 Month 5 (M5) is September 2026");
+  const aprM18 = getMissionMonthInfo("April 2026", 18);
+  assert(aprM18.display === "October 2027" && aprM18.monthNum === 10 && aprM18.year === 2027, "April 2026 Month 18 (Sister M18) is October 2027");
+  const aprM24 = getMissionMonthInfo("April 2026", 24);
+  assert(aprM24.display === "April 2028" && aprM24.monthNum === 4 && aprM24.year === 2028, "April 2026 Month 24 (Elder M24) is April 2028");
+
+  // September 2026 Cohort Formula Tests (Month 0 = September 2026)
+  const sepM0 = getMissionMonthInfo("September 2026", 0);
+  assert(sepM0.display === "September 2026" && sepM0.monthNum === 9 && sepM0.year === 2026, "September 2026 Month 0 is September 2026");
+  const sepM1 = getMissionMonthInfo("September 2026", 1);
+  assert(sepM1.display === "October 2026" && sepM1.monthNum === 10 && sepM1.year === 2026, "September 2026 Month 1 (M1) is October 2026");
+  const sepM4 = getMissionMonthInfo("September 2026", 4);
+  assert(sepM4.display === "January 2027" && sepM4.monthNum === 1 && sepM4.year === 2027, "September 2026 Month 4 (M4) crosses year boundary to January 2027");
+
+  // Elapsed mission month calculation
   const phtSept9 = new Date("2026-09-09T12:00:00Z");
-  const monthSept = calculateMissionMonth("September 2026", 24, phtSept9);
-  assert(monthSept === 0, "Missionary in arrival month (September 2026) has mission month 0");
+  const monthSeptFromApr = calculateMissionMonth("April 2026", 24, phtSept9);
+  assert(monthSeptFromApr === 5, "April 2026 missionary in September 2026 is at Month 5");
+
+  const monthSeptFromSep = calculateMissionMonth("September 2026", 24, phtSept9);
+  assert(monthSeptFromSep === 0, "Missionary in arrival month (September 2026) has mission month 0");
 
   const septDispatchDate = getFirstDispatchDate("September 2026", phtSept9);
   assert(septDispatchDate === "2026-10-09", "First dispatch date for September cohort is 2026-10-09");

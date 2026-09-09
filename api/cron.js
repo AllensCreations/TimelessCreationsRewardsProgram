@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { runSql } from '../lib/db.js';
 import { sendDripEmail, getCalendarMonthLabel } from '../lib/mailer.js';
 import { cache } from '../lib/cache.js';
-import { getFirstMonthInfo, calculateMissionMonth, isMissionaryEligibleForDispatch } from '../lib/utils/batchCalculator.js';
+import { getFirstMonthInfo, calculateMissionMonth, isMissionaryEligibleForDispatch, getMissionMonthInfo } from '../lib/utils/batchCalculator.js';
 
 const inFlightCronDispatches = new Set();
 
@@ -96,8 +96,8 @@ export default async function handler(req, res) {
           const tenureMonth = (Number(m.months_sent) || 0) + 1;
           const isSister = (m.cohort || '').toLowerCase().includes('sister');
           const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
-          const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
-          const targetCalMonth = ((batchInfo.firstMonthNum - 1 + Number(m.months_sent || 0)) % 12) + 1;
+          const missionMonth = getMissionMonthInfo(m.batch_month || 'August 2026', tenureMonth);
+          const targetCalMonth = missionMonth.monthNum;
 
           const result = await sendDripEmail(m.email, targetCalMonth, recipientName);
           if (result?.ok) {

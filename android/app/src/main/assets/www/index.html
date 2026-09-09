@@ -434,10 +434,19 @@ function renderDashboardPendingQueue(items) {
     <div class="queue-grid">
       ${items.map(m => {
         const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+        const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
         const bInfo = typeof getFirstMonthInfo === 'function' ? getFirstMonthInfo(m.batch_month || 'August 2026') : null;
         const sentC = Number(m.months_sent) || 0;
         const firstMonthPrefix = bInfo ? `${bInfo.firstMonthYear}-${String(bInfo.firstMonthNum).padStart(2, '0')}` : '2026-09';
         
+        // Next drip calculations using Month 0 formula
+        const nextTenureNum = Math.min(sentC + 1, totalMonths);
+        const nextDripInfo = (typeof getMissionMonthInfo === 'function')
+          ? getMissionMonthInfo(m.batch_month || 'August 2026', nextTenureNum)
+          : { monthNum: bInfo?.firstMonthNum || 9, year: bInfo?.firstMonthYear || 2026, monthName: bInfo?.firstMonthName || 'September', display: bInfo?.firstMonthDisplay || 'September 2026' };
+        const nextMonthNum = nextDripInfo.monthNum;
+        const nextMonthYearDisplay = nextDripInfo.display;
+
         let effectiveNextSendDate = m.next_send_date;
         if (sentC === 0) {
           if (!effectiveNextSendDate || effectiveNextSendDate.slice(0, 7) < firstMonthPrefix) {
@@ -460,29 +469,7 @@ function renderDashboardPendingQueue(items) {
         }
 
         const nextDrip = m.next_drip;
-
-        let targetCalMonth = bInfo ? bInfo.firstMonthNum : 9;
-        if (sentC === 0 && bInfo) {
-          targetCalMonth = bInfo.firstMonthNum;
-          if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
-            const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
-            if (!isNaN(pm) && pm >= bInfo.firstMonthNum) targetCalMonth = pm;
-          }
-        } else if (nextDrip && nextDrip.month_num) {
-          targetCalMonth = nextDrip.month_num;
-        } else if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
-          const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
-          if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
-        } else if (bInfo) {
-          targetCalMonth = ((bInfo.firstMonthNum - 1 + sentC) % 12) + 1;
-        } else {
-          targetCalMonth = (new Date().getMonth() + 1);
-        }
-
-        const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : (bInfo?.firstMonthName || 'September');
-        const tenureNum = sentC + 1;
-        const nextMonthNum = targetCalMonth;
-        const nextDripLabel = (sentC === 0) ? `${calMonthName} (M1)` : (nextDrip?.display_label || `${calMonthName} (M${tenureNum})`);
+        const nextDripLabel = (nextDrip && nextDrip.display_label) ? nextDrip.display_label : `${nextMonthYearDisplay} (M${nextTenureNum})`;
 
         let daysUntilNext = Number(m.days_until_next) || 0;
         if (effectiveNextSendDate) {
@@ -495,20 +482,19 @@ function renderDashboardPendingQueue(items) {
 
         let badge = '';
         if (m.is_completed) {
-          badge = '<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (24M)</span>';
+          badge = `<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (${totalMonths}M)</span>`;
         } else if (isSentToday) {
-          badge = '<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent Today</span>';
+          badge = `<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
         } else if (!dashboardState.isOnline && isDue) {
           badge = '<span style="font-size:0.62rem; color:#ff6b6b; font-weight:bold; background:rgba(239,68,68,0.18); border:1px solid #ff6b6b; padding:2px 7px; border-radius:4px;">💤 Offline Paused</span>';
         } else if (isDue) {
-          badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
+          badge = `<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due (${nextMonthYearDisplay})</span>`;
         } else {
-          const nextDateFmt = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : '';
-          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${daysUntilNext}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
+          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextMonthYearDisplay}</span>`;
         }
 
-        const lastSentStr = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
-        const nextEstimatedStr = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : (isDue ? 'Today' : '--');
+        const lastSentStr = m.last_sent_at ? formatMonthYear(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
+        const nextEstimatedStr = m.is_completed ? 'Completed' : ((!dashboardState.isOnline && isDue) ? `${nextMonthYearDisplay} (Paused Offline)` : nextMonthYearDisplay);
 
         return `
           <div class="queue-card ${isDue && dashboardState.isOnline ? 'due-highlight' : ''}">

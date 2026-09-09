@@ -480,6 +480,10 @@ function renderDashboardPendingQueue(items) {
           } catch (_) {}
         }
 
+        const nextCalMonthYear = effectiveNextSendDate 
+          ? formatMonthYear(effectiveNextSendDate) 
+          : (isDue ? formatMonthYear(phtNowIso) : (bInfo ? bInfo.firstMonthDisplay : 'October 2026'));
+
         let badge = '';
         if (m.is_completed) {
           badge = `<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (${totalMonths}M)</span>`;
@@ -488,13 +492,13 @@ function renderDashboardPendingQueue(items) {
         } else if (!dashboardState.isOnline && isDue) {
           badge = '<span style="font-size:0.62rem; color:#ff6b6b; font-weight:bold; background:rgba(239,68,68,0.18); border:1px solid #ff6b6b; padding:2px 7px; border-radius:4px;">💤 Offline Paused</span>';
         } else if (isDue) {
-          badge = `<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due (${nextMonthYearDisplay})</span>`;
+          badge = `<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due (${nextCalMonthYear})</span>`;
         } else {
-          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextMonthYearDisplay}</span>`;
+          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextCalMonthYear}</span>`;
         }
 
         const lastSentStr = m.last_sent_at ? formatMonthYear(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
-        const nextEstimatedStr = m.is_completed ? 'Completed' : ((!dashboardState.isOnline && isDue) ? `${nextMonthYearDisplay} (Paused Offline)` : nextMonthYearDisplay);
+        const nextEstimatedStr = m.is_completed ? 'Completed' : ((!dashboardState.isOnline && isDue) ? `${nextCalMonthYear} (Paused Offline)` : nextCalMonthYear);
 
         return `
           <div class="queue-card ${isDue && dashboardState.isOnline ? 'due-highlight' : ''}">

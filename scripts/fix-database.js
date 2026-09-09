@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { queryTurso, unwrap } from '../lib/db.js';
+import { getFirstMonthInfo, getFirstDispatchDate, calculateMissionMonth } from '../lib/utils/batchCalculator.js';
 
 async function runSql(sql, args = []) {
   const formattedArgs = args.map(val => {
@@ -60,20 +61,48 @@ async function fixDatabase() {
   const usedCodes = new Set();
   let updatedCount = 0;
   const nowIso = new Date().toISOString();
+  const phtNow = new Date(Date.now() + 8 * 3600 * 1000);
+  const todayPhtIso = phtNow.toISOString().slice(0, 10);
 
   for (const m of missionaries) {
     let email = (m.email || '').toLowerCase().trim();
     if (!email) continue;
 
     let rawName = (m.name || '').trim();
-    let titleCohort = /^sister\b/i.test(rawName) ? 'Sister' : 'Elder';
+    let isSister = /^sister\b/i.test(rawName) || (m.cohort || '').toLowerCase().includes('sister');
+    let titleCohort = isSister ? 'sister' : 'elder';
+    let maxMonths = isSister ? 18 : 24;
     let cleanLastName = (m.last_name || rawName.replace(/^(elder|sister)\s+/i, '')).trim();
     cleanLastName = toTitleCase(cleanLastName);
 
-    let properName = `${titleCohort} ${cleanLastName}`;
-    let batchMonth = m.batch_month || m.cohort || 'August 2026';
-    if (batchMonth === 'Elder' || batchMonth === 'Sister') {
+    let properName = `${isSister ? 'Sister' : 'Elder'} ${cleanLastName}`;
+    let batchMonth = m.batch_month || 'August 2026';
+    if (batchMonth.toLowerCase() === 'elder' || batchMonth.toLowerCase() === 'sister') {
       batchMonth = 'August 2026';
+    }
+
+    const batchInfo = getFirstMonthInfo(batchMonth);
+    const monthsSent = Number(m.months_sent) || 0;
+    const firstDispatchDate = getFirstDispatchDate(batchMonth, phtNow);
+    const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
+
+    // Calculate proper next_send_date without jumping to distant years
+    let cleanNextSendDate = m.next_send_date;
+    if (monthsSent === 0 || !m.last_sent_at) {
+      if (!cleanNextSendDate || cleanNextSendDate.slice(0, 7) !== firstMonthPrefix) {
+        cleanNextSendDate = firstDispatchDate;
+      }
+    } else if (m.last_sent_at) {
+      try {
+        const lastD = new Date(m.last_sent_at);
+        lastD.setMonth(lastD.getMonth() + 1);
+        const expectedNext = lastD.toISOString().slice(0, 10);
+        if (!cleanNextSendDate || cleanNextSendDate.slice(0, 7) > expectedNext.slice(0, 7)) {
+          cleanNextSendDate = expectedNext;
+        }
+      } catch (_) {
+        cleanNextSendDate = todayPhtIso;
+      }
     }
 
     // Check if referral code matches the A#A#A# format (6 chars, alternating letter-digit)
@@ -95,19 +124,21 @@ async function fixDatabase() {
           last_name = ?,
           cohort = ?,
           batch_month = ?,
+          max_months = ?,
+          next_send_date = ?,
           referral_code = ?,
           email = ?
-      WHERE email = ?
-    `, [properName, cleanLastName, titleCohort, batchMonth, finalCode, email, m.email]);
+      WHERE LOWER(email) = LOWER(?)
+    `, [properName, cleanLastName, titleCohort, batchMonth, maxMonths, cleanNextSendDate, finalCode, email, m.email]);
 
     // Populate or sync names table
     await runSql(`
       INSERT OR REPLACE INTO names (email, title, first_name, last_name, full_name, batch_month, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [email, titleCohort, '', cleanLastName, properName, batchMonth, nowIso]);
+    `, [email, isSister ? 'Sister' : 'Elder', '', cleanLastName, properName, batchMonth, nowIso]);
 
     updatedCount++;
-    console.log(`✅ Fixed [${email}]: Name='${properName}', Code='${finalCode}', Cohort='${titleCohort}', Batch='${batchMonth}'`);
+    console.log(`✅ Fixed [${email}]: Name='${properName}', Code='${finalCode}', Cohort='${titleCohort}', NextSend='${cleanNextSendDate}', Batch='${batchMonth}'`);
   }
 
   console.log(`\n🎉 Completed! Standardized and verified ${updatedCount} records safely.`);

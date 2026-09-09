@@ -635,8 +635,18 @@ function renderPaginatedCards() {
     const isDue = m.schedule_status === 'DUE_TODAY' || m.is_due;
     const isSentToday = m.schedule_status === 'SENT_TODAY';
     const nextDrip = m.next_drip;
-    const nextMonthNum = nextDrip ? nextDrip.month_num : 9;
-    const nextDripDisplay = nextDrip?.display_label || `${nextDrip?.calendar_month_label || 'September'} (M${sentCount + 1})`;
+    
+    let targetCalMonth = 9;
+    if (m.next_send_date && /^\d{4}-\d{2}-\d{2}/.test(m.next_send_date)) {
+      const pm = parseInt(m.next_send_date.slice(5, 7), 10);
+      if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
+    } else {
+      targetCalMonth = (new Date().getMonth() + 1);
+    }
+    const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : 'September';
+    const tenureNum = sentCount + 1;
+    const nextMonthNum = nextDrip ? nextDrip.month_num : targetCalMonth;
+    const nextDripDisplay = nextDrip?.display_label || `${calMonthName} (M${tenureNum})`;
 
     let badge = '';
     if (m.is_completed) {

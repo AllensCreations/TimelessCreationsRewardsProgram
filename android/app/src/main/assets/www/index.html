@@ -483,8 +483,18 @@ function renderDashboardPendingQueue(items) {
 
         const lastSentStr = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
         const nextEstimatedStr = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : (isDue ? 'Today' : '--');
-        const nextMonthNum = nextDrip ? nextDrip.month_num : 9;
-        const nextDripLabel = nextDrip?.display_label || `${nextDrip?.calendar_month_label || 'September'} (M${(m.months_sent || 0) + 1})`;
+        
+        let targetCalMonth = 9;
+        if (m.next_send_date && /^\d{4}-\d{2}-\d{2}/.test(m.next_send_date)) {
+          const pm = parseInt(m.next_send_date.slice(5, 7), 10);
+          if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
+        } else {
+          targetCalMonth = (new Date().getMonth() + 1);
+        }
+        const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : 'September';
+        const tenureNum = (Number(m.months_sent) || 0) + 1;
+        const nextMonthNum = nextDrip ? nextDrip.month_num : targetCalMonth;
+        const nextDripLabel = nextDrip?.display_label || `${calMonthName} (M${tenureNum})`;
 
         return `
           <div class="queue-card ${isDue && dashboardState.isOnline ? 'due-highlight' : ''}">

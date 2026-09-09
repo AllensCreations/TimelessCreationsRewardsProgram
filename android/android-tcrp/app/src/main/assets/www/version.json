@@ -1,9 +1,9 @@
 {
-  "version": "2.31.0",
-  "version_code": 43,
-  "deployment_id": "deploy_20260909_v2_31",
-  "build_timestamp": "2026-09-09T08:25:00.000Z",
+  "version": "2.33.0",
+  "version_code": 45,
+  "deployment_id": "deploy_20260909_v2_33",
+  "build_timestamp": "2026-09-09T08:36:00.000Z",
   "apk_url": "https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk",
   "github_apk_url": "https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk",
-  "changelog": "<div style=\"font-weight:600; color:var(--gold,#c9a84c); margin-top:6px; margin-bottom:2px;\">🚀 New Features & Enhancements</div>\n<div style=\"margin-left:8px; margin-bottom:3px; font-size:0.75rem;\">• <strong>Sub-5ms Cloudflare Tier-1 RAM Edge Caching:</strong> Added `caches.default` memory layer and automated Google Drive 10KB `=s400` image compression for ultra-fast load times on mobile.</div>"
+  "changelog": "<div style=\"font-weight:600; color:var(--gold,#c9a84c); margin-top:6px; margin-bottom:2px;\">🚀 New Features & Enhancements</div>\n<div style=\"margin-left:8px; margin-bottom:3px; font-size:0.75rem;\">• <strong>Direct jsDelivr Image Storage & Harmonized Rewards Toggle:</strong> Hosted template images permanently on jsDelivr with R2 edge proxying, and synchronized the Hide/Unhide Rewards toggle seamlessly across `drips.html`, `missionaries.html`, `index.html`, and Brevo dispatches.</div>"
 }

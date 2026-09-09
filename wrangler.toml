@@ -1,15 +1,15 @@
-name = "fightinglightsv2"
+name = "tcrp"
 main = "cloudflare-worker/worker.js"
 compatibility_date = "2026-09-09"
 
-# Daily Cleanup of Unused Images at 3:00 AM UTC
+# Automatic Daily Pruning of Unused Images at 3:00 AM UTC
 [triggers]
 crons = ["0 3 * * *"]
 
-# Cloudflare R2 Bucket Binding
+# Bind to your R2 Bucket
 [[r2_buckets]]
 binding = "MY_BUCKET"
-bucket_name = "fightinglightsv2"
+bucket_name = "tcrp"
 
 [vars]
 ADMIN_SECRET = "tcrp-clean-2026"

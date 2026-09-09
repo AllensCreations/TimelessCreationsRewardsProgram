@@ -1,5 +1,5 @@
 /**
- * FightingLightsV - Cloudflare R2 On-Demand Pull-Through CDN with Auto-Cleanup
+ * TCRP - Cloudflare R2 On-Demand Pull-Through CDN with Auto-Cleanup
  * 
  * Features:
  * 1. Pull-Through Caching: Fetches from permanent storage (jsDelivr / GitHub) on miss, stores in R2.
@@ -32,7 +32,7 @@ export default {
     if (!pathname) {
       return new Response(
         JSON.stringify({
-          service: "FightingLightsV Cloudflare R2 Smart Cache",
+          service: "TCRP Cloudflare R2 Smart Cache",
           status: "ONLINE",
           bucket_connected: !!bucket,
           permanent_origin: PERMANENT_ORIGIN_BASE,

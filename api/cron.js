@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { runSql } from '../lib/db.js';
 import { sendDripEmail, getCalendarMonthLabel } from '../lib/mailer.js';
 import { cache } from '../lib/cache.js';
+import { getFirstMonthInfo, calculateMissionMonth, isMissionaryEligibleForDispatch } from '../lib/utils/batchCalculator.js';
 
 export default async function handler(req, res) {
   const authHeader = req.headers?.authorization || req.query?.key;
@@ -24,10 +25,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, sentCount: 0, message: "System is OFFLINE. Dispatches paused." });
     }
 
-    // Cap at 45 emails total per cron run (23 Elders + 22 Sisters)
-    const [dueElders, dueSisters] = await Promise.all([
+    const phtNow = new Date(Date.now() + 8 * 3600 * 1000);
+    const todayPhtIso = phtNow.toISOString().slice(0, 10);
+
+    // Query active candidates who have not finished tenure
+    const [rawElders, rawSisters] = await Promise.all([
       runSql(`
-        SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
+        SELECT email, name, cohort, batch_month, months_sent, max_months, last_sent_at, next_send_date
         FROM missionaries 
         WHERE status = 'active'
           AND LOWER(cohort) = 'elder'
@@ -37,10 +41,10 @@ export default async function handler(req, res) {
           CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
           last_sent_at ASC,
           ROWID ASC
-        LIMIT 23
+        LIMIT 45
       `),
       runSql(`
-        SELECT email, name, cohort, months_sent, max_months, last_sent_at, next_send_date
+        SELECT email, name, cohort, batch_month, months_sent, max_months, last_sent_at, next_send_date
         FROM missionaries 
         WHERE status = 'active'
           AND LOWER(cohort) = 'sister'
@@ -50,18 +54,18 @@ export default async function handler(req, res) {
           CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
           last_sent_at ASC,
           ROWID ASC
-        LIMIT 22
+        LIMIT 45
       `)
     ]);
 
-    const dueMissionaries = [...(dueElders || []), ...(dueSisters || [])].slice(0, 45);
+    // Filter strictly by cohort schedule eligibility (Month 0 is NOT due; only Month >= 1)
+    const dueElders = (rawElders || []).filter(m => isMissionaryEligibleForDispatch(m, phtNow, todayPhtIso)).slice(0, 23);
+    const dueSisters = (rawSisters || []).filter(m => isMissionaryEligibleForDispatch(m, phtNow, todayPhtIso)).slice(0, 22);
+    const dueMissionaries = [...dueElders, ...dueSisters].slice(0, 45);
 
     if (!dueMissionaries || dueMissionaries.length === 0) {
       return res.status(200).json({ ok: true, sentCount: 0, message: "All missionaries are up-to-date." });
     }
-
-    const phtNow = new Date(Date.now() + 8 * 3600 * 1000);
-    const currentCalMonth = phtNow.getMonth() + 1; // 9 for September
 
     let sentCount = 0;
     const errors = [];
@@ -73,9 +77,11 @@ export default async function handler(req, res) {
         const tenureMonth = (Number(m.months_sent) || 0) + 1;
         const isSister = (m.cohort || '').toLowerCase().includes('sister');
         const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
+        const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
+        const targetCalMonth = ((batchInfo.firstMonthNum - 1 + Number(m.months_sent || 0)) % 12) + 1;
 
         try {
-          const result = await sendDripEmail(m.email, currentCalMonth, recipientName);
+          const result = await sendDripEmail(m.email, targetCalMonth, recipientName);
           if (result?.ok) {
             await runSql(`
               UPDATE missionaries 
@@ -85,7 +91,7 @@ export default async function handler(req, res) {
               WHERE LOWER(email) = LOWER(?)
             `, [m.email]);
 
-            const calLabel = getCalendarMonthLabel(currentCalMonth);
+            const calLabel = getCalendarMonthLabel(targetCalMonth);
             await runSql(`
               INSERT INTO system_logs (level, message, created_at)
               VALUES ('DISPATCH', ?, CURRENT_TIMESTAMP)

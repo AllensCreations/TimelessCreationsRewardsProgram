@@ -421,6 +421,36 @@ function calculateMissionMonth(batchMonthStr, maxMonths = 24, targetDate = new D
   return Math.max(0, Math.min(elapsed, maxMonths));
 }
 
+function getFirstDispatchDate(batchMonthStr, baseDate = new Date()) {
+  const info = getFirstMonthInfo(batchMonthStr);
+  const y = info.firstMonthYear;
+  const m = info.firstMonthNum;
+  const maxDays = new Date(y, m, 0).getDate();
+  const targetDay = Math.min(Math.max(1, baseDate.getDate()), maxDays);
+  return `${y}-${String(m).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+}
+
+function isMissionaryEligibleForDispatch(m, targetDate = new Date(), todayIso = null) {
+  if (!m) return false;
+  const status = (m.status || 'active').toLowerCase();
+  if (status !== 'active') return false;
+
+  const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+  const maxMonths = Number(m.max_months) || (isSister ? 18 : 24);
+  const monthsSent = Number(m.months_sent) || 0;
+  if (monthsSent >= maxMonths) return false;
+
+  const curMissionMonth = calculateMissionMonth(m.batch_month || 'August 2026', maxMonths, targetDate);
+  if (curMissionMonth <= 0) return false;
+  if (monthsSent >= curMissionMonth) return false;
+
+  const todayStr = todayIso || targetDate.toISOString().slice(0, 10);
+  if (m.last_sent_at && m.last_sent_at.slice(0, 10) === todayStr) return false;
+  if (m.next_send_date && m.next_send_date.slice(0, 10) > todayStr) return false;
+
+  return true;
+}
+
 /**
  * HTML Protection Lock Engine
  * Disables right-click context menu, image drag-saving, and download shortcuts

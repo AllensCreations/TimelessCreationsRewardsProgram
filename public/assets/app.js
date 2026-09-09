@@ -231,13 +231,18 @@ async function triggerGlobalRefresh() {
   showToast("Syncing data with server...");
   
   try {
-    const [statsRes, mRes] = await Promise.all([
+    const [statsRes, mRes, pendingRes] = await Promise.all([
       fetch("/api/main?action=get_stats").then(r => r.json()).catch(() => ({})),
-      fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({}))
+      fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_pending_emails").then(r => r.json()).catch(() => ({}))
     ]);
 
     if (statsRes && statsRes.ok) LocalStore.set('stats_payload', statsRes);
     if (mRes && mRes.ok && Array.isArray(mRes.missionaries)) LocalStore.set('missionaries', mRes.missionaries);
+    if (pendingRes && pendingRes.ok) {
+      LocalStore.set('pending_emails_data', pendingRes);
+      LocalStore.set('missionaries_with_pending_data', pendingRes);
+    }
 
     showToast("✓ Live data updated!");
     window.dispatchEvent(new CustomEvent("tcrp:data-synced"));

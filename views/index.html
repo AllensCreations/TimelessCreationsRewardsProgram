@@ -306,6 +306,14 @@ let dashboardState = {
   currentPreviewTarget: null
 };
 
+// 0ms Synchronous Boot
+(function instantBoot() {
+  const cachedPending = LocalStore.get('pending_emails_data', null) || LocalStore.get('missionaries_with_pending_data', null);
+  if (cachedPending && cachedPending.ok) {
+    dashboardState.pendingList = cachedPending.missionaries || [];
+  }
+})();
+
 window.renderFromCache = renderFromCache;
 function renderFromCache() {
   const cachedPayload = LocalStore.get('stats_payload', null);

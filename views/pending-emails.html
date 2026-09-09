@@ -612,6 +612,16 @@ let state = {
   selectedMissionaryForModal: null
 };
 
+// 0ms Synchronous Boot
+(function instantBoot() {
+  const cached = LocalStore.get('pending_emails_data', null) || LocalStore.get('missionaries_with_pending_data', null);
+  if (cached && cached.ok) {
+    state.missionaries = cached.missionaries || [];
+    state.stats = cached.stats || {};
+    state.forecastByDate = cached.forecast_by_date || {};
+  }
+})();
+
 // 1. Initial Load & Sync Engine
 window.addEventListener("DOMContentLoaded", () => {
   initAppLayout('pending', 'Pending Emails');

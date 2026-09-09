@@ -412,15 +412,34 @@ function applyDashQueueFilter() {
     filtered = filtered.filter(m => m.schedule_status === 'SENT_TODAY');
   }
 
-  // Strict sorting by Soonest Next Send Date
+  // Strict sorting by Soonest Next Send Date (Today's dispatches at the very top)
   filtered.sort((a, b) => {
-    if (dashboardState.isOnline) {
-      if (a.schedule_status === 'DUE_TODAY' && b.schedule_status !== 'DUE_TODAY') return -1;
-      if (b.schedule_status === 'DUE_TODAY' && a.schedule_status !== 'DUE_TODAY') return 1;
-    }
-    const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 999 : a.days_until_next;
-    const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 999 : b.days_until_next;
+    // 1. Due today at the very top
+    const aDue = (a.schedule_status === 'DUE_TODAY' || a.is_due) && !a.is_completed && a.schedule_status !== 'SENT_TODAY';
+    const bDue = (b.schedule_status === 'DUE_TODAY' || b.is_due) && !b.is_completed && b.schedule_status !== 'SENT_TODAY';
+    if (aDue && !bDue) return -1;
+    if (!aDue && bDue) return 1;
+
+    // 2. Completed at bottom
+    if (a.is_completed && !b.is_completed) return 1;
+    if (!a.is_completed && b.is_completed) return -1;
+
+    // 3. Sent Today after upcoming
+    const aSentToday = a.schedule_status === 'SENT_TODAY';
+    const bSentToday = b.schedule_status === 'SENT_TODAY';
+    if (aSentToday && !bSentToday) return 1;
+    if (!aSentToday && bSentToday) return -1;
+
+    // 4. Chronological by days_until_next / next_send_date ascending
+    const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 9999 : Number(a.days_until_next);
+    const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 9999 : Number(b.days_until_next);
     if (daysA !== daysB) return daysA - daysB;
+
+    if (a.next_send_date && b.next_send_date) {
+      const cmp = a.next_send_date.localeCompare(b.next_send_date);
+      if (cmp !== 0) return cmp;
+    }
+
     return (a.name || '').localeCompare(b.name || '');
   });
 
@@ -444,7 +463,7 @@ function renderDashboardPendingQueue(items) {
     <div class="queue-grid">
       ${items.map(m => {
         const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-        const isDue = m.schedule_status === 'DUE_TODAY';
+        const isDue = m.schedule_status === 'DUE_TODAY' || m.is_due;
         const isSentToday = m.schedule_status === 'SENT_TODAY';
         const nextDrip = m.next_drip;
 
@@ -458,10 +477,12 @@ function renderDashboardPendingQueue(items) {
         } else if (isDue) {
           badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
         } else {
-          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${m.days_until_next}d (${m.next_send_date || ''})</span>`;
+          const nextDateFmt = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : '';
+          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${m.days_until_next}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
         }
 
-        const lastSentStr = m.last_sent_at ? formatPhtDate(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
+        const lastSentStr = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
+        const nextEstimatedStr = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : (isDue ? 'Today' : '--');
         const nextMonthNum = nextDrip ? nextDrip.month_num : (m.months_sent + 1);
 
         return `
@@ -495,7 +516,7 @@ function renderDashboardPendingQueue(items) {
               </div>
               <div style="display:flex; justify-content:space-between;">
                 <span>📅 Next Estimated:</span>
-                <strong style="${isDue && dashboardState.isOnline ? 'color:var(--gold);' : 'color:#e2e8f0;'}">${m.next_send_date || 'Today'}</strong>
+                <strong style="${isDue && dashboardState.isOnline ? 'color:var(--gold);' : 'color:#e2e8f0;'}">${nextEstimatedStr}</strong>
               </div>
             </div>
 
@@ -529,11 +550,12 @@ async function previewDripFromDash(email, month, name) {
 
   try {
     const res = await fetch(`/api/main?action=preview_pending_email&email=${encodeURIComponent(email)}&month=${month}`).then(r => r.json());
-    if (res && res.ok && res.html) {
-      frame.srcdoc = res.html;
+    const previewHtml = res?.html || res?.html_content;
+    if (res && res.ok && previewHtml) {
+      frame.srcdoc = previewHtml;
       meta.textContent = `Subject: ${res.subject || 'Timeless Creations Drip'}`;
     } else {
-      frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">${res.error || 'Failed to generate preview'}</div>`;
+      frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">${res?.error || 'Failed to generate preview'}</div>`;
     }
   } catch (err) {
     frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">Network error loading preview</div>`;

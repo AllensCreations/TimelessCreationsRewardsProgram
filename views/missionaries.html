@@ -545,16 +545,35 @@ function applyFilterAndRender() {
     );
   }
 
-  // 0ms In-Memory Sorting — Strictly Soonest Next Send by default
+  // 0ms In-Memory Sorting — Strictly Soonest Next Send by default (Today at top)
   list.sort((a, b) => {
     if (state.currentSort === 'soonest') {
-      if (state.isOnline) {
-        if (a.schedule_status === 'DUE_TODAY' && b.schedule_status !== 'DUE_TODAY') return -1;
-        if (b.schedule_status === 'DUE_TODAY' && a.schedule_status !== 'DUE_TODAY') return 1;
-      }
-      const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 999 : a.days_until_next;
-      const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 999 : b.days_until_next;
+      // 1. Due today at top
+      const aDue = (a.schedule_status === 'DUE_TODAY' || a.is_due) && !a.is_completed && a.schedule_status !== 'SENT_TODAY';
+      const bDue = (b.schedule_status === 'DUE_TODAY' || b.is_due) && !b.is_completed && b.schedule_status !== 'SENT_TODAY';
+      if (aDue && !bDue) return -1;
+      if (!aDue && bDue) return 1;
+
+      // 2. Completed at bottom
+      if (a.is_completed && !b.is_completed) return 1;
+      if (!a.is_completed && b.is_completed) return -1;
+
+      // 3. Sent Today after upcoming
+      const aSentToday = a.schedule_status === 'SENT_TODAY';
+      const bSentToday = b.schedule_status === 'SENT_TODAY';
+      if (aSentToday && !bSentToday) return 1;
+      if (!aSentToday && bSentToday) return -1;
+
+      // 4. Chronological by days_until_next / next_send_date ascending
+      const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 9999 : Number(a.days_until_next);
+      const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 9999 : Number(b.days_until_next);
       if (daysA !== daysB) return daysA - daysB;
+
+      if (a.next_send_date && b.next_send_date) {
+        const cmp = a.next_send_date.localeCompare(b.next_send_date);
+        if (cmp !== 0) return cmp;
+      }
+
       return (a.name || '').localeCompare(b.name || '');
     } else if (state.currentSort === 'last_sent') {
       const ta = a.last_sent_at ? new Date(a.last_sent_at).getTime() : 0;
@@ -613,7 +632,7 @@ function renderPaginatedCards() {
     const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
     const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
-    const isDue = m.schedule_status === 'DUE_TODAY';
+    const isDue = m.schedule_status === 'DUE_TODAY' || m.is_due;
     const isSentToday = m.schedule_status === 'SENT_TODAY';
     const nextDrip = m.next_drip;
     const nextMonthNum = nextDrip ? nextDrip.month_num : (sentCount + 1);
@@ -628,11 +647,13 @@ function renderPaginatedCards() {
     } else if (isDue) {
       badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
     } else {
-      badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${m.days_until_next}d</span>`;
+      const nextDateFmt = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : '';
+      badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${m.days_until_next}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
     }
 
-    const lastSentDisplay = m.last_sent_at ? formatPhtDate(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
-    const nextSendDisplay = (!state.isOnline && isDue) ? `${m.next_send_date || 'Today'} (Resumes on Online)` : (m.next_send_date || 'Today');
+    const lastSentDisplay = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
+    const nextFormatted = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : (isDue ? 'Today' : '--');
+    const nextSendDisplay = (!state.isOnline && isDue) ? `${nextFormatted} (Paused Offline)` : nextFormatted;
 
     return `
       <div class="missionary-card ${isDue && state.isOnline ? 'due-highlight' : (!state.isOnline && isDue ? 'offline-paused' : '')}">
@@ -842,11 +863,12 @@ async function openPreviewModal(email, month, name) {
 
   try {
     const res = await fetch(`/api/main?action=preview_pending_email&email=${encodeURIComponent(email)}&month=${month}`).then(r => r.json());
-    if (res && res.ok && res.html) {
-      frame.srcdoc = res.html;
+    const previewHtml = res?.html || res?.html_content;
+    if (res && res.ok && previewHtml) {
+      frame.srcdoc = previewHtml;
       meta.textContent = `Subject: ${res.subject || 'Timeless Creations Drip'}`;
     } else {
-      frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">${res.error || 'Failed to generate preview'}</div>`;
+      frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">${res?.error || 'Failed to generate preview'}</div>`;
     }
   } catch (err) {
     frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">Network error loading preview</div>`;

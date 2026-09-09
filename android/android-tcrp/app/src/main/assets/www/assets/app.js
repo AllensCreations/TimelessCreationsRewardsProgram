@@ -230,13 +230,18 @@ async function triggerGlobalRefresh() {
   showToast("Syncing data with server...");
   
   try {
-    const [statsRes, mRes] = await Promise.all([
+    const [statsRes, mRes, pendingRes] = await Promise.all([
       fetch("/api/main?action=get_stats").then(r => r.json()).catch(() => ({})),
-      fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({}))
+      fetch("/api/main?action=get_missionaries").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_pending_emails").then(r => r.json()).catch(() => ({}))
     ]);
 
     if (statsRes && statsRes.ok) LocalStore.set('stats_payload', statsRes);
     if (mRes && mRes.ok && Array.isArray(mRes.missionaries)) LocalStore.set('missionaries', mRes.missionaries);
+    if (pendingRes && pendingRes.ok) {
+      LocalStore.set('pending_emails_data', pendingRes);
+      LocalStore.set('missionaries_with_pending_data', pendingRes);
+    }
 
     showToast("✓ Live data updated!");
     window.dispatchEvent(new CustomEvent("tcrp:data-synced"));
@@ -292,6 +297,28 @@ function formatPhtDate(dateVal, includeSeconds = true) {
       hour12: true
     }) + ' PHT';
   } catch {
+    return String(dateVal);
+  }
+}
+
+function formatShortDateMMDDYY(dateVal) {
+  if (!dateVal) return 'Never';
+  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
+    const parts = dateVal.slice(0, 10).split('-');
+    const yy = parts[0].slice(-2);
+    const mm = parts[1];
+    const dd = parts[2];
+    return `${mm}/${dd}/${yy}`;
+  }
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    const phtDate = new Date(d.getTime() + (d.getTimezoneOffset() * 60000) + (8 * 3600000));
+    const mm = String(phtDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(phtDate.getDate()).padStart(2, '0');
+    const yy = String(phtDate.getFullYear()).slice(-2);
+    return `${mm}/${dd}/${yy}`;
+  } catch (_) {
     return String(dateVal);
   }
 }

@@ -855,15 +855,19 @@ function renderPaginatedCards() {
       dripTheme = m.next_drip.theme || dripTheme;
     }
 
-    let lastDispatchedDripDisplay = '<span style="color:var(--muted); font-style:italic;">None (0 Sent)</span>';
+    let lastDispatchedDripDisplay = '<span style="color:var(--muted); font-style:italic;">Never Dispatched (0 Sent)</span>';
     if (sentCount > 0) {
-      const lastDripInfo = (typeof getMissionMonthInfo === 'function')
-        ? getMissionMonthInfo(m.batch_month || 'August 2026', sentCount)
-        : null;
-      const lastMonthNum = lastDripInfo ? lastDripInfo.monthNum : (((batchInfo.firstMonthNum - 1 + sentCount - 1) % 12) + 1);
-      const lastMonthYearDisplay = lastDripInfo ? lastDripInfo.display : `${batchInfo.firstMonthName} (M${sentCount})`;
-      const lastTheme = (state.dripThemeMap && state.dripThemeMap[lastMonthNum]) || 'Encouragement & Points';
-      lastDispatchedDripDisplay = `${escapeHtml(lastMonthYearDisplay)} (M${sentCount}): ${escapeHtml(lastTheme)}`;
+      try {
+        const lastDripInfo = (typeof getMissionMonthInfo === 'function')
+          ? getMissionMonthInfo(m.batch_month || 'August 2026', sentCount)
+          : null;
+        const lastMonthNum = lastDripInfo ? lastDripInfo.monthNum : (((batchInfo.firstMonthNum - 1 + sentCount - 1) % 12) + 1);
+        const lastMonthYearDisplay = lastDripInfo ? lastDripInfo.display : `${batchInfo.firstMonthName} (M${sentCount})`;
+        const lastTheme = (state.dripThemeMap && state.dripThemeMap[lastMonthNum]) || 'Encouragement & Points';
+        lastDispatchedDripDisplay = `${escapeHtml(lastMonthYearDisplay)} (M${sentCount}): ${escapeHtml(lastTheme)}`;
+      } catch (_) {
+        lastDispatchedDripDisplay = '<span style="color:var(--muted); font-style:italic;">Never Dispatched</span>';
+      }
     }
 
     let daysUntilNext = Number(m.days_until_next) || 0;

@@ -1,0 +1,15 @@
+name = "fightinglightsv2"
+main = "worker.js"
+compatibility_date = "2026-09-09"
+
+# Automatic Daily Pruning of Unused Images at 3:00 AM UTC
+[triggers]
+crons = ["0 3 * * *"]
+
+# Bind to your R2 Bucket
+[[r2_buckets]]
+binding = "MY_BUCKET"
+bucket_name = "fightinglightsv2"
+
+[vars]
+ADMIN_SECRET = "tcrp-clean-2026"

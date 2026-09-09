@@ -434,9 +434,64 @@ function renderDashboardPendingQueue(items) {
     <div class="queue-grid">
       ${items.map(m => {
         const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-        const isDue = m.schedule_status === 'DUE_TODAY' || m.is_due;
-        const isSentToday = m.schedule_status === 'SENT_TODAY';
+        const bInfo = typeof getFirstMonthInfo === 'function' ? getFirstMonthInfo(m.batch_month || 'August 2026') : null;
+        const sentC = Number(m.months_sent) || 0;
+        const firstMonthPrefix = bInfo ? `${bInfo.firstMonthYear}-${String(bInfo.firstMonthNum).padStart(2, '0')}` : '2026-09';
+        
+        let effectiveNextSendDate = m.next_send_date;
+        if (sentC === 0) {
+          if (!effectiveNextSendDate || effectiveNextSendDate.slice(0, 7) < firstMonthPrefix) {
+            effectiveNextSendDate = (typeof getFirstDispatchDate === 'function')
+              ? getFirstDispatchDate(m.batch_month || 'August 2026')
+              : `${firstMonthPrefix}-09`;
+          }
+        }
+
+        const phtNowIso = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+        const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+        
+        let isDue = false;
+        if (!m.is_completed && !isSentToday) {
+          if (sentC === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
+            isDue = false;
+          } else {
+            isDue = m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY'));
+          }
+        }
+
         const nextDrip = m.next_drip;
+
+        let targetCalMonth = bInfo ? bInfo.firstMonthNum : 9;
+        if (sentC === 0 && bInfo) {
+          targetCalMonth = bInfo.firstMonthNum;
+          if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
+            const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
+            if (!isNaN(pm) && pm >= bInfo.firstMonthNum) targetCalMonth = pm;
+          }
+        } else if (nextDrip && nextDrip.month_num) {
+          targetCalMonth = nextDrip.month_num;
+        } else if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
+          const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
+          if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
+        } else if (bInfo) {
+          targetCalMonth = ((bInfo.firstMonthNum - 1 + sentC) % 12) + 1;
+        } else {
+          targetCalMonth = (new Date().getMonth() + 1);
+        }
+
+        const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : (bInfo?.firstMonthName || 'September');
+        const tenureNum = sentC + 1;
+        const nextMonthNum = targetCalMonth;
+        const nextDripLabel = (sentC === 0) ? `${calMonthName} (M1)` : (nextDrip?.display_label || `${calMonthName} (M${tenureNum})`);
+
+        let daysUntilNext = Number(m.days_until_next) || 0;
+        if (effectiveNextSendDate) {
+          try {
+            const targetTime = new Date(effectiveNextSendDate + 'T00:00:00Z').getTime();
+            const todayTime = new Date(phtNowIso + 'T00:00:00Z').getTime();
+            daysUntilNext = Math.max(0, Math.round((targetTime - todayTime) / (1000 * 3600 * 24)));
+          } catch (_) {}
+        }
 
         let badge = '';
         if (m.is_completed) {
@@ -448,30 +503,12 @@ function renderDashboardPendingQueue(items) {
         } else if (isDue) {
           badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
         } else {
-          const nextDateFmt = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : '';
-          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${m.days_until_next}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
+          const nextDateFmt = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : '';
+          badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${daysUntilNext}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
         }
 
         const lastSentStr = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
-        const nextEstimatedStr = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : (isDue ? 'Today' : '--');
-        
-        let targetCalMonth = 9;
-        const bInfo = typeof getFirstMonthInfo === 'function' ? getFirstMonthInfo(m.batch_month || 'August 2026') : null;
-        const sentC = Number(m.months_sent) || 0;
-        if (nextDrip && nextDrip.month_num) {
-          targetCalMonth = nextDrip.month_num;
-        } else if (m.next_send_date && /^\d{4}-\d{2}-\d{2}/.test(m.next_send_date)) {
-          const pm = parseInt(m.next_send_date.slice(5, 7), 10);
-          if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
-        } else if (bInfo) {
-          targetCalMonth = ((bInfo.firstMonthNum - 1 + sentC) % 12) + 1;
-        } else {
-          targetCalMonth = (new Date().getMonth() + 1);
-        }
-        const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : 'September';
-        const tenureNum = sentC + 1;
-        const nextMonthNum = nextDrip ? nextDrip.month_num : targetCalMonth;
-        const nextDripLabel = nextDrip?.display_label || `${calMonthName} (M${tenureNum})`;
+        const nextEstimatedStr = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : (isDue ? 'Today' : '--');
 
         return `
           <div class="queue-card ${isDue && dashboardState.isOnline ? 'due-highlight' : ''}">

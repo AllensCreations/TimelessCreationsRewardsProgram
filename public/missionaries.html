@@ -478,7 +478,8 @@ let state = {
   selectMode: false,
   selectedEmails: new Set(),
   previewTarget: null,
-  isOnline: true
+  isOnline: true,
+  dripThemeMap: {}
 };
 
 // ==========================================
@@ -577,6 +578,18 @@ async function loadRoster(force = false) {
       }
     }
   });
+}
+
+async function loadDripThemes() {
+  try {
+    const res = await fetch('/api/main?action=get_drips').then(r => r.json());
+    if (res?.ok && Array.isArray(res.drips)) {
+      res.drips.forEach(d => {
+        if (d.month && d.theme) state.dripThemeMap[d.month] = d.theme;
+      });
+      renderPaginatedCards();
+    }
+  } catch (_) {}
 }
 
 function updateOfflineUI() {
@@ -803,25 +816,65 @@ function renderPaginatedCards() {
     const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
     const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
-    const isDue = m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY'));
-    const isSentToday = m.schedule_status === 'SENT_TODAY';
-    const nextDrip = m.next_drip;
-    
-    let targetCalMonth = 9;
-    if (nextDrip && nextDrip.month_num) {
-      targetCalMonth = nextDrip.month_num;
-    } else if (m.next_send_date && /^\d{4}-\d{2}-\d{2}/.test(m.next_send_date)) {
-      const pm = parseInt(m.next_send_date.slice(5, 7), 10);
-      if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
-    } else if (batchInfo) {
-      targetCalMonth = ((batchInfo.firstMonthNum - 1 + sentCount) % 12) + 1;
-    } else {
-      targetCalMonth = (new Date().getMonth() + 1);
+    // If sentCount === 0, earliest dispatch CANNOT be prior to batch cohort 1st dispatch month
+    const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
+    let effectiveNextSendDate = m.next_send_date;
+    if (sentCount === 0) {
+      if (!effectiveNextSendDate || effectiveNextSendDate.slice(0, 7) < firstMonthPrefix) {
+        effectiveNextSendDate = (typeof getFirstDispatchDate === 'function')
+          ? getFirstDispatchDate(m.batch_month || 'August 2026')
+          : `${firstMonthPrefix}-09`;
+      }
     }
-    const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : 'September';
+
+    const phtNowIso = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    
+    // An arrival-month missionary (sentCount === 0 with effectiveNextSendDate in the future) CANNOT be DUE_TODAY
+    let isDue = false;
+    if (!m.is_completed && !isSentToday) {
+      if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
+        isDue = false;
+      } else {
+        isDue = m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY'));
+      }
+    }
+
+    let targetCalMonth = batchInfo.firstMonthNum;
+    if (sentCount === 0) {
+      targetCalMonth = batchInfo.firstMonthNum;
+      if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
+        const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
+        if (!isNaN(pm) && pm >= batchInfo.firstMonthNum) targetCalMonth = pm;
+      }
+    } else if (m.next_drip && m.next_drip.month_num) {
+      targetCalMonth = m.next_drip.month_num;
+    } else if (effectiveNextSendDate && /^\d{4}-\d{2}-\d{2}/.test(effectiveNextSendDate)) {
+      const pm = parseInt(effectiveNextSendDate.slice(5, 7), 10);
+      if (!isNaN(pm) && pm >= 1 && pm <= 12) targetCalMonth = pm;
+    } else {
+      targetCalMonth = ((batchInfo.firstMonthNum - 1 + sentCount) % 12) + 1;
+    }
+
+    const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(targetCalMonth) : batchInfo.firstMonthName;
     const tenureNum = sentCount + 1;
-    const nextMonthNum = nextDrip ? nextDrip.month_num : targetCalMonth;
-    const nextDripDisplay = nextDrip?.display_label || `${calMonthName} (M${tenureNum})`;
+    const nextMonthNum = targetCalMonth;
+
+    let nextDripDisplay = `${calMonthName} (M${tenureNum})`;
+    let dripTheme = (state.dripThemeMap && state.dripThemeMap[targetCalMonth]) || 'Encouragement & Points';
+    if (m.next_drip && m.next_drip.month_num === targetCalMonth) {
+      nextDripDisplay = m.next_drip.display_label || nextDripDisplay;
+      dripTheme = m.next_drip.theme || dripTheme;
+    }
+
+    let daysUntilNext = Number(m.days_until_next) || 0;
+    if (effectiveNextSendDate) {
+      try {
+        const targetTime = new Date(effectiveNextSendDate + 'T00:00:00Z').getTime();
+        const todayTime = new Date(phtNowIso + 'T00:00:00Z').getTime();
+        daysUntilNext = Math.max(0, Math.round((targetTime - todayTime) / (1000 * 3600 * 24)));
+      } catch (_) {}
+    }
 
     let badge = '';
     if (m.is_completed) {
@@ -833,12 +886,12 @@ function renderPaginatedCards() {
     } else if (isDue) {
       badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
     } else {
-      const nextDateFmt = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : '';
-      badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${m.days_until_next}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
+      const nextDateFmt = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : '';
+      badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ In ${daysUntilNext}d ${nextDateFmt ? `(${nextDateFmt})` : ''}</span>`;
     }
 
     const lastSentDisplay = m.last_sent_at ? formatShortDateMMDDYY(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
-    const nextFormatted = m.next_send_date ? formatShortDateMMDDYY(m.next_send_date) : (isDue ? 'Today' : '--');
+    const nextFormatted = effectiveNextSendDate ? formatShortDateMMDDYY(effectiveNextSendDate) : (isDue ? 'Today' : '--');
     const nextSendDisplay = (!state.isOnline && isDue) ? `${nextFormatted} (Paused Offline)` : nextFormatted;
 
     return `
@@ -876,7 +929,7 @@ function renderPaginatedCards() {
             </div>
             <div class="intel-box">
               <span class="intel-label">💌 Upcoming Drip Intel</span>
-              <span class="intel-val">${escapeHtml(nextDripDisplay)}: ${escapeHtml(nextDrip?.theme || 'Encouragement & Points')}</span>
+              <span class="intel-val">${escapeHtml(nextDripDisplay)}: ${escapeHtml(dripTheme)}</span>
             </div>
             <div class="intel-box">
               <span class="intel-label">🏷️ Referral Code</span>
@@ -1202,6 +1255,7 @@ window.addEventListener('DOMContentLoaded', () => {
   updateOfflineUI();
   applyFilterAndRender();
   loadRoster();
+  loadDripThemes();
 });
 </script>
 </body>

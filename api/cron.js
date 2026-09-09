@@ -4,6 +4,8 @@ import { sendDripEmail, getCalendarMonthLabel } from '../lib/mailer.js';
 import { cache } from '../lib/cache.js';
 import { getFirstMonthInfo, calculateMissionMonth, isMissionaryEligibleForDispatch } from '../lib/utils/batchCalculator.js';
 
+const inFlightCronDispatches = new Set();
+
 export default async function handler(req, res) {
   const authHeader = req.headers?.authorization || req.query?.key;
   const secret = process.env.CRON_SECRET;
@@ -74,13 +76,29 @@ export default async function handler(req, res) {
     for (let i = 0; i < dueMissionaries.length; i += CONCURRENCY_CHUNK_SIZE) {
       const chunk = dueMissionaries.slice(i, i + CONCURRENCY_CHUNK_SIZE);
       await Promise.all(chunk.map(async (m) => {
-        const tenureMonth = (Number(m.months_sent) || 0) + 1;
-        const isSister = (m.cohort || '').toLowerCase().includes('sister');
-        const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
-        const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
-        const targetCalMonth = ((batchInfo.firstMonthNum - 1 + Number(m.months_sent || 0)) % 12) + 1;
+        const emailKey = (m.email || '').toLowerCase().trim();
+        if (!emailKey || inFlightCronDispatches.has(emailKey)) return;
+        inFlightCronDispatches.add(emailKey);
 
         try {
+          // Idempotency: verify this missionary was not already dispatched today
+          const recentSent = await runSql(`
+            SELECT email FROM missionaries 
+            WHERE LOWER(email) = ? 
+              AND last_sent_at IS NOT NULL 
+              AND substr(last_sent_at, 1, 10) = ?
+          `, [emailKey, todayPhtIso]).catch(() => []);
+
+          if (recentSent && recentSent.length > 0) {
+            return; // Already dispatched today, idempotent skip
+          }
+
+          const tenureMonth = (Number(m.months_sent) || 0) + 1;
+          const isSister = (m.cohort || '').toLowerCase().includes('sister');
+          const recipientName = m.name || (isSister ? 'Sister' : 'Elder');
+          const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
+          const targetCalMonth = ((batchInfo.firstMonthNum - 1 + Number(m.months_sent || 0)) % 12) + 1;
+
           const result = await sendDripEmail(m.email, targetCalMonth, recipientName);
           if (result?.ok) {
             await runSql(`
@@ -103,6 +121,8 @@ export default async function handler(req, res) {
           }
         } catch (err) {
           errors.push(`Failed for ${m.email}: ${err.message}`);
+        } finally {
+          inFlightCronDispatches.delete(emailKey);
         }
       }));
     }

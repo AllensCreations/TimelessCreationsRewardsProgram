@@ -140,5 +140,6 @@ CREATE TABLE IF NOT EXISTS `bot_rate_limits` (
 CREATE INDEX IF NOT EXISTS `idx_m_email` ON `missionaries` (`email`);
 CREATE INDEX IF NOT EXISTS `idx_m_psid` ON `missionaries` (`psid`);
 CREATE INDEX IF NOT EXISTS `idx_m_ref` ON `missionaries` (`referral_code`);
+CREATE INDEX IF NOT EXISTS `idx_m_dispatch` ON `missionaries` (`status`, `cohort`, `next_send_date`, `months_sent`);
 CREATE INDEX IF NOT EXISTS `idx_orders_status` ON `orders` (`status`, `created_at`);
 CREATE INDEX IF NOT EXISTS `idx_catalog_type` ON `product_catalog` (`type`, `price`);

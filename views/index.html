@@ -154,7 +154,7 @@
       <p style="font-size:0.76rem; color:var(--muted); margin:0;">Centralized executive control station for missionary email dispatches, POS invoicing, and rewards.</p>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button onclick="quickBatchDispatch()" class="btn btn-gold" style="padding:7px 14px; font-size:0.75rem;">🚀 Batch Cron Dispatch</button>
+      <button onclick="quickBatchDispatch()" class="btn btn-gold" id="btn-batch-cron" style="padding:7px 14px; font-size:0.75rem;">🚀 Batch Cron Dispatch</button>
       <button onclick="triggerGlobalRefresh()" class="btn btn-secondary" style="padding:7px 12px; font-size:0.75rem;">↻ Sync</button>
     </div>
   </div>
@@ -188,7 +188,7 @@
           <span id="dash-due-count-pill" style="font-size:0.65rem; font-weight:800; background:rgba(201,168,76,0.2); border:1px solid var(--gold); color:var(--gold); padding:2px 8px; border-radius:99px;">0 Due Today</span>
         </div>
         <div style="font-size:0.70rem; color:var(--muted); margin-top:2px;">
-          Real-time queue of missionary dispatches referencing last sent timestamps and calculated delivery cycles.
+          Real-time queue of missionary dispatches strictly sorted by soonest next send referencing last sent timestamps.
         </div>
       </div>
       <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
@@ -198,7 +198,15 @@
           <button class="btn btn-dark tab-btn" style="padding:4px 8px; font-size:0.65rem;" onclick="filterDashQueue('upcoming', this)">⏱️ Next 7 Days</button>
           <button class="btn btn-dark tab-btn" style="padding:4px 8px; font-size:0.65rem;" onclick="filterDashQueue('sent', this)">✅ Sent Today</button>
         </div>
-        <a href="/pending-emails.html" class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; text-decoration:none;">Open Full Hub ↗</a>
+        <a href="/missionaries.html" class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; text-decoration:none;">View Full Roster ↗</a>
+      </div>
+    </div>
+
+    <!-- Power Offline Alert Notice (if offline) -->
+    <div id="offline-banner" style="display:none; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:12px; font-size:0.72rem; color:#ff6b6b; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.1rem;">💤</span>
+        <span><strong>Master Power is OFFLINE:</strong> Automatic dispatches are paused. Emails will dispatch once Master is switched to ONLINE in <a href="/settings.html" style="color:var(--gold); font-weight:bold; text-decoration:underline;">Settings</a>.</span>
       </div>
     </div>
 
@@ -217,18 +225,11 @@
         <span style="font-size:0.65rem; color:var(--muted);">Fast Navigation</span>
       </div>
       <div class="ops-grid">
-        <a href="/pending-emails.html" class="ops-card" style="border-color:var(--border-gold); background:rgba(201,168,76,0.06);">
-          <span style="font-size:1.1rem;">⏳</span>
-          <div>
-            <div>Pending Emails</div>
-            <div style="font-size:0.60rem; color:var(--gold); font-weight:normal;">Dispatch Timelines</div>
-          </div>
-        </a>
-        <a href="/missionaries.html" class="ops-card">
+        <a href="/missionaries.html" class="ops-card" style="border-color:var(--border-gold); background:rgba(201,168,76,0.06);">
           <span style="font-size:1.1rem;">👥</span>
           <div>
-            <div>Missionaries</div>
-            <div style="font-size:0.60rem; color:var(--muted); font-weight:normal;">Roster &amp; Last Sent</div>
+            <div>Missionaries Roster</div>
+            <div style="font-size:0.60rem; color:var(--gold); font-weight:normal;">Roster &amp; Last Sent</div>
           </div>
         </a>
         <a href="/invoicing.html" class="ops-card">
@@ -243,6 +244,13 @@
           <div>
             <div>24M Drips</div>
             <div style="font-size:0.60rem; color:var(--muted); font-weight:normal;">Templates &amp; Themes</div>
+          </div>
+        </a>
+        <a href="/messengerbot.html" class="ops-card">
+          <span style="font-size:1.1rem;">🎁</span>
+          <div>
+            <div>Bot Rewards</div>
+            <div style="font-size:0.60rem; color:var(--muted); font-weight:normal;">Messenger FSM &amp; Points</div>
           </div>
         </a>
         <a href="/gallery.html" class="ops-card">
@@ -303,7 +311,8 @@ let dashboardState = {
   pendingList: [],
   filteredQueue: [],
   currentQueueFilter: 'all',
-  currentPreviewTarget: null
+  currentPreviewTarget: null,
+  isOnline: true
 };
 
 // 0ms Synchronous Boot
@@ -311,6 +320,7 @@ let dashboardState = {
   const cachedPending = LocalStore.get('pending_emails_data', null) || LocalStore.get('missionaries_with_pending_data', null);
   if (cachedPending && cachedPending.ok) {
     dashboardState.pendingList = cachedPending.missionaries || [];
+    dashboardState.isOnline = cachedPending.is_online !== false;
   }
 })();
 
@@ -338,6 +348,7 @@ function renderFromCache() {
   }
 
   const pState = (cachedPayload.stats?.power_state || LocalStore.get('tcrp_power_state', 'online')).toUpperCase();
+  dashboardState.isOnline = pState === 'ONLINE';
   updateDashboardPowerBadge(pState);
 }
 
@@ -347,6 +358,7 @@ async function loadDashboardPendingQueue() {
     onCached: (cached) => {
       if (cached && cached.ok) {
         dashboardState.pendingList = cached.missionaries || [];
+        dashboardState.isOnline = cached.is_online !== false;
         updateDueTodayStat(cached.stats?.due_today || 0);
         applyDashQueueFilter();
       }
@@ -354,6 +366,7 @@ async function loadDashboardPendingQueue() {
     onFresh: (fresh) => {
       if (fresh && fresh.ok) {
         dashboardState.pendingList = fresh.missionaries || [];
+        dashboardState.isOnline = fresh.is_online !== false;
         updateDueTodayStat(fresh.stats?.due_today || 0);
         applyDashQueueFilter();
       }
@@ -365,7 +378,19 @@ function updateDueTodayStat(count) {
   const el = document.getElementById('stat-due-today');
   if (el) el.textContent = count.toLocaleString();
   const pill = document.getElementById('dash-due-count-pill');
-  if (pill) pill.textContent = `${count} Due Today (PHT)`;
+  if (pill) {
+    if (!dashboardState.isOnline) {
+      pill.textContent = `💤 Paused (Offline)`;
+      pill.style.borderColor = '#ff6b6b';
+      pill.style.color = '#ff6b6b';
+      pill.style.background = 'rgba(239,68,68,0.15)';
+    } else {
+      pill.textContent = `${count} Due Today (PHT)`;
+      pill.style.borderColor = 'var(--gold)';
+      pill.style.color = 'var(--gold)';
+      pill.style.background = 'rgba(201,168,76,0.2)';
+    }
+  }
 }
 
 function filterDashQueue(type, btn) {
@@ -387,11 +412,15 @@ function applyDashQueueFilter() {
     filtered = filtered.filter(m => m.schedule_status === 'SENT_TODAY');
   }
 
-  // Sort priority: Due Today first, then lowest days_until_next, then name
+  // Strict sorting by Soonest Next Send Date
   filtered.sort((a, b) => {
-    if (a.schedule_status === 'DUE_TODAY' && b.schedule_status !== 'DUE_TODAY') return -1;
-    if (b.schedule_status === 'DUE_TODAY' && a.schedule_status !== 'DUE_TODAY') return 1;
-    if (a.days_until_next !== b.days_until_next) return a.days_until_next - b.days_until_next;
+    if (dashboardState.isOnline) {
+      if (a.schedule_status === 'DUE_TODAY' && b.schedule_status !== 'DUE_TODAY') return -1;
+      if (b.schedule_status === 'DUE_TODAY' && a.schedule_status !== 'DUE_TODAY') return 1;
+    }
+    const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 999 : a.days_until_next;
+    const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 999 : b.days_until_next;
+    if (daysA !== daysB) return daysA - daysB;
     return (a.name || '').localeCompare(b.name || '');
   });
 
@@ -424,6 +453,8 @@ function renderDashboardPendingQueue(items) {
           badge = '<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (24M)</span>';
         } else if (isSentToday) {
           badge = '<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent Today</span>';
+        } else if (!dashboardState.isOnline && isDue) {
+          badge = '<span style="font-size:0.62rem; color:#ff6b6b; font-weight:bold; background:rgba(239,68,68,0.18); border:1px solid #ff6b6b; padding:2px 7px; border-radius:4px;">💤 Offline Paused</span>';
         } else if (isDue) {
           badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
         } else {
@@ -434,7 +465,7 @@ function renderDashboardPendingQueue(items) {
         const nextMonthNum = nextDrip ? nextDrip.month_num : (m.months_sent + 1);
 
         return `
-          <div class="queue-card ${isDue ? 'due-highlight' : ''}">
+          <div class="queue-card ${isDue && dashboardState.isOnline ? 'due-highlight' : ''}">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:1.25rem;">${isSister ? '👗' : '👔'}</span>
@@ -464,14 +495,14 @@ function renderDashboardPendingQueue(items) {
               </div>
               <div style="display:flex; justify-content:space-between;">
                 <span>📅 Next Estimated:</span>
-                <strong style="${isDue ? 'color:var(--gold);' : 'color:#e2e8f0;'}">${m.next_send_date || 'Today'}</strong>
+                <strong style="${isDue && dashboardState.isOnline ? 'color:var(--gold);' : 'color:#e2e8f0;'}">${m.next_send_date || 'Today'}</strong>
               </div>
             </div>
 
             <!-- Quick Action Buttons -->
             <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:2px;">
               <button onclick="previewDripFromDash('${m.email}', ${nextMonthNum}, '${escapeHtml(m.name)}')" class="btn btn-secondary" style="padding:4px 8px; font-size:0.65rem;">👁️ Preview</button>
-              <button onclick="dispatchSingleFromDash('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})" class="btn ${isDue ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.65rem;">✉️ Send Now</button>
+              <button onclick="dispatchSingleFromDash('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})" class="btn ${isDue && dashboardState.isOnline ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.65rem;">✉️ Send Now</button>
             </div>
           </div>
         `;
@@ -553,6 +584,10 @@ async function dispatchSingleFromDash(email, name, month) {
 }
 
 async function quickBatchDispatch() {
+  if (!dashboardState.isOnline) {
+    showToast("System is currently OFFLINE. Switch to ONLINE in Settings to execute batch dispatches.", "error");
+    return;
+  }
   const confirmed = await showConfirmWarningModal({
     title: "🚀 Execute Batch Cron Dispatch",
     message: "Trigger batch cron dispatch for all currently due missionaries?<br><br>• Dispatches up to 28 Elders + 28 Sisters per batch run in accordance with Brevo rate-limiting.<br>• Advances missionary drip progression upon delivery.",
@@ -586,20 +621,28 @@ function updateDashboardPowerBadge(state) {
   const badge = document.getElementById('cockpit-power-badge');
   const dot = document.getElementById('cockpit-power-dot');
   const text = document.getElementById('cockpit-power-text');
+  const offlineBanner = document.getElementById('offline-banner');
+  const batchBtn = document.getElementById('btn-batch-cron');
   if (!badge || !text) return;
   const isOnline = state === 'ONLINE';
+  dashboardState.isOnline = isOnline;
+
   if (isOnline) {
     badge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
     badge.style.background = 'rgba(34, 197, 94, 0.12)';
     badge.style.color = 'var(--green)';
     if (dot) { dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)'; }
     text.textContent = '⚡ Master: ONLINE';
+    if (offlineBanner) offlineBanner.style.display = 'none';
+    if (batchBtn) { batchBtn.disabled = false; batchBtn.style.opacity = '1'; }
   } else {
     badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
     badge.style.background = 'rgba(239, 68, 68, 0.12)';
     badge.style.color = '#ff6b6b';
     if (dot) { dot.style.background = '#ff6b6b'; dot.style.boxShadow = '0 0 8px #ff6b6b'; }
     text.textContent = '💤 Master: OFFLINE';
+    if (offlineBanner) offlineBanner.style.display = 'flex';
+    if (batchBtn) { batchBtn.disabled = true; batchBtn.style.opacity = '0.5'; }
   }
 }
 

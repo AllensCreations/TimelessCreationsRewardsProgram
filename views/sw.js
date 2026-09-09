@@ -9,7 +9,6 @@ const PRECACHE_ASSETS = [
   '/assets/fonts/DMSans-Variable.ttf',
   '/assets/fonts/DMMono-Regular.ttf',
   '/assets/fonts/DMMono-Medium.ttf',
-  '/pending-emails.html',
   '/pusher.html',
   '/invoicing.html',
   '/claims.html',

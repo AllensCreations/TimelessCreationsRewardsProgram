@@ -8,68 +8,30 @@
   <link rel="stylesheet" href="/assets/app.css?v=2.9.0">
   <script src="/assets/app.js?v=2.9.0"></script>
   <style>
-    /* High-Speed Table Styles */
-    .table-container {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow-x: auto;
-      margin-bottom: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .roster-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.74rem;
-      text-align: left;
-    }
-    .roster-table th {
-      background: #10121a;
-      color: var(--gold);
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border-gold);
-      white-space: nowrap;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-    .roster-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      vertical-align: middle;
-    }
-    .roster-table tr:hover td {
-      background: rgba(201,168,76,0.04);
-    }
-    .roster-table tr.due-row td {
-      background: rgba(201,168,76,0.07);
-    }
-
-    /* Card Mode Styles */
+    /* Clean, Modern Missionary Card Design */
     .missionary-card {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       overflow: hidden;
-      margin-bottom: 10px;
-      transition: border-color 0.2s;
+      margin-bottom: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
     }
     .missionary-card:hover { border-color: var(--border-gold); }
-    .missionary-card.due-highlight { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(201,168,76,0.06) 0%, var(--surface2) 100%); }
+    .missionary-card.due-highlight { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(201,168,76,0.07) 0%, var(--surface2) 100%); }
+    .missionary-card.offline-paused { border-color: rgba(239,68,68,0.3); background: linear-gradient(180deg, rgba(239,68,68,0.05) 0%, var(--surface2) 100%); }
 
     .card-main-row {
       display: flex;
       align-items: center;
-      padding: 12px 14px;
-      gap: 10px;
+      padding: 14px 16px;
+      gap: 12px;
       cursor: pointer;
       user-select: none;
     }
     .card-details {
       display: none;
-      padding: 12px 14px;
+      padding: 14px 16px;
       background: rgba(0,0,0,0.3);
       border-top: 1px solid var(--border);
       font-size: 0.74rem;
@@ -96,16 +58,16 @@
       background: #090a12;
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 6px 10px;
+      padding: 8px 10px;
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
     .intel-label { font-size: 0.60rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
-    .intel-val { font-size: 0.72rem; color: #fff; font-weight: 600; }
+    .intel-val { font-size: 0.74rem; color: #fff; font-weight: 600; }
 
     /* Progress bar */
-    .drip-bar-bg { width: 100%; min-width: 60px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 3px; }
+    .drip-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 4px; }
     .drip-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold) 0%, #e0c878 100%); border-radius: 99px; }
 
     /* Floating Batch Toolbar */
@@ -118,22 +80,6 @@
     .batch-toolbar.active { transform: translateY(0); }
     .select-checkbox { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; display: none; }
     .select-mode-active .select-checkbox { display: inline-block; }
-
-    .view-toggle-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 5px 10px;
-      font-size: 0.68rem;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .view-toggle-btn.active {
-      background: var(--gold-dim);
-      border-color: var(--gold);
-      color: var(--gold);
-    }
   </style>
 </head>
 <body id="body-root">
@@ -148,22 +94,21 @@
         <span style="font-size:0.60rem; background:rgba(76,175,130,0.15); border:1px solid rgba(76,175,130,0.4); color:var(--green); padding:2px 6px; border-radius:4px; font-weight:700;">⚡ 0ms Fast Engine</span>
       </div>
       <p style="font-size:0.72rem; color:var(--muted); margin:2px 0 0 0;">
-        Showing <span id="showing-count" style="color:#fff; font-weight:bold;">0</span> of <span id="roster-count" style="color:#fff; font-weight:bold;">0</span> registered missionaries with last sent references.
+        Showing <span id="showing-count" style="color:#fff; font-weight:bold;">0</span> of <span id="roster-count" style="color:#fff; font-weight:bold;">0</span> registered missionaries strictly sorted by soonest next send date.
       </p>
     </div>
     <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-      <!-- View mode switcher -->
-      <div style="display:flex; background:var(--surface); border-radius:var(--radius-sm); padding:2px; border:1px solid var(--border); gap:2px;">
-        <button id="btn-view-table" class="view-toggle-btn active" onclick="switchViewMode('table')">📊 Table</button>
-        <button id="btn-view-card" class="view-toggle-btn" onclick="switchViewMode('card')">🗂️ Cards</button>
-      </div>
-
-      <a href="/pending-emails.html" class="btn btn-gold" style="padding:6px 12px; font-size:0.72rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
-        <span>⏳</span> <span>Pending Emails Hub</span>
-      </a>
       <button class="btn btn-secondary" onclick="openPusherModal()" style="padding:6px 12px; font-size:0.72rem;">📥 CSV Importer</button>
       <button class="btn btn-dark" id="toggle-select-mode" onclick="toggleSelectMode()" style="padding:6px 10px; font-size:0.72rem;">☑️ Select Mode</button>
       <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Sync</button>
+    </div>
+  </div>
+
+  <!-- Offline Status Alert Banner (Shown when master power is OFFLINE) -->
+  <div id="offline-alert-banner" style="display:none; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:12px; font-size:0.72rem; color:#ff6b6b; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:1.1rem;">💤</span>
+      <span><strong>Master Power is OFFLINE:</strong> All automated and manual dispatches are paused. Status will resume when switched to ONLINE in <a href="/settings.html" style="color:var(--gold); font-weight:bold; text-decoration:underline;">Settings</a>.</span>
     </div>
   </div>
 
@@ -172,8 +117,8 @@
     <div style="display:grid; grid-template-columns:1fr; gap:8px;">
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <input class="form-input" id="search-box" style="flex:1; min-width:200px;" placeholder="Search missionary name, email, referral code, or batch..."/>
-        <select id="sort-select" class="form-select" style="width:auto; min-width:180px; font-size:0.72rem;" onchange="changeSorting(this.value)">
-          <option value="soonest">📅 Soonest Next Send</option>
+        <select id="sort-select" class="form-select" style="width:auto; min-width:200px; font-size:0.72rem;" onchange="changeSorting(this.value)">
+          <option value="soonest">📅 Soonest Next Send (Strict)</option>
           <option value="last_sent">🕒 Last Sent (Recent first)</option>
           <option value="name_asc">🔤 Name (A - Z)</option>
           <option value="points_desc">⭐ Points (High - Low)</option>
@@ -197,7 +142,7 @@
     </div>
   </div>
 
-  <!-- Dynamic Content Container -->
+  <!-- Cards Container -->
   <div id="roster-container">
     <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries...</div>
   </div>
@@ -232,7 +177,7 @@
     </div>
     <input type="hidden" id="reschedule-email">
     <p style="font-size:0.72rem; color:var(--muted); margin-bottom:12px;">
-      Adjust next delivery date for <strong id="reschedule-name" style="color:#fff;">--</strong>:
+      Adjust next estimated send date for <strong id="reschedule-name" style="color:#fff;">--</strong>:
     </p>
     <div class="form-group">
       <label class="form-label">Next Send Date (PHT)</label>
@@ -355,14 +300,14 @@ let state = {
   missionaries: [],
   filteredList: [],
   currentFilter: 'all',
-  currentSort: 'soonest',
-  viewMode: LocalStore.get('missionaries_view_mode', 'table'),
+  currentSort: 'soonest', // Strictly sort by soonest next send date by default
   searchQuery: '',
   page: 1,
   pageSize: 25,
   selectMode: false,
   selectedEmails: new Set(),
-  previewTarget: null
+  previewTarget: null,
+  isOnline: true
 };
 
 // ==========================================
@@ -370,23 +315,19 @@ let state = {
 // ==========================================
 (function instantBoot() {
   const cached = LocalStore.get('missionaries_with_pending_data', null) || LocalStore.get('pending_emails_data', null) || LocalStore.get('missionaries', null);
+  const powerVal = LocalStore.get('tcrp_power_state', 'online');
+  state.isOnline = String(powerVal).toLowerCase() !== 'offline';
+
   if (cached) {
     if (Array.isArray(cached)) {
       state.missionaries = cached;
     } else if (cached && Array.isArray(cached.missionaries)) {
       state.missionaries = cached.missionaries;
+      if (cached.is_online !== undefined) state.isOnline = cached.is_online;
       if (cached.stats) updateHeaderStats(cached.stats);
     }
   }
 })();
-
-function switchViewMode(mode) {
-  state.viewMode = mode;
-  LocalStore.set('missionaries_view_mode', mode);
-  document.getElementById('btn-view-table').className = `view-toggle-btn ${mode === 'table' ? 'active' : ''}`;
-  document.getElementById('btn-view-card').className = `view-toggle-btn ${mode === 'card' ? 'active' : ''}`;
-  renderPaginatedContent();
-}
 
 function openPusherModal() {
   document.getElementById('pusher-raw-input').value = '';
@@ -449,18 +390,29 @@ async function loadRoster(force = false) {
     onCached: (cached) => {
       if (cached && cached.ok) {
         state.missionaries = cached.missionaries || [];
+        state.isOnline = cached.is_online !== false;
         updateHeaderStats(cached.stats);
+        updateOfflineUI();
         applyFilterAndRender();
       }
     },
     onFresh: (fresh) => {
       if (fresh && fresh.ok) {
         state.missionaries = fresh.missionaries || [];
+        state.isOnline = fresh.is_online !== false;
         updateHeaderStats(fresh.stats);
+        updateOfflineUI();
         applyFilterAndRender();
       }
     }
   });
+}
+
+function updateOfflineUI() {
+  const banner = document.getElementById('offline-alert-banner');
+  if (banner) {
+    banner.style.display = state.isOnline ? 'none' : 'flex';
+  }
 }
 
 function updateHeaderStats(stats = {}) {
@@ -473,7 +425,19 @@ function updateHeaderStats(stats = {}) {
   if (rosterEl) rosterEl.textContent = total.toLocaleString();
 
   const badge = document.getElementById('due-badge-header');
-  if (badge) badge.textContent = `${due} Due Today (PHT)`;
+  if (badge) {
+    if (!state.isOnline) {
+      badge.textContent = `💤 Paused (Offline)`;
+      badge.style.borderColor = '#ff6b6b';
+      badge.style.color = '#ff6b6b';
+      badge.style.background = 'rgba(239,68,68,0.15)';
+    } else {
+      badge.textContent = `${due} Due Today (PHT)`;
+      badge.style.borderColor = 'var(--gold)';
+      badge.style.color = 'var(--gold)';
+      badge.style.background = 'rgba(201,168,76,0.2)';
+    }
+  }
 
   const tAll = document.getElementById('tab-count-all');
   if (tAll) tAll.textContent = total;
@@ -504,18 +468,18 @@ function toggleSelectMode() {
     state.selectedEmails.clear();
     updateSelectedCount();
   }
-  renderPaginatedContent();
+  renderPaginatedCards();
 }
 
 function selectAllVisible() {
   state.filteredList.forEach(m => state.selectedEmails.add(m.email.toLowerCase()));
-  renderPaginatedContent();
+  renderPaginatedCards();
   updateSelectedCount();
 }
 
 function deselectAll() {
   state.selectedEmails.clear();
-  renderPaginatedContent();
+  renderPaginatedCards();
   updateSelectedCount();
 }
 
@@ -548,7 +512,7 @@ function changeSorting(sortVal) {
 function changePageSize(val) {
   state.pageSize = parseInt(val, 10) || 25;
   state.page = 1;
-  renderPaginatedContent();
+  renderPaginatedCards();
 }
 
 document.getElementById('search-box').addEventListener('input', (e) => {
@@ -581,12 +545,17 @@ function applyFilterAndRender() {
     );
   }
 
-  // 0ms In-Memory Sorting
+  // 0ms In-Memory Sorting — Strictly Soonest Next Send by default
   list.sort((a, b) => {
     if (state.currentSort === 'soonest') {
-      if (a.schedule_status === 'DUE_TODAY' && b.schedule_status !== 'DUE_TODAY') return -1;
-      if (b.schedule_status === 'DUE_TODAY' && a.schedule_status !== 'DUE_TODAY') return 1;
-      return (a.days_until_next || 999) - (b.days_until_next || 999);
+      if (state.isOnline) {
+        if (a.schedule_status === 'DUE_TODAY' && b.schedule_status !== 'DUE_TODAY') return -1;
+        if (b.schedule_status === 'DUE_TODAY' && a.schedule_status !== 'DUE_TODAY') return 1;
+      }
+      const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 999 : a.days_until_next;
+      const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 999 : b.days_until_next;
+      if (daysA !== daysB) return daysA - daysB;
+      return (a.name || '').localeCompare(b.name || '');
     } else if (state.currentSort === 'last_sent') {
       const ta = a.last_sent_at ? new Date(a.last_sent_at).getTime() : 0;
       const tb = b.last_sent_at ? new Date(b.last_sent_at).getTime() : 0;
@@ -602,15 +571,15 @@ function applyFilterAndRender() {
   });
 
   state.filteredList = list;
-  renderPaginatedContent();
+  renderPaginatedCards();
 }
 
 function changePage(delta) {
   state.page += delta;
-  renderPaginatedContent();
+  renderPaginatedCards();
 }
 
-function renderPaginatedContent() {
+function renderPaginatedCards() {
   const totalItems = state.filteredList.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
   state.page = Math.max(1, Math.min(state.page, totalPages));
@@ -632,120 +601,10 @@ function renderPaginatedContent() {
   if (!container) return;
 
   if (!pageItems.length) {
-    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem; background:var(--surface); border-radius:var(--radius-sm);">No matching missionaries found.</div>';
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem; background:var(--surface); border-radius:var(--radius-sm); border:1px dashed var(--border);">No matching missionaries found.</div>';
     return;
   }
 
-  if (state.viewMode === 'table') {
-    renderTableView(container, pageItems);
-  } else {
-    renderCardView(container, pageItems);
-  }
-}
-
-function renderTableView(container, pageItems) {
-  container.innerHTML = `
-    <div class="table-container">
-      <table class="roster-table">
-        <thead>
-          <tr>
-            <th style="width:30px;"><input type="checkbox" class="select-checkbox" onclick="selectAllVisible()"/></th>
-            <th>Missionary</th>
-            <th>Referral Code</th>
-            <th>⭐ Points</th>
-            <th>🕒 Last Dispatched (PHT)</th>
-            <th>📅 Next Send &amp; Status</th>
-            <th>Next Drip</th>
-            <th>Progression</th>
-            <th style="text-align:right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${pageItems.map(m => {
-            const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-            const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
-            const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
-            const progressPct = Math.round((sentCount / totalMonths) * 100);
-            const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
-
-            const isDue = m.schedule_status === 'DUE_TODAY';
-            const isSentToday = m.schedule_status === 'SENT_TODAY';
-            const nextDrip = m.next_drip;
-            const nextMonthNum = nextDrip ? nextDrip.month_num : (sentCount + 1);
-
-            let statusBadge = '';
-            if (m.is_completed) {
-              statusBadge = '<span style="font-size:0.60rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 6px; border-radius:4px;">🎓 Completed</span>';
-            } else if (isSentToday) {
-              statusBadge = '<span style="font-size:0.60rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 6px; border-radius:4px;">✅ Sent Today</span>';
-            } else if (isDue) {
-              statusBadge = '<span style="font-size:0.60rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 6px; border-radius:4px;">🔥 Due Today</span>';
-            } else {
-              statusBadge = `<span style="font-size:0.60rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 6px; border-radius:4px;">In ${m.days_until_next}d</span>`;
-            }
-
-            const lastSentDisplay = m.last_sent_at ? formatPhtDate(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
-
-            return `
-              <tr class="${isDue ? 'due-row' : ''}">
-                <td>
-                  <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
-                </td>
-                <td>
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:1.15rem;">${isSister ? '👗' : '👔'}</span>
-                    <div>
-                      <div style="font-weight:700; color:#fff;">${escapeHtml(m.name || 'Unnamed')}</div>
-                      <div style="font-size:0.65rem; color:var(--gold);">${escapeHtml(m.email)}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span style="font-family:'DM Mono',monospace; color:var(--gold); font-weight:700;">${m.referral_code || '—'}</span>
-                </td>
-                <td>
-                  <strong style="color:var(--gold); font-size:0.78rem;">⭐ ${m.points || 0}</strong>
-                </td>
-                <td>
-                  <span style="font-family:'DM Mono',monospace; color:${m.last_sent_at ? '#e2e8f0' : 'var(--muted)'};">${lastSentDisplay}</span>
-                </td>
-                <td>
-                  <div style="display:flex; flex-direction:column; gap:2px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <strong style="${isDue ? 'color:var(--gold);' : 'color:#fff;'} font-family:'DM Mono',monospace;">${m.next_send_date || 'Today'}</strong>
-                      ${statusBadge}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div style="font-size:0.68rem; color:#fff; font-weight:600;">M${nextMonthNum} ${nextDrip?.calendar_month_label ? `(${nextDrip.calendar_month_label})` : ''}</div>
-                  <div style="font-size:0.62rem; color:var(--muted); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(nextDrip?.theme || 'Encouragement')}</div>
-                </td>
-                <td style="min-width:90px;">
-                  <div style="font-size:0.62rem; color:var(--muted);">${sentCount}/${totalMonths}M (${progressPct}%)</div>
-                  <div class="drip-bar-bg">
-                    <div class="drip-bar-fill" style="width:${Math.max(progressPct, 4)}%;"></div>
-                  </div>
-                </td>
-                <td style="text-align:right; white-space:nowrap;">
-                  <div style="display:inline-flex; gap:4px;">
-                    <button class="btn ${isDue ? 'btn-gold' : 'btn-dark'}" style="padding:3px 8px; font-size:0.65rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})" title="Send Drip Email">✉️</button>
-                    <button class="btn btn-secondary" style="padding:3px 7px; font-size:0.65rem;" onclick="openPreviewModal('${m.email}', ${nextMonthNum}, '${escapeHtml(m.name)}')" title="Preview Email">👁️</button>
-                    <button class="btn btn-secondary" style="padding:3px 7px; font-size:0.65rem;" onclick="openRescheduleModal('${m.email}', '${escapeHtml(m.name)}', '${m.next_send_date || ''}')" title="Reschedule Date">📅</button>
-                    <button class="btn btn-secondary" style="padding:3px 7px; font-size:0.65rem;" onclick="openEditMissionaryModal('${m.email}')" title="Edit Profile">✏️</button>
-                    <button class="btn-danger" style="padding:3px 7px; font-size:0.65rem; border-radius:4px;" onclick="deleteMissionary('${m.email}', '${escapeHtml(m.name || 'Missionary')}')" title="Delete">🗑️</button>
-                  </div>
-                </td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function renderCardView(container, pageItems) {
   container.innerHTML = pageItems.map(m => {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
     const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
@@ -764,6 +623,8 @@ function renderCardView(container, pageItems) {
       badge = '<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (24M)</span>';
     } else if (isSentToday) {
       badge = '<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent Today</span>';
+    } else if (!state.isOnline && isDue) {
+      badge = '<span style="font-size:0.62rem; color:#ff6b6b; font-weight:bold; background:rgba(239,68,68,0.18); border:1px solid #ff6b6b; padding:2px 7px; border-radius:4px;">💤 Offline Paused</span>';
     } else if (isDue) {
       badge = '<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due Today</span>';
     } else {
@@ -771,12 +632,13 @@ function renderCardView(container, pageItems) {
     }
 
     const lastSentDisplay = m.last_sent_at ? formatPhtDate(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
+    const nextSendDisplay = (!state.isOnline && isDue) ? `${m.next_send_date || 'Today'} (Resumes on Online)` : (m.next_send_date || 'Today');
 
     return `
-      <div class="missionary-card ${isDue ? 'due-highlight' : ''}">
+      <div class="missionary-card ${isDue && state.isOnline ? 'due-highlight' : (!state.isOnline && isDue ? 'offline-paused' : '')}">
         <div class="card-main-row" onclick="this.closest('.missionary-card').classList.toggle('open')">
           <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
-          <div style="font-size:1.3rem;">${isSister ? '👗' : '👔'}</div>
+          <div style="font-size:1.35rem;">${isSister ? '👗' : '👔'}</div>
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
               <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister (18M)' : 'Elder (24M)'}</span>
@@ -786,7 +648,7 @@ function renderCardView(container, pageItems) {
             <div style="font-size:0.68rem; color:var(--muted); display:flex; gap:12px; flex-wrap:wrap;">
               <span style="color:var(--gold);">${escapeHtml(m.email)}</span>
               <span>🕒 Last Sent: <strong style="color:#e2e8f0;">${lastSentDisplay}</strong></span>
-              <span>📅 Next: <strong style="${isDue ? 'color:var(--gold);' : 'color:#e2e8f0;'}">${m.next_send_date || 'Today'}</strong></span>
+              <span>📅 Next: <strong style="${isDue && state.isOnline ? 'color:var(--gold);' : 'color:#e2e8f0;'}">${nextSendDisplay}</strong></span>
             </div>
           </div>
           <div style="text-align:right; flex-shrink:0;">
@@ -803,7 +665,7 @@ function renderCardView(container, pageItems) {
             </div>
             <div class="intel-box">
               <span class="intel-label">📅 Next Estimated Dispatch</span>
-              <span class="intel-val" style="color:${isDue ? 'var(--gold)' : '#fff'}; font-family:'DM Mono',monospace;">${m.next_send_date || 'Today'} (${m.schedule_status})</span>
+              <span class="intel-val" style="color:${isDue && state.isOnline ? 'var(--gold)' : '#fff'}; font-family:'DM Mono',monospace;">${nextSendDisplay}</span>
             </div>
             <div class="intel-box">
               <span class="intel-label">💌 Upcoming Drip Intel</span>
@@ -836,7 +698,7 @@ function renderCardView(container, pageItems) {
 
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button class="btn ${isDue ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.68rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})">✉️ Send Month ${nextMonthNum}</button>
+              <button class="btn ${isDue && state.isOnline ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.68rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})">✉️ Send Month ${nextMonthNum}</button>
               <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openPreviewModal('${m.email}', ${nextMonthNum}, '${escapeHtml(m.name)}')">👁️ Preview</button>
               <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openRescheduleModal('${m.email}', '${escapeHtml(m.name)}', '${m.next_send_date || ''}')">📅 Reschedule</button>
             </div>
@@ -1005,6 +867,10 @@ async function sendFromPreviewModal() {
 }
 
 async function dispatchMissionaryEmail(email, name, month) {
+  if (!state.isOnline) {
+    showToast("System is currently OFFLINE. Switch to ONLINE in Settings to send emails.", "error");
+    return;
+  }
   const confirmed = await showConfirmWarningModal({
     title: "✉️ Confirm Direct Email Dispatch",
     message: `Dispatch Month ${month} transactional email directly to <strong>${name}</strong> (<code>${email}</code>)?<br><br>• This will send immediately via Brevo and update the missionary's Last Sent timestamp.`,
@@ -1117,7 +983,7 @@ if (state.missionaries.length > 0) {
 
 window.addEventListener('DOMContentLoaded', () => {
   initAppLayout('missionaries', 'Missionaries');
-  switchViewMode(state.viewMode);
+  updateOfflineUI();
   applyFilterAndRender();
   loadRoster();
 });

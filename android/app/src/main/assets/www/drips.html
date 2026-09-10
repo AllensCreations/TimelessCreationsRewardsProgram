@@ -217,7 +217,7 @@ const defaultGrids = [
                   <div style="font-size:0.65rem; color:var(--muted);">Side-by-side 2-column showcase with real order auto-detection.</div>
               </div>
               <label class="switch">
-                  <input type="checkbox" id="inp-highlight-toggle" onchange="onLiveEdit()">
+                  <input type="checkbox" id="inp-highlight-toggle" onchange="onToggleHighlights()">
                   <span class="slider"></span>
               </label>
           </div>
@@ -231,8 +231,8 @@ const defaultGrids = [
             <!-- TOP 1 (Column 1) -->
             <div class="img-picker-card" style="border-color:var(--gold); background:rgba(201,168,76,0.06);">
                 <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:var(--red); padding:2px 8px; border-radius:4px;">🥇 TOP 1 BESTSELLER</span>
-                <input type="text" id="inp-highlight-name" class="form-input" placeholder="Product Name" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
-                <input type="text" id="inp-highlight-sold-1" class="form-input" placeholder="e.g. 1.5k+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
+                <input type="text" id="inp-highlight-name" class="form-input" placeholder="e.g. Custom Wooden Nametag" value="Custom Wooden Nametag" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
+                <input type="text" id="inp-highlight-sold-1" class="form-input" placeholder="e.g. 1.5k+ Sold" value="1.5k+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
                 <input type="hidden" id="inp-highlight-img" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE">
                 <div class="picker-thumb-wrap" style="max-width:115px; margin:4px 0;">
                   <img id="thumb-hl-1" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" alt="Top 1 Product">
@@ -246,8 +246,8 @@ const defaultGrids = [
             <!-- TOP 2 (Column 2) -->
             <div class="img-picker-card">
                 <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:#555566; padding:2px 8px; border-radius:4px;">🥈 TOP 2 POPULAR</span>
-                <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="Product Name" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
-                <input type="text" id="inp-highlight-sold-2" class="form-input" placeholder="e.g. 950+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
+                <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="e.g. LDS Temple Keychain" value="LDS Temple Keychain" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
+                <input type="text" id="inp-highlight-sold-2" class="form-input" placeholder="e.g. 950+ Sold" value="950+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
                 <input type="hidden" id="inp-highlight-img-2" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ">
                 <div class="picker-thumb-wrap" style="max-width:95px; margin:4px 0;">
                   <img id="thumb-hl-2" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" alt="Top 2 Product">
@@ -623,18 +623,20 @@ async function fetchFromTurso() {
 
     if (dripRes.ok && Array.isArray(dripRes.drips)) {
       dripRes.drips.forEach(d => {
+        const isExplicitlyDisabled = d.highlight_label === "__DISABLED__";
         liveDripMap[Number(d.month)] = {
           month: Number(d.month),
           subject: d.subject || `Monthly Encouragement (${getCalendarMonthLabel(d.month)}) • Timeless Creations`,
           theme: d.theme || "Elder Jeffrey R. Holland",
           scripture: d.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
           message: d.message || `May your faith be strengthened as you serve and invite others during ${getCalendarMonthLabel(d.month)}.`,
-          highlight_img: d.highlight_img || "",
-          highlight_label: d.highlight_label || "",
-          highlight_sold_1: d.highlight_sold_1 || "",
-          highlight_img_2: d.highlight_img_2 || "",
-          highlight_label_2: d.highlight_label_2 || "",
-          highlight_sold_2: d.highlight_sold_2 || "",
+          highlight_img: d.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+          highlight_label: (d.highlight_label && d.highlight_label !== "__DISABLED__") ? d.highlight_label : (isExplicitlyDisabled ? "__DISABLED__" : "Custom Wooden Nametag"),
+          highlight_sold_1: d.highlight_sold_1 || "1.5k+ Sold",
+          highlight_img_2: d.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+          highlight_label_2: d.highlight_label_2 || (isExplicitlyDisabled ? "" : "LDS Temple Keychain"),
+          highlight_sold_2: d.highlight_sold_2 || "950+ Sold",
+          highlight_enabled: !isExplicitlyDisabled,
           custom_html: d.custom_html || ""
         };
       });
@@ -659,12 +661,13 @@ function onSelectMonth(m) {
     theme: "Elder Jeffrey R. Holland",
     scripture: "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
     message: `May your faith be strengthened as you serve and invite others during ${label}.`,
-    highlight_img: "",
-    highlight_label: "",
-    highlight_sold_1: "",
-    highlight_img_2: "",
-    highlight_label_2: "",
-    highlight_sold_2: "",
+    highlight_img: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+    highlight_label: "Custom Wooden Nametag",
+    highlight_sold_1: "1.5k+ Sold",
+    highlight_img_2: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+    highlight_label_2: "LDS Temple Keychain",
+    highlight_sold_2: "950+ Sold",
+    highlight_enabled: true,
     custom_html: ""
   };
 
@@ -674,24 +677,19 @@ function onSelectMonth(m) {
   document.getElementById("inp-quote").value = data.scripture || "";
   document.getElementById("inp-custom-html").value = data.custom_html || "";
 
-  if ((data.highlight_label && data.highlight_label.trim() !== "") || (data.highlight_label_2 && data.highlight_label_2.trim() !== "")) {
-    document.getElementById("inp-highlight-toggle").checked = true;
-    document.getElementById("inp-highlight-name").value = data.highlight_label || "";
-    document.getElementById("inp-highlight-sold-1").value = data.highlight_sold_1 || "1.5k+ Sold";
-    document.getElementById("inp-highlight-img").value = data.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
-    document.getElementById("thumb-hl-1").src = data.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
-    
-    document.getElementById("inp-highlight-name-2").value = data.highlight_label_2 || "";
-    document.getElementById("inp-highlight-sold-2").value = data.highlight_sold_2 || "950+ Sold";
-    document.getElementById("inp-highlight-img-2").value = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
-    document.getElementById("thumb-hl-2").src = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
-  } else {
-    document.getElementById("inp-highlight-toggle").checked = false;
-    document.getElementById("inp-highlight-name").value = "";
-    document.getElementById("inp-highlight-sold-1").value = "";
-    document.getElementById("inp-highlight-name-2").value = "";
-    document.getElementById("inp-highlight-sold-2").value = "";
-  }
+  const isExplicitlyDisabled = data.highlight_enabled === false || data.highlight_label === "__DISABLED__";
+  const isHigh = !isExplicitlyDisabled;
+
+  document.getElementById("inp-highlight-toggle").checked = isHigh;
+  document.getElementById("inp-highlight-name").value = (data.highlight_label && data.highlight_label !== "__DISABLED__") ? data.highlight_label : (isHigh ? "Custom Wooden Nametag" : "");
+  document.getElementById("inp-highlight-sold-1").value = data.highlight_sold_1 || "1.5k+ Sold";
+  document.getElementById("inp-highlight-img").value = data.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  document.getElementById("thumb-hl-1").src = data.highlight_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  
+  document.getElementById("inp-highlight-name-2").value = data.highlight_label_2 || (isHigh ? "LDS Temple Keychain" : "");
+  document.getElementById("inp-highlight-sold-2").value = data.highlight_sold_2 || "950+ Sold";
+  document.getElementById("inp-highlight-img_2" ? "inp-highlight-img-2" : "inp-highlight-img-2").value = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+  document.getElementById("thumb-hl-2").src = data.highlight_img_2 || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
 
   const badge = document.getElementById("badge-template-status");
   if (data.custom_html && data.custom_html.trim() !== "") {
@@ -705,6 +703,25 @@ function onSelectMonth(m) {
   renderPreview();
 }
 
+function onToggleHighlights() {
+  const isHigh = document.getElementById("inp-highlight-toggle").checked;
+  if (isHigh) {
+    if (!document.getElementById("inp-highlight-name").value.trim()) {
+      document.getElementById("inp-highlight-name").value = "Custom Wooden Nametag";
+    }
+    if (!document.getElementById("inp-highlight-sold-1").value.trim()) {
+      document.getElementById("inp-highlight-sold-1").value = "1.5k+ Sold";
+    }
+    if (!document.getElementById("inp-highlight-name-2").value.trim()) {
+      document.getElementById("inp-highlight-name-2").value = "LDS Temple Keychain";
+    }
+    if (!document.getElementById("inp-highlight-sold-2").value.trim()) {
+      document.getElementById("inp-highlight-sold-2").value = "950+ Sold";
+    }
+  }
+  onLiveEdit();
+}
+
 function onLiveEdit() {
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
   const customHtmlVal = document.getElementById("inp-custom-html").value;
@@ -715,12 +732,13 @@ function onLiveEdit() {
     theme: document.getElementById("inp-theme").value.trim(),
     message: document.getElementById("inp-msg").value.trim(),
     scripture: document.getElementById("inp-quote").value.trim(),
-    highlight_label: isHigh ? document.getElementById("inp-highlight-name").value.trim() : "",
-    highlight_sold_1: isHigh ? document.getElementById("inp-highlight-sold-1").value.trim() : "",
-    highlight_img: isHigh ? document.getElementById("inp-highlight-img").value.trim() : "",
+    highlight_enabled: isHigh,
+    highlight_label: isHigh ? (document.getElementById("inp-highlight-name").value.trim() || "Custom Wooden Nametag") : "__DISABLED__",
+    highlight_sold_1: document.getElementById("inp-highlight-sold-1").value.trim() || "1.5k+ Sold",
+    highlight_img: document.getElementById("inp-highlight-img").value.trim() || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
     highlight_label_2: isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "",
-    highlight_sold_2: isHigh ? document.getElementById("inp-highlight-sold-2").value.trim() : "",
-    highlight_img_2: isHigh ? document.getElementById("inp-highlight-img-2").value.trim() : "",
+    highlight_sold_2: document.getElementById("inp-highlight-sold-2").value.trim() || "950+ Sold",
+    highlight_img_2: document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
     custom_html: customHtmlVal
   };
 
@@ -821,17 +839,32 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
 }
 
 function buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) {
-  if (!p1Name && !p2Name) return "";
+  const name1 = (p1Name || "").trim();
+  const name2 = (p2Name || "").trim();
+  if (!name1 && !name2) return "";
 
-  if (p1Name && !p2Name) {
+  if (name1 && !name2) {
     return `
       <div style="margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1.5px solid #c9a84c; border-radius: 6px; text-align: center;">
         <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: bold; padding: 3px 8px; border-radius: 3px; margin-bottom: 8px;">
           🥇 #1 TOP BESTSELLER
         </span>
-        <img src="${p1Img}" style="width: 100%; max-width: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${p1Name}">
-        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11.5px; font-weight: bold; color: #1a1a1a;">${p1Name}</div>
+        <img src="${p1Img}" style="width: 100%; max-width: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${name1}">
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11.5px; font-weight: bold; color: #1a1a1a;">${name1}</div>
         <div style="font-size: 10px; color: #8c7e5d; font-weight: bold; margin-top: 2px;">🔥 ${formatK(p1Sold)}</div>
+      </div>
+    `;
+  }
+
+  if (!name1 && name2) {
+    return `
+      <div style="margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1.5px solid #c9a84c; border-radius: 6px; text-align: center;">
+        <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: bold; padding: 3px 8px; border-radius: 3px; margin-bottom: 8px;">
+          🥇 #1 TOP BESTSELLER
+        </span>
+        <img src="${p2Img}" style="width: 100%; max-width: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${name2}">
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11.5px; font-weight: bold; color: #1a1a1a;">${name2}</div>
+        <div style="font-size: 10px; color: #8c7e5d; font-weight: bold; margin-top: 2px;">🔥 ${formatK(p2Sold)}</div>
       </div>
     `;
   }
@@ -848,8 +881,8 @@ function buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) {
             <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 7.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-bottom: 6px;">
               🥇 #1 TOP SELLER
             </span>
-            <img src="${p1Img}" style="width: 100%; max-width: 110px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${p1Name}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; font-weight: bold; color: #1a1a1a; line-height: 1.2;">${p1Name}</div>
+            <img src="${p1Img}" style="width: 100%; max-width: 110px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${name1}">
+            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; font-weight: bold; color: #1a1a1a; line-height: 1.2;">${name1}</div>
             <div style="font-size: 9.5px; color: #8c7e5d; font-weight: bold; margin-top: 3px;">🔥 ${formatK(p1Sold)}</div>
           </td>
           <td width="4%"></td>
@@ -858,8 +891,8 @@ function buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) {
             <span style="display: inline-block; background: #555566; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 7.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-bottom: 6px;">
               🥈 #2 POPULAR
             </span>
-            <img src="${p2Img}" style="width: 100%; max-width: 95px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #d4c197; display: block;" alt="${p2Name}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10.5px; font-weight: bold; color: #1a1a1a; line-height: 1.2;">${p2Name}</div>
+            <img src="${p2Img}" style="width: 100%; max-width: 95px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #d4c197; display: block;" alt="${name2}">
+            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10.5px; font-weight: bold; color: #1a1a1a; line-height: 1.2;">${name2}</div>
             <div style="font-size: 9px; color: #8c7e5d; font-weight: bold; margin-top: 3px;">⭐ ${formatK(p2Sold)}</div>
           </td>
         </tr>
@@ -881,15 +914,18 @@ function renderPreview() {
   const points = 2;
 
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
-  const p1Name = isHigh ? document.getElementById("inp-highlight-name").value.trim() : "";
+  const rawP1 = document.getElementById("inp-highlight-name").value.trim();
+  const rawP2 = document.getElementById("inp-highlight-name-2").value.trim();
+
+  const p1Name = isHigh ? (rawP1 || "Custom Wooden Nametag") : "";
   const p1Img = getCdnImageUrl(document.getElementById("inp-highlight-img").value.trim() || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE", "product_1.jpg");
   const p1Sold = document.getElementById("inp-highlight-sold-1").value.trim() || "1.5k+ Sold";
 
-  const p2Name = isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "";
+  const p2Name = isHigh ? rawP2 : "";
   const p2Img = getCdnImageUrl(document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ", "product_2.jpg");
   const p2Sold = document.getElementById("inp-highlight-sold-2").value.trim() || "950+ Sold";
 
-  const topProductsHtml = buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold);
+  const topProductsHtml = isHigh ? buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) : "";
 
   let catalogProducts = LocalStore.get('temp_products', [
     { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
@@ -959,12 +995,17 @@ function resetTab2Defaults() {
 }
 
 function resetTab3Defaults() {
-  document.getElementById("inp-highlight-toggle").checked = false;
-  document.getElementById("inp-highlight-name").value = "";
-  document.getElementById("inp-highlight-sold-1").value = "";
-  document.getElementById("inp-highlight-name-2").value = "";
-  document.getElementById("inp-highlight-sold-2").value = "";
+  document.getElementById("inp-highlight-toggle").checked = true;
+  document.getElementById("inp-highlight-name").value = "Custom Wooden Nametag";
+  document.getElementById("inp-highlight-sold-1").value = "1.5k+ Sold";
+  document.getElementById("inp-highlight-img").value = "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  document.getElementById("thumb-hl-1").src = "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  document.getElementById("inp-highlight-name-2").value = "LDS Temple Keychain";
+  document.getElementById("inp-highlight-sold-2").value = "950+ Sold";
+  document.getElementById("inp-highlight-img-2").value = "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+  document.getElementById("thumb-hl-2").src = "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
   onLiveEdit();
+  showToast("Reset to default Top 1 & Top 2 products.");
 }
 
 async function saveActiveMonth(sectionName = 'global') {

@@ -288,6 +288,7 @@
         <h2 style="color:var(--gold); font-size:clamp(1.05rem, 3.5vw, 1.25rem); margin:0;">Missionaries Roster &amp; Dispatch Hub</h2>
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
           <span id="due-badge-header" style="font-size:0.65rem; background:rgba(201,168,76,0.2); border:1px solid var(--gold); color:var(--gold); padding:2px 8px; border-radius:99px; font-weight:800; white-space:nowrap;">0 Due Today</span>
+          <span id="open-rate-badge" style="font-size:0.60rem; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; padding:2px 7px; border-radius:99px; font-weight:700; white-space:nowrap; font-family:'DM Mono',monospace;">👁️ 0% Open Rate</span>
           <span id="cron-next-pill" style="font-size:0.60rem; background:rgba(92,141,224,0.15); border:1px solid rgba(92,141,224,0.4); color:var(--blue); padding:2px 7px; border-radius:99px; font-weight:700; white-space:nowrap; font-family:'DM Mono',monospace;">⏱️ Next Cron: Loading...</span>
           <span style="font-size:0.60rem; background:rgba(76,175,130,0.15); border:1px solid rgba(76,175,130,0.4); color:var(--green); padding:2px 6px; border-radius:4px; font-weight:700; white-space:nowrap;">⚡ 0ms Fast Engine</span>
         </div>
@@ -632,9 +633,13 @@ function updateHeaderStats(stats = {}) {
   const due = stats.due_today || 0;
   const sent = stats.sent_today || 0;
   const up7 = stats.upcoming_7d || 0;
+  const openRate = stats.open_rate_pct !== undefined ? stats.open_rate_pct : 0;
 
   const rosterEl = document.getElementById('roster-count');
   if (rosterEl) rosterEl.textContent = total.toLocaleString();
+
+  const openRateEl = document.getElementById('open-rate-badge');
+  if (openRateEl) openRateEl.textContent = `👁️ ${openRate}% Open Rate`;
 
   const badge = document.getElementById('due-badge-header');
   if (badge) {
@@ -1146,6 +1151,12 @@ function renderPaginatedCards() {
       badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextCalMonthYear}</span>`;
     }
 
+    const openCount = Number(m.open_count) || 0;
+    const hasOpened = openCount > 0 || !!m.last_opened_at;
+    const openBadge = hasOpened
+      ? `<span style="font-size:0.62rem; color:#38bdf8; font-weight:bold; background:rgba(56,189,248,0.18); border:1px solid rgba(56,189,248,0.4); padding:2px 7px; border-radius:4px;" title="Recipient opened emails ${openCount} time${openCount > 1 ? 's' : ''}">👁️ Opened (${openCount}x)</span>`
+      : `<span style="font-size:0.62rem; color:var(--muted); background:rgba(255,255,255,0.05); border:1px solid var(--border); padding:2px 7px; border-radius:4px;">👁️ Unopened</span>`;
+
     // Dynamic countdown and estimate calculations
     const est = getMissionaryEstimate(m, dueQueue, phtNowIso);
 
@@ -1162,6 +1173,7 @@ function renderPaginatedCards() {
               <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister (18M)' : 'Elder (24M)'}</span>
               <strong style="font-size:0.88rem; color:#fff; word-break:break-word;">${escapeHtml(m.name || 'Unnamed')}</strong>
               <div>${badge}</div>
+              <div>${openBadge}</div>
               <div>${est.badgeHtml}</div>
             </div>
             <div style="font-size:0.68rem; color:var(--muted); display:flex; gap:8px 12px; flex-wrap:wrap;">
@@ -1189,6 +1201,10 @@ function renderPaginatedCards() {
             <div class="intel-box">
               <span class="intel-label">📅 Next Estimated Dispatch</span>
               <span class="intel-val" style="color:${isDue && state.isOnline ? 'var(--gold)' : '#fff'}; font-family:'DM Mono',monospace;">${nextSendDisplay}</span>
+            </div>
+            <div class="intel-box">
+              <span class="intel-label">👁️ Email Engagement</span>
+              <span class="intel-val" style="color:${hasOpened ? '#38bdf8' : 'var(--muted)'}; font-family:'DM Mono',monospace;">${hasOpened ? `Opened ${openCount}x ${m.last_opened_at ? `(Last: ${formatMonthYear(m.last_opened_at)})` : ''}` : 'No Opens Tracked'}</span>
             </div>
             <div class="intel-box">
               <span class="intel-label">💌 Upcoming Drip Intel</span>

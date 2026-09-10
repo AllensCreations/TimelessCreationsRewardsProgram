@@ -55,20 +55,6 @@ export default async function handler(req, res) {
     for (const h of handlers) {
       const result = await h(action, req, bodyData);
       if (result) {
-        if (result.headers) {
-          for (const [k, v] of Object.entries(result.headers)) {
-            res.setHeader(k, v);
-          }
-        }
-        if (result.buffer) {
-          if (typeof res.status === 'function') res.status(result.status || 200);
-          else res.statusCode = result.status || 200;
-
-          if (typeof res.send === 'function') {
-            return res.send(result.buffer);
-          }
-          return res.end(result.buffer);
-        }
         return res.status(result.status).json(result.json);
       }
     }

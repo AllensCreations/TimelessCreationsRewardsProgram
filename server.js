@@ -43,17 +43,6 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify(data));
     return res;
   };
-  res.send = function(data) {
-    if (Buffer.isBuffer(data)) {
-      res.end(data);
-    } else if (typeof data === 'object') {
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(data));
-    } else {
-      res.end(String(data));
-    }
-    return res;
-  };
 
   const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = urlObj.pathname;

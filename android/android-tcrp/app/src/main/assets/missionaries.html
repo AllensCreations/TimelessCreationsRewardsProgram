@@ -845,6 +845,7 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
 
   if (isCompleted) {
     return {
+      tier: 4,
       statusType: 'COMPLETED',
       targetEpochMs: Infinity,
       isWithin24h: false,
@@ -854,9 +855,11 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
   }
 
   if (isSentToday) {
+    const sentEpoch = m.last_sent_at ? new Date(m.last_sent_at).getTime() : nowPht;
     return {
+      tier: 2,
       statusType: 'SENT_TODAY',
-      targetEpochMs: 0,
+      targetEpochMs: sentEpoch,
       isWithin24h: false,
       badgeHtml: '<span class="est-countdown-pill sent-today">✅ Sent Today</span>',
       intelHtml: `<span style="color:var(--green); font-weight:bold;">✅ Dispatched Today (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`
@@ -865,6 +868,7 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
 
   if (!state.isOnline && isDue) {
     return {
+      tier: 1,
       statusType: 'OFFLINE_PAUSED',
       targetEpochMs: nowPht + 86400000,
       isWithin24h: false,
@@ -886,6 +890,7 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
 
     if (isWithin24h) {
       return {
+        tier: 1,
         statusType: 'DUE_ESTIMATE',
         targetEpochMs: slot.targetTime,
         rank: cleanRank + 1,
@@ -898,6 +903,7 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
       };
     } else {
       return {
+        tier: 1,
         statusType: 'DUE_SOON',
         targetEpochMs: slot.targetTime,
         rank: cleanRank + 1,
@@ -911,38 +917,41 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
     }
   }
 
-  // Upcoming non-due missionaries
-  let daysUntilNext = Number(m.days_until_next) || 0;
-  let nextDateEpoch = nowPht + (daysUntilNext * 86400000);
-  if (effectiveNextSendDate) {
+  // Tier 3: Upcoming non-due missionaries (>24h away)
+  let targetTime = 0;
+  if (effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
     try {
-      const targetTime = new Date(effectiveNextSendDate + 'T07:00:00+08:00').getTime();
-      daysUntilNext = Math.max(0, Math.round((targetTime - nowPht) / (1000 * 3600 * 24)));
-      nextDateEpoch = targetTime;
-    } catch (_) {}
+      targetTime = new Date(effectiveNextSendDate + 'T07:00:00+08:00').getTime();
+    } catch (_) {
+      targetTime = nowPht + (86400000 * 30);
+    }
+  } else {
+    targetTime = nowPht + (86400000 * 30);
   }
 
-  const diffMs = nextDateEpoch - nowPht;
-  const isWithin24h = diffMs <= 24 * 3600 * 1000 && diffMs > -60000;
+  const diffMs = targetTime - nowPht;
+  const isWithin24h = diffMs <= 24 * 3600 * 1000 && diffMs > 0;
   const nextCalMonthYear = effectiveNextSendDate ? formatMonthYear(effectiveNextSendDate) : (batchInfo ? batchInfo.firstMonthDisplay : 'Soon');
 
   if (isWithin24h) {
-    const cd = formatCountdown(nextDateEpoch);
+    const cd = formatCountdown(targetTime);
     return {
+      tier: 1,
       statusType: 'UPCOMING_24H',
-      targetEpochMs: nextDateEpoch,
+      targetEpochMs: targetTime,
       isWithin24h: true,
       timeLabel: '7:00 AM PHT',
-      badgeHtml: `<span class="est-countdown-pill today" data-target="${nextDateEpoch}" data-label="7:00 AM PHT">⏳ Est: ~7:00 AM PHT (${cd})</span>`,
-      intelHtml: `📅 Scheduled: ${nextCalMonthYear} &bull; <span class="est-countdown-text" data-target="${nextDateEpoch}">${cd}</span>`
+      badgeHtml: `<span class="est-countdown-pill today" data-target="${targetTime}" data-label="7:00 AM PHT">⏳ Est: ~7:00 AM PHT (${cd})</span>`,
+      intelHtml: `📅 Scheduled: ${nextCalMonthYear} &bull; <span class="est-countdown-text" data-target="${targetTime}">${cd}</span>`
     };
   }
 
   return {
+    tier: 3,
     statusType: 'UPCOMING_SOON',
-    targetEpochMs: nextDateEpoch,
+    targetEpochMs: targetTime,
     isWithin24h: false,
-    badgeHtml: `<span class="est-countdown-pill scheduled" data-target="${nextDateEpoch}">📅 Soon</span>`,
+    badgeHtml: `<span class="est-countdown-pill scheduled" data-target="${targetTime}">📅 Soon</span>`,
     intelHtml: `<span style="color:var(--muted);">📅 Scheduled: ${nextCalMonthYear} (Soon)</span>`
   };
 }
@@ -974,30 +983,41 @@ function applyFilterAndRender() {
   const phtNowIso = getPhtNow().toISOString().slice(0, 10);
   const dueQueue = getDueQueue(state.missionaries, phtNowIso);
 
-  // 0ms In-Memory Sorting — Strictly Soonest Next Send by default reflecting the accurate estimate
+  // 0ms In-Memory Sorting — Strictly Soonest Next Send:
+  // Tier 1: Due Today (by batch order 7 AM -> 8 AM -> 9 AM -> etc.)
+  // Tier 2: Sent Today
+  // Tier 3: Upcoming Future (>24h chronologically 'Soon')
+  // Tier 4: Completed (at bottom)
   list.sort((a, b) => {
     if (state.currentSort === 'soonest') {
       const estA = getMissionaryEstimate(a, dueQueue, phtNowIso);
       const estB = getMissionaryEstimate(b, dueQueue, phtNowIso);
 
-      // 1. Completed at bottom
-      if (estA.statusType === 'COMPLETED' && estB.statusType !== 'COMPLETED') return 1;
-      if (estA.statusType !== 'COMPLETED' && estB.statusType === 'COMPLETED') return -1;
-
-      // 2. Sent Today after active dispatches
-      const aSent = estA.statusType === 'SENT_TODAY';
-      const bSent = estB.statusType === 'SENT_TODAY';
-      if (aSent && !bSent) return 1;
-      if (!aSent && bSent) return -1;
-
-      // 3. Chronological by estimate dispatch time ascending
-      if (estA.targetEpochMs !== estB.targetEpochMs) {
-        return estA.targetEpochMs - estB.targetEpochMs;
+      // 1. Sort strictly by Tier hierarchy
+      if (estA.tier !== estB.tier) {
+        return estA.tier - estB.tier;
       }
 
-      // 4. Same target epoch: order by rank in batch / name
-      if (estA.rank && estB.rank && estA.rank !== estB.rank) {
-        return estA.rank - estB.rank;
+      // 2. Within Tier 1 (Due Today): sort by batch / target time ascending, then rank
+      if (estA.tier === 1) {
+        if (estA.targetEpochMs !== estB.targetEpochMs) {
+          return estA.targetEpochMs - estB.targetEpochMs;
+        }
+        if (estA.rank && estB.rank && estA.rank !== estB.rank) {
+          return estA.rank - estB.rank;
+        }
+      }
+
+      // 3. Within Tier 2 (Sent Today): sort by last_sent_at descending
+      if (estA.tier === 2) {
+        return estB.targetEpochMs - estA.targetEpochMs;
+      }
+
+      // 4. Within Tier 3 (Upcoming Future): sort chronologically from nearest date to furthest
+      if (estA.tier === 3) {
+        if (estA.targetEpochMs !== estB.targetEpochMs) {
+          return estA.targetEpochMs - estB.targetEpochMs;
+        }
       }
 
       return (a.name || '').localeCompare(b.name || '');

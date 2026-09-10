@@ -58,6 +58,33 @@
     .cohort-elder { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
     .cohort-sister { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
 
+    .est-countdown-pill {
+      font-size: 0.62rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .est-countdown-pill.today {
+      background: rgba(201,168,76,0.18);
+      color: var(--gold);
+      border: 1px solid rgba(201,168,76,0.4);
+    }
+    .est-countdown-pill.sent-today {
+      background: rgba(76,175,130,0.18);
+      color: var(--green);
+      border: 1px solid rgba(76,175,130,0.4);
+    }
+    .est-countdown-pill.scheduled {
+      background: rgba(92,141,224,0.15);
+      color: var(--blue);
+      border: 1px solid rgba(92,141,224,0.3);
+    }
+
     .intel-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -261,6 +288,7 @@
         <h2 style="color:var(--gold); font-size:clamp(1.05rem, 3.5vw, 1.25rem); margin:0;">Missionaries Roster &amp; Dispatch Hub</h2>
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
           <span id="due-badge-header" style="font-size:0.65rem; background:rgba(201,168,76,0.2); border:1px solid var(--gold); color:var(--gold); padding:2px 8px; border-radius:99px; font-weight:800; white-space:nowrap;">0 Due Today</span>
+          <span id="cron-next-pill" style="font-size:0.60rem; background:rgba(92,141,224,0.15); border:1px solid rgba(92,141,224,0.4); color:var(--blue); padding:2px 7px; border-radius:99px; font-weight:700; white-space:nowrap; font-family:'DM Mono',monospace;">⏱️ Next Cron: Loading...</span>
           <span style="font-size:0.60rem; background:rgba(76,175,130,0.15); border:1px solid rgba(76,175,130,0.4); color:var(--green); padding:2px 6px; border-radius:4px; font-weight:700; white-space:nowrap;">⚡ 0ms Fast Engine</span>
         </div>
       </div>
@@ -782,6 +810,72 @@ function changePage(delta) {
   renderPaginatedCards();
 }
 
+function getPhtNow() {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 8));
+}
+
+function getNextCronSlot(batchIndex = 0, customPht = null) {
+  const pht = customPht || getPhtNow();
+  const year = pht.getFullYear();
+  const month = pht.getMonth();
+  const date = pht.getDate();
+  const currentMinutes = pht.getHours() * 60 + pht.getMinutes() + pht.getSeconds() / 60;
+
+  const cronHours = [7, 8, 9, 10, 11, 12];
+  const availableSlotsToday = [];
+  for (const h of cronHours) {
+    if (h * 60 > currentMinutes) {
+      availableSlotsToday.push(new Date(year, month, date, h, 0, 0));
+    }
+  }
+
+  if (batchIndex < availableSlotsToday.length) {
+    const target = availableSlotsToday[batchIndex];
+    return {
+      targetTime: target.getTime(),
+      label: target.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PHT',
+      slotNum: (6 - availableSlotsToday.length) + batchIndex + 1,
+      isToday: true
+    };
+  }
+
+  // Multi-day overflow
+  const overflowIndex = batchIndex - availableSlotsToday.length;
+  const dayOffset = Math.floor(overflowIndex / cronHours.length) + 1;
+  const slotInDay = overflowIndex % cronHours.length;
+  const targetHour = cronHours[slotInDay];
+  const target = new Date(year, month, date + dayOffset, targetHour, 0, 0);
+  return {
+    targetTime: target.getTime(),
+    label: (dayOffset === 1 ? 'Tomorrow ' : `In ${dayOffset}d `) + target.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PHT',
+    slotNum: slotInDay + 1,
+    isToday: false
+  };
+}
+
+function formatCountdown(targetEpochMs) {
+  const nowPht = getPhtNow().getTime();
+  const diff = targetEpochMs - nowPht;
+  if (diff <= 0) return '⚡ Triggering now';
+  
+  const totalSecs = Math.floor(diff / 1000);
+  const hours = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    const remHours = hours % 24;
+    return `${days}d ${remHours}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+  }
+  return `${mins}m ${String(secs).padStart(2, '0')}s`;
+}
+
 function renderPaginatedCards() {
   const totalItems = state.filteredList.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
@@ -807,6 +901,33 @@ function renderPaginatedCards() {
     container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem; background:var(--surface); border-radius:var(--radius-sm); border:1px dashed var(--border);">No matching missionaries found.</div>';
     return;
   }
+
+  const phtNowIso = getPhtNow().toISOString().slice(0, 10);
+
+  // Group all due missionaries by cohort with priority sorting matching api/cron.js dispatch order
+  const dueEldersQueue = state.missionaries.filter(m => {
+    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    const isDue = !m.is_completed && !isSentToday && (m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY')));
+    return isDue && !isSister && (m.status || 'active').toLowerCase() === 'active';
+  }).sort((a, b) => {
+    const aLast = a.last_sent_at ? 1 : 0;
+    const bLast = b.last_sent_at ? 1 : 0;
+    if (aLast !== bLast) return aLast - bLast;
+    return (a.last_sent_at || '').localeCompare(b.last_sent_at || '');
+  });
+
+  const dueSistersQueue = state.missionaries.filter(m => {
+    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    const isDue = !m.is_completed && !isSentToday && (m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY')));
+    return isDue && isSister && (m.status || 'active').toLowerCase() === 'active';
+  }).sort((a, b) => {
+    const aLast = a.last_sent_at ? 1 : 0;
+    const bLast = b.last_sent_at ? 1 : 0;
+    if (aLast !== bLast) return aLast - bLast;
+    return (a.last_sent_at || '').localeCompare(b.last_sent_at || '');
+  });
 
   container.innerHTML = pageItems.map(m => {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
@@ -835,7 +956,6 @@ function renderPaginatedCards() {
       }
     }
 
-    const phtNowIso = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
     const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
     
     // An arrival-month missionary (sentCount === 0 with effectiveNextSendDate in the future) CANNOT be DUE_TODAY
@@ -894,6 +1014,36 @@ function renderPaginatedCards() {
       badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextCalMonthYear}</span>`;
     }
 
+    // Dynamic countdown calculation for missionary
+    let estimateHtml = '';
+    let estimateBadge = '';
+    if (m.is_completed) {
+      estimateHtml = `<span style="color:#c084fc;">🎓 Completed (${totalMonths}M)</span>`;
+      estimateBadge = `<span class="est-countdown-pill" style="color:#c084fc; border-color:rgba(168,85,247,0.4); background:rgba(168,85,247,0.15);">🎓 Completed</span>`;
+    } else if (isSentToday) {
+      estimateHtml = `<span style="color:var(--green); font-weight:bold;">✅ Dispatched Today (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
+      estimateBadge = `<span class="est-countdown-pill sent-today">✅ Sent Today</span>`;
+    } else if (!state.isOnline && isDue) {
+      estimateHtml = `<span style="color:#ff6b6b;">💤 Paused (Offline Mode)</span>`;
+      estimateBadge = `<span class="est-countdown-pill" style="color:#ff6b6b; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.15);">💤 Paused</span>`;
+    } else if (isDue) {
+      const queue = isSister ? dueSistersQueue : dueEldersQueue;
+      const rank = queue.findIndex(x => (x.email || '').toLowerCase() === (m.email || '').toLowerCase());
+      const cleanRank = rank >= 0 ? rank : 0;
+      const batchCapacity = isSister ? 22 : 23;
+      const batchOffset = Math.floor(cleanRank / batchCapacity);
+      const slot = getNextCronSlot(batchOffset);
+      const cd = formatCountdown(slot.targetTime);
+      const inBatchPos = (cleanRank % batchCapacity) + 1;
+
+      estimateHtml = `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; Slot #${inBatchPos} of ${batchCapacity} (${isSister ? 'Sister' : 'Elder'}) &bull; <span class="est-countdown-text" data-target="${slot.targetTime}" style="color:var(--gold); font-weight:bold;">${cd}</span>`;
+      estimateBadge = `<span class="est-countdown-pill today" data-target="${slot.targetTime}" data-label="${escapeHtml(slot.label)}">⏳ Est: ~${escapeHtml(slot.label)} (${cd})</span>`;
+    } else {
+      const cdDays = daysUntilNext > 0 ? `in ${daysUntilNext}d` : 'Soon';
+      estimateHtml = `<span style="color:var(--muted);">📅 Scheduled: ${nextCalMonthYear} (${cdDays})</span>`;
+      estimateBadge = `<span class="est-countdown-pill scheduled">📅 ${cdDays}</span>`;
+    }
+
     const lastSentDisplay = m.last_sent_at ? formatMonthYear(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
     const nextSendDisplay = m.is_completed ? 'Completed' : ((!state.isOnline && isDue) ? `${nextCalMonthYear} (Paused Offline)` : nextCalMonthYear);
 
@@ -907,6 +1057,7 @@ function renderPaginatedCards() {
               <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister (18M)' : 'Elder (24M)'}</span>
               <strong style="font-size:0.88rem; color:#fff; word-break:break-word;">${escapeHtml(m.name || 'Unnamed')}</strong>
               <div>${badge}</div>
+              <div>${estimateBadge}</div>
             </div>
             <div style="font-size:0.68rem; color:var(--muted); display:flex; gap:8px 12px; flex-wrap:wrap;">
               <span style="color:var(--gold); word-break:break-all;">${escapeHtml(m.email)}</span>
@@ -922,6 +1073,10 @@ function renderPaginatedCards() {
 
         <div class="card-details">
           <div class="intel-grid">
+            <div class="intel-box" style="border-color:rgba(201,168,76,0.3); background:#0c0e17;">
+              <span class="intel-label" style="color:var(--gold);">⏳ Estimated Send Today</span>
+              <span class="intel-val" style="font-family:'DM Mono',monospace;">${estimateHtml}</span>
+            </div>
             <div class="intel-box">
               <span class="intel-label">🕒 Last Dispatched (PHT)</span>
               <span class="intel-val" style="color:var(--gold); font-family:'DM Mono',monospace;">${lastSentDisplay}</span>
@@ -1248,15 +1403,56 @@ async function deleteMissionary(email, name) {
   }
 }
 
+let countdownTimerInterval = null;
+
+function tickLiveCountdowns() {
+  const nextSlot = getNextCronSlot(0);
+  const cronPill = document.getElementById('cron-next-pill');
+  if (cronPill) {
+    if (!state.isOnline) {
+      cronPill.textContent = '💤 Cron Paused (Offline)';
+      cronPill.style.color = '#ff6b6b';
+      cronPill.style.borderColor = 'rgba(239,68,68,0.4)';
+      cronPill.style.background = 'rgba(239,68,68,0.15)';
+    } else {
+      const cd = formatCountdown(nextSlot.targetTime);
+      cronPill.textContent = `⏱️ Next Cron: ${nextSlot.label} (${cd})`;
+      cronPill.style.color = 'var(--blue)';
+      cronPill.style.borderColor = 'rgba(92,141,224,0.4)';
+      cronPill.style.background = 'rgba(92,141,224,0.18)';
+    }
+  }
+
+  document.querySelectorAll('.est-countdown-pill.today').forEach(el => {
+    const target = Number(el.getAttribute('data-target'));
+    const label = el.getAttribute('data-label') || '';
+    if (target) {
+      el.textContent = `⏳ Est: ~${label} (${formatCountdown(target)})`;
+    }
+  });
+
+  document.querySelectorAll('.est-countdown-text').forEach(el => {
+    const target = Number(el.getAttribute('data-target'));
+    if (target) {
+      el.textContent = formatCountdown(target);
+    }
+  });
+}
+
 // 0ms Synchronous Initial Render
 if (state.missionaries.length > 0) {
   applyFilterAndRender();
+  tickLiveCountdowns();
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   initAppLayout('missionaries', 'Missionaries');
   updateOfflineUI();
   applyFilterAndRender();
+  tickLiveCountdowns();
+  if (!countdownTimerInterval) {
+    countdownTimerInterval = setInterval(tickLiveCountdowns, 1000);
+  }
   loadRoster();
   loadDripThemes();
 });

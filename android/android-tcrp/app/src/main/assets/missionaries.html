@@ -3,75 +3,351 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Missionaries Roster | Timeless Creations</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/assets/app.css">
-  <script src="/assets/app.js"></script>
+  <title>Missionaries Roster & Dispatch Hub | Timeless Creations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
+  <link rel="stylesheet" href="/assets/app.css?v=2.9.0">
+  <script src="/assets/app.js?v=2.9.0"></script>
   <style>
+    /* Clean, Modern Missionary Card Design */
     .missionary-card {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       overflow: hidden;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      width: 100%;
+      box-sizing: border-box;
     }
-    .card-main-row { display: flex; align-items: center; padding: 12px 14px; gap: 10px; cursor: pointer; }
+    .missionary-card:hover { border-color: var(--border-gold); }
+    .missionary-card.due-highlight { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(201,168,76,0.07) 0%, var(--surface2) 100%); }
+    .missionary-card.offline-paused { border-color: rgba(239,68,68,0.3); background: linear-gradient(180deg, rgba(239,68,68,0.05) 0%, var(--surface2) 100%); }
+
+    .card-main-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .card-main-info {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .card-main-points {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
     .card-details {
       display: none;
-      padding: 14px;
-      background: rgba(0,0,0,0.25);
+      padding: 14px 16px;
+      background: rgba(0,0,0,0.3);
       border-top: 1px solid var(--border);
       font-size: 0.74rem;
-      line-height: 1.8;
+      box-sizing: border-box;
+      width: 100%;
     }
     .missionary-card.open .card-details { display: block; }
-    .cohort-pill { font-size: 0.62rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    
+    .cohort-pill { font-size: 0.62rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
     .cohort-elder { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
     .cohort-sister { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
 
-    /* Batch Toolbar */
+    .est-countdown-pill {
+      font-size: 0.62rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .est-countdown-pill.today {
+      background: rgba(201,168,76,0.18);
+      color: var(--gold);
+      border: 1px solid rgba(201,168,76,0.4);
+    }
+    .est-countdown-pill.sent-today {
+      background: rgba(76,175,130,0.18);
+      color: var(--green);
+      border: 1px solid rgba(76,175,130,0.4);
+    }
+    .est-countdown-pill.scheduled {
+      background: rgba(92,141,224,0.15);
+      color: var(--blue);
+      border: 1px solid rgba(92,141,224,0.3);
+    }
+
+    .intel-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    @media(min-width: 600px) {
+      .intel-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media(min-width: 900px) {
+      .intel-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .intel-box {
+      background: #090a12;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .intel-label { font-size: 0.60rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .intel-val { font-size: 0.74rem; color: #fff; font-weight: 600; min-width: 0; word-break: break-word; overflow-wrap: anywhere; }
+
+    /* Progress bar */
+    .drip-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+    .drip-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold) 0%, #e0c878 100%); border-radius: 99px; }
+
+    /* Floating Batch Toolbar */
     .batch-toolbar {
       position: fixed; bottom: 0; left: 0; right: 0; background: #151824; border-top: 1px solid var(--gold);
-      padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 999;
+      padding: 10px 14px calc(10px + var(--safe-bottom)); display: flex; justify-content: space-between; align-items: center; z-index: 999;
       box-shadow: 0 -10px 30px rgba(0,0,0,0.8); transform: translateY(100%); transition: transform 0.3s ease;
-      flex-wrap: wrap; gap: 8px;
+      flex-wrap: wrap; gap: 8px; box-sizing: border-box; width: 100%;
     }
     .batch-toolbar.active { transform: translateY(0); }
-    .select-checkbox { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; display: none; }
+    .select-checkbox { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; display: none; flex-shrink: 0; }
     .select-mode-active .select-checkbox { display: inline-block; }
+
+    /* Header Bar Responsiveness */
+    .roster-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+    }
+    .roster-header-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .roster-header-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* Search & Filter Controls */
+    .search-filter-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .search-input {
+      flex: 3 1 240px;
+      min-width: 0;
+      width: 100%;
+    }
+    .sort-select {
+      flex: 2 1 180px;
+      min-width: 0;
+      width: 100%;
+      font-size: 0.72rem;
+    }
+    .pagesize-select {
+      flex: 1 1 100px;
+      min-width: 0;
+      font-size: 0.72rem;
+    }
+    .responsive-tab-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .responsive-tab-bar::-webkit-scrollbar { display: none; }
+
+    /* Modal Form Responsive Grid */
+    .modal-form-row-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Mobile Adaptations */
+    @media (max-width: 640px) {
+      .roster-header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .roster-header-actions {
+        width: 100%;
+      }
+      .roster-header-actions .btn {
+        flex: 1 1 auto;
+        min-width: 80px;
+        text-align: center;
+        justify-content: center;
+      }
+      .search-input {
+        flex: 1 1 100%;
+      }
+      .sort-select {
+        flex: 1 1 calc(65% - 4px);
+      }
+      .pagesize-select {
+        flex: 1 1 calc(35% - 4px);
+      }
+      .card-main-row {
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        gap: 8px;
+      }
+      .card-main-info {
+        flex: 1 1 calc(100% - 46px);
+      }
+      .card-main-points {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px dashed rgba(255, 255, 255, 0.08);
+        padding-top: 6px;
+        margin-top: 4px;
+        text-align: left;
+      }
+      .card-details {
+        padding: 10px 12px;
+      }
+      .card-actions-wrap {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 8px;
+      }
+      .card-actions-group {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .card-actions-group .btn,
+      .card-actions-group .btn-danger {
+        flex: 1 1 auto;
+        min-width: 80px;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+      }
+      .batch-toolbar {
+        padding: 8px 10px calc(8px + var(--safe-bottom));
+      }
+      .batch-toolbar-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .modal-form-row-2col {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
   </style>
 </head>
 <body id="body-root">
 
 <div class="container">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+  <!-- Header Bar -->
+  <div class="roster-header-bar">
     <div>
-      <h2 style="color:var(--gold); font-size:1.25rem;">Missionaries Roster</h2>
-      <p style="font-size:0.72rem; color:var(--muted);">Showing <span id="showing-count">0</span> of <span id="roster-count">0</span> registered.</p>
+      <div class="roster-header-title-row">
+        <h2 style="color:var(--gold); font-size:clamp(1.05rem, 3.5vw, 1.25rem); margin:0;">Missionaries Roster &amp; Dispatch Hub</h2>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <span id="due-badge-header" style="font-size:0.65rem; background:rgba(201,168,76,0.2); border:1px solid var(--gold); color:var(--gold); padding:2px 8px; border-radius:99px; font-weight:800; white-space:nowrap;">0 Due Today</span>
+          <span id="cron-next-pill" style="font-size:0.60rem; background:rgba(92,141,224,0.15); border:1px solid rgba(92,141,224,0.4); color:var(--blue); padding:2px 7px; border-radius:99px; font-weight:700; white-space:nowrap; font-family:'DM Mono',monospace;">⏱️ Next Cron: Loading...</span>
+          <span style="font-size:0.60rem; background:rgba(76,175,130,0.15); border:1px solid rgba(76,175,130,0.4); color:var(--green); padding:2px 6px; border-radius:4px; font-weight:700; white-space:nowrap;">⚡ 0ms Fast Engine</span>
+        </div>
+      </div>
+      <p style="font-size:0.72rem; color:var(--muted); margin:4px 0 0 0;">
+        Showing <span id="showing-count" style="color:#fff; font-weight:bold;">0</span> of <span id="roster-count" style="color:#fff; font-weight:bold;">0</span> registered missionaries strictly sorted by soonest next send date.
+      </p>
     </div>
-    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+    <div class="roster-header-actions">
       <button class="btn btn-secondary" onclick="openPusherModal()" style="padding:6px 12px; font-size:0.72rem;">📥 CSV Importer</button>
       <button class="btn btn-dark" id="toggle-select-mode" onclick="toggleSelectMode()" style="padding:6px 10px; font-size:0.72rem;">☑️ Select Mode</button>
       <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Sync</button>
     </div>
   </div>
 
-  <div class="card" style="padding:12px;">
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <input class="form-input" id="search-box" placeholder="Search missionary name, email, or code..."/>
-      <div class="tab-bar" style="margin-bottom:0; padding-bottom:0;">
-        <button class="btn btn-gold tab-btn" onclick="filterType('all', this)">All</button>
-        <button class="btn btn-dark tab-btn" onclick="filterType('elder', this)">Elders</button>
-        <button class="btn btn-dark tab-btn" onclick="filterType('sister', this)">Sisters</button>
+  <!-- Offline Status Alert Banner (Shown when master power is OFFLINE) -->
+  <div id="offline-alert-banner" style="display:none; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:12px; font-size:0.72rem; color:#ff6b6b; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:1.1rem;">💤</span>
+      <span><strong>Master Power is OFFLINE:</strong> All automated and manual dispatches are paused. Status will resume when switched to ONLINE in <a href="/settings.html" style="color:var(--gold); font-weight:bold; text-decoration:underline;">Settings</a>.</span>
+    </div>
+  </div>
+
+  <!-- Search and Filter Matrix -->
+  <div class="card" style="padding:12px; margin-bottom:12px;">
+    <div style="display:grid; grid-template-columns:1fr; gap:8px;">
+      <div class="search-filter-controls">
+        <input class="form-input search-input" id="search-box" placeholder="Search missionary name, email, referral code, or batch..."/>
+        <select id="sort-select" class="form-select sort-select" onchange="changeSorting(this.value)">
+          <option value="soonest">📅 Soonest Next Send (Strict)</option>
+          <option value="last_sent">🕒 Last Sent (Recent first)</option>
+          <option value="name_asc">🔤 Name (A - Z)</option>
+          <option value="points_desc">⭐ Points (High - Low)</option>
+          <option value="batch">🗓️ Batch Cohort</option>
+        </select>
+        <select id="page-size-select" class="form-select pagesize-select" onchange="changePageSize(this.value)">
+          <option value="25">Show 25</option>
+          <option value="50">Show 50</option>
+          <option value="100">Show 100</option>
+          <option value="999999">Show All</option>
+        </select>
+      </div>
+      <div class="tab-bar responsive-tab-bar" style="margin-bottom:0; padding-bottom:2px;">
+        <button class="btn btn-gold tab-btn" onclick="filterType('all', this)">All Roster (<span id="tab-count-all">0</span>)</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('due', this)">🔥 Due Today (<span id="tab-count-due">0</span>)</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('sent', this)">✅ Sent Today (<span id="tab-count-sent">0</span>)</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('upcoming7', this)">⏱️ Next 7 Days (<span id="tab-count-7d">0</span>)</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('elder', this)">👔 Elders</button>
+        <button class="btn btn-dark tab-btn" onclick="filterType('sister', this)">👗 Sisters</button>
       </div>
     </div>
   </div>
 
+  <!-- Cards Container -->
   <div id="roster-container">
     <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">Loading missionaries...</div>
   </div>
 
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+  <!-- Pagination Controls -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:8px;">
     <button class="btn btn-dark" id="prev-page-btn" onclick="changePage(-1)" style="padding:6px 14px; font-size:0.75rem;">← Prev</button>
     <span id="page-indicator" style="font-size:0.72rem; color:var(--muted);">Page 1</span>
     <button class="btn btn-dark" id="next-page-btn" onclick="changePage(1)" style="padding:6px 14px; font-size:0.75rem;">Next →</button>
@@ -82,20 +358,65 @@
 <div class="batch-toolbar" id="batch-toolbar">
   <div style="display:flex; gap:8px; align-items:center;">
     <span style="font-size:0.74rem; color:var(--gold); font-weight:bold;" id="selected-count-label">0 Selected</span>
-    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="selectAllVisible()">All</button>
+    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="selectAllVisible()">All Page</button>
     <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="deselectAll()">None</button>
   </div>
-  <div style="display:flex; gap:6px;">
+  <div class="batch-toolbar-actions" style="display:flex; gap:6px; flex-wrap:wrap;">
     <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem;" onclick="promptBulkAddPoints()">⭐ Add Points</button>
     <button class="btn-danger" style="padding:5px 10px; font-size:0.68rem; border-radius:4px;" onclick="promptBulkDelete()">🗑️ Delete</button>
   </div>
 </div>
 
+<!-- Reschedule Modal -->
+<div class="modal-overlay" id="reschedule-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+  <div class="modal-content" style="max-width:440px; width:100%; background:#141622; border:1px solid var(--border-gold); border-radius:var(--radius); padding:18px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="color:var(--gold); font-size:1.05rem; margin:0;">📅 Reschedule Email Dispatch</h3>
+      <button onclick="closeRescheduleModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="reschedule-email">
+    <p style="font-size:0.72rem; color:var(--muted); margin-bottom:12px;">
+      Adjust next estimated send date for <strong id="reschedule-name" style="color:#fff;">--</strong>:
+    </p>
+    <div class="form-group">
+      <label class="form-label">Next Send Date (PHT)</label>
+      <input type="date" id="reschedule-date-input" class="form-input" style="font-family:'DM Mono',monospace;">
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+      <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="submitReschedule()">💾 Save Date</button>
+    </div>
+  </div>
+</div>
+
+<!-- Email Preview Modal -->
+<div class="modal-overlay" id="email-preview-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+  <div class="modal-content" style="max-width:min(94vw, 680px); width:100%; max-height:90vh; display:flex; flex-direction:column; background:#12131c; border:1px solid var(--border-gold); border-radius:var(--radius); padding:16px; box-sizing:border-box;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+      <div>
+        <h3 style="color:var(--gold); font-size:1rem; margin:0;" id="modal-preview-title">Drip Email Preview</h3>
+        <div style="font-size:0.68rem; color:var(--muted); word-break:break-word;" id="modal-preview-recipient">Recipient: --</div>
+      </div>
+      <button onclick="closeEmailPreviewModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+    <div style="flex:1; height:58vh; min-height:240px; max-height:520px; background:#f9f7f2; border-radius:6px; border:1px solid #e0d6bc; overflow:hidden; margin-bottom:12px; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+      <iframe id="modal-preview-frame" style="width:100%; height:100%; border:none; background:#ffffff; display:block;" title="Preview"></iframe>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <span style="font-size:0.68rem; color:var(--muted); word-break:break-word;" id="modal-preview-meta">--</span>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" onclick="closeEmailPreviewModal()">Close</button>
+        <button class="btn btn-gold" id="modal-preview-send-btn" onclick="sendFromPreviewModal()">✉️ Dispatch Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Embedded Pusher CSV Importer Modal -->
-<div class="modal-overlay" id="pusher-modal">
+<div class="modal-overlay" id="pusher-modal" style="display:none;">
   <div class="modal-content" style="max-width:540px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h3 style="color:var(--gold); font-size:1.05rem;">📥 Bulk Missionary CSV Importer</h3>
+      <h3 style="color:var(--gold); font-size:1.05rem; margin:0;">📥 Bulk Missionary CSV Importer</h3>
       <button onclick="closePusherModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
     </div>
     <p style="font-size:0.72rem; color:var(--muted); margin-bottom:10px;">Paste raw CSV or missionary records below (e.g. <code>Elder Smith, August 2026, john@missionary.org</code>).</p>
@@ -112,10 +433,10 @@
 </div>
 
 <!-- Edit Missionary Modal -->
-<div class="modal-overlay" id="edit-missionary-modal">
+<div class="modal-overlay" id="edit-missionary-modal" style="display:none;">
   <div class="modal-content">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-      <h3 style="color:var(--gold); font-size:1.05rem;" id="modal-missionary-heading">Edit Missionary Profile</h3>
+      <h3 style="color:var(--gold); font-size:1.05rem; margin:0;" id="modal-missionary-heading">Edit Missionary Profile</h3>
       <button onclick="closeMissionaryModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
     </div>
     <input type="hidden" id="edit-m-original-email">
@@ -130,7 +451,7 @@
       <input type="email" id="edit-m-email" class="form-input" placeholder="name@missionary.org">
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+    <div class="modal-form-row-2col">
       <div class="form-group">
         <label class="form-label">Cohort</label>
         <select id="edit-m-cohort" class="form-select">
@@ -139,12 +460,15 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Batch Month</label>
-        <input type="text" id="edit-m-batch" class="form-input" placeholder="August 2026">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+          <label class="form-label" style="margin:0;">Batch Month</label>
+          <span id="edit-m-first-month-preview" style="font-size:0.65rem; color:var(--gold); font-weight:bold;">1st Month: September 2026</span>
+        </div>
+        <input type="text" id="edit-m-batch" class="form-input" placeholder="August 2026" oninput="updateEditBatchPreview(this.value)">
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+    <div class="modal-form-row-2col">
       <div class="form-group">
         <label class="form-label">Points Balance</label>
         <input type="number" id="edit-m-points" class="form-input" min="0">
@@ -175,12 +499,35 @@ let state = {
   missionaries: [],
   filteredList: [],
   currentFilter: 'all',
+  currentSort: 'soonest', // Strictly sort by soonest next send date by default
   searchQuery: '',
   page: 1,
-  pageSize: 30,
+  pageSize: 25,
   selectMode: false,
-  selectedEmails: new Set()
+  selectedEmails: new Set(),
+  previewTarget: null,
+  isOnline: true,
+  dripThemeMap: {}
 };
+
+// ==========================================
+// ⚡ 0ms INSTANT BOOTSTRAP FROM MEMORY CACHE
+// ==========================================
+(function instantBoot() {
+  const cached = LocalStore.get('missionaries_with_pending_data', null) || LocalStore.get('pending_emails_data', null) || LocalStore.get('missionaries', null);
+  const powerVal = LocalStore.get('tcrp_power_state', 'online');
+  state.isOnline = String(powerVal).toLowerCase() !== 'offline';
+
+  if (cached) {
+    if (Array.isArray(cached)) {
+      state.missionaries = cached;
+    } else if (cached && Array.isArray(cached.missionaries)) {
+      state.missionaries = cached.missionaries;
+      if (cached.is_online !== undefined) state.isOnline = cached.is_online;
+      if (cached.stats) updateHeaderStats(cached.stats);
+    }
+  }
+})();
 
 function openPusherModal() {
   document.getElementById('pusher-raw-input').value = '';
@@ -237,40 +584,81 @@ async function submitBulkPusher() {
   }
 }
 
-window.renderRoster = () => {
-  const cached = LocalStore.get('missionaries', []);
-  state.missionaries = cached;
-  document.getElementById('roster-count').textContent = cached.length.toLocaleString();
-  applyFilterAndRender();
-};
-
 async function loadRoster(force = false) {
-  const container = document.getElementById('roster-container');
-  const cached = LocalStore.get('missionaries', null);
+  await TCRPSync.fetchWithCache('/api/main?action=get_pending_emails', {}, {
+    cacheKey: 'missionaries_with_pending_data',
+    onCached: (cached) => {
+      if (cached && cached.ok) {
+        state.missionaries = cached.missionaries || [];
+        state.isOnline = cached.is_online !== false;
+        updateHeaderStats(cached.stats);
+        updateOfflineUI();
+        applyFilterAndRender();
+      }
+    },
+    onFresh: (fresh) => {
+      if (fresh && fresh.ok) {
+        state.missionaries = fresh.missionaries || [];
+        state.isOnline = fresh.is_online !== false;
+        updateHeaderStats(fresh.stats);
+        updateOfflineUI();
+        applyFilterAndRender();
+      }
+    }
+  });
+}
 
-  if (cached && !force) {
-    state.missionaries = cached;
-    document.getElementById('roster-count').textContent = cached.length.toLocaleString();
-    applyFilterAndRender();
-    return;
-  }
-
+async function loadDripThemes() {
   try {
-    const res = await fetch("/api/main?action=get_missionaries");
-    const data = await res.json();
-    if (data.ok && Array.isArray(data.missionaries)) {
-      state.missionaries = data.missionaries;
-      LocalStore.set('missionaries', state.missionaries);
-      document.getElementById('roster-count').textContent = state.missionaries.length.toLocaleString();
-      applyFilterAndRender();
-    } else {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">No missionaries found.</div>';
+    const res = await fetch('/api/main?action=get_drips').then(r => r.json());
+    if (res?.ok && Array.isArray(res.drips)) {
+      res.drips.forEach(d => {
+        if (d.month && d.theme) state.dripThemeMap[d.month] = d.theme;
+      });
+      renderPaginatedCards();
     }
-  } catch (err) {
-    if (!cached) {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red); font-size:0.8rem;">Error loading missionaries.</div>';
+  } catch (_) {}
+}
+
+function updateOfflineUI() {
+  const banner = document.getElementById('offline-alert-banner');
+  if (banner) {
+    banner.style.display = state.isOnline ? 'none' : 'flex';
+  }
+}
+
+function updateHeaderStats(stats = {}) {
+  const total = stats.total_roster || state.missionaries.length || 0;
+  const due = stats.due_today || 0;
+  const sent = stats.sent_today || 0;
+  const up7 = stats.upcoming_7d || 0;
+
+  const rosterEl = document.getElementById('roster-count');
+  if (rosterEl) rosterEl.textContent = total.toLocaleString();
+
+  const badge = document.getElementById('due-badge-header');
+  if (badge) {
+    if (!state.isOnline) {
+      badge.textContent = `💤 Paused (Offline)`;
+      badge.style.borderColor = '#ff6b6b';
+      badge.style.color = '#ff6b6b';
+      badge.style.background = 'rgba(239,68,68,0.15)';
+    } else {
+      badge.textContent = `${due} Due Today (PHT)`;
+      badge.style.borderColor = 'var(--gold)';
+      badge.style.color = 'var(--gold)';
+      badge.style.background = 'rgba(201,168,76,0.2)';
     }
   }
+
+  const tAll = document.getElementById('tab-count-all');
+  if (tAll) tAll.textContent = total;
+  const tDue = document.getElementById('tab-count-due');
+  if (tDue) tDue.textContent = due;
+  const tSent = document.getElementById('tab-count-sent');
+  if (tSent) tSent.textContent = sent;
+  const t7 = document.getElementById('tab-count-7d');
+  if (t7) t7.textContent = up7;
 }
 
 function toggleSelectMode() {
@@ -308,7 +696,7 @@ function deselectAll() {
 }
 
 function toggleCheckbox(email, e) {
-  e.stopPropagation();
+  if (e) e.stopPropagation();
   const cleanEmail = email.toLowerCase();
   if (state.selectedEmails.has(cleanEmail)) state.selectedEmails.delete(cleanEmail);
   else state.selectedEmails.add(cleanEmail);
@@ -316,15 +704,27 @@ function toggleCheckbox(email, e) {
 }
 
 function updateSelectedCount() {
-  document.getElementById('selected-count-label').textContent = `${state.selectedEmails.size} Selected`;
+  const el = document.getElementById('selected-count-label');
+  if (el) el.textContent = `${state.selectedEmails.size} Selected`;
 }
 
 function filterType(type, btn) {
   state.currentFilter = type;
   state.page = 1;
-  document.querySelectorAll('.tab-bar .btn').forEach(b => b.className = 'btn btn-dark tab-btn');
-  btn.className = 'btn btn-gold tab-btn';
+  document.querySelectorAll('.tab-bar .tab-btn').forEach(b => b.className = 'btn btn-dark tab-btn');
+  if (btn) btn.className = 'btn btn-gold tab-btn';
   applyFilterAndRender();
+}
+
+function changeSorting(sortVal) {
+  state.currentSort = sortVal;
+  applyFilterAndRender();
+}
+
+function changePageSize(val) {
+  state.pageSize = parseInt(val, 10) || 25;
+  state.page = 1;
+  renderPaginatedCards();
 }
 
 document.getElementById('search-box').addEventListener('input', (e) => {
@@ -335,7 +735,14 @@ document.getElementById('search-box').addEventListener('input', (e) => {
 
 function applyFilterAndRender() {
   let list = [...state.missionaries];
-  if (state.currentFilter === 'elder') {
+
+  if (state.currentFilter === 'due') {
+    list = list.filter(m => m.schedule_status === 'DUE_TODAY');
+  } else if (state.currentFilter === 'sent') {
+    list = list.filter(m => m.schedule_status === 'SENT_TODAY');
+  } else if (state.currentFilter === 'upcoming7') {
+    list = list.filter(m => !m.is_completed && m.schedule_status !== 'SENT_TODAY' && (m.days_until_next <= 7));
+  } else if (state.currentFilter === 'elder') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
   } else if (state.currentFilter === 'sister') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister'));
@@ -345,9 +752,54 @@ function applyFilterAndRender() {
     list = list.filter(m =>
       (m.name || '').toLowerCase().includes(state.searchQuery) ||
       (m.email || '').toLowerCase().includes(state.searchQuery) ||
-      (m.referral_code || '').toLowerCase().includes(state.searchQuery)
+      (m.referral_code || '').toLowerCase().includes(state.searchQuery) ||
+      (m.batch_month || '').toLowerCase().includes(state.searchQuery)
     );
   }
+
+  // 0ms In-Memory Sorting — Strictly Soonest Next Send by default (Today at top)
+  list.sort((a, b) => {
+    if (state.currentSort === 'soonest') {
+      // 1. Due today at top
+      const aDue = (a.schedule_status === 'DUE_TODAY' || a.is_due) && !a.is_completed && a.schedule_status !== 'SENT_TODAY';
+      const bDue = (b.schedule_status === 'DUE_TODAY' || b.is_due) && !b.is_completed && b.schedule_status !== 'SENT_TODAY';
+      if (aDue && !bDue) return -1;
+      if (!aDue && bDue) return 1;
+
+      // 2. Completed at bottom
+      if (a.is_completed && !b.is_completed) return 1;
+      if (!a.is_completed && b.is_completed) return -1;
+
+      // 3. Sent Today after upcoming
+      const aSentToday = a.schedule_status === 'SENT_TODAY';
+      const bSentToday = b.schedule_status === 'SENT_TODAY';
+      if (aSentToday && !bSentToday) return 1;
+      if (!aSentToday && bSentToday) return -1;
+
+      // 4. Chronological by days_until_next / next_send_date ascending
+      const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 9999 : Number(a.days_until_next);
+      const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 9999 : Number(b.days_until_next);
+      if (daysA !== daysB) return daysA - daysB;
+
+      if (a.next_send_date && b.next_send_date) {
+        const cmp = a.next_send_date.localeCompare(b.next_send_date);
+        if (cmp !== 0) return cmp;
+      }
+
+      return (a.name || '').localeCompare(b.name || '');
+    } else if (state.currentSort === 'last_sent') {
+      const ta = a.last_sent_at ? new Date(a.last_sent_at).getTime() : 0;
+      const tb = b.last_sent_at ? new Date(b.last_sent_at).getTime() : 0;
+      return tb - ta;
+    } else if (state.currentSort === 'name_asc') {
+      return (a.name || '').localeCompare(b.name || '');
+    } else if (state.currentSort === 'points_desc') {
+      return (b.points || 0) - (a.points || 0);
+    } else if (state.currentSort === 'batch') {
+      return (b.batch_month || '').localeCompare(a.batch_month || '');
+    }
+    return 0;
+  });
 
   state.filteredList = list;
   renderPaginatedCards();
@@ -358,15 +810,345 @@ function changePage(delta) {
   renderPaginatedCards();
 }
 
+function getPhtNow() {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 8));
+}
+
+function getNextCronSlot(batchIndex = 0, customPht = null) {
+  const pht = customPht || getPhtNow();
+  const year = pht.getFullYear();
+  const month = pht.getMonth();
+  const date = pht.getDate();
+  const currentMinutes = pht.getHours() * 60 + pht.getMinutes() + pht.getSeconds() / 60;
+
+  const cronHours = [7, 8, 9, 10, 11, 12];
+  const availableSlotsToday = [];
+  for (const h of cronHours) {
+    if (h * 60 > currentMinutes) {
+      availableSlotsToday.push(new Date(year, month, date, h, 0, 0));
+    }
+  }
+
+  if (batchIndex < availableSlotsToday.length) {
+    const target = availableSlotsToday[batchIndex];
+    return {
+      targetTime: target.getTime(),
+      label: target.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PHT',
+      slotNum: (6 - availableSlotsToday.length) + batchIndex + 1,
+      isToday: true
+    };
+  }
+
+  // Multi-day overflow
+  const overflowIndex = batchIndex - availableSlotsToday.length;
+  const dayOffset = Math.floor(overflowIndex / cronHours.length) + 1;
+  const slotInDay = overflowIndex % cronHours.length;
+  const targetHour = cronHours[slotInDay];
+  const target = new Date(year, month, date + dayOffset, targetHour, 0, 0);
+  return {
+    targetTime: target.getTime(),
+    label: (dayOffset === 1 ? 'Tomorrow ' : `In ${dayOffset}d `) + target.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PHT',
+    slotNum: slotInDay + 1,
+    isToday: false
+  };
+}
+
+function formatCountdown(targetEpochMs) {
+  const nowPht = getPhtNow().getTime();
+  const diff = targetEpochMs - nowPht;
+  if (diff <= 0) return '⚡ Triggering now';
+  
+  const totalSecs = Math.floor(diff / 1000);
+  const hours = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    const remHours = hours % 24;
+    return `${days}d ${remHours}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+  }
+  return `${mins}m ${String(secs).padStart(2, '0')}s`;
+}
+
+function renderPaginatedCards() {
+  const totalItems = state.filteredList.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+  state.page = Math.max(1, Math.min(state.page, totalPages));
+
+  const startIdx = (state.page - 1) * state.pageSize;
+  const pageItems = state.filteredList.slice(startIdx, startIdx + state.pageSize);
+
+  const showingEl = document.getElementById('showing-count');
+  if (showingEl) showingEl.textContent = totalItems > 0 ? `${startIdx + 1}-${Math.min(startIdx + state.pageSize, totalItems)}` : '0';
+  const pageIndEl = document.getElementById('page-indicator');
+  if (pageIndEl) pageIndEl.textContent = `Page ${state.page} of ${totalPages}`;
+  
+  const prevBtn = document.getElementById('prev-page-btn');
+  if (prevBtn) prevBtn.disabled = state.page <= 1;
+  const nextBtn = document.getElementById('next-page-btn');
+  if (nextBtn) nextBtn.disabled = state.page >= totalPages;
+
+  const container = document.getElementById('roster-container');
+  if (!container) return;
+
+  if (!pageItems.length) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem; background:var(--surface); border-radius:var(--radius-sm); border:1px dashed var(--border);">No matching missionaries found.</div>';
+    return;
+  }
+
+  const phtNowIso = getPhtNow().toISOString().slice(0, 10);
+
+  // Group all due missionaries by cohort with priority sorting matching api/cron.js dispatch order
+  const dueEldersQueue = state.missionaries.filter(m => {
+    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    const isDue = !m.is_completed && !isSentToday && (m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY')));
+    return isDue && !isSister && (m.status || 'active').toLowerCase() === 'active';
+  }).sort((a, b) => {
+    const aLast = a.last_sent_at ? 1 : 0;
+    const bLast = b.last_sent_at ? 1 : 0;
+    if (aLast !== bLast) return aLast - bLast;
+    return (a.last_sent_at || '').localeCompare(b.last_sent_at || '');
+  });
+
+  const dueSistersQueue = state.missionaries.filter(m => {
+    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    const isDue = !m.is_completed && !isSentToday && (m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY')));
+    return isDue && isSister && (m.status || 'active').toLowerCase() === 'active';
+  }).sort((a, b) => {
+    const aLast = a.last_sent_at ? 1 : 0;
+    const bLast = b.last_sent_at ? 1 : 0;
+    if (aLast !== bLast) return aLast - bLast;
+    return (a.last_sent_at || '').localeCompare(b.last_sent_at || '');
+  });
+
+  container.innerHTML = pageItems.map(m => {
+    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+    const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
+    const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
+    const progressPct = Math.round((sentCount / totalMonths) * 100);
+    const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
+    const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
+
+    // Upcoming drip calculations using Month 0 formula and calendar synchronization
+    const upcomingInfo = (typeof getUpcomingDripInfo === 'function')
+      ? getUpcomingDripInfo(m.batch_month || 'August 2026', sentCount, totalMonths)
+      : null;
+    const nextMonthNum = upcomingInfo ? upcomingInfo.monthNum : (m.next_drip ? m.next_drip.month_num : 9);
+    const nextMonthYearDisplay = upcomingInfo ? upcomingInfo.display : (m.next_drip ? m.next_drip.month_year : 'September 2026');
+    const nextTenureNum = upcomingInfo ? upcomingInfo.tenureMonth : (m.next_drip ? m.next_drip.tenure_month : Math.min(sentCount + 1, totalMonths));
+
+    // If sentCount === 0, earliest dispatch CANNOT be prior to batch cohort 1st dispatch month
+    const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
+    let effectiveNextSendDate = m.next_send_date;
+    if (sentCount === 0) {
+      if (!effectiveNextSendDate || effectiveNextSendDate.slice(0, 7) < firstMonthPrefix) {
+        effectiveNextSendDate = (typeof getFirstDispatchDate === 'function')
+          ? getFirstDispatchDate(m.batch_month || 'August 2026')
+          : `${firstMonthPrefix}-09`;
+      }
+    }
+
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    
+    // An arrival-month missionary (sentCount === 0 with effectiveNextSendDate in the future) CANNOT be DUE_TODAY
+    let isDue = false;
+    if (!m.is_completed && !isSentToday) {
+      if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
+        isDue = false;
+      } else {
+        isDue = m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY'));
+      }
+    }
+
+    let nextDripDisplay = (m.next_drip && m.next_drip.display_label) 
+      ? m.next_drip.display_label 
+      : (upcomingInfo ? upcomingInfo.displayLabel : `${nextMonthYearDisplay} (M${nextTenureNum})`);
+    let dripTheme = (state.dripThemeMap && state.dripThemeMap[nextMonthNum]) || (m.next_drip ? m.next_drip.theme : 'Encouragement & Points');
+
+    let lastDispatchedDripDisplay = '<span style="color:var(--muted); font-style:italic;">Never Dispatched (0 Sent)</span>';
+    if (sentCount > 0) {
+      try {
+        const lastDripInfo = (typeof getMissionMonthInfo === 'function')
+          ? getMissionMonthInfo(m.batch_month || 'August 2026', sentCount)
+          : null;
+        const lastMonthNum = lastDripInfo ? lastDripInfo.monthNum : (((batchInfo.firstMonthNum - 1 + sentCount - 1) % 12) + 1);
+        const lastMonthYearDisplay = lastDripInfo ? lastDripInfo.display : `${batchInfo.firstMonthName} (M${sentCount})`;
+        const lastTheme = (state.dripThemeMap && state.dripThemeMap[lastMonthNum]) || 'Encouragement & Points';
+        lastDispatchedDripDisplay = `${escapeHtml(lastMonthYearDisplay)} (M${sentCount}): ${escapeHtml(lastTheme)}`;
+      } catch (_) {
+        lastDispatchedDripDisplay = '<span style="color:var(--muted); font-style:italic;">Never Dispatched</span>';
+      }
+    }
+
+    let daysUntilNext = Number(m.days_until_next) || 0;
+    if (effectiveNextSendDate) {
+      try {
+        const targetTime = new Date(effectiveNextSendDate + 'T00:00:00Z').getTime();
+        const todayTime = new Date(phtNowIso + 'T00:00:00Z').getTime();
+        daysUntilNext = Math.max(0, Math.round((targetTime - todayTime) / (1000 * 3600 * 24)));
+      } catch (_) {}
+    }
+
+    const nextCalMonthYear = effectiveNextSendDate 
+      ? formatMonthYear(effectiveNextSendDate) 
+      : (isDue ? formatMonthYear(phtNowIso) : (batchInfo ? batchInfo.firstMonthDisplay : 'October 2026'));
+
+    let badge = '';
+    if (m.is_completed) {
+      badge = `<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (${totalMonths}M)</span>`;
+    } else if (isSentToday) {
+      badge = `<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
+    } else if (!state.isOnline && isDue) {
+      badge = '<span style="font-size:0.62rem; color:#ff6b6b; font-weight:bold; background:rgba(239,68,68,0.18); border:1px solid #ff6b6b; padding:2px 7px; border-radius:4px;">💤 Offline Paused</span>';
+    } else if (isDue) {
+      badge = `<span style="font-size:0.62rem; color:var(--gold); font-weight:bold; background:rgba(201,168,76,0.22); border:1px solid var(--gold); padding:2px 7px; border-radius:4px;">🔥 Due (${nextCalMonthYear})</span>`;
+    } else {
+      badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextCalMonthYear}</span>`;
+    }
+
+    // Dynamic countdown calculation for missionary
+    let estimateHtml = '';
+    let estimateBadge = '';
+    if (m.is_completed) {
+      estimateHtml = `<span style="color:#c084fc;">🎓 Completed (${totalMonths}M)</span>`;
+      estimateBadge = `<span class="est-countdown-pill" style="color:#c084fc; border-color:rgba(168,85,247,0.4); background:rgba(168,85,247,0.15);">🎓 Completed</span>`;
+    } else if (isSentToday) {
+      estimateHtml = `<span style="color:var(--green); font-weight:bold;">✅ Dispatched Today (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
+      estimateBadge = `<span class="est-countdown-pill sent-today">✅ Sent Today</span>`;
+    } else if (!state.isOnline && isDue) {
+      estimateHtml = `<span style="color:#ff6b6b;">💤 Paused (Offline Mode)</span>`;
+      estimateBadge = `<span class="est-countdown-pill" style="color:#ff6b6b; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.15);">💤 Paused</span>`;
+    } else if (isDue) {
+      const queue = isSister ? dueSistersQueue : dueEldersQueue;
+      const rank = queue.findIndex(x => (x.email || '').toLowerCase() === (m.email || '').toLowerCase());
+      const cleanRank = rank >= 0 ? rank : 0;
+      const batchCapacity = isSister ? 22 : 23;
+      const batchOffset = Math.floor(cleanRank / batchCapacity);
+      const slot = getNextCronSlot(batchOffset);
+      const cd = formatCountdown(slot.targetTime);
+      const inBatchPos = (cleanRank % batchCapacity) + 1;
+
+      estimateHtml = `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; Slot #${inBatchPos} of ${batchCapacity} (${isSister ? 'Sister' : 'Elder'}) &bull; <span class="est-countdown-text" data-target="${slot.targetTime}" style="color:var(--gold); font-weight:bold;">${cd}</span>`;
+      estimateBadge = `<span class="est-countdown-pill today" data-target="${slot.targetTime}" data-label="${escapeHtml(slot.label)}">⏳ Est: ~${escapeHtml(slot.label)} (${cd})</span>`;
+    } else {
+      const cdDays = daysUntilNext > 0 ? `in ${daysUntilNext}d` : 'Soon';
+      estimateHtml = `<span style="color:var(--muted);">📅 Scheduled: ${nextCalMonthYear} (${cdDays})</span>`;
+      estimateBadge = `<span class="est-countdown-pill scheduled">📅 ${cdDays}</span>`;
+    }
+
+    const lastSentDisplay = m.last_sent_at ? formatMonthYear(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
+    const nextSendDisplay = m.is_completed ? 'Completed' : ((!state.isOnline && isDue) ? `${nextCalMonthYear} (Paused Offline)` : nextCalMonthYear);
+
+    return `
+      <div class="missionary-card ${isDue && state.isOnline ? 'due-highlight' : (!state.isOnline && isDue ? 'offline-paused' : '')}">
+        <div class="card-main-row" onclick="this.closest('.missionary-card').classList.toggle('open')">
+          <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
+          <div style="font-size:1.35rem; flex-shrink:0;">${isSister ? '👗' : '👔'}</div>
+          <div class="card-main-info" style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
+              <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister (18M)' : 'Elder (24M)'}</span>
+              <strong style="font-size:0.88rem; color:#fff; word-break:break-word;">${escapeHtml(m.name || 'Unnamed')}</strong>
+              <div>${badge}</div>
+              <div>${estimateBadge}</div>
+            </div>
+            <div style="font-size:0.68rem; color:var(--muted); display:flex; gap:8px 12px; flex-wrap:wrap;">
+              <span style="color:var(--gold); word-break:break-all;">${escapeHtml(m.email)}</span>
+              <span>🕒 Last Sent: <strong style="color:#e2e8f0;">${lastSentDisplay}</strong></span>
+              <span>📅 Next: <strong style="${isDue && state.isOnline ? 'color:var(--gold);' : 'color:#e2e8f0;'}">${nextSendDisplay}</strong></span>
+            </div>
+          </div>
+          <div class="card-main-points">
+            <span style="color:var(--gold); font-weight:bold; font-size:0.85rem;">⭐ ${m.points || 0} PTS</span>
+            <div style="font-size:0.62rem; color:var(--muted);">Progress: ${sentCount}/${totalMonths}M</div>
+          </div>
+        </div>
+
+        <div class="card-details">
+          <div class="intel-grid">
+            <div class="intel-box" style="border-color:rgba(201,168,76,0.3); background:#0c0e17;">
+              <span class="intel-label" style="color:var(--gold);">⏳ Estimated Send Today</span>
+              <span class="intel-val" style="font-family:'DM Mono',monospace;">${estimateHtml}</span>
+            </div>
+            <div class="intel-box">
+              <span class="intel-label">🕒 Last Dispatched (PHT)</span>
+              <span class="intel-val" style="color:var(--gold); font-family:'DM Mono',monospace;">${lastSentDisplay}</span>
+            </div>
+            <div class="intel-box">
+              <span class="intel-label">📅 Next Estimated Dispatch</span>
+              <span class="intel-val" style="color:${isDue && state.isOnline ? 'var(--gold)' : '#fff'}; font-family:'DM Mono',monospace;">${nextSendDisplay}</span>
+            </div>
+            <div class="intel-box">
+              <span class="intel-label">💌 Upcoming Drip Intel</span>
+              <span class="intel-val">${escapeHtml(nextDripDisplay)}: ${escapeHtml(dripTheme)}</span>
+            </div>
+            <div class="intel-box">
+              <span class="intel-label">🏷️ Referral Code</span>
+              <span class="intel-val" style="font-family:'DM Mono',monospace; letter-spacing:1px; color:var(--gold);">${m.referral_code || 'N/A'}</span>
+            </div>
+            <div class="intel-box">
+              <span class="intel-label">🗓️ Batch Cohort</span>
+              <span class="intel-val">${escapeHtml(batchInfo.batchDisplay)} <span style="color:var(--muted); font-size:0.7rem;">(Month 0)</span> &bull; 1st: <span style="color:var(--gold);">${batchInfo.firstMonthDisplay}</span></span>
+            </div>
+            <div class="intel-box">
+              <span class="intel-label">📬 Last Dispatched Drip Intel</span>
+              <span class="intel-val">${lastDispatchedDripDisplay}</span>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.64rem; color:var(--muted);">
+              <span>Drip Progression: <strong>${sentCount} of ${totalMonths} Months Sent</strong></span>
+              <span><strong>${progressPct}%</strong></span>
+            </div>
+            <div class="drip-bar-bg">
+              <div class="drip-bar-fill" style="width:${progressPct}%;"></div>
+            </div>
+          </div>
+
+          <div class="card-actions-wrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div class="card-actions-group" style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn ${isDue && state.isOnline ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.68rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})">✉️ Send ${escapeHtml(nextDripDisplay)}</button>
+              <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openPreviewModal('${m.email}', ${nextMonthNum}, '${escapeHtml(m.name)}')">👁️ Preview</button>
+              <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openRescheduleModal('${m.email}', '${escapeHtml(m.name)}', '${m.next_send_date || ''}')">📅 Reschedule</button>
+            </div>
+            <div class="card-actions-group" style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openEditMissionaryModal('${m.email}')">✏️ Edit</button>
+              <button class="btn-danger" style="padding:4px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteMissionary('${m.email}', '${escapeHtml(m.name || 'Missionary')}')">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateEditBatchPreview(val) {
+  const el = document.getElementById('edit-m-first-month-preview');
+  if (!el) return;
+  const info = getFirstMonthInfo(val || 'August 2026');
+  el.textContent = `1st Month: ${info.firstMonthDisplay}`;
+}
+
 function openEditMissionaryModal(email) {
   const m = state.missionaries.find(x => x.email.toLowerCase() === email.toLowerCase());
   if (!m) return;
 
+  const batchVal = m.batch_month || 'August 2026';
   document.getElementById('edit-m-original-email').value = m.email;
   document.getElementById('edit-m-name').value = m.name || '';
   document.getElementById('edit-m-email').value = m.email || '';
   document.getElementById('edit-m-cohort').value = (m.cohort || '').toLowerCase().includes('sister') ? 'sister' : 'elder';
-  document.getElementById('edit-m-batch').value = m.batch_month || 'August 2026';
+  document.getElementById('edit-m-batch').value = batchVal;
+  updateEditBatchPreview(batchVal);
   document.getElementById('edit-m-points').value = m.points || 0;
   document.getElementById('edit-m-code').value = m.referral_code || '';
   document.getElementById('edit-m-status').value = m.status || 'active';
@@ -408,17 +1190,139 @@ async function saveMissionaryChanges() {
         referral_code,
         status
       })
-    });
-    const data = await res.json();
-    if (data.ok) {
+    }).then(r => r.json());
+
+    if (res.ok) {
       showToast("Profile updated successfully!");
       closeMissionaryModal();
       loadRoster(true);
     } else {
-      showToast(data.error || "Failed to update profile", "error");
+      showToast(res.error || "Failed to update profile", "error");
     }
   } catch (err) {
     showToast("Network error: " + err.message, "error");
+  }
+}
+
+function openRescheduleModal(email, name, currentDate) {
+  document.getElementById('reschedule-email').value = email;
+  document.getElementById('reschedule-name').textContent = name;
+  document.getElementById('reschedule-date-input').value = currentDate || new Date().toISOString().slice(0, 10);
+  document.getElementById('reschedule-modal').style.display = 'flex';
+}
+
+function closeRescheduleModal() {
+  document.getElementById('reschedule-modal').style.display = 'none';
+}
+
+async function submitReschedule() {
+  const email = document.getElementById('reschedule-email').value;
+  const dateVal = document.getElementById('reschedule-date-input').value;
+  if (!email || !dateVal) {
+    showToast("Please choose a valid date", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reschedule_missionary_email', email, next_send_date: dateVal })
+    }).then(r => r.json());
+
+    if (res && res.ok) {
+      showToast(`✓ Next dispatch rescheduled to ${dateVal}`);
+      closeRescheduleModal();
+      loadRoster(true);
+    } else {
+      showToast(res.error || "Reschedule failed", "error");
+    }
+  } catch (err) {
+    showToast("Network error updating schedule", "error");
+  }
+}
+
+async function openPreviewModal(email, month, name) {
+  state.previewTarget = { email, month, name };
+  const modal = document.getElementById('email-preview-modal');
+  const frame = document.getElementById('modal-preview-frame');
+  const title = document.getElementById('modal-preview-title');
+  const recipient = document.getElementById('modal-preview-recipient');
+  const meta = document.getElementById('modal-preview-meta');
+  const sendBtn = document.getElementById('modal-preview-send-btn');
+
+  if (!modal || !frame) return;
+  const calMonthName = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(month) : `Month ${month}`;
+  title.textContent = `💌 ${calMonthName} Live Email Preview`;
+  recipient.textContent = `Recipient: ${name} (${email})`;
+  meta.textContent = `Rendering live template...`;
+  if (sendBtn) sendBtn.textContent = `✉️ Dispatch ${calMonthName}`;
+  modal.style.display = 'flex';
+
+  frame.srcdoc = '<div style="padding:40px; text-align:center; font-family:sans-serif; color:#666;">Rendering live HTML email template...</div>';
+
+  try {
+    const res = await fetch(`/api/main?action=preview_pending_email&email=${encodeURIComponent(email)}&month=${month}`).then(r => r.json());
+    const previewHtml = res?.html || res?.html_content;
+    if (res && res.ok && previewHtml) {
+      frame.srcdoc = previewHtml;
+      meta.textContent = `Subject: ${res.subject || 'Timeless Creations Drip'}`;
+      if (res.display_label) {
+        title.textContent = `💌 ${res.display_label} Live Email Preview`;
+        if (sendBtn) sendBtn.textContent = `✉️ Dispatch ${res.display_label}`;
+      }
+    } else {
+      frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">${res?.error || 'Failed to generate preview'}</div>`;
+    }
+  } catch (err) {
+    frame.srcdoc = `<div style="padding:40px; text-align:center; color:#e00; font-family:sans-serif;">Network error loading preview</div>`;
+  }
+}
+
+function closeEmailPreviewModal() {
+  const modal = document.getElementById('email-preview-modal');
+  if (modal) modal.style.display = 'none';
+  state.previewTarget = null;
+}
+
+async function sendFromPreviewModal() {
+  if (!state.previewTarget) return;
+  const { email, month, name } = state.previewTarget;
+  closeEmailPreviewModal();
+  await dispatchMissionaryEmail(email, name, month);
+}
+
+async function dispatchMissionaryEmail(email, name, month) {
+  if (!state.isOnline) {
+    showToast("System is currently OFFLINE. Switch to ONLINE in Settings to send emails.", "error");
+    return;
+  }
+  const calLabel = (typeof getCalendarMonthLabel === 'function') ? getCalendarMonthLabel(month) : `Month ${month}`;
+  const confirmed = await showConfirmWarningModal({
+    title: "✉️ Confirm Direct Email Dispatch",
+    message: `Dispatch <strong>${calLabel}</strong> transactional email directly to <strong>${name}</strong> (<code>${email}</code>)?<br><br>• This will send immediately via Brevo and update the missionary's Last Sent timestamp.`,
+    confirmText: "Yes, Dispatch Now",
+    cancelText: "Cancel",
+    isDanger: false
+  });
+  if (!confirmed) return;
+
+  showToast(`Dispatching ${calLabel} email to ${name}...`);
+  try {
+    const res = await fetch('/api/main', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'dispatch_single_pending', email, month })
+    }).then(r => r.json());
+
+    if (res && res.ok) {
+      showToast(res.message || `✓ ${calLabel} email sent to ${name}!`);
+      loadRoster(true);
+    } else {
+      showToast(res.error || "Dispatch failed", "error");
+    }
+  } catch (_) {
+    showToast("Network error executing dispatch", "error");
   }
 }
 
@@ -450,7 +1354,14 @@ async function promptBulkDelete() {
     showToast("No missionaries selected.", "error");
     return;
   }
-  if (!confirm(`Delete ${state.selectedEmails.size} selected missionaries?`)) return;
+  const confirmed = await showConfirmWarningModal({
+    title: "Bulk Delete Missionaries?",
+    message: `Are you sure you want to delete <strong>${state.selectedEmails.size}</strong> selected missionaries?<br><br><span style="color:#ff6b6b;">⚠️ This action will permanently remove these missionaries and their point balances.</span>`,
+    confirmText: `Delete ${state.selectedEmails.size} Missionaries`,
+    cancelText: "Cancel",
+    isDanger: true
+  });
+  if (!confirmed) return;
 
   for (const email of state.selectedEmails) {
     try {
@@ -468,15 +1379,22 @@ async function promptBulkDelete() {
 }
 
 async function deleteMissionary(email, name) {
-  if (!confirm(`Permanently remove ${name} (${email})?`)) return;
+  const confirmed = await showConfirmWarningModal({
+    title: "Remove Missionary Profile?",
+    message: `Are you sure you want to permanently remove <strong>${name}</strong> (<code>${email}</code>) from the active roster?<br><br><span style="color:#ff6b6b;">⚠️ This action cannot be undone.</span>`,
+    confirmText: "Remove Missionary",
+    cancelText: "Keep Profile",
+    isDanger: true
+  });
+  if (!confirmed) return;
+
   try {
     const res = await fetch("/api/main", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete_missionary", email })
-    });
-    const data = await res.json();
-    if (data.ok) {
+    }).then(r => r.json());
+    if (res.ok) {
       showToast(`Removed ${name} from roster.`);
       loadRoster(true);
     }
@@ -485,64 +1403,58 @@ async function deleteMissionary(email, name) {
   }
 }
 
-function renderPaginatedCards() {
-  const totalItems = state.filteredList.length;
-  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
-  state.page = Math.max(1, Math.min(state.page, totalPages));
+let countdownTimerInterval = null;
 
-  const startIdx = (state.page - 1) * state.pageSize;
-  const pageItems = state.filteredList.slice(startIdx, startIdx + state.pageSize);
-
-  document.getElementById('showing-count').textContent = totalItems > 0 ? `${startIdx + 1}-${Math.min(startIdx + state.pageSize, totalItems)}` : '0';
-  document.getElementById('page-indicator').textContent = `Page ${state.page} of ${totalPages}`;
-  document.getElementById('prev-page-btn').disabled = state.page <= 1;
-  document.getElementById('next-page-btn').disabled = state.page >= totalPages;
-
-  const container = document.getElementById('roster-container');
-  if (!pageItems.length) {
-    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.8rem;">No matching missionaries found.</div>';
-    return;
+function tickLiveCountdowns() {
+  const nextSlot = getNextCronSlot(0);
+  const cronPill = document.getElementById('cron-next-pill');
+  if (cronPill) {
+    if (!state.isOnline) {
+      cronPill.textContent = '💤 Cron Paused (Offline)';
+      cronPill.style.color = '#ff6b6b';
+      cronPill.style.borderColor = 'rgba(239,68,68,0.4)';
+      cronPill.style.background = 'rgba(239,68,68,0.15)';
+    } else {
+      const cd = formatCountdown(nextSlot.targetTime);
+      cronPill.textContent = `⏱️ Next Cron: ${nextSlot.label} (${cd})`;
+      cronPill.style.color = 'var(--blue)';
+      cronPill.style.borderColor = 'rgba(92,141,224,0.4)';
+      cronPill.style.background = 'rgba(92,141,224,0.18)';
+    }
   }
 
-  container.innerHTML = pageItems.map(m => {
-    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-    const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
-    const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
-    const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
+  document.querySelectorAll('.est-countdown-pill.today').forEach(el => {
+    const target = Number(el.getAttribute('data-target'));
+    const label = el.getAttribute('data-label') || '';
+    if (target) {
+      el.textContent = `⏳ Est: ~${label} (${formatCountdown(target)})`;
+    }
+  });
 
-    return `
-      <div class="missionary-card">
-        <div class="card-main-row" onclick="this.closest('.missionary-card').classList.toggle('open')">
-          <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
-          <div style="flex:1;">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-              <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister' : 'Elder'}</span>
-              <strong style="font-size:0.85rem;">${m.name || 'Unnamed'}</strong>
-            </div>
-            <div style="font-size:0.68rem; color:var(--muted);">${m.email}</div>
-          </div>
-          <div style="text-align:right;">
-            <span style="color:var(--gold); font-weight:bold; font-size:0.8rem;">⭐ ${m.points || 0} PTS</span>
-          </div>
-        </div>
+  document.querySelectorAll('.est-countdown-text').forEach(el => {
+    const target = Number(el.getAttribute('data-target'));
+    if (target) {
+      el.textContent = formatCountdown(target);
+    }
+  });
+}
 
-        <div class="card-details">
-          <div>🏷️ <strong>Referral Code:</strong> ${m.referral_code || 'N/A'}</div>
-          <div>📩 <strong>Dispatches Sent:</strong> ${sentCount} of ${totalMonths} months (${m.batch_month || 'August 2026'})</div>
-          <div>⚡ <strong>Status:</strong> <span style="text-transform:uppercase; color:${m.status === 'active' ? 'var(--green)' : 'var(--red)'}">${m.status || 'active'}</span></div>
-          <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:8px;">
-            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; min-height:30px;" onclick="openEditMissionaryModal('${m.email}')">✏️ Edit</button>
-            <button class="btn-danger" style="padding:4px 10px; font-size:0.68rem; border-radius:4px;" onclick="deleteMissionary('${m.email}', '${m.name || 'Missionary'}')">🗑️ Delete</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+// 0ms Synchronous Initial Render
+if (state.missionaries.length > 0) {
+  applyFilterAndRender();
+  tickLiveCountdowns();
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   initAppLayout('missionaries', 'Missionaries');
+  updateOfflineUI();
+  applyFilterAndRender();
+  tickLiveCountdowns();
+  if (!countdownTimerInterval) {
+    countdownTimerInterval = setInterval(tickLiveCountdowns, 1000);
+  }
   loadRoster();
+  loadDripThemes();
 });
 </script>
 </body>

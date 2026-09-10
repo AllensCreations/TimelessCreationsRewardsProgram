@@ -61,7 +61,13 @@ export default async function handler(req, res) {
           }
         }
         if (result.buffer) {
-          return res.status(result.status || 200).send(result.buffer);
+          if (typeof res.status === 'function') res.status(result.status || 200);
+          else res.statusCode = result.status || 200;
+
+          if (typeof res.send === 'function') {
+            return res.send(result.buffer);
+          }
+          return res.end(result.buffer);
         }
         return res.status(result.status).json(result.json);
       }

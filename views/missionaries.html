@@ -586,7 +586,11 @@ async function submitBulkPusher() {
 }
 
 async function loadRoster(force = false) {
-  await TCRPSync.fetchWithCache('/api/main?action=get_pending_emails', {}, {
+  if (force) {
+    TCRPSync.invalidate('missionaries_with_pending_data');
+  }
+  const url = force ? `/api/main?action=get_pending_emails&_ts=${Date.now()}` : '/api/main?action=get_pending_emails';
+  await TCRPSync.fetchWithCache(url, {}, {
     cacheKey: 'missionaries_with_pending_data',
     onCached: (cached) => {
       if (cached && cached.ok) {

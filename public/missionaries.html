@@ -733,83 +733,6 @@ document.getElementById('search-box').addEventListener('input', (e) => {
   applyFilterAndRender();
 });
 
-function applyFilterAndRender() {
-  let list = [...state.missionaries];
-
-  if (state.currentFilter === 'due') {
-    list = list.filter(m => m.schedule_status === 'DUE_TODAY');
-  } else if (state.currentFilter === 'sent') {
-    list = list.filter(m => m.schedule_status === 'SENT_TODAY');
-  } else if (state.currentFilter === 'upcoming7') {
-    list = list.filter(m => !m.is_completed && m.schedule_status !== 'SENT_TODAY' && (m.days_until_next <= 7));
-  } else if (state.currentFilter === 'elder') {
-    list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
-  } else if (state.currentFilter === 'sister') {
-    list = list.filter(m => (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister'));
-  }
-
-  if (state.searchQuery) {
-    list = list.filter(m =>
-      (m.name || '').toLowerCase().includes(state.searchQuery) ||
-      (m.email || '').toLowerCase().includes(state.searchQuery) ||
-      (m.referral_code || '').toLowerCase().includes(state.searchQuery) ||
-      (m.batch_month || '').toLowerCase().includes(state.searchQuery)
-    );
-  }
-
-  // 0ms In-Memory Sorting — Strictly Soonest Next Send by default (Today at top)
-  list.sort((a, b) => {
-    if (state.currentSort === 'soonest') {
-      // 1. Due today at top
-      const aDue = (a.schedule_status === 'DUE_TODAY' || a.is_due) && !a.is_completed && a.schedule_status !== 'SENT_TODAY';
-      const bDue = (b.schedule_status === 'DUE_TODAY' || b.is_due) && !b.is_completed && b.schedule_status !== 'SENT_TODAY';
-      if (aDue && !bDue) return -1;
-      if (!aDue && bDue) return 1;
-
-      // 2. Completed at bottom
-      if (a.is_completed && !b.is_completed) return 1;
-      if (!a.is_completed && b.is_completed) return -1;
-
-      // 3. Sent Today after upcoming
-      const aSentToday = a.schedule_status === 'SENT_TODAY';
-      const bSentToday = b.schedule_status === 'SENT_TODAY';
-      if (aSentToday && !bSentToday) return 1;
-      if (!aSentToday && bSentToday) return -1;
-
-      // 4. Chronological by days_until_next / next_send_date ascending
-      const daysA = (a.days_until_next === undefined || a.days_until_next === null) ? 9999 : Number(a.days_until_next);
-      const daysB = (b.days_until_next === undefined || b.days_until_next === null) ? 9999 : Number(b.days_until_next);
-      if (daysA !== daysB) return daysA - daysB;
-
-      if (a.next_send_date && b.next_send_date) {
-        const cmp = a.next_send_date.localeCompare(b.next_send_date);
-        if (cmp !== 0) return cmp;
-      }
-
-      return (a.name || '').localeCompare(b.name || '');
-    } else if (state.currentSort === 'last_sent') {
-      const ta = a.last_sent_at ? new Date(a.last_sent_at).getTime() : 0;
-      const tb = b.last_sent_at ? new Date(b.last_sent_at).getTime() : 0;
-      return tb - ta;
-    } else if (state.currentSort === 'name_asc') {
-      return (a.name || '').localeCompare(b.name || '');
-    } else if (state.currentSort === 'points_desc') {
-      return (b.points || 0) - (a.points || 0);
-    } else if (state.currentSort === 'batch') {
-      return (b.batch_month || '').localeCompare(a.batch_month || '');
-    }
-    return 0;
-  });
-
-  state.filteredList = list;
-  renderPaginatedCards();
-}
-
-function changePage(delta) {
-  state.page += delta;
-  renderPaginatedCards();
-}
-
 function getPhtNow() {
   const now = new Date();
   const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
@@ -876,6 +799,231 @@ function formatCountdown(targetEpochMs) {
   return `${mins}m ${String(secs).padStart(2, '0')}s`;
 }
 
+function getDueQueue(list, phtNowIso) {
+  return (list || []).filter(m => {
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    const isDue = !m.is_completed && !isSentToday && (m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY')));
+    return isDue && (m.status || 'active').toLowerCase() === 'active';
+  }).sort((a, b) => {
+    const aLast = a.last_sent_at ? 1 : 0;
+    const bLast = b.last_sent_at ? 1 : 0;
+    if (aLast !== bLast) return aLast - bLast;
+    const cmp = (a.last_sent_at || '').localeCompare(b.last_sent_at || '');
+    if (cmp !== 0) return cmp;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+}
+
+function getMissionaryEstimate(m, dueQueue, phtNowIso) {
+  const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+  const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
+  const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
+  const isCompleted = sentCount >= totalMonths;
+  const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+
+  const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
+  const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
+  let effectiveNextSendDate = m.next_send_date;
+  if (sentCount === 0) {
+    if (!effectiveNextSendDate || effectiveNextSendDate.slice(0, 7) < firstMonthPrefix) {
+      effectiveNextSendDate = (typeof getFirstDispatchDate === 'function')
+        ? getFirstDispatchDate(m.batch_month || 'August 2026')
+        : `${firstMonthPrefix}-09`;
+    }
+  }
+
+  let isDue = false;
+  if (!isCompleted && !isSentToday) {
+    if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
+      isDue = false;
+    } else {
+      isDue = m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY'));
+    }
+  }
+
+  const nowPht = getPhtNow().getTime();
+
+  if (isCompleted) {
+    return {
+      statusType: 'COMPLETED',
+      targetEpochMs: Infinity,
+      isWithin24h: false,
+      badgeHtml: '<span class="est-countdown-pill" style="color:#c084fc; border-color:rgba(168,85,247,0.4); background:rgba(168,85,247,0.15);">🎓 Completed</span>',
+      intelHtml: `<span style="color:#c084fc;">🎓 Completed (${totalMonths}M)</span>`
+    };
+  }
+
+  if (isSentToday) {
+    return {
+      statusType: 'SENT_TODAY',
+      targetEpochMs: 0,
+      isWithin24h: false,
+      badgeHtml: '<span class="est-countdown-pill sent-today">✅ Sent Today</span>',
+      intelHtml: `<span style="color:var(--green); font-weight:bold;">✅ Dispatched Today (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`
+    };
+  }
+
+  if (!state.isOnline && isDue) {
+    return {
+      statusType: 'OFFLINE_PAUSED',
+      targetEpochMs: nowPht + 86400000,
+      isWithin24h: false,
+      badgeHtml: '<span class="est-countdown-pill" style="color:#ff6b6b; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.15);">💤 Paused</span>',
+      intelHtml: '<span style="color:#ff6b6b;">💤 Paused (Offline Mode)</span>'
+    };
+  }
+
+  if (isDue) {
+    const queueIndex = dueQueue.findIndex(x => (x.email || '').toLowerCase() === (m.email || '').toLowerCase());
+    const cleanRank = queueIndex >= 0 ? queueIndex : 0;
+    const batchCapacity = 45; // Uniform 45 per cron batch
+    const batchOffset = Math.floor(cleanRank / batchCapacity);
+    const slot = getNextCronSlot(batchOffset);
+    const diffMs = slot.targetTime - nowPht;
+    const isWithin24h = diffMs <= 24 * 3600 * 1000 && diffMs > -60000;
+    const cd = formatCountdown(slot.targetTime);
+    const inBatchPos = (cleanRank % batchCapacity) + 1;
+
+    if (isWithin24h) {
+      return {
+        statusType: 'DUE_ESTIMATE',
+        targetEpochMs: slot.targetTime,
+        rank: cleanRank + 1,
+        batchNum: batchOffset + 1,
+        inBatchPos,
+        isWithin24h: true,
+        timeLabel: slot.label,
+        badgeHtml: `<span class="est-countdown-pill today" data-target="${slot.targetTime}" data-label="${escapeHtml(slot.label)}">⏳ Est: ~${escapeHtml(slot.label)} (${cd})</span>`,
+        intelHtml: `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; Slot #${inBatchPos} of ${batchCapacity} &bull; <span class="est-countdown-text" data-target="${slot.targetTime}" style="color:var(--gold); font-weight:bold;">${cd}</span>`
+      };
+    } else {
+      return {
+        statusType: 'DUE_SOON',
+        targetEpochMs: slot.targetTime,
+        rank: cleanRank + 1,
+        batchNum: batchOffset + 1,
+        inBatchPos,
+        isWithin24h: false,
+        timeLabel: slot.label,
+        badgeHtml: `<span class="est-countdown-pill scheduled" data-target="${slot.targetTime}" data-label="${escapeHtml(slot.label)}">📅 Soon</span>`,
+        intelHtml: `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; <span style="color:var(--muted);">Soon</span>`
+      };
+    }
+  }
+
+  // Upcoming non-due missionaries
+  let daysUntilNext = Number(m.days_until_next) || 0;
+  let nextDateEpoch = nowPht + (daysUntilNext * 86400000);
+  if (effectiveNextSendDate) {
+    try {
+      const targetTime = new Date(effectiveNextSendDate + 'T07:00:00+08:00').getTime();
+      daysUntilNext = Math.max(0, Math.round((targetTime - nowPht) / (1000 * 3600 * 24)));
+      nextDateEpoch = targetTime;
+    } catch (_) {}
+  }
+
+  const diffMs = nextDateEpoch - nowPht;
+  const isWithin24h = diffMs <= 24 * 3600 * 1000 && diffMs > -60000;
+  const nextCalMonthYear = effectiveNextSendDate ? formatMonthYear(effectiveNextSendDate) : (batchInfo ? batchInfo.firstMonthDisplay : 'Soon');
+
+  if (isWithin24h) {
+    const cd = formatCountdown(nextDateEpoch);
+    return {
+      statusType: 'UPCOMING_24H',
+      targetEpochMs: nextDateEpoch,
+      isWithin24h: true,
+      timeLabel: '7:00 AM PHT',
+      badgeHtml: `<span class="est-countdown-pill today" data-target="${nextDateEpoch}" data-label="7:00 AM PHT">⏳ Est: ~7:00 AM PHT (${cd})</span>`,
+      intelHtml: `📅 Scheduled: ${nextCalMonthYear} &bull; <span class="est-countdown-text" data-target="${nextDateEpoch}">${cd}</span>`
+    };
+  }
+
+  return {
+    statusType: 'UPCOMING_SOON',
+    targetEpochMs: nextDateEpoch,
+    isWithin24h: false,
+    badgeHtml: `<span class="est-countdown-pill scheduled" data-target="${nextDateEpoch}">📅 Soon</span>`,
+    intelHtml: `<span style="color:var(--muted);">📅 Scheduled: ${nextCalMonthYear} (Soon)</span>`
+  };
+}
+
+function applyFilterAndRender() {
+  let list = [...state.missionaries];
+
+  if (state.currentFilter === 'due') {
+    list = list.filter(m => m.schedule_status === 'DUE_TODAY');
+  } else if (state.currentFilter === 'sent') {
+    list = list.filter(m => m.schedule_status === 'SENT_TODAY');
+  } else if (state.currentFilter === 'upcoming7') {
+    list = list.filter(m => !m.is_completed && m.schedule_status !== 'SENT_TODAY' && (m.days_until_next <= 7));
+  } else if (state.currentFilter === 'elder') {
+    list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
+  } else if (state.currentFilter === 'sister') {
+    list = list.filter(m => (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister'));
+  }
+
+  if (state.searchQuery) {
+    list = list.filter(m =>
+      (m.name || '').toLowerCase().includes(state.searchQuery) ||
+      (m.email || '').toLowerCase().includes(state.searchQuery) ||
+      (m.referral_code || '').toLowerCase().includes(state.searchQuery) ||
+      (m.batch_month || '').toLowerCase().includes(state.searchQuery)
+    );
+  }
+
+  const phtNowIso = getPhtNow().toISOString().slice(0, 10);
+  const dueQueue = getDueQueue(state.missionaries, phtNowIso);
+
+  // 0ms In-Memory Sorting — Strictly Soonest Next Send by default reflecting the accurate estimate
+  list.sort((a, b) => {
+    if (state.currentSort === 'soonest') {
+      const estA = getMissionaryEstimate(a, dueQueue, phtNowIso);
+      const estB = getMissionaryEstimate(b, dueQueue, phtNowIso);
+
+      // 1. Completed at bottom
+      if (estA.statusType === 'COMPLETED' && estB.statusType !== 'COMPLETED') return 1;
+      if (estA.statusType !== 'COMPLETED' && estB.statusType === 'COMPLETED') return -1;
+
+      // 2. Sent Today after active dispatches
+      const aSent = estA.statusType === 'SENT_TODAY';
+      const bSent = estB.statusType === 'SENT_TODAY';
+      if (aSent && !bSent) return 1;
+      if (!aSent && bSent) return -1;
+
+      // 3. Chronological by estimate dispatch time ascending
+      if (estA.targetEpochMs !== estB.targetEpochMs) {
+        return estA.targetEpochMs - estB.targetEpochMs;
+      }
+
+      // 4. Same target epoch: order by rank in batch / name
+      if (estA.rank && estB.rank && estA.rank !== estB.rank) {
+        return estA.rank - estB.rank;
+      }
+
+      return (a.name || '').localeCompare(b.name || '');
+    } else if (state.currentSort === 'last_sent') {
+      const ta = a.last_sent_at ? new Date(a.last_sent_at).getTime() : 0;
+      const tb = b.last_sent_at ? new Date(b.last_sent_at).getTime() : 0;
+      return tb - ta;
+    } else if (state.currentSort === 'name_asc') {
+      return (a.name || '').localeCompare(b.name || '');
+    } else if (state.currentSort === 'points_desc') {
+      return (b.points || 0) - (a.points || 0);
+    } else if (state.currentSort === 'batch') {
+      return (b.batch_month || '').localeCompare(a.batch_month || '');
+    }
+    return 0;
+  });
+
+  state.filteredList = list;
+  renderPaginatedCards();
+}
+
+function changePage(delta) {
+  state.page += delta;
+  renderPaginatedCards();
+}
+
 function renderPaginatedCards() {
   const totalItems = state.filteredList.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
@@ -903,31 +1051,7 @@ function renderPaginatedCards() {
   }
 
   const phtNowIso = getPhtNow().toISOString().slice(0, 10);
-
-  // Group all due missionaries by cohort with priority sorting matching api/cron.js dispatch order
-  const dueEldersQueue = state.missionaries.filter(m => {
-    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
-    const isDue = !m.is_completed && !isSentToday && (m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY')));
-    return isDue && !isSister && (m.status || 'active').toLowerCase() === 'active';
-  }).sort((a, b) => {
-    const aLast = a.last_sent_at ? 1 : 0;
-    const bLast = b.last_sent_at ? 1 : 0;
-    if (aLast !== bLast) return aLast - bLast;
-    return (a.last_sent_at || '').localeCompare(b.last_sent_at || '');
-  });
-
-  const dueSistersQueue = state.missionaries.filter(m => {
-    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
-    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
-    const isDue = !m.is_completed && !isSentToday && (m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY')));
-    return isDue && isSister && (m.status || 'active').toLowerCase() === 'active';
-  }).sort((a, b) => {
-    const aLast = a.last_sent_at ? 1 : 0;
-    const bLast = b.last_sent_at ? 1 : 0;
-    if (aLast !== bLast) return aLast - bLast;
-    return (a.last_sent_at || '').localeCompare(b.last_sent_at || '');
-  });
+  const dueQueue = getDueQueue(state.missionaries, phtNowIso);
 
   container.innerHTML = pageItems.map(m => {
     const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
@@ -937,7 +1061,6 @@ function renderPaginatedCards() {
     const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
     const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
 
-    // Upcoming drip calculations using Month 0 formula and calendar synchronization
     const upcomingInfo = (typeof getUpcomingDripInfo === 'function')
       ? getUpcomingDripInfo(m.batch_month || 'August 2026', sentCount, totalMonths)
       : null;
@@ -945,7 +1068,6 @@ function renderPaginatedCards() {
     const nextMonthYearDisplay = upcomingInfo ? upcomingInfo.display : (m.next_drip ? m.next_drip.month_year : 'September 2026');
     const nextTenureNum = upcomingInfo ? upcomingInfo.tenureMonth : (m.next_drip ? m.next_drip.tenure_month : Math.min(sentCount + 1, totalMonths));
 
-    // If sentCount === 0, earliest dispatch CANNOT be prior to batch cohort 1st dispatch month
     const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
     let effectiveNextSendDate = m.next_send_date;
     if (sentCount === 0) {
@@ -958,7 +1080,6 @@ function renderPaginatedCards() {
 
     const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
     
-    // An arrival-month missionary (sentCount === 0 with effectiveNextSendDate in the future) CANNOT be DUE_TODAY
     let isDue = false;
     if (!m.is_completed && !isSentToday) {
       if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
@@ -988,15 +1109,6 @@ function renderPaginatedCards() {
       }
     }
 
-    let daysUntilNext = Number(m.days_until_next) || 0;
-    if (effectiveNextSendDate) {
-      try {
-        const targetTime = new Date(effectiveNextSendDate + 'T00:00:00Z').getTime();
-        const todayTime = new Date(phtNowIso + 'T00:00:00Z').getTime();
-        daysUntilNext = Math.max(0, Math.round((targetTime - todayTime) / (1000 * 3600 * 24)));
-      } catch (_) {}
-    }
-
     const nextCalMonthYear = effectiveNextSendDate 
       ? formatMonthYear(effectiveNextSendDate) 
       : (isDue ? formatMonthYear(phtNowIso) : (batchInfo ? batchInfo.firstMonthDisplay : 'October 2026'));
@@ -1014,35 +1126,8 @@ function renderPaginatedCards() {
       badge = `<span style="font-size:0.62rem; color:var(--blue); background:rgba(92,141,224,0.18); border:1px solid rgba(92,141,224,0.4); padding:2px 7px; border-radius:4px;">⏱️ Next: ${nextCalMonthYear}</span>`;
     }
 
-    // Dynamic countdown calculation for missionary
-    let estimateHtml = '';
-    let estimateBadge = '';
-    if (m.is_completed) {
-      estimateHtml = `<span style="color:#c084fc;">🎓 Completed (${totalMonths}M)</span>`;
-      estimateBadge = `<span class="est-countdown-pill" style="color:#c084fc; border-color:rgba(168,85,247,0.4); background:rgba(168,85,247,0.15);">🎓 Completed</span>`;
-    } else if (isSentToday) {
-      estimateHtml = `<span style="color:var(--green); font-weight:bold;">✅ Dispatched Today (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
-      estimateBadge = `<span class="est-countdown-pill sent-today">✅ Sent Today</span>`;
-    } else if (!state.isOnline && isDue) {
-      estimateHtml = `<span style="color:#ff6b6b;">💤 Paused (Offline Mode)</span>`;
-      estimateBadge = `<span class="est-countdown-pill" style="color:#ff6b6b; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.15);">💤 Paused</span>`;
-    } else if (isDue) {
-      const queue = isSister ? dueSistersQueue : dueEldersQueue;
-      const rank = queue.findIndex(x => (x.email || '').toLowerCase() === (m.email || '').toLowerCase());
-      const cleanRank = rank >= 0 ? rank : 0;
-      const batchCapacity = isSister ? 22 : 23;
-      const batchOffset = Math.floor(cleanRank / batchCapacity);
-      const slot = getNextCronSlot(batchOffset);
-      const cd = formatCountdown(slot.targetTime);
-      const inBatchPos = (cleanRank % batchCapacity) + 1;
-
-      estimateHtml = `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; Slot #${inBatchPos} of ${batchCapacity} (${isSister ? 'Sister' : 'Elder'}) &bull; <span class="est-countdown-text" data-target="${slot.targetTime}" style="color:var(--gold); font-weight:bold;">${cd}</span>`;
-      estimateBadge = `<span class="est-countdown-pill today" data-target="${slot.targetTime}" data-label="${escapeHtml(slot.label)}">⏳ Est: ~${escapeHtml(slot.label)} (${cd})</span>`;
-    } else {
-      const cdDays = daysUntilNext > 0 ? `in ${daysUntilNext}d` : 'Soon';
-      estimateHtml = `<span style="color:var(--muted);">📅 Scheduled: ${nextCalMonthYear} (${cdDays})</span>`;
-      estimateBadge = `<span class="est-countdown-pill scheduled">📅 ${cdDays}</span>`;
-    }
+    // Dynamic countdown and estimate calculations
+    const est = getMissionaryEstimate(m, dueQueue, phtNowIso);
 
     const lastSentDisplay = m.last_sent_at ? formatMonthYear(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
     const nextSendDisplay = m.is_completed ? 'Completed' : ((!state.isOnline && isDue) ? `${nextCalMonthYear} (Paused Offline)` : nextCalMonthYear);
@@ -1057,7 +1142,7 @@ function renderPaginatedCards() {
               <span class="cohort-pill ${isSister ? 'cohort-sister' : 'cohort-elder'}">${isSister ? 'Sister (18M)' : 'Elder (24M)'}</span>
               <strong style="font-size:0.88rem; color:#fff; word-break:break-word;">${escapeHtml(m.name || 'Unnamed')}</strong>
               <div>${badge}</div>
-              <div>${estimateBadge}</div>
+              <div>${est.badgeHtml}</div>
             </div>
             <div style="font-size:0.68rem; color:var(--muted); display:flex; gap:8px 12px; flex-wrap:wrap;">
               <span style="color:var(--gold); word-break:break-all;">${escapeHtml(m.email)}</span>
@@ -1075,7 +1160,7 @@ function renderPaginatedCards() {
           <div class="intel-grid">
             <div class="intel-box" style="border-color:rgba(201,168,76,0.3); background:#0c0e17;">
               <span class="intel-label" style="color:var(--gold);">⏳ Estimated Send Today</span>
-              <span class="intel-val" style="font-family:'DM Mono',monospace;">${estimateHtml}</span>
+              <span class="intel-val" style="font-family:'DM Mono',monospace;">${est.intelHtml}</span>
             </div>
             <div class="intel-box">
               <span class="intel-label">🕒 Last Dispatched (PHT)</span>
@@ -1423,18 +1508,31 @@ function tickLiveCountdowns() {
     }
   }
 
+  const nowPht = getPhtNow().getTime();
+
   document.querySelectorAll('.est-countdown-pill.today').forEach(el => {
     const target = Number(el.getAttribute('data-target'));
     const label = el.getAttribute('data-label') || '';
     if (target) {
-      el.textContent = `⏳ Est: ~${label} (${formatCountdown(target)})`;
+      const diff = target - nowPht;
+      if (diff <= 24 * 3600 * 1000 && diff > -60000) {
+        el.textContent = `⏳ Est: ~${label} (${formatCountdown(target)})`;
+      } else {
+        el.textContent = '📅 Soon';
+        el.className = 'est-countdown-pill scheduled';
+      }
     }
   });
 
   document.querySelectorAll('.est-countdown-text').forEach(el => {
     const target = Number(el.getAttribute('data-target'));
     if (target) {
-      el.textContent = formatCountdown(target);
+      const diff = target - nowPht;
+      if (diff <= 24 * 3600 * 1000 && diff > -60000) {
+        el.textContent = formatCountdown(target);
+      } else {
+        el.textContent = 'Soon';
+      }
     }
   });
 }

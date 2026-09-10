@@ -30,24 +30,40 @@ export default async function handler(req, res) {
     const phtNow = new Date(Date.now() + 8 * 3600 * 1000);
     const todayPhtIso = phtNow.toISOString().slice(0, 10);
 
-    // ── Single unified query for ALL active missionaries (no Elder/Sister split) ──
-    const rawMissionaries = await runSql(`
-      SELECT email, name, cohort, batch_month, months_sent, max_months, last_sent_at, next_send_date
-      FROM missionaries 
-      WHERE status = 'active'
-        AND months_sent < max_months
-        AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL OR last_sent_at IS NULL)
-      ORDER BY 
-        CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
-        last_sent_at ASC,
-        ROWID ASC
-      LIMIT 90
-    `);
+    // Query active candidates who have not finished tenure
+    const [rawElders, rawSisters] = await Promise.all([
+      runSql(`
+        SELECT email, name, cohort, batch_month, months_sent, max_months, last_sent_at, next_send_date
+        FROM missionaries 
+        WHERE status = 'active'
+          AND LOWER(cohort) = 'elder'
+          AND months_sent < max_months
+          AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL OR last_sent_at IS NULL)
+        ORDER BY 
+          CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
+          last_sent_at ASC,
+          ROWID ASC
+        LIMIT 45
+      `),
+      runSql(`
+        SELECT email, name, cohort, batch_month, months_sent, max_months, last_sent_at, next_send_date
+        FROM missionaries 
+        WHERE status = 'active'
+          AND LOWER(cohort) = 'sister'
+          AND months_sent < max_months
+          AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL OR last_sent_at IS NULL)
+        ORDER BY 
+          CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
+          last_sent_at ASC,
+          ROWID ASC
+        LIMIT 45
+      `)
+    ]);
 
-    // Filter strictly by schedule eligibility (Month 0 is NOT due; only Month >= 1)
-    const dueMissionaries = (rawMissionaries || [])
-      .filter(m => isMissionaryEligibleForDispatch(m, phtNow, todayPhtIso))
-      .slice(0, 45);
+    // Filter strictly by cohort schedule eligibility (Month 0 is NOT due; only Month >= 1)
+    const dueElders = (rawElders || []).filter(m => isMissionaryEligibleForDispatch(m, phtNow, todayPhtIso)).slice(0, 23);
+    const dueSisters = (rawSisters || []).filter(m => isMissionaryEligibleForDispatch(m, phtNow, todayPhtIso)).slice(0, 22);
+    const dueMissionaries = [...dueElders, ...dueSisters].slice(0, 45);
 
     if (!dueMissionaries || dueMissionaries.length === 0) {
       return res.status(200).json({ ok: true, sentCount: 0, message: "All missionaries are up-to-date." });
@@ -119,7 +135,8 @@ export default async function handler(req, res) {
       ok: true,
       sentCount,
       cappedLimit: 45,
-      totalProcessed: dueMissionaries.length,
+      eldersProcessed: dueElders?.length || 0,
+      sistersProcessed: dueSisters?.length || 0,
       errors: errors.length > 0 ? errors : undefined
     });
   } catch (err) {

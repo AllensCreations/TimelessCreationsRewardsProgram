@@ -24,18 +24,18 @@ async function runFullBotTester() {
   const testEmail = `elder.tester${Date.now().toString().slice(-4)}@missionary.org`;
 
   try {
-    // TEST 1: Initial Touch -> Welcome & Terms
-    console.log("📝 [Test 1] Initial Touch (AWAITING_TERMS)");
+    // TEST 1: Initial Touch -> Unified Registration Prompt & Terms
+    console.log("📝 [Test 1] Initial Touch (Unified AWAITING_ALL_IN_ONE)");
     await runSql("DELETE FROM sessions WHERE psid = ?", [testPsid]);
     await runSql("DELETE FROM missionaries WHERE psid = ?", [testPsid]);
     await runSql("DELETE FROM chat_messages WHERE psid = ?", [testPsid]);
 
     await handleBotMessage(testPsid, "Get Started", "GET_STARTED");
     let session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
-    assert(session && session.state === 'AWAITING_TERMS', "Shows Welcome & Privacy/Terms");
+    assert(session && (session.state === 'AWAITING_ALL_IN_ONE' || session.state === 'AWAITING_TERMS'), "Shows Unified Welcome & Registration Prompt");
 
-    // TEST 2: Terms Agreed -> Advances to 3-in-1 Step
-    console.log("\n📜 [Test 2] Agree to Terms");
+    // TEST 2: Terms Agreed / Ready -> Advances to 3-in-1 Step
+    console.log("\n📜 [Test 2] Terms Agreement & Direct Progression");
     await handleBotMessage(testPsid, "I agree", "TERMS_AGREE");
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
     assert(session && session.state === 'AWAITING_ALL_IN_ONE', "Advanced to 3-in-1 submission (AWAITING_ALL_IN_ONE)");

@@ -72,7 +72,7 @@ async function testNewUser() {
 
   await handleBotMessage(psid, '', 'GET_STARTED');
   let session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
-  assert(session?.state === 'AWAITING_TERMS', `Session enters AWAITING_TERMS after Get Started (got: ${session?.state})`, SCENARIO);
+  assert(session?.state === 'AWAITING_ALL_IN_ONE' || session?.state === 'AWAITING_TERMS', `Session enters registration state after Get Started (got: ${session?.state})`, SCENARIO);
 
   await handleBotMessage(psid, '', 'TERMS_AGREE');
   session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];

@@ -53,6 +53,16 @@
     .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
     .send-btn { background: var(--blue); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
+    /* Typing Indicator Animation */
+    .msg.bot.typing-indicator-msg { display: inline-flex; align-items: center; gap: 5px; padding: 10px 14px; width: fit-content; }
+    .typing-dot { width: 6px; height: 6px; background: var(--muted); border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0.3); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
     .inspect-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; height: 760px; display: flex; flex-direction: column; gap: 14px; }
     .log-screen { flex: 1; background: #08090f; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; font-size: 0.68rem; color: var(--green); overflow-y: auto; font-family: 'DM Mono', monospace; white-space: pre-wrap; line-height: 1.5; }
     .state-box { background: #151824; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.72rem; }
@@ -190,11 +200,29 @@ function renderQuickResponses(quickReplies = []) {
   container.appendChild(wrapper);
 }
 
+function showTypingIndicator() {
+  hideTypingIndicator();
+  const chatScroll = document.getElementById("chat-scroll");
+  const typingDiv = document.createElement("div");
+  typingDiv.className = "msg bot typing-indicator-msg";
+  typingDiv.id = "bot-typing-indicator";
+  typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  chatScroll.appendChild(typingDiv);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  const el = document.getElementById("bot-typing-indicator");
+  if (el) el.remove();
+}
+
 async function sendToBot(displayText, payload = null, rawText = null) {
   const messageText = rawText || displayText;
   appendMessage('user', displayText);
   document.getElementById("dynamic-qr-container").innerHTML = "";
   appendLog('USER', `Input: "${messageText}" | Payload: ${payload || 'None'}`);
+
+  showTypingIndicator();
 
   try {
     const res = await fetch("/api/simulator", {
@@ -207,6 +235,7 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         payload: payload
       })
     });
+    hideTypingIndicator();
     const data = await res.json();
     if (data.ok) {
       if (data.turso_logs && data.turso_logs.length > 0) {
@@ -269,6 +298,7 @@ async function sendToBot(displayText, payload = null, rawText = null) {
       appendLog('ERROR', data.error || "Failed to process message");
     }
   } catch (err) {
+    hideTypingIndicator();
     appendLog('NET_ERROR', err.message);
   }
 }

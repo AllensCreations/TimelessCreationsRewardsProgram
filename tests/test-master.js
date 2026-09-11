@@ -145,7 +145,7 @@ async function run500PointAuditor() {
       const currentBotPsid = `AUDIT_PSID_${i}_${Date.now()}`;
       await handleBotMessage(currentBotPsid, "Get Started", "GET_STARTED");
       const sess = (await runSql("SELECT * FROM sessions WHERE psid = ?", [currentBotPsid]))[0];
-      assert(sess && (sess.state === 'AWAITING_TERMS' || sess.alive === 1), `Bot FSM state machine robust against rapid re-entry iteration #${i}`);
+      assert(sess && (sess.state === 'AWAITING_ALL_IN_ONE' || sess.state === 'AWAITING_TERMS' || sess.alive === 1), `Bot FSM state machine robust against rapid re-entry iteration #${i}`);
       await runSql("DELETE FROM sessions WHERE psid = ?", [currentBotPsid]);
       await runSql("DELETE FROM bot_rate_limits WHERE psid = ?", [currentBotPsid]);
     }

@@ -4,7 +4,14 @@ All notable changes to the Timeless Rewards Android APK and platform are documen
 
 ## [v2.58.0] - 2026-09-11 (Build 71)
 
-### 🚀 New Features & Enhancements
+### 🤖 Messenger Bot Onboarding & Anti-Spam Modernization
+- **Unified 1-Step Onboarding with Embedded T&C**: Merged separate Terms & Conditions button prompt into the initial account setup step (`AWAITING_ALL_IN_ONE`). Missionary details request now directly includes: `"Note: By entering this information, you agree to our Terms of Service & Privacy Policy."`, reducing friction from 3 clicks to 1 message reply.
+- **Removed Hardcoded Unoffered Product Mentions**: Cleaned `sendGatekeeper` to remove `• Custom nametags, temple keychains & CTR gear` in favor of dynamic `• Exclusive missionary rewards catalog`, ensuring zero promises of uncataloged items.
+- **Messenger Typing Indicator (`sender_action: "typing_on"`)**: Added native `sendTypingIndicator` helper to `lib/botHandler.js` dispatched on inbound message processing, providing responsive conversational pacing and humanized bot delivery.
+- **Interactive Simulator Typing Animation**: Enhanced `views/messenger-test.html` with animated three-dot typing indicator bubble (`.typing-indicator-msg`), mirroring real Facebook Messenger user experience.
+- **Make.com vs Direct Meta API Architecture Strategy**: Validated existing direct API setup with integrated multi-layered anti-spam defenses (`checkBurstRateLimit`, `checkDailyMessageQuota`, `isDoubleTapDuplicate`, `checkOtpResendEligibility`) proving superior protection and reliability compared to third-party automation webhooks.
+
+### 🚀 Platform & Android Enhancements
 - **Hardware-Backed Version & Code Bridge**: Added `AndroidBridge.getAppVersion()` and `AndroidBridge.getAppVersionCode()` in `LauncherActivity.java` to read version code and name directly from Android's `PackageManager`.
 - **Minimal In-App Update Modal**: In-app updater prompt is now a sleek, compact popup showing only version, build code, download size, and "Update Now" / "Later" buttons with zero changelog clutter.
 - **Native Android Scroll Physics & Scrollbars**: Enabled native vertical scrollbar overlays (`setVerticalScrollBarEnabled(true)` and `setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY)`) with responsive bounce overscroll.

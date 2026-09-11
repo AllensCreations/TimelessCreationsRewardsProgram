@@ -64,8 +64,8 @@
   <!-- Left: Messenger Simulator UI -->
   <div>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📱 Messenger Simulator (Carousel Supported)</div>
-      <button class="filter-btn" onclick="resetSimulatorSession()" style="padding:4px 10px; font-size:0.65rem; background:rgba(224,92,92,0.15); color:#e05c5c; border-color:rgba(224,92,92,0.3);">🔄 Reset Session</button>
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Messenger Simulator</div>
+      <button class="filter-btn" onclick="resetSimulatorSession()" style="padding:4px 10px; font-size:0.65rem; background:rgba(224,92,92,0.15); color:#e05c5c; border-color:rgba(224,92,92,0.3);">Reset Session</button>
     </div>
     
     <div class="messenger-phone">
@@ -81,21 +81,23 @@
       </div>
 
       <div class="chat-scroll" id="chat-scroll">
-        <div class="msg bot">👋 Welcome to Timeless Creations Rewards Program (TCRP)!\n\n🔒 Authentication Required: Unverified users cannot bypass to the dashboard.\n\nTap '✨ Get Started' below to begin:</div>
+        <div class="msg bot">Welcome to Timeless Creations Rewards Program (TCRP)!\n\nAuthentication Required: Unverified users cannot bypass to the dashboard.\n\nTap 'Get Started' below to begin:</div>
       </div>
 
       <div id="dynamic-qr-container" style="padding: 0 16px; background: #0d0f17;"></div>
 
       <div class="static-replies-bar">
-        <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">✨ Get Started</button>
-        <button class="qr-chip" onclick="sendToBot('My Dashboard', 'ACTION_DASHBOARD')">📊 My Dashboard</button>
-        <button class="qr-chip" onclick="sendToBot('Rewards & Promos', 'MENU_REWARDS')">🎁 Rewards & Promos</button>
-        <button class="qr-chip" onclick="sendToBot('Help & Support', 'MENU_HELP')">📖 Help & Support</button>
+        <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">Get Started</button>
+        <button class="qr-chip" onclick="sendToBot('My Dashboard', 'ACTION_DASHBOARD')">My Dashboard</button>
+        <button class="qr-chip" onclick="sendToBot('Rewards & Promos', 'MENU_REWARDS')">Rewards & Promos</button>
+        <button class="qr-chip" onclick="sendToBot('Help & Support', 'MENU_HELP')">Help & Support</button>
       </div>
 
       <div class="chat-input-bar">
         <input type="text" class="chat-input" id="chat-input" placeholder="Type message, OTP code, or email..." onkeydown="if(event.key==='Enter') sendUserText()">
-        <button class="send-btn" onclick="sendUserText()">➤</button>
+        <button class="send-btn" onclick="sendUserText()" title="Send">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -103,14 +105,14 @@
   <!-- Right: Dev Logs & Turso SQL Query Inspector -->
   <div class="inspect-panel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">🔍 Turso SQL Query Telemetry &amp; OTP Logs</div>
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Turso SQL Query Telemetry &amp; OTP Logs</div>
       <button class="filter-btn" onclick="inspectSessionState()" style="padding:4px 10px; font-size:0.65rem;">Refresh State</button>
     </div>
 
     <!-- DB Session & Missionary State Card -->
     <div class="state-box" id="state-box">
       <div><strong>Session State:</strong> <span id="st-state" style="color:var(--gold);">START</span></div>
-      <div><strong>Verification Status:</strong> <span id="st-status" style="color:var(--red);">UNREGISTERED / UNVERIFIED 🔒</span></div>
+      <div><strong>Verification Status:</strong> <span id="st-status" style="color:var(--red);">UNREGISTERED / UNVERIFIED</span></div>
       <div><strong>Missionary Name:</strong> <span id="st-name" style="color:var(--muted);">—</span></div>
       <div><strong>Email:</strong> <span id="st-email" style="color:var(--muted);">—</span></div>
       <div><strong>Points Balance:</strong> <span id="st-points" style="color:var(--gold);">0 PTS</span></div>
@@ -134,7 +136,7 @@ function appendLog(level, text) {
   let colorStyle = "";
 
   if (level.toUpperCase() === 'OTP_DEBUG') {
-    prefix = `\n🔥 [${time}] [🔑 SIMULATED OTP PASSCODE FOUND]`;
+    prefix = `\n[${time}] [SIMULATED OTP PASSCODE FOUND]`;
     colorStyle = "color: #ffcc00; font-weight: bold; display: block; margin: 8px 0; border: 1px dashed #ffcc00; padding: 4px;";
   }
 
@@ -165,9 +167,9 @@ function appendCarousel(products = []) {
       <img class="fb-card-img" src="${item.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" alt="Reward">
       <div class="fb-card-body">
         <div class="fb-card-title">${item.name || 'Reward Item'}</div>
-        <div class="fb-card-subtitle">⭐ Cost: ${item.price || 0} PTS</div>
+        <div class="fb-card-subtitle">Cost: ${item.price || 0} PTS</div>
       </div>
-      <button class="fb-card-btn" onclick="sendToBot('Claim ${item.name}', '${item.payload || 'CLAIM_ITEM_' + (item.id || 1)}')">🎁 Claim (${item.price || 0} PTS)</button>
+      <button class="fb-card-btn" onclick="sendToBot('Claim ${item.name}', '${item.payload || 'CLAIM_ITEM_' + (item.id || 1)}')">Claim (${item.price || 0} PTS)</button>
     </div>
   `).join('');
 
@@ -233,23 +235,36 @@ async function sendToBot(displayText, payload = null, rawText = null) {
       }
       
       const st = data.session_data?.state || data.session_state;
+      const isVerified = Boolean(data.missionary_profile && data.missionary_profile.email && data.missionary_profile.name && data.missionary_profile.name !== 'Missionary');
+
       if (st === 'AWAITING_TERMS') {
         renderQuickResponses([
-          { title: "✅ Agree & Continue", payload: "TERMS_AGREE" },
-          { title: "❌ Decline", payload: "TERMS_DECLINE" }
+          { title: "Agree & Continue", payload: "TERMS_AGREE" },
+          { title: "Decline", payload: "TERMS_DECLINE" }
         ]);
       } else if (st === 'AWAITING_OTP') {
         renderQuickResponses([
-          { title: "🔄 Resend Code", payload: "RESEND_OTP" },
-          { title: "✏️ Edit Details", payload: "EDIT_DETAILS" },
-          { title: "❌ Cancel", payload: "RESET_SESSION" }
+          { title: "Resend Code", payload: "RESEND_OTP" },
+          { title: "Edit Details", payload: "EDIT_DETAILS" },
+          { title: "Cancel", payload: "RESET_SESSION" }
         ]);
       } else if (st === 'AWAITING_DETAILS' || st === 'AWAITING_ALL_IN_ONE') {
         renderQuickResponses([
-          { title: "❌ Cancel", payload: "RESET_SESSION" }
+          { title: "Cancel", payload: "RESET_SESSION" }
+        ]);
+      } else if (isVerified) {
+        renderQuickResponses([
+          { title: "Rewards Catalog", payload: "MENU_REWARDS" },
+          { title: "Invite (+1 Pt)", payload: "INVITE_COMPANION" },
+          { title: "Redeem Promo", payload: "PROMO_INFO" },
+          { title: "Help & FAQs", payload: "MENU_HELP" },
+          { title: "My Dashboard", payload: "ACTION_DASHBOARD" }
         ]);
       } else {
-        renderQuickResponses([]);
+        renderQuickResponses([
+          { title: "Get Started", payload: "GET_STARTED" },
+          { title: "Help & Support", payload: "MENU_HELP" }
+        ]);
       }
 
       updateStateDisplay(st, data.missionary_profile, data.quota);
@@ -298,7 +313,7 @@ async function resetSimulatorSession() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "reset_session", psid: currentPsid })
     });
-    document.getElementById("chat-scroll").innerHTML = '<div class="msg bot">🔄 Session reset! Tap \'✨ Get Started\' to begin again.</div>';
+    document.getElementById("chat-scroll").innerHTML = '<div class="msg bot">Session reset! Tap \'Get Started\' to begin again.</div>';
     document.getElementById("dynamic-qr-container").innerHTML = "";
     appendLog('TURSO_RESET', `Database sessions and missionary profile cleared for PSID ${currentPsid}`);
     inspectSessionState();
@@ -329,13 +344,13 @@ function updateStateDisplay(stateName, missionary, quota = null) {
   }
 
   if (missionary) {
-    document.getElementById('st-status').textContent = "VERIFIED & ACTIVE ✅";
+    document.getElementById('st-status').textContent = "VERIFIED & ACTIVE";
     document.getElementById('st-status').style.color = "var(--green)";
     document.getElementById('st-name').textContent = missionary.name || 'Unnamed';
     document.getElementById('st-email').textContent = missionary.email || '—';
     document.getElementById('st-points').textContent = `${missionary.points || 0} PTS`;
   } else {
-    document.getElementById('st-status').textContent = "UNREGISTERED / UNVERIFIED 🔒";
+    document.getElementById('st-status').textContent = "UNREGISTERED / UNVERIFIED";
     document.getElementById('st-status').style.color = "var(--red)";
     document.getElementById('st-name').textContent = '—';
     document.getElementById('st-email').textContent = '—';

@@ -29,9 +29,9 @@ async function setupMessenger() {
         locale: "default",
         composer_input_disabled: false,
         call_to_actions: [
-          { type: "postback", title: "🎁 Dashboard & Rewards", payload: "MENU_DASHBOARD" },
-          { type: "postback", title: "❓ FAQs & Help", payload: "MENU_FAQS" },
-          { type: "web_url", title: "💬 Support Inbox", url: "https://m.me/TimelessCreationsRP", whitelisted_domains: ["https://m.me/TimelessCreationsRP"] }
+          { type: "postback", title: "Dashboard & Rewards", payload: "MENU_DASHBOARD" },
+          { type: "postback", title: "FAQs & Help", payload: "MENU_FAQS" },
+          { type: "web_url", title: "Support Inbox", url: "https://m.me/TimelessCreationsRP", whitelisted_domains: ["https://m.me/TimelessCreationsRP"] }
         ]
       }
     ]

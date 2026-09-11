@@ -18,17 +18,17 @@ async function setupPersistentMenu() {
         call_to_actions: [
           {
             type: "postback",
-            title: "📊 My Dashboard",
+            title: "My Dashboard",
             payload: "ACTION_DASHBOARD"
           },
           {
             type: "postback",
-            title: "🛍️ Rewards Catalog",
+            title: "Rewards Catalog",
             payload: "DISCOVER_PAYLOAD"
           },
           {
             type: "postback",
-            title: "📖 Help & FAQs",
+            title: "Help & FAQs",
             payload: "FAQS_PAYLOAD"
           }
         ]

@@ -9,7 +9,7 @@
  * 5. Permanent jsDelivr / GitHub Fallback: Zero data loss guarantee.
  */
 
-const PERMANENT_ORIGIN_BASE = "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@NewVersion/public";
+const PERMANENT_ORIGIN_BASE = "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@main/public";
 const DEFAULT_MAX_UNUSED_DAYS = 30; // Auto-delete images unused for 30 days
 
 export default {

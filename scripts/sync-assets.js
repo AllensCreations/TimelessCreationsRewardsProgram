@@ -83,7 +83,7 @@ if (fs.existsSync(pkgPath)) {
     versionData.version = cleanVer;
     versionData.version_code = currentCode;
     versionData.deployment_id = `deploy_${cleanVer.replace(/\./g, '_')}`;
-    versionData.github_apk_url = `https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/NewVersion/public/TimelessRewards.apk`;
+    versionData.github_apk_url = `https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/main/public/TimelessRewards.apk`;
     fs.writeFileSync(rootVersion, JSON.stringify(versionData, null, 2) + '\n', 'utf8');
 
     // Sync to public/version.json

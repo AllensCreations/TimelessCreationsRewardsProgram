@@ -137,7 +137,7 @@
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:12px;">
               <script>
                 
-const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@NewVersion/public";
+const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@main/public";
 const KNOWN_DRIVE_MAP = {
   "1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG": "drips/temple_hero.jpg",
   "1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE": "drips/essential_nametag.jpg",
@@ -157,8 +157,8 @@ function getCdnImageUrl(urlOrPath, fallbackName = "image.jpg") {
   if (!urlOrPath || typeof urlOrPath !== "string") return JSDELIVR_BASE + "/drips/" + fallbackName;
   let trimmed = urlOrPath.trim();
   if (!trimmed) return JSDELIVR_BASE + "/drips/" + fallbackName;
-  if (trimmed.includes("@Appversion")) {
-    trimmed = trimmed.replace(/@Appversion/g, "@NewVersion");
+  if (trimmed.includes("@Appversion") || trimmed.includes("@NewVersion")) {
+    trimmed = trimmed.replace(/@(Appversion|NewVersion)/g, "@main");
   }
   if (trimmed.includes("cdn.jsdelivr.net")) return trimmed;
   if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {

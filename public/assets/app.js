@@ -841,7 +841,7 @@ async function checkDeploymentUpdate(isManual = false) {
 
     if (!remote || !remote.ok) {
       try {
-        const ghRes = await fetch('https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/NewVersion/public/version.json?t=' + Date.now(), { cache: 'no-store' });
+        const ghRes = await fetch('https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/main/public/version.json?t=' + Date.now(), { cache: 'no-store' });
         if (ghRes.ok) {
           const ghData = await ghRes.json();
           if (ghData && ghData.version) {

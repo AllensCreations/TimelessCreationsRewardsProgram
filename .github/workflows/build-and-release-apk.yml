@@ -3,6 +3,7 @@ name: Build and Release Android APK
 on:
   push:
     branches:
+      - main
       - NewVersion
   workflow_dispatch:
 
@@ -98,15 +99,15 @@ jobs:
           cp "$APK_PATH" public/TimelessRewards.apk
           cp "$APK_PATH" "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
 
-      - name: Commit and Push to NewVersion Branch
+      - name: Commit and Push to Branch
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git checkout NewVersion
+          git checkout ${{ github.ref_name }}
           git add -f package.json views/version.json public/version.json CHANGELOG.md android/android-tcrp/app/build.gradle android/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
           git commit -m "chore(release): bump version to v${{ steps.versioning.outputs.new_version }} (Build ${{ steps.versioning.outputs.new_code }}) [skip ci]"
-          git push origin NewVersion
+          git push origin ${{ github.ref_name }}
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

@@ -133,8 +133,8 @@ export function generateReleaseNotes() {
 
   let releaseBody = `## 🎁 Timeless Rewards v${currentVersion} (Build ${currentCode})\n\n`;
   releaseBody += `- **Build Code**: \`${currentCode}\`\n`;
-  releaseBody += `- **Branch**: \`NewVersion\`\n`;
-  releaseBody += `- **Direct APK**: [Download TimelessRewards.apk](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/NewVersion/public/TimelessRewards.apk)\n\n`;
+  releaseBody += `- **Branch**: \`main\`\n`;
+  releaseBody += `- **Direct APK**: [Download TimelessRewards.apk](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/main/public/TimelessRewards.apk)\n\n`;
 
   let notesMarkdown = '';
 
@@ -202,7 +202,7 @@ export function generateReleaseNotes() {
   versionData.deployment_id = `deploy_${dateStr}_v${major}_${minor}`;
   versionData.build_timestamp = nowIso;
   versionData.apk_url = 'https://timelesscreationsrewardsprogram.vercel.app/TimelessRewards.apk';
-  versionData.github_apk_url = 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/NewVersion/public/TimelessRewards.apk';
+  versionData.github_apk_url = 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/main/public/TimelessRewards.apk';
   versionData.changelog = finalInAppChangelog;
 
   if (dryRun) {

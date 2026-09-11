@@ -1,7 +1,7 @@
 import { handleBotMessage } from '../lib/botHandler.js';
 import { runSql } from '../lib/db.js';
 import { requireAdmin } from '../lib/auth.js';
-import { clearDebounce } from '../lib/security.js';
+import { clearDebounce, hasUsedDailyCheck } from '../lib/security.js';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -26,6 +26,7 @@ export default async function handler(req, res) {
       await runSql("DELETE FROM chat_messages WHERE psid = ?", [psid]);
       await runSql("DELETE FROM bot_rate_limits WHERE psid = ?", [psid]);
       await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [psid]);
+      await runSql("DELETE FROM bot_daily_views WHERE sender_id = ?", [psid]);
       await runSql("INSERT INTO system_logs (level, message) VALUES ('TURSO', ?)", [`RESET session for PSID ${psid}`]);
       return res.status(200).json({ ok: true, message: "Session and test user reset successfully." });
     }
@@ -39,13 +40,14 @@ export default async function handler(req, res) {
       const quotaRows = await runSql("SELECT msg_count, warned, otp_resend_count FROM bot_daily_user_quotas WHERE psid = ? AND quota_date = ? LIMIT 1", [psid, todayStr]);
       const quotaRec = quotaRows?.[0] || { msg_count: 0, warned: 0, otp_resend_count: 0 };
       const isVerified = missionary !== null && missionary.email && missionary.name && missionary.name !== 'Missionary';
+      const checkUsed = await hasUsedDailyCheck(psid);
       const quota = {
         msg_count: Number(quotaRec.msg_count) || 0,
         limit: isVerified ? 15 : 10,
         otp_resends: Number(quotaRec.otp_resend_count) || 0,
         max_otp_resends: 3
       };
-      return res.status(200).json({ ok: true, session, missionary, quota, recent_logs: recentLogs });
+      return res.status(200).json({ ok: true, session, missionary, quota, daily_check_used: checkUsed, recent_logs: recentLogs });
     }
 
     if (action === "send_message") {
@@ -71,12 +73,15 @@ export default async function handler(req, res) {
         max_otp_resends: 3
       };
 
+      const checkUsed = await hasUsedDailyCheck(psid);
+
       return res.status(200).json({
         ok: true,
         session_state: session?.state || "START",
         session_data: session || null,
         missionary_profile: missionary,
         quota,
+        daily_check_used: checkUsed,
         bot_responses: botResponses || [],
         turso_logs: recentTursoQueries || []
       });

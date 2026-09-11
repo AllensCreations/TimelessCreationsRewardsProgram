@@ -2,7 +2,7 @@ import 'dotenv/config';
 import crypto from 'crypto';
 import { runSql } from '../lib/db.js';
 import webhookHandler from '../api/webhook.js';
-import { verifyFbSignature, clearRapidDebounce } from '../lib/security.js';
+import { verifyFbSignature, clearRapidDebounce, hasUsedDailyCheck } from '../lib/security.js';
 import { handleBotMessage } from '../lib/botHandler.js';
 
 async function runWebhookLoggerTests() {
@@ -193,18 +193,20 @@ async function runWebhookLoggerTests() {
     const referrerM2 = (await runSql("SELECT pending_ref_notices FROM missionaries WHERE psid = ?", [referrerPsid]))[0];
     assert(Number(referrerM2?.pending_ref_notices) === 0, "pending_ref_notices reset to 0 after notification displayed");
 
-    // 7. 1-Check-per-day rate limit enforcement
-    console.log("\n⏱️ [Test 7] 1-Check-per-day rate limit enforcement");
+    // 7. 1-Check-per-day rate limit enforcement (Silent drop until 8:00 AM PHT)
+    console.log("\n⏱️ [Test 7] 1-Check-per-day rate limit enforcement (Silent drop until 8:00 AM PHT)");
+    const checkUsedAfterFirst = await hasUsedDailyCheck(referrerPsid);
+    assert(checkUsedAfterFirst === true, "Daily check usage is flagged as active for today");
+
     clearRapidDebounce(referrerPsid);
     await runSql("DELETE FROM chat_messages WHERE psid = ?", [referrerPsid]);
     await handleBotMessage(referrerPsid, "Check", "ACTION_CHECK");
 
     const secondCheckMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [referrerPsid]);
-    assert(secondCheckMsgs.length === 1, "Second check triggers single rate limit notice message");
-    assert(secondCheckMsgs[0]?.message.includes("You have already checked your rewards dashboard today"), "Second check displays polite rate limit warning");
-    assert(secondCheckMsgs[0]?.message.includes("8:00 AM PHT"), "Notice reminds user of 8:00 AM PHT daily reset");
-    assert(secondCheckMsgs[0]?.message.includes("We will not reply as of the moment"), "Notice contains polite 'We will not reply as of the moment' note");
-    assert(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(secondCheckMsgs[0]?.message), "Rate limit notice strictly has 0 emojis");
+    assert(secondCheckMsgs.length === 0, "Second check produces 0 messages (silent drop until 8:00 AM PHT)");
+
+    const silentLog = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_SILENT%' ORDER BY id DESC LIMIT 1", [referrerPsid]);
+    assert(silentLog.length > 0, "Silent drop logged in system_logs with [CHECK_LIMIT_SILENT]");
 
     // Cleanup
     await runSql("DELETE FROM missionaries WHERE psid IN (?, ?)", [batchPsid, referrerPsid]);

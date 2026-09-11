@@ -495,7 +495,7 @@
       <div id="dynamic-qr-container" style="padding: 0 16px; background: #0d0f17;"></div>
 
       <div class="static-replies-bar">
-        <button class="qr-chip" onclick="sendToBot('Check', 'ACTION_CHECK')">Check</button>
+        <button class="qr-chip" id="qr-chip-check" onclick="sendToBot('Check', 'ACTION_CHECK')">Check</button>
         <button class="qr-chip" onclick="sendToBot('Help & FAQs', 'MENU_HELP')">Help & FAQs</button>
         <button class="qr-chip" onclick="sendToBot('Redeem Promo', 'PROMO_INFO')">Redeem Promo</button>
         <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">Get Started</button>
@@ -741,6 +741,8 @@ async function sendToBot(displayText, payload = null, rawText = null) {
             appendMessage('bot', latest.message);
           }
         });
+      } else if (payload === 'ACTION_CHECK' || messageText.trim().toLowerCase() === 'check') {
+        appendLog('SILENT_DROP', 'Bot will not reply as of the moment. Daily check limit used (resets tomorrow at 8:00 AM PHT).');
       }
       
       const st = data.session_data?.state || data.session_state;
@@ -762,9 +764,13 @@ async function sendToBot(displayText, payload = null, rawText = null) {
           { title: "Cancel", payload: "RESET_SESSION" }
         ]);
       } else if (isVerified) {
-        renderQuickResponses([
-          { title: "Check", payload: "ACTION_CHECK" }
-        ]);
+        if (!data.daily_check_used) {
+          renderQuickResponses([
+            { title: "Check", payload: "ACTION_CHECK" }
+          ]);
+        } else {
+          renderQuickResponses([]); // Check quick response is temporarily hidden until 8:00 AM PHT the next day!
+        }
       } else {
         renderQuickResponses([
           { title: "Get Started", payload: "GET_STARTED" },
@@ -772,7 +778,7 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         ]);
       }
 
-      updateStateDisplay(st, data.missionary_profile, data.quota);
+      updateStateDisplay(st, data.missionary_profile, data.quota, data.daily_check_used);
     } else {
       appendLog('ERROR', data.error || "Failed to process message");
     }
@@ -799,7 +805,7 @@ async function inspectSessionState() {
     });
     const data = await res.json();
     if (data.ok) {
-      updateStateDisplay(data.session?.state || 'START', data.missionary, data.quota);
+      updateStateDisplay(data.session?.state || 'START', data.missionary, data.quota, data.daily_check_used);
       appendLog('TURSO_INSPECT', `State: ${data.session?.state || 'START'} | Missionary Linked: ${data.missionary ? 'YES' : 'NO'}`);
       
       if (data.recent_logs && data.recent_logs.length > 0) {
@@ -828,7 +834,7 @@ async function resetSimulatorSession() {
   }
 }
 
-function updateStateDisplay(stateName, missionary, quota = null) {
+function updateStateDisplay(stateName, missionary, quota = null, dailyCheckUsed = false) {
   document.getElementById('st-state').textContent = stateName || 'START';
   const isVerified = Boolean(missionary && missionary.email && missionary.name && missionary.name !== 'Missionary');
   const maxQuota = isVerified ? 15 : 10;
@@ -836,6 +842,15 @@ function updateStateDisplay(stateName, missionary, quota = null) {
   const quotaLimit = quota?.limit || maxQuota;
   const otpResends = quota?.otp_resends || 0;
   const maxOtpResends = quota?.max_otp_resends || 3;
+
+  const chipCheck = document.getElementById("qr-chip-check");
+  if (chipCheck) {
+    if (isVerified && dailyCheckUsed) {
+      chipCheck.style.display = "none";
+    } else {
+      chipCheck.style.display = "inline-flex";
+    }
+  }
 
   const quotaEl = document.getElementById('st-quota');
   if (quotaEl) {

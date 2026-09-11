@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import 'dotenv/config';
-import { handleBotMessage, toUnicodeBold } from '../lib/botHandler.js';
+import { handleBotMessage, toUnicodeBold, getVerifiedQuickReplies } from '../lib/botHandler.js';
 import { runSql } from '../lib/db.js';
-import { clearDebounce, clearRapidDebounce } from '../lib/security.js';
+import { clearDebounce, clearRapidDebounce, hasUsedDailyCheck } from '../lib/security.js';
 
 console.log("🤖 ==================================================");
 console.log("🤖 TIMELESS CREATIONS REWARDS PROGRAM - BOT HUB & CHECK TESTER");
@@ -155,25 +155,31 @@ async function runCheckHubTester() {
     assert(!gateMsg?.message.includes(toUnicodeBold("MISSIONARY DASHBOARD")), "Unverified user cannot view Dashboard");
 
     // ----------------------------------------------------
-    // TEST 7: 1-Check per day limit enforcement
+    // TEST 7: 1-Check per day limit enforcement (Silent drop & QR hiding)
     // ----------------------------------------------------
-    console.log("\n📌 [Test 7] 1-Check per day limit enforcement");
+    console.log("\n📌 [Test 7] 1-Check per day limit enforcement (Silent drop & QR hiding)");
     clearDebounce(verifiedPsid); // clean start
     await runSql("DELETE FROM chat_messages WHERE psid = ?", [verifiedPsid]);
     await handleBotMessage(verifiedPsid, 'Check', 'ACTION_CHECK');
     let msgs1 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
     assert(msgs1.length === 3, `First check yields 3-in-1 sequence (got ${msgs1.length})`);
 
-    // Second check without clearing daily views
+    // Verify daily check is recorded and quick reply is temporarily hidden
+    const isCheckUsed = await hasUsedDailyCheck(verifiedPsid);
+    assert(isCheckUsed === true, "Daily check usage is recorded for today");
+    const activeQrs = await getVerifiedQuickReplies(verifiedPsid);
+    assert(activeQrs.length === 0, "Quick replies temporarily hidden once daily check is used");
+
+    // Second check without clearing daily views: MUST SILENTLY DROP (0 messages)
     clearRapidDebounce(verifiedPsid);
     await runSql("DELETE FROM chat_messages WHERE psid = ?", [verifiedPsid]);
     await handleBotMessage(verifiedPsid, 'Check', 'ACTION_CHECK');
     let msgs2 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
-    assert(msgs2.length === 1, "Second check triggers rate limit notice (1 message)");
-    assert(msgs2[0]?.message.includes("You have already checked your rewards dashboard today"), "Second check rate limit message contains polite explanation");
-    assert(msgs2[0]?.message.includes("8:00 AM PHT"), "Second check message specifies reset time 8:00 AM PHT");
-    assert(msgs2[0]?.message.includes("We will not reply as of the moment"), "Second check message includes polite 'we will not reply as of the moment' note");
-    assert(!EMOJI_REGEX.test(msgs2[0]?.message), "Rate limit notice contains 0 emojis");
+    assert(msgs2.length === 0, "Second check produces 0 replies (silent drop until 8:00 AM PHT)");
+
+    // Verify silent drop was logged in system_logs
+    const silentLogs = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_SILENT%' ORDER BY id DESC LIMIT 1", [verifiedPsid]);
+    assert(silentLogs.length > 0, "Silent drop logged in system_logs");
 
   } catch (err) {
     console.error(`\n💥 Fatal Test Error: ${err.message}`);

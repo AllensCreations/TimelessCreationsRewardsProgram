@@ -65,14 +65,53 @@ for (const wwwDir of targetWwwDirs) {
   }
 }
 
-// 4. Ensure version.json is synced everywhere
-const rootVersion = path.join(rootDir, 'views', 'version.json');
-if (fs.existsSync(rootVersion)) {
-  fs.copyFileSync(rootVersion, path.join(publicDir, 'version.json'));
-  for (const wwwDir of targetWwwDirs) {
-    if (fs.existsSync(wwwDir)) {
-      fs.copyFileSync(rootVersion, path.join(wwwDir, 'version.json'));
+// 4. Ensure package.json is the single source of truth for version and synced everywhere
+const pkgPath = path.join(rootDir, 'package.json');
+if (fs.existsSync(pkgPath)) {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    const currentVersion = pkg.version || '2.49.0';
+    const currentCode = Number(pkg.versionCode || pkg.version_code) || 62;
+    const cleanVer = currentVersion.replace(/^v/i, '');
+
+    // Sync views/version.json
+    const rootVersion = path.join(rootDir, 'views', 'version.json');
+    let versionData = {};
+    if (fs.existsSync(rootVersion)) {
+      try { versionData = JSON.parse(fs.readFileSync(rootVersion, 'utf8')); } catch (_) {}
     }
+    versionData.version = cleanVer;
+    versionData.version_code = currentCode;
+    versionData.deployment_id = `deploy_${cleanVer.replace(/\./g, '_')}`;
+    versionData.github_apk_url = `https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/NewVersion/public/TimelessRewards.apk`;
+    fs.writeFileSync(rootVersion, JSON.stringify(versionData, null, 2) + '\n', 'utf8');
+
+    // Sync to public/version.json
+    fs.writeFileSync(path.join(publicDir, 'version.json'), JSON.stringify(versionData, null, 2) + '\n', 'utf8');
+
+    // Sync to Android build.gradle
+    const gradleFiles = [
+      path.join(rootDir, 'android', 'android-tcrp', 'app', 'build.gradle'),
+      path.join(rootDir, 'android', 'app', 'build.gradle')
+    ];
+    for (const gf of gradleFiles) {
+      if (fs.existsSync(gf)) {
+        let gContent = fs.readFileSync(gf, 'utf8');
+        gContent = gContent.replace(/versionCode\s+\d+/, `versionCode ${currentCode}`);
+        gContent = gContent.replace(/versionName\s+["'][^"']+["']/, `versionName "${cleanVer}"`);
+        fs.writeFileSync(gf, gContent, 'utf8');
+      }
+    }
+
+    // Sync to Android www directories
+    for (const wwwDir of targetWwwDirs) {
+      if (fs.existsSync(wwwDir)) {
+        fs.writeFileSync(path.join(wwwDir, 'version.json'), JSON.stringify(versionData, null, 2) + '\n', 'utf8');
+      }
+    }
+    console.log(`[sync-assets] Unified version from package.json: v${cleanVer} (Build ${currentCode})`);
+  } catch (err) {
+    console.error('[sync-assets] Error syncing version from package.json:', err);
   }
 }
 

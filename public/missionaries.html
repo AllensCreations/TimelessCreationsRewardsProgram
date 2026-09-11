@@ -741,39 +741,52 @@ function getPhtNow() {
 
 function getNextCronSlot(batchIndex = 0, customPht = null) {
   const pht = customPht || getPhtNow();
-  const year = pht.getFullYear();
-  const month = pht.getMonth();
-  const date = pht.getDate();
-  const currentMinutes = pht.getHours() * 60 + pht.getMinutes() + pht.getSeconds() / 60;
-
   const cronHours = [7, 8, 9, 10, 11, 12];
-  const availableSlotsToday = [];
-  for (const h of cronHours) {
-    if (h * 60 > currentMinutes) {
-      availableSlotsToday.push(new Date(year, month, date, h, 0, 0));
+  
+  // Find next valid cron slot adhering to cron schedule 0 7-12 6-31 (PHT)
+  const testDate = new Date(pht.getTime());
+  let foundSlots = [];
+  let dayOffset = 0;
+
+  while (foundSlots.length <= batchIndex && dayOffset < 35) {
+    const curYear = testDate.getFullYear();
+    const curMonth = testDate.getMonth();
+    const curDay = testDate.getDate();
+    
+    // Check if day is within 6-31 of month
+    if (curDay >= 6) {
+      const currentMinutes = (dayOffset === 0) ? (pht.getHours() * 60 + pht.getMinutes() + pht.getSeconds() / 60) : -1;
+      for (const h of cronHours) {
+        if (h * 60 > currentMinutes) {
+          foundSlots.push(new Date(curYear, curMonth, curDay, h, 0, 0));
+        }
+      }
     }
+
+    dayOffset++;
+    testDate.setDate(testDate.getDate() + 1);
+    testDate.setHours(0, 0, 0, 0);
   }
 
-  if (batchIndex < availableSlotsToday.length) {
-    const target = availableSlotsToday[batchIndex];
+  if (batchIndex < foundSlots.length) {
+    const target = foundSlots[batchIndex];
+    const isToday = target.toDateString() === pht.toDateString();
+    const diffDays = Math.round((new Date(target.getFullYear(), target.getMonth(), target.getDate()) - new Date(pht.getFullYear(), pht.getMonth(), pht.getDate())) / 86400000);
+    const timeStr = target.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PHT';
+    const dayPrefix = isToday ? '' : (diffDays === 1 ? 'Tomorrow ' : `In ${diffDays}d `);
+
     return {
       targetTime: target.getTime(),
-      label: target.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PHT',
-      slotNum: (6 - availableSlotsToday.length) + batchIndex + 1,
-      isToday: true
+      label: dayPrefix + timeStr,
+      slotNum: (batchIndex % cronHours.length) + 1,
+      isToday
     };
   }
 
-  // Multi-day overflow
-  const overflowIndex = batchIndex - availableSlotsToday.length;
-  const dayOffset = Math.floor(overflowIndex / cronHours.length) + 1;
-  const slotInDay = overflowIndex % cronHours.length;
-  const targetHour = cronHours[slotInDay];
-  const target = new Date(year, month, date + dayOffset, targetHour, 0, 0);
   return {
-    targetTime: target.getTime(),
-    label: (dayOffset === 1 ? 'Tomorrow ' : `In ${dayOffset}d `) + target.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' PHT',
-    slotNum: slotInDay + 1,
+    targetTime: pht.getTime() + 3600000,
+    label: '~7:00 AM PHT',
+    slotNum: 1,
     isToday: false
   };
 }
@@ -1152,6 +1165,13 @@ function renderPaginatedCards() {
     const lastSentDisplay = m.last_sent_at ? formatMonthYear(m.last_sent_at) : '<span style="color:var(--muted); font-style:italic;">Never</span>';
     const nextSendDisplay = m.is_completed ? 'Completed' : ((!state.isOnline && isDue) ? `${nextCalMonthYear} (Paused Offline)` : nextCalMonthYear);
 
+    const estBoxLabel = m.is_completed ? '🎓 Completion Status'
+      : isSentToday ? '✅ Dispatched Today'
+      : (isDue && state.isOnline) ? '⏳ Estimated Send Today'
+      : (!state.isOnline && isDue) ? '💤 Offline Paused'
+      : est.isWithin24h ? '⏳ Estimated Dispatch'
+      : '📅 Next Estimated Dispatch';
+
     return `
       <div class="missionary-card ${isDue && state.isOnline ? 'due-highlight' : (!state.isOnline && isDue ? 'offline-paused' : '')}">
         <div class="card-main-row" onclick="this.closest('.missionary-card').classList.toggle('open')">
@@ -1178,8 +1198,8 @@ function renderPaginatedCards() {
 
         <div class="card-details">
           <div class="intel-grid">
-            <div class="intel-box" style="border-color:rgba(201,168,76,0.3); background:#0c0e17;">
-              <span class="intel-label" style="color:var(--gold);">⏳ Estimated Send Today</span>
+            <div class="intel-box" style="border-color:${isDue && state.isOnline ? 'rgba(201,168,76,0.35)' : 'rgba(255,255,255,0.07)'}; background:#0c0e17;">
+              <span class="intel-label" style="color:${isDue && state.isOnline ? 'var(--gold)' : 'var(--muted)'};">${estBoxLabel}</span>
               <span class="intel-val" style="font-family:'DM Mono',monospace;">${est.intelHtml}</span>
             </div>
             <div class="intel-box">

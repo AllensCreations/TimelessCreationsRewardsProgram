@@ -90,10 +90,19 @@ export function generateReleaseNotes() {
   const fromTagArg = getArg('--from-tag') || getLatestTag();
   const dryRun = process.argv.includes('--dry-run');
 
-  const gradlePath = path.join(rootDir, 'android', 'android-tcrp', 'app', 'build.gradle');
   let currentVersion = versionArg;
   let currentCode = codeArg ? Number(codeArg) : null;
 
+  const pkgPath = path.join(rootDir, 'package.json');
+  if (fs.existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      if (!currentVersion && pkg.version) currentVersion = pkg.version;
+      if (!currentCode && (pkg.versionCode || pkg.version_code)) currentCode = Number(pkg.versionCode || pkg.version_code);
+    } catch (_) {}
+  }
+
+  const gradlePath = path.join(rootDir, 'android', 'android-tcrp', 'app', 'build.gradle');
   if (fs.existsSync(gradlePath)) {
     const gradleContent = fs.readFileSync(gradlePath, 'utf8');
     if (!currentVersion) {
@@ -106,8 +115,8 @@ export function generateReleaseNotes() {
     }
   }
 
-  currentVersion = currentVersion || '2.5.0';
-  currentCode = currentCode || 17;
+  currentVersion = currentVersion || '2.49.0';
+  currentCode = currentCode || 62;
 
   console.log(`[release-notes] Generating notes for v${currentVersion} (Build ${currentCode})`);
   console.log(`[release-notes] Commit range base: ${fromTagArg || 'recent commits'}`);

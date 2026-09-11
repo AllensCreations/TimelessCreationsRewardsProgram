@@ -3,7 +3,7 @@ name: Build and Release Android APK
 on:
   push:
     branches:
-      - Appversion
+      - NewVersion
   workflow_dispatch:
 
 permissions:
@@ -38,9 +38,9 @@ jobs:
         id: versioning
         run: |
           set -e
-          GRADLE_FILE="android/android-tcrp/app/build.gradle"
-          CURRENT_VERSION=$(grep 'versionName' $GRADLE_FILE | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-          CURRENT_CODE=$(grep 'versionCode' $GRADLE_FILE | head -1 | tr -dc '0-9')
+          # Read current version and code from package.json as single source of truth
+          CURRENT_VERSION=$(node -e "console.log(require('./package.json').version || '2.49.0')")
+          CURRENT_CODE=$(node -e "console.log(require('./package.json').versionCode || 62)")
           
           NEW_CODE=$((CURRENT_CODE + 1))
 
@@ -49,12 +49,16 @@ jobs:
           NEW_MINOR=$((MINOR + 1))
           NEW_VERSION="${MAJOR}.${NEW_MINOR}.0"
 
-          echo "Bumping version: $CURRENT_VERSION (Code $CURRENT_CODE) -> $NEW_VERSION (Code $NEW_CODE)"
+          echo "Bumping package.json: $CURRENT_VERSION (Code $CURRENT_CODE) -> $NEW_VERSION (Code $NEW_CODE)"
 
-          sed -i "s/versionCode .*/versionCode $NEW_CODE/" android/android-tcrp/app/build.gradle
-          sed -i "s/versionName .*/versionName \"$NEW_VERSION\"/" android/android-tcrp/app/build.gradle
-          sed -i "s/versionCode .*/versionCode $NEW_CODE/" android/app/build.gradle
-          sed -i "s/versionName .*/versionName \"$NEW_VERSION\"/" android/app/build.gradle
+          # Update package.json as single source of truth
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+            pkg.version = '$NEW_VERSION';
+            pkg.versionCode = $NEW_CODE;
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
 
           # Generate rich changelog with Features, Bug Fixes, and Improvements
           node scripts/generate-release-notes.js --version "$NEW_VERSION" --code "$NEW_CODE"
@@ -94,15 +98,15 @@ jobs:
           cp "$APK_PATH" public/TimelessRewards.apk
           cp "$APK_PATH" "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
 
-      - name: Commit and Push to Appversion Branch
+      - name: Commit and Push to NewVersion Branch
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git checkout Appversion
-          git add -f views/version.json public/version.json CHANGELOG.md android/android-tcrp/app/build.gradle android/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
+          git checkout NewVersion
+          git add -f package.json views/version.json public/version.json CHANGELOG.md android/android-tcrp/app/build.gradle android/app/build.gradle public/TimelessRewards.apk "android/TimelessRewards-v${{ steps.versioning.outputs.new_version }}.apk"
           git commit -m "chore(release): bump version to v${{ steps.versioning.outputs.new_version }} (Build ${{ steps.versioning.outputs.new_code }}) [skip ci]"
-          git push origin Appversion
+          git push origin NewVersion
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

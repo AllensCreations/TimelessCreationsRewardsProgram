@@ -1,12 +1,13 @@
 # 🎁 Timeless Creations Rewards Program (TCRP)
 
-[![Version](https://img.shields.io/badge/Version-v2.2.0-gold.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/tree/Appversion)
-[![Android APK](https://img.shields.io/badge/Android%20APK-Build%2014-blue.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk)
+[![Version](https://img.shields.io/badge/Version-v2.49.0-gold.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/tree/NewVersion)
+[![Android APK](https://img.shields.io/badge/Android%20APK-Build%2062-blue.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk)
 [![Runtime](https://img.shields.io/badge/Runtime-Node.js%20(ESM)%20%7C%20Android%20WebView-darkgreen.svg)](https://nodejs.org/)
 [![Database](https://img.shields.io/badge/Database-Turso%20libSQL-blueviolet.svg)](https://turso.tech/)
-[![Tests](https://img.shields.io/badge/Auditor%20Tests-502%20Passed%20(100%25)-brightgreen.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram)
+[![Auditor Tests](https://img.shields.io/badge/Auditor%20Tests-502%20Passed%20(100%25)-brightgreen.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-orange.svg)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/actions)
 
-**Timeless Creations Rewards Program (TCRP)** is an enterprise-grade missionary rewards, automated encouragement drip dispatch, and Point-of-Sale (POS) invoicing ecosystem. Built with a high-performance hybrid architecture combining a native Android app (Java WebView + `AndroidBridge`), pure HTTP Turso SQLite pipeline, serverless Node.js backend with in-memory TTLCache, and Meta Messenger chatbot automation.
+**Timeless Creations Rewards Program (TCRP)** is an enterprise-grade missionary rewards, automated encouragement drip dispatch, and Point-of-Sale (POS) invoicing ecosystem. Built with a high-performance hybrid architecture combining a native Android app (Java WebView + hardware-backed `AndroidBridge`), pure HTTP Turso SQLite pipeline, serverless Node.js backend with in-memory TTLCache, automated external cron scheduling, and Meta Messenger chatbot automation.
 
 ---
 
@@ -14,31 +15,159 @@
 
 | Distribution Channel | Target Link | Format |
 | :--- | :--- | :--- |
-| **🌐 GitHub Direct APK Mirror** | [📥 Download TimelessRewards.apk (v2.2.0)](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/Appversion/public/TimelessRewards.apk) | Standalone Android APK (2.8 MB) |
+| **🚀 GitHub Latest Release APK** | [📥 Download TimelessRewards.apk](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk) | Standalone Android APK (Build 62+) |
+| **🌐 Raw Branch Mirror** | [📥 Download via NewVersion Raw Mirror](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/raw/NewVersion/public/TimelessRewards.apk) | Direct APK Raw Mirror |
 | **⚡ Live Production Web Host** | [🌐 Open Web Dashboard (Vercel)](https://timelesscreationsrewardsprogram.vercel.app/) | PWA / Mobile-Optimized Web App |
-| **📦 Release Artifacts** | [`android/TimelessRewards-v2.2.0.apk`](android/TimelessRewards-v2.2.0.apk) | Version 2.2.0 (Build Code 14) |
+| **📦 GitHub Releases Page** | [🏷️ View All GitHub Releases](https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases) | Release Binaries & Changelogs |
 
 ---
 
-## 🏛️ System Architecture & Key Capabilities
+## ⏰ Automated Cron Dispatching & cron-jobs.org Guide
+
+### ❓ Do you still need to run `cron-jobs.org`?
+**YES, absolutely.** You must continue running your recurring job on [cron-jobs.org](https://cron-jobs.org).
+
+### 🔍 Why cron-jobs.org is Required
+1. **Serverless Architecture**: TCRP is hosted as serverless functions on Vercel. Serverless functions are purely event-driven and on-demand—they do not have a persistent background Node process running `setInterval` or `node-cron`. If nothing calls `/api/cron`, no code executes.
+2. **Vercel Hobby Plan Cron Limitations**: Vercel's free/Hobby tier allows only **once-a-day** cron execution at UTC midnight (`0 0 * * *`) and caps projects at 2 crons maximum. It strictly rejects multi-hour or complex expressions like `0 7-12 6-31`.
+3. **Custom Schedule Execution**: `cron-jobs.org` reliably triggers HTTP GET requests on your precise operational schedule (`0 7-12 6-31` PHT), waking up `api/cron.js` to process batches without requiring an expensive dedicated server.
+
+---
+
+### 🛠️ Step-by-Step cron-jobs.org Configuration
+
+To guarantee automated monthly drip dispatches, configure your `cron-jobs.org` task with the following settings:
+
+| Parameter | Configuration Value | Notes |
+| :--- | :--- | :--- |
+| **Title** | `TCRP Monthly Drip Dispatcher` | Human-readable job title |
+| **URL** | `https://timelesscreationsrewardsprogram.vercel.app/api/cron?key=YOUR_CRON_SECRET` | Replace with your actual `CRON_SECRET` |
+| **Request Method** | `GET` | Standard HTTP GET |
+| **Cron Schedule** | `0 7-12 6-31 * *` | Minutes: `0`, Hours: `7-12`, Days: `6-31` |
+| **Timezone** | `Asia/Manila (PHT, UTC+8)` | Philippines Standard Time |
+| **Request Headers** | `Authorization: Bearer YOUR_CRON_SECRET`<br>`Accept: application/json` | Optional if `?key=` query param is set |
+| **Request Timeout** | `30 seconds` | Allows full batch execution |
+| **Failure Notification** | Enable Email Alert | Alerts you if Vercel encounters an error |
+
+#### How the Dispatch Pipeline Operates
+```
+[⏰ cron-jobs.org]
+   │ Triggered at 7:00, 8:00, 9:00, 10:00, 11:00, 12:00 PHT (Days 6–31)
+   ▼
+[GET /api/cron?key=CRON_SECRET]
+   │
+   ├─► Check Cache-Control headers: bypasses Vercel edge proxy cache
+   ├─► Verify CRON_SECRET authentication
+   ├─► Check System Power State: aborts cleanly if OFFLINE
+   ├─► Enforce Concurrency Lock: rejects duplicate concurrent executions
+   │
+   ▼
+[SQL Query Candidate Fetch]
+   │ • Status: 'active'
+   │ • Not dispatched yet in current calendar month (YYYY-MM)
+   │ • Priority: Overdue next_send_date <= today first, then batch order
+   │ • LIMIT 100 rows
+   ▼
+[Batch Filter & Eligibility Guard]
+   │ • Calculates mission month: Arrival month = Month 0 (not due)
+   │ • Months 1..24 (or 18): Due if months_sent < currentMissionMonth
+   │ • Caps batch at 45 missionaries per run
+   ▼
+[Brevo Email Dispatch + Turso Update]
+   │ • Dispatches personalized monthly encouragement email
+   │ • Increments months_sent
+   │ • Advances next_send_date to the 9th of following month
+   │ • Logs dispatch to Turso system_logs
+   ▼
+[JSON Response: { ok: true, sentCount: N, message: "..." }]
+```
+
+---
+
+## 📦 Single Source of Truth for Versioning
+
+To eliminate manual editing across multiple files, **`package.json`** is the sole source of truth for all version numbering.
+
+```
+           ┌────────────────────────┐
+           │      package.json      │
+           │  "version": "2.49.0"   │
+           │  "versionCode": 62     │
+           └───────────┬────────────┘
+                       │
+             npm run build / sync
+             (scripts/sync-assets.js)
+                       │
+       ┌───────────────┼───────────────┬────────────────┐
+       ▼               ▼               ▼                ▼
+views/version.json  public/version.json  android/app/    android/android-tcrp/
+ (Web metadata)      (PWA metadata)     build.gradle     build.gradle
+                                       (versionName &   (versionName &
+                                        versionCode)     versionCode)
+```
+
+1. **Automated Asset Sync (`scripts/sync-assets.js`)**:
+   - Reads `version` and `versionCode` directly from `package.json`.
+   - Generates and writes synchronized metadata to `views/version.json` and `public/version.json`.
+   - Automatically patches `versionName` and `versionCode` in both Android Gradle configurations (`android/android-tcrp/app/build.gradle` and `android/app/build.gradle`).
+   - Syncs all web assets into the Android native assets directory (`www/`).
+2. **Automated CI/CD Increments (`.github/workflows/build-and-release-apk.yml`)**:
+   - On every push to branch `NewVersion`, the GitHub Actions workflow reads `package.json`.
+   - Automatically bumps the minor version (`+0.1.0`) and increments `versionCode` (`+1`).
+   - Writes the new version back to `package.json` and runs `scripts/sync-assets.js`.
+   - Compiles the release APK and publishes a new GitHub Release tagged `vX.XX.X (Build YY)`.
+
+---
+
+## 🛑 Mandatory Update Barrier (Older Versions Made Unrunnable)
+
+To guarantee that all active installations run the latest business rules, security patches, and database synchronization logic, **older client versions are rendered completely unrunnable upon the release of a newer build**:
+
+### 1. Backend Enforcement (`api/main.js`)
+* Every client request transmitting `x-client-version-code` or `client_version_code` lower than the server's version code is rejected with **HTTP `426 Upgrade Required`**.
+* Mutating operations (invoicing, missionary edits, roster modifications) and data queries are immediately blocked.
+* Returns structured upgrade payload:
+  ```json
+  {
+    "ok": false,
+    "update_required": true,
+    "error": "Installed app version (Build 56) is outdated and retired. Please update to v2.49.0 (Build 62) to continue.",
+    "latest_version": "2.49.0",
+    "latest_version_code": 62
+  }
+  ```
+
+### 2. Frontend Fullscreen Lockdown (`assets/app.js`)
+* When an update is detected (via 60s background polling or receipt of HTTP 426), `showMandatoryUpdateBarrier()` triggers immediately.
+* **Non-Dismissible**: Renders a full-screen blocking overlay with `z-index: 2147483647`.
+* **Zero Bypass**: Removes any "Later" or "Dismiss" buttons; users cannot close the dialog.
+* **Input Lock**: Disables scrolling on `<html>` and `<body>`, traps keyboard input, and intercepts hardware back buttons.
+* **Network Interceptor**: Wraps `window.fetch` to abort all subsequent non-update network calls.
+* **One Action**: Prominently features the **"⬇️ Update Now"** button pointing directly to the latest APK download.
+
+---
+
+## 🏛️ System Architecture & Multi-Tier Ecosystem
 
 ```
 +-----------------------------------------------------------------------------------+
 |                            TCRP MULTI-TIER ECOSYSTEM                              |
 +-----------------------------------------------------------------------------------+
 |                                                                                   |
-|  [📱 Android Native Runtime]              [🌐 Web / Mobile Dashboard]             |
-|   • AndroidBridge (JS Interface)           • 0ms Stale-While-Revalidate Sync      |
-|   • MediaStore / Gallery Slip Saver        • HTML Protection & Anti-Copy Lock     |
-|   • In-App OTA Update Poller (60s)         • Real-time POS & Product Editor       |
+|  [📱 Android Native App]                  [🌐 Web / Mobile Dashboard]             |
+|   • Hardware PackageManager Bridge         • 0ms Stale-While-Revalidate Sync      |
+|   • AndroidBridge.saveBase64File (Gallery) • HTML Protection & Anti-Copy Lock     |
+|   • Native Scroll Physics & Overlay Bars   • Real-time POS & Product Editor       |
+|   • Inescapable Mandatory Update Barrier   • Live Cron Slot Schedule Preview      |
 |            │                                              │                       |
 |            └──────────────────────┬───────────────────────┘                       |
 |                                   ▼                                               |
 |                    [⚡ Backend API (Node.js ESM)]                                 |
+|                     • Mandatory Version Gate (HTTP 426 Upgrade Required)          |
 |                     • In-Memory TTLCache (1-5ms read responses)                   |
-|                     • Tag-Based Cache Invalidation (invoices, orders, roster)     |
-|                     • Meta Messenger Webhook Engine (Graph API v19.0+)            |
 |                     • Brevo Universal Mailer & Monthly Encouragement Drips        |
+|                     • Meta Messenger Webhook Engine (Graph API v19.0+)            |
+|                     • Concurrency Locks & Daily Dispatch Idempotency             |
 |                                   │                                               |
 |                                   ▼                                               |
 |                    [🗄️ Turso libSQL Cloud Database]                                |
@@ -52,20 +181,33 @@
 
 ## 🌟 Core Features & Modules
 
-### 1. ⚡ High-Speed Stale-While-Revalidate LocalStorage Sync & TTLCache
+### 1. ⚡ High-Speed Stale-While-Revalidate Sync & TTLCache
 * **Instant 0ms Perceived Page Load (`TCRPSync` in `assets/app.js`)**:
-  * Invoicing (`invoicing.html`) and Roster (`missionaries.html`) immediately render cached records from `localStorage` in **0ms** without blocking spinner delays.
-  * Silent background revalidation fetches fresh data from the server and reconciles UI elements smoothly without jarring refreshes.
+  * Invoicing (`invoicing.html`) and Roster (`missionaries.html`) render cached records from `localStorage` in **0ms** without blocking spinner delays.
+  * Silent background revalidation fetches fresh data from the server and reconciles UI elements smoothly.
 * **Server-Side In-Memory TTLCache (`lib/cache.js`)**:
   * Accelerates read-heavy endpoints (`get_invoices`, `get_orders`, `get_products`, `get_missionaries`) with sub-5ms response times.
-  * Automatic tag invalidation (`invoices`, `orders`, `missionaries`, `catalog`) purges cached reads immediately upon any database mutation.
+  * Automatic tag invalidation (`invoices`, `orders`, `missionaries`, `catalog`) purges cached reads immediately upon database mutations.
 
-### 2. 🧾 Point-of-Sale (POS) & Invoicing Engine (`views/invoicing.html`)
+### 2. 📅 Missionary Progression & Drip Schedule Engine
+* **Arrival Cohort Rule (Month 0)**:
+  * A missionary arriving in `September 2026` has mission month `0` during September.
+  * Arrival month is a welcome period; monthly encouragement drips start in **Month 1** (`October 2026`).
+  * Prevents premature dispatches to new arrivals.
+* **Once-Per-Calendar-Month Guard**:
+  * An active missionary can receive at most **1 encouragement drip per calendar month** (`YYYY-MM`).
+  * If a missionary was dispatched on September 1, they cannot be re-dispatched on September 11.
+* **Starvation-Free Candidate Selection**:
+  * The dispatch candidate query orders missionaries by due `next_send_date` first, preventing hundreds of newly prelisted arrival-month missionaries from starving overdue missionaries.
+* **Schedule Slot Preview (`0 7-12 6-31` PHT)**:
+  * Roster UI accurately calculates upcoming cron execution slots based on operational days (6th–31st) and hours (7:00 AM – 12:00 PM PHT).
+
+### 3. 🧾 Point-of-Sale (POS) & Invoicing Engine (`views/invoicing.html`)
 * **Dual Transaction Architecture**:
   * **Cash Invoices (`TCxxxxxx`)**: Direct customer and walk-in sales with subtotal calculations, dynamic discount options (% or ₱), and itemized product lists.
   * **Missionary Reward Claims (`ORD-xxxxxx`)**: Points-based reward redemptions by verified missionaries.
 * **Focused Product-Only Editor**:
-  * Allows cashiers to add, edit, or remove purchased items without altering or corrupting customer IDs or profile records.
+  * Allows cashiers to add, edit, or remove purchased items without altering customer profile records.
 * **Permanent Locked Rewards (`🔒 Redeemed Reward (Permanent)`)**:
   * Primary reward items in redemptions cannot be removed or deleted during order edits.
 * **7-Day Delivered Permanent Lock Policy**:
@@ -75,43 +217,34 @@
 * **Downloadable Order Slips**:
   * `html2canvas` visual rendering with native Android `AndroidBridge.saveBase64File()` integration, saving directly into the device's **Pictures / TimelessRewards** gallery folder.
 
-### 3. 📅 Missionary Batch Progression Engine
-* **Standardized Calculation Rule**:
-  * **Batch Month (Month 0)**: Missionary arrival month (e.g. `August 2026`).
-  * **1st Month (Month 1)**: First monthly encouragement drip dispatch and mission progress begin in **`September 2026`**.
-  * **Subsequent Months**: Progresses monthly (Month 2 in `October 2026`, etc.).
-* **Integrated Previews**:
-  * Messenger bot dashboard displays: `• Batch: August 2026 (1st Month: September 2026)` & `• Mission Progress: Month X of 24 (or 18)`.
-  * Missionary Roster and Bulk Pusher feature real-time 1st-month calculations and previews.
-
 ### 4. 🤖 Meta Messenger Bot & Companion Referrals (`lib/botHandler.js`)
 * **Verified Missionary Dashboard**:
   * Displays personal profile info, points balance, batch arrival, and mission progress.
 * **Deep-Link Referral Engine (`m.me/TimelessCreationsRP?ref=<code>`)**:
   * Tracks incoming companions via `messaging_referrals` and postback parameters.
-  * Automatically awards **+1 Reward Point** to both the inviter and the joining companion.
+  * Automatically awards **+1 Reward Point** to both the inviter and the joining companion upon onboarding.
 * **1:1 Square Aspect Ratio Catalog Carousel**:
   * Dynamic action buttons: `[ 🎁 Claim (<price> PTS) ]` when affordable or `[ ⭐ Need <diff> More PTS ]` when locked.
 * **Daily Rate Limiting**: Max 2 dashboard views per day with automated UTC midnight reset.
 
-### 5. 💌 Brevo Production Email Dispatch & Monthly Drips
-* **Universal Email Dispatcher (`lib/mailer.js`)**:
-  * Strict `</html>` ending verification and auto-repair engine.
-  * **Supported Templates**:
-    1. 🔐 OTP Verification Passcode (`templates/otp-email.html`)
-    2. 🧾 Order Redemption Receipt (`templates/receipt-email.html`)
-    3. 📦 Order Completed & Fulfilled (`templates/thankyou-email.html`)
-    4. 💌 Monthly Encouragement Drip Letter (`templates/monthly-drip.html`)
-    5. ⚡ Out-of-Window Reconnect Letter (`templates/out-of-window-drip.html`)
-    6. 🚚 Package Delivered Notification (`templates/delivered-email.html`)
+### 5. 💌 Brevo Universal Email Dispatcher (`lib/mailer.js`)
+* Strict `</html>` ending verification and auto-repair engine.
+* **Supported Templates**:
+  1. 🔐 OTP Verification Passcode (`templates/otp-email.html`)
+  2. 🧾 Order Redemption Receipt (`templates/receipt-email.html`)
+  3. 📦 Order Completed & Fulfilled (`templates/thankyou-email.html`)
+  4. 💌 Monthly Encouragement Drip Letter (`templates/monthly-drip.html`)
+  5. ⚡ Out-of-Window Reconnect Letter (`templates/out-of-window-drip.html`)
+  6. 🚚 Package Delivered Notification (`templates/delivered-email.html`)
 
-### 6. 📱 Android Native WebView & Permission Engine
+### 6. 📱 Android Native WebView & Hardware Bridge
 * **`LauncherActivity.java`**:
+  * Exposes `AndroidBridge.getAppVersion()` and `AndroidBridge.getAppVersionCode()` directly from Android `PackageManager`.
   * Modern Android 10+ (API 29+) scoped storage via `MediaStore.Images.Media.EXTERNAL_CONTENT_URI`.
   * Dynamic `WRITE_EXTERNAL_STORAGE` permission checks for Android 9 and below.
-  * Dedicated `@JavascriptInterface` bridge (`AndroidBridge.saveBase64File`).
+  * Native vertical scrollbar overlays (`setVerticalScrollBarEnabled(true)`) and bounce overscroll.
   * Automated 60-second in-app OTA deployment update poller.
-  * Streamlined **"🔍 Check for Updates"** button with dynamic `"✓ You're at the latest version!"` feedback.
+  * Cache-clearing routines on launch to eliminate WebView stale-script traps.
 
 ---
 
@@ -125,63 +258,94 @@ CREATE TABLE IF NOT EXISTS missionaries (
   last_name TEXT,
   first_name TEXT,
   full_name TEXT,
-  cohort TEXT DEFAULT 'elder',
-  batch_month TEXT DEFAULT 'August 2026',
-  referral_code TEXT,
-  points INTEGER DEFAULT 0,
+  cohort TEXT,
+  batch_month TEXT,
   months_sent INTEGER DEFAULT 0,
   max_months INTEGER DEFAULT 24,
-  last_sent_at TEXT,
+  psid TEXT UNIQUE,
+  fb_sender_id TEXT,
+  points INTEGER DEFAULT 0,
+  referral_code TEXT UNIQUE,
+  is_prelisted INTEGER DEFAULT 1,
+  is_active INTEGER DEFAULT 1,
   status TEXT DEFAULT 'active',
-  psid TEXT,
-  is_prelisted INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  last_sent_at TEXT,
+  next_send_date TEXT,
+  pending_ref_notices INTEGER DEFAULT 0
 );
 
--- Point-Based Reward Orders
+-- Reward Redemptions
 CREATE TABLE IF NOT EXISTS orders (
   order_id TEXT PRIMARY KEY,
+  psid TEXT,
   email TEXT,
   name TEXT,
   item TEXT,
-  items_json TEXT,
   points_cost INTEGER,
   status TEXT DEFAULT 'PENDING',
-  delivered_at TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  delivered_at TEXT
 );
 
--- Cash & Custom POS Invoices
+-- POS Cash Invoices
 CREATE TABLE IF NOT EXISTS cash_invoices (
   invoice_id TEXT PRIMARY KEY,
   email TEXT,
   name TEXT,
   items_json TEXT,
-  subtotal REAL,
-  discount_type TEXT DEFAULT 'none',
+  subtotal REAL DEFAULT 0,
+  discount_type TEXT DEFAULT 'fixed',
   discount_val REAL DEFAULT 0,
   discount_amount REAL DEFAULT 0,
-  total_amount REAL,
+  total_amount REAL DEFAULT 0,
   status TEXT DEFAULT 'PENDING',
-  delivered_at TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  delivered_at TEXT
 );
 
 -- Product & Reward Catalog
 CREATE TABLE IF NOT EXISTS product_catalog (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT UNIQUE,
-  price REAL,
+  price REAL DEFAULT 0,
   image_url TEXT,
   type TEXT DEFAULT 'reward'
 );
 
--- Bot Rate Limiting
-CREATE TABLE IF NOT EXISTS bot_daily_views (
-  sender_id TEXT PRIMARY KEY,
-  view_date TEXT,
-  view_count INTEGER DEFAULT 0,
-  warned INTEGER DEFAULT 0
+-- Encouragement Drip Configuration
+CREATE TABLE IF NOT EXISTS drip_messages (
+  month INTEGER PRIMARY KEY,
+  subject TEXT,
+  theme TEXT,
+  scripture TEXT,
+  message TEXT,
+  highlight_img TEXT,
+  highlight_label TEXT,
+  custom_html TEXT
+);
+
+-- Promo Codes & Redemptions
+CREATE TABLE IF NOT EXISTS promo_codes (
+  code TEXT PRIMARY KEY,
+  points INTEGER DEFAULT 1,
+  max_users INTEGER DEFAULT 30,
+  claimed_count INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- System Settings & Power Control
+CREATE TABLE IF NOT EXISTS system_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- System Audit Logs
+CREATE TABLE IF NOT EXISTS system_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  level TEXT DEFAULT 'INFO',
+  message TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -190,112 +354,120 @@ CREATE TABLE IF NOT EXISTS bot_daily_views (
 ## 📂 Project Structure
 
 ```
+├── .github/
+│   └── workflows/
+│       └── build-and-release-apk.yml   # CI/CD: Reads package.json, auto-bumps, builds APK & releases
 ├── android/
 │   ├── android-tcrp/                   # Primary Android Studio Gradle Project
 │   │   └── app/src/main/java/.../     # LauncherActivity.java (WebView, AndroidBridge)
-│   ├── TimelessRewards-v1.8.apk        # Compiled Android Release Binary (v1.8.0)
 │   └── app/                            # Secondary build mirror
 ├── api/
-│   ├── main.js                         # Core API Route Handler
+│   ├── main.js                         # Core REST API & Version Gate (HTTP 426)
+│   ├── cron.js                         # Monthly Drip Encouragement Dispatcher
 │   ├── bot.js                          # Meta Messenger Webhook Handler
-│   └── cron.js                         # Monthly Drip Encouragement Dispatcher
+│   ├── brevo-webhook.js                # Brevo Email Delivery/Bounce Webhook
+│   └── simulator.js                    # Local Messenger Bot Simulation Endpoint
 ├── assets/
-│   ├── app.js                          # TCRPSync Engine, Layouts, Updater, Protections
+│   ├── app.js                          # Mandatory Update Barrier, TCRPSync, Layout Engine
 │   └── styles.css                      # Cockpit Dark/Gold High-Contrast Theme
 ├── lib/
 │   ├── cache.js                        # In-Memory TTLCache with Tag Invalidation
 │   ├── db.js                           # Turso libSQL Pipeline Client & Migrations
-│   ├── botHandler.js                   # Messenger Bot FSM & Dashboard Formatter
+│   ├── dbPruner.js                     # Automated Database Vacuuming & Maintenance
 │   ├── mailer.js                       # Brevo Universal Email Dispatcher
-│   ├── security.js                     # Rate Limiter & View Guard
 │   ├── handlers/
-│   │   ├── invoiceHandler.js           # POS Invoices & 7-Day Lock Enforcement
-│   │   ├── catalogHandler.js           # Product Catalog & Reward Orders
-│   │   ├── missionaryHandler.js        # Roster CRUD & Bulk Pusher
-│   │   └── systemHandler.js            # Update Checking & System Health
+│   │   ├── systemHandler.js            # GitHub Releases, Version Checks, Power Switch
+│   │   ├── emailHandler.js             # Pending Email Calculation & Manual Dispatch
+│   │   ├── invoiceHandler.js           # POS Invoices & 7-Day Delivery Lock
+│   │   ├── missionaryHandler.js        # Roster CRUD, Import, & Bulk Pusher
+│   │   └── catalogHandler.js           # Catalog & Reward Order Management
 │   └── utils/
-│       └── batchCalculator.js          # Standardized Batch Month Progression Logic
-├── templates/                          # Production Responsive HTML Email Templates
+│       └── batchCalculator.js          # Missionary Progression & Eligibility Engine
+├── scripts/
+│   ├── sync-assets.js                  # Syncs package.json version to all build targets & assets
+│   └── generate-release-notes.js       # Generates formatted release notes from git commits
+├── templates/                          # Production HTML Email Templates (Brevo)
 ├── views/                              # Application Frontend Views
 │   ├── index.html                      # System Cockpit & Heat Map
+│   ├── missionaries.html               # Missionary Roster & Next-Cron Slot Calculator
 │   ├── invoicing.html                  # POS Cashier, Wireframe Cards, Slip Downloader
-│   ├── missionaries.html               # Missionary Roster & Batch Editor
-│   ├── pusher.html                     # Bulk Missionary Onboarding & History Feed
-│   ├── gallery.html                    # CDN Image & Reward Catalog Manager
+│   ├── pusher.html                     # Bulk Missionary Pusher with Keyboard Shortcuts
 │   ├── drips.html                      # Drip Letter Preview & Scheduler
-│   ├── settings.html                   # System Settings & Clean Update Checker
+│   ├── gallery.html                    # Product Catalog & Image Manager
+│   ├── delivered.html                  # Delivered Orders Archive & Slips
+│   ├── settings.html                   # Control Room, Power Switch, & Update Checker
 │   └── logs.html                       # Real-Time System Audit Logs
-├── package.json                        # Project Metadata & Scripts
-└── schema.sql                          # Production Database Schema
+├── package.json                        # Single Source of Truth for Versioning
+└── schema.sql                          # Production Turso Database Schema
 ```
 
 ---
 
 ## 🧪 Testing & Quality Assurance
 
-All features are covered by a comprehensive, zero-failure testing suite:
+All features, migration scripts, and cohort rules are covered by an automated test suite:
 
 ```bash
-# 1. Run Master 500-Point Auditor
+# 1. Run Master 500-Point Auditor Test
 npm test
 # Result: 502 Passed, 0 Failed (100% Clean)
 
-# 2. Run Strict HTML Email Template Auditor (Validates </html> completeness)
-npm run test:templates
-# Result: 6/6 Templates Passed
+# 2. Run Backend Suggestions & Cohort Progression Suite
+node tests/backendSuggestionsAndCohort.test.js
+# Result: 39 Passed, 0 Failed
 
-# 3. Run Frontend DOM & HTML Integrity Verification
-npm run test:html
-# Result: 12/12 HTML Views Validated
-
-# 4. Build Web & Android Assets
+# 3. Synchronize Web Assets & Versioning
 npm run build
-
-# 5. Compile Android APK with Gradle
-cd android/android-tcrp && ./gradlew assembleDebug
+# (Runs node scripts/sync-assets.js to propagate package.json version)
 ```
 
 ---
 
-## 📜 Full Changelog
+## ⚙️ Environment Variables
 
-### [v1.8.0] - 2026-09-02 (Build Code 10)
-* **⚡ High-Speed Stale-While-Revalidate Engine**: Integrated `TCRPSync` in `assets/app.js` enabling instant 0ms page rendering for Invoicing and Roster views.
-* **🚀 Server-Side In-Memory TTLCache (`lib/cache.js`)**: Sub-5ms response times for read queries with tag-based cache invalidation upon mutations.
-* **📱 Streamlined Update Checker**: Removed raw APK download buttons from Settings; added a dedicated "🔍 Check for Updates" button with `"✓ You're at the latest version!"` feedback.
+Configure the following environment variables in your local `.env` file or Vercel Project Settings:
 
-### [v1.7.0] - 2026-09-02 (Build Code 9)
-* **🗑️ Invoicing Delete Button Restored**: Added global `escapeHtml()` definition, resolving confirmation modal crash.
-* **📥 Android MediaStore Slip Downloader**: Implemented `AndroidBridge.saveBase64File()` using modern Android 10+ scoped storage (`MediaStore`) and dynamic storage permission handling for older Android versions.
+```ini
+# Turso libSQL Cloud Database
+TURSO_DATABASE_URL=https://tcrp-xxxx.turso.io
+TURSO_AUTH_TOKEN=your-turso-auth-token
 
-### [v1.6.0] - 2026-09-02 (Build Code 8)
-* **📅 Missionary Batch Progression Engine**: Standardized missionary mission month progression across the platform (`Batch: August` &rarr; `1st Month: September`).
-* **📊 Messenger Bot Dashboard Integration**: Bot displays batch arrival month and calculated 1st month start.
-* **🔍 UI Live Previews**: Real-time batch progression calculation in Roster Edit modal and Bulk Pusher.
+# Brevo (Sendinblue) Transactional Email API
+BREVO_API_KEY=xkeysib-xxxx-your-brevo-api-key
+SENDER_EMAIL=support@timelesscreations.com
+SENDER_NAME="Timeless Creations"
 
-### [v1.5.0] - 2026-09-02 (Build Code 7)
-* **🔒 7-Day Delivered Permanent Lock Policy**: Automatic stamping of `delivered_at`; transactions delivered ≥ 7 days ago become permanently locked and immutable.
-* **🛡️ Backend Enforcement**: Status rollbacks, product edits, and deletions rejected after 7-day delivery grace period.
+# Automated Cron Execution Secret
+CRON_SECRET=your-secure-cron-secret-token
 
-### [v1.4.0] - 2026-09-02 (Build Code 6)
-* **✏️ Focused Product-Only Editor**: Simplified Invoicing edit modal allowing editing of purchased products without altering customer profiles.
-* **🔒 Locked Reward Items**: Permanent protection for primary reward items in redemptions.
-* **🔘 Single Action Button Architecture**: Unified transaction cards to exactly one edit button per card.
+# Meta Messenger Platform Webhook
+FB_PAGE_ACCESS_TOKEN=your-facebook-page-access-token
+FB_VERIFY_TOKEN=your-webhook-verification-token
+FB_APP_SECRET=your-facebook-app-secret
 
-### [v1.3.0] - 2026-09-02 (Build Code 5)
-* **📋 Recent Additions & Bulk Push History Feed**: Live feed in `pusher.html` showing recent missionary registrations and cohort statistics.
-* **🏷️ Dual Cash/Reward Item Separation**: Clear itemization between free redeemed reward items and cash add-on purchases.
+# Admin Authorization
+ADMIN_PASSCODE=your-cockpit-admin-passcode
+```
 
-### [v1.2.0] - 2026-09-02 (Build Code 4)
-* **🗑️ Database Table Cleanup**: Removed obsolete Turso tables (`claims`, `invoices`, `bot_state`) and standardized on `cash_invoices` and `orders`.
-* **⚡ Power Switch Persistence**: Robust online/offline system toggle backed by Turso `system_settings` table.
+---
 
-### [v1.1.0] - 2026-09-02 (Build Code 3)
-* **📱 Android APK In-App Auto-Updater**: Automatic 60-second deployment polling and in-app APK update prompts.
-* **🔐 Zero-Key Access**: Removed requirement for hardcoded admin keys in settings.
+## 📜 Key Changelog Highlights
 
-### [v1.0.0] - 2026-08-23
-* **🎉 Initial Production Release**: Complete missionary reward redemption bot, Brevo 24-month email drip engine, and Turso libSQL backend.
+### [v2.49.0] - 2026-09-11 (Build 62)
+* **📦 Single Source of Truth**: Unified versioning across the entire repository to `package.json`. All build tools (`sync-assets.js`, `build.gradle`, `version.json`, CI) derive version and code from `package.json`.
+* **🛑 Mandatory Update Barrier**: Outdated client builds are locked down with an inescapable fullscreen blocker and rejected on the API with HTTP `426 Upgrade Required`.
+* **⏰ Cron Dispatch Optimization**: Resolved candidate query starvation, prioritizing overdue `next_send_date` records over newly prelisted arrival-month missionaries. Added strict Vercel cache-bypass headers.
+* **📅 Cron Schedule Alignment**: Synchronized UI slot estimations to reference schedule `0 7-12 6-31` (PHT).
+* **💌 Drip Email Template Overhaul**: Enhanced typography, visual hierarchy, direct support contact section, and anti-spam footer in `templates/monthly-drip.html`.
+
+### [v2.44.0] - 2026-09-10 (Build 56)
+* **📱 Hardware-Backed Version & Code Bridge**: Added `AndroidBridge.getAppVersion()` and `AndroidBridge.getAppVersionCode()` via Android `PackageManager`.
+* **🔄 Native Viewport Touch Physics**: Standardized scroll styling in `assets/app.css` and enabled native vertical scrollbars with bounce overscroll.
+* **⚡ Asset Cache-Busting**: Added cache-busting version query strings across all HTML view templates to eliminate WebView asset lockups.
+
+### [v1.8.0] - 2026-09-02 (Build 10)
+* **⚡ Stale-While-Revalidate Engine**: Integrated `TCRPSync` in `assets/app.js` enabling instant 0ms page rendering.
+* **🚀 Server-Side TTLCache**: Sub-5ms response times for read queries with tag-based cache invalidation.
 
 ---
 

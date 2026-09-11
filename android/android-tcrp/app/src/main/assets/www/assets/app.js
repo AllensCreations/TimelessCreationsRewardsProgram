@@ -841,7 +841,7 @@ async function checkDeploymentUpdate(isManual = false) {
 
     if (!remote || !remote.ok) {
       try {
-        const ghRes = await fetch('https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/Appversion/public/version.json?t=' + Date.now(), { cache: 'no-store' });
+        const ghRes = await fetch('https://raw.githubusercontent.com/AllensCreations/TimelessCreationsRewardsProgram/NewVersion/public/version.json?t=' + Date.now(), { cache: 'no-store' });
         if (ghRes.ok) {
           const ghData = await ghRes.json();
           if (ghData && ghData.version) {
@@ -931,52 +931,39 @@ async function checkDeploymentUpdate(isManual = false) {
       }
     } else if (hasUpdate) {
       if (badgeEl) {
-        badgeEl.textContent = `Update: v${remoteVer} (Build ${remoteCode})`;
-        badgeEl.style.background = 'rgba(201,168,76,0.2)';
-        badgeEl.style.color = 'var(--gold)';
+        badgeEl.textContent = `Update Required: v${remoteVer} (Build ${remoteCode})`;
+        badgeEl.style.background = 'rgba(239,68,68,0.2)';
+        badgeEl.style.color = '#ef4444';
       }
       if (msgEl) {
         msgEl.style.display = 'block';
-        msgEl.style.borderColor = 'rgba(201,168,76,0.5)';
-        msgEl.style.background = 'rgba(201,168,76,0.08)';
+        msgEl.style.borderColor = 'rgba(239,68,68,0.5)';
+        msgEl.style.background = 'rgba(239,68,68,0.08)';
         msgEl.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
-            <strong style="color:var(--gold); font-size:0.82rem;">🚀 New Update Detected in Release Link!</strong>
+            <strong style="color:#ef4444; font-size:0.82rem;">⚠️ Outdated Build: Mandatory Update Required!</strong>
             <span style="font-size:0.7rem; color:var(--muted);">${rel.apk_size_formatted || ''}</span>
           </div>
           <div style="font-size:0.75rem; color:var(--text); line-height:1.4;">
-            <div><strong>Release APK:</strong> ${rel.name || (`v${remoteVer} (Build ${remoteCode})`)}</div>
-            <div><strong>Installed APK:</strong> v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE})</div>
+            <div><strong>Latest Version:</strong> v${remoteVer} (Build ${remoteCode})</div>
+            <div><strong>Installed Version:</strong> v${CURRENT_APP_VERSION} (Build ${CURRENT_APP_VERSION_CODE}) [Retired]</div>
           </div>
           <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            <a href="${remote.apk_url || remote.direct_apk_url || remote.github_apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk'}" class="btn btn-sm btn-gold" style="text-decoration:none; padding:4px 12px; font-size:0.75rem;">⬇️ Download Release APK</a>
-            ${remote.release_url ? `<a href="${remote.release_url}" target="_blank" rel="noopener" class="btn btn-sm" style="background:rgba(255,255,255,0.08); color:var(--text); text-decoration:none; padding:4px 10px; font-size:0.75rem; border:1px solid var(--border);">🔗 Release Link</a>` : ''}
+            <a href="${remote.apk_url || remote.direct_apk_url || remote.github_apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk'}" class="btn btn-sm btn-gold" style="text-decoration:none; padding:4px 12px; font-size:0.75rem;">⬇️ Download Required Update</a>
           </div>
         `;
       }
 
-      // If user already dismissed this specific release build, do not pop up automatically in background
-      const alreadyDismissed = Number(LocalStore.get('tcrp_dismissed_update_build', 0)) === remoteCode;
-      if (!isManual && alreadyDismissed) {
-        return;
-      }
-
-      const confirmed = await showConfirmWarningModal({
-        title: `Update Available (v${remoteVer})`,
-        message: `A new update is ready to install.<br><span style="font-size:0.75rem; color:var(--muted); display:inline-block; margin-top:4px;">Build ${remoteCode} &bull; ${rel.apk_size_formatted || '11.8 MB'}</span>`,
-        confirmText: "Update Now",
-        cancelText: "Later",
-        isDanger: false,
-        icon: "🚀"
+      // Mandatory full-screen blocking overlay: renders older versions completely unrunnable
+      showMandatoryUpdateBarrier({
+        remoteVer,
+        remoteCode,
+        clientVer: CURRENT_APP_VERSION,
+        clientCode: CURRENT_APP_VERSION_CODE,
+        apkUrl: remote.apk_url || remote.direct_apk_url || remote.github_apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk',
+        apkSize: rel.apk_size_formatted || '',
+        releaseUrl: rel.release_url || ''
       });
-
-      if (confirmed) {
-        LocalStore.set('tcrp_installed_version_code', remoteCode);
-        const targetUrl = remote.apk_url || remote.direct_apk_url || remote.github_apk_url || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk';
-        window.location.href = targetUrl;
-      } else {
-        LocalStore.set('tcrp_dismissed_update_build', remoteCode);
-      }
     } else {
       if (msgEl) {
         msgEl.style.display = 'block';
@@ -1000,9 +987,137 @@ async function checkDeploymentUpdate(isManual = false) {
   } catch (_) {}
 }
 
+function showMandatoryUpdateBarrier(info) {
+  if (typeof document === 'undefined') return;
+  const existingBarrier = document.getElementById('tcrp-mandatory-update-barrier');
+  if (existingBarrier) return;
+
+  // Set global flag to disable all non-update interactions and API operations
+  window.__APP_VERSION_BLOCKED = true;
+
+  // Prevent background scrolling
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+
+  const targetUrl = info.apkUrl || 'https://github.com/AllensCreations/TimelessCreationsRewardsProgram/releases/latest/download/TimelessRewards.apk';
+
+  const barrier = document.createElement('div');
+  barrier.id = 'tcrp-mandatory-update-barrier';
+  barrier.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, rgba(20, 22, 32, 0.98) 0%, rgba(10, 11, 16, 0.99) 100%);
+    z-index: 2147483647;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #f8fafc;
+    text-align: center;
+    user-select: none;
+  `;
+
+  barrier.innerHTML = `
+    <div style="
+      background: rgba(18, 20, 29, 0.95);
+      border: 1.5px solid rgba(201, 168, 76, 0.45);
+      border-radius: 16px;
+      max-width: 440px;
+      width: 100%;
+      padding: 32px 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(201, 168, 76, 0.15);
+      box-sizing: border-box;
+    ">
+      <div style="font-size: 3rem; margin-bottom: 12px; line-height: 1;">🛑</div>
+      <h2 style="font-size: 1.35rem; font-weight: 700; color: #f8fafc; margin: 0 0 8px 0; letter-spacing: -0.02em;">
+        Update Required
+      </h2>
+      <p style="font-size: 0.88rem; color: #94a3b8; line-height: 1.5; margin: 0 0 20px 0;">
+        This app version has been retired. To maintain security, accurate rewards, and database synchronization, please update immediately to continue using TCRP.
+      </p>
+
+      <div style="
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 24px;
+        text-align: left;
+        font-size: 0.82rem;
+      ">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: #64748b;">Installed Version:</span>
+          <span style="color: #f87171; font-weight: 600; font-family: monospace;">v${info.clientVer} (Build ${info.clientCode})</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: #64748b;">Required Version:</span>
+          <span style="color: #4ade80; font-weight: 600; font-family: monospace;">v${info.remoteVer} (Build ${info.remoteCode})</span>
+        </div>
+        ${info.apkSize ? `
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #64748b;">Package Size:</span>
+          <span style="color: #cbd5e1; font-family: monospace;">${info.apkSize}</span>
+        </div>` : ''}
+      </div>
+
+      <a href="${targetUrl}" id="mandatory-update-download-btn" class="btn btn-gold" style="
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 14px 20px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-decoration: none;
+        box-sizing: border-box;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #e5c158, #c9a84c);
+        color: #0b0c10;
+        box-shadow: 0 4px 16px rgba(201, 168, 76, 0.35);
+        cursor: pointer;
+      ">
+        ⬇️ Update Now (Download v${info.remoteVer})
+      </a>
+
+      ${info.releaseUrl ? `
+      <div style="margin-top: 16px;">
+        <a href="${info.releaseUrl}" target="_blank" rel="noopener" style="
+          font-size: 0.75rem;
+          color: #94a3b8;
+          text-decoration: underline;
+        ">
+          View Release Notes on GitHub ↗
+        </a>
+      </div>` : ''}
+    </div>
+  `;
+
+  document.body.appendChild(barrier);
+
+  barrier.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'mandatory-update-download-btn') {
+      window.location.href = targetUrl;
+    }
+    e.stopPropagation();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (window.__APP_VERSION_BLOCKED) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+
 function initAutoUpdateChecker() {
-  // Check 3 seconds after page load
-  setTimeout(() => checkDeploymentUpdate(false), 3000);
+  // Check immediately (500ms) after page load
+  setTimeout(() => checkDeploymentUpdate(false), 500);
   // Recurring check every 60 seconds
   setInterval(() => checkDeploymentUpdate(false), 60000);
 }

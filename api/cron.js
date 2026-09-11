@@ -17,6 +17,11 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, error: "Unauthorized cron execution." });
   }
 
+  // Prevent caching of cron execution on Vercel edge/proxies
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   try {
     const rowSettings = await runSql("SELECT value FROM system_settings WHERE key = 'power_state'").catch(() => []);
     const powerVal = rowSettings?.[0]?.value;
@@ -30,18 +35,21 @@ export default async function handler(req, res) {
     const phtNow = new Date(Date.now() + 8 * 3600 * 1000);
     const todayPhtIso = phtNow.toISOString().slice(0, 10);
 
-    // ── Single unified query for ALL active missionaries (no Elder/Sister split) ──
+    // ── Single unified query for ALL active missionaries (prioritize due next_send_date, exclude current-month dispatched) ──
     const rawMissionaries = await runSql(`
       SELECT email, name, cohort, batch_month, months_sent, max_months, last_sent_at, next_send_date
       FROM missionaries 
       WHERE status = 'active'
         AND months_sent < max_months
-        AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL OR last_sent_at IS NULL)
+        AND (last_sent_at IS NULL OR substr(last_sent_at, 1, 7) < strftime('%Y-%m', date('now', '+8 hours')))
+        AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL)
       ORDER BY 
+        CASE WHEN next_send_date IS NOT NULL AND next_send_date <= date('now', '+8 hours') THEN 0 ELSE 1 END ASC,
+        next_send_date ASC,
         CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
         last_sent_at ASC,
         ROWID ASC
-      LIMIT 90
+      LIMIT 100
     `);
 
     // Filter strictly by schedule eligibility (Month 0 is NOT due; only Month >= 1)

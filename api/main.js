@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { handleSystemAction } from '../lib/handlers/systemHandler.js';
+import { handleSystemAction, readLocalVersion } from '../lib/handlers/systemHandler.js';
 import { handleMissionaryAction } from '../lib/handlers/missionaryHandler.js';
 import { handlePromoAction } from '../lib/handlers/promoHandler.js';
 import { handleEmailAction } from '../lib/handlers/emailHandler.js';
@@ -23,7 +23,7 @@ const MUTATING_ADMIN_ACTIONS = new Set([
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-admin-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-admin-key, x-client-version, x-client-version-code");
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
@@ -37,6 +37,22 @@ export default async function handler(req, res) {
       bodyData = req.body || {};
     }
     if (bodyData.action) action = bodyData.action;
+  }
+
+  // Enforce unrunnable status for outdated client versions (except update checks)
+  const clientCodeHeader = req.headers?.['x-client-version-code'] || req.query?.client_version_code || bodyData?.client_version_code;
+  if (clientCodeHeader && action !== 'get_version' && action !== 'check_update') {
+    const local = readLocalVersion();
+    const clientCodeNum = parseInt(clientCodeHeader, 10);
+    if (!isNaN(clientCodeNum) && local.version_code && clientCodeNum < local.version_code) {
+      return res.status(426).json({
+        ok: false,
+        update_required: true,
+        error: `Installed app version (Build ${clientCodeNum}) is outdated and retired. Please update to v${local.version} (Build ${local.version_code}) to continue.`,
+        latest_version: local.version,
+        latest_version_code: local.version_code
+      });
+    }
   }
 
   try {

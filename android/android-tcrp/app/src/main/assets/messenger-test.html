@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Messenger Simulator & Turso Telemetry | Timeless Creations</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/assets/app.css">
-  <script src="/assets/app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
+  <link rel="stylesheet" href="/assets/app.css?v=2.7.0">
+  <script src="/assets/app.js?v=2.7.0"></script>
   <style>
     :root {
       --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
@@ -17,55 +17,463 @@
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
-    .sim-wrap { max-width: 1320px; margin: 20px auto; padding: 0 16px 40px; display: grid; grid-template-columns: 440px 1fr; gap: 24px; align-items: start; }
+    .sim-wrap {
+      max-width: 1320px;
+      margin: 16px auto;
+      padding: 0 16px 40px;
+      display: grid;
+      grid-template-columns: 440px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Mobile Segmented View Switcher (Visible on <= 991px) */
+    .sim-mobile-switcher {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 12px;
+      gap: 4px;
+      width: 100%;
+    }
+    .sim-switch-btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 8px;
+      font-size: 0.78rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 700;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .sim-switch-btn.active {
+      background: var(--surface2);
+      color: var(--gold);
+      border-color: rgba(201,168,76,0.35);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .pill-counter {
+      background: rgba(201,168,76,0.2);
+      color: var(--gold);
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 10px;
+      border: 1px solid rgba(201,168,76,0.3);
+    }
     
     .messenger-phone {
-      background: #0f111a; border: 2px solid rgba(201,168,76,0.3); border-radius: 20px;
-      overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; height: 760px;
+      background: #0f111a;
+      border: 2px solid rgba(201,168,76,0.3);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      height: 760px;
+      width: 100%;
     }
-    .fb-header { background: #181b2a; padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .fb-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: 'Syne', sans-serif; }
-    .chat-scroll { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #0d0f17; }
+    .fb-header {
+      background: #181b2a;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .fb-avatar {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: 'Syne', sans-serif;
+    }
+    .chat-scroll {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #0d0f17;
+      -webkit-overflow-scrolling: touch;
+    }
     
-    .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.75rem; line-height: 1.5; word-break: break-word; white-space: pre-wrap; }
-    .msg.bot { background: #262938; color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
-    .msg.user { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .msg.bot {
+      background: #262938;
+      color: #fff;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .msg.user {
+      background: var(--blue);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
 
     /* Carousel Card Styling matching Facebook Messenger */
-    .fb-carousel-container { display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px 0; align-self: flex-start; max-width: 100%; scroll-snap-type: x mandatory; }
-    .fb-card { background: #1a1d2d; border: 1px solid var(--border); border-radius: 12px; width: 220px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; scroll-snap-align: start; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
-    .fb-card-img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #222534; display: block; }
-    .fb-card-body { padding: 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
-    .fb-card-title { font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700; color: #fff; }
-    .fb-card-subtitle { font-size: 0.68rem; color: var(--gold); }
-    .fb-card-btn { background: #28304a; border-top: 1px solid var(--border); color: var(--blue); text-align: center; padding: 10px; font-size: 0.72rem; font-weight: bold; cursor: pointer; transition: background 0.2s; font-family: 'DM Mono', monospace; border: none; width: 100%; }
+    .fb-carousel-container {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 4px 0 12px 0;
+      align-self: flex-start;
+      max-width: 100%;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .fb-card {
+      background: #1a1d2d;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 220px;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      scroll-snap-align: start;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+    .fb-card-img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: #222534;
+      display: block;
+    }
+    .fb-card-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .fb-card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .fb-card-subtitle {
+      font-size: 0.68rem;
+      color: var(--gold);
+    }
+    .fb-card-btn {
+      background: #28304a;
+      border-top: 1px solid var(--border);
+      color: var(--blue);
+      text-align: center;
+      padding: 10px;
+      font-size: 0.72rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: 'DM Mono', monospace;
+      border: none;
+      width: 100%;
+      min-height: 40px;
+    }
     .fb-card-btn:hover { background: #354166; }
 
-    .quick-responses-container { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; margin-bottom: 4px; align-self: flex-start; }
-    .quick-response-btn { background: rgba(0,132,255,0.15); border: 1px solid var(--blue); color: var(--blue); padding: 6px 12px; border-radius: 16px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; font-weight: bold; transition: all 0.2s; }
-    .quick-response-btn:hover { background: var(--blue); color: #fff; }
+    .quick-responses-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      align-self: flex-start;
+    }
+    .quick-response-btn {
+      background: rgba(0,132,255,0.15);
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      padding: 7px 13px;
+      border-radius: 16px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-weight: bold;
+      transition: all 0.2s;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .quick-response-btn:hover, .quick-response-btn:active {
+      background: var(--blue);
+      color: #fff;
+    }
 
-    .static-replies-bar { display: flex; gap: 6px; padding: 8px 12px; background: #151824; border-top: 1px solid var(--border); overflow-x: auto; }
-    .qr-chip { background: var(--surface); border: 1px solid var(--gold); color: var(--gold); padding: 5px 12px; border-radius: 16px; font-size: 0.68rem; cursor: pointer; white-space: nowrap; font-family: 'DM Mono', monospace; }
-    .qr-chip:hover { background: var(--gold-dim); }
+    .static-replies-bar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      background: #151824;
+      border-top: 1px solid var(--border);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .static-replies-bar::-webkit-scrollbar { display: none; }
+    .qr-chip {
+      background: var(--surface);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .qr-chip:hover, .qr-chip:active { background: var(--gold-dim); }
 
-    .chat-input-bar { display: flex; padding: 12px; background: #181b2a; border-top: 1px solid var(--border); gap: 8px; }
-    .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
-    .send-btn { background: var(--blue); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .chat-input-bar {
+      display: flex;
+      padding: 12px;
+      background: #181b2a;
+      border-top: 1px solid var(--border);
+      gap: 8px;
+      align-items: center;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 16px; /* 16px prevents mobile auto-zoom */
+      outline: none;
+      min-height: 42px;
+    }
+    .send-btn {
+      background: var(--blue);
+      border: none;
+      color: #fff;
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      transition: transform 0.1s;
+    }
+    .send-btn:active { transform: scale(0.92); }
 
-    .inspect-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; height: 760px; display: flex; flex-direction: column; gap: 14px; }
-    .log-screen { flex: 1; background: #08090f; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; font-size: 0.68rem; color: var(--green); overflow-y: auto; font-family: 'DM Mono', monospace; white-space: pre-wrap; line-height: 1.5; }
-    .state-box { background: #151824; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.72rem; }
+    /* Typing Indicator Animation */
+    .msg.bot.typing-indicator-msg {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 10px 14px;
+      width: fit-content;
+    }
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0.3); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .inspect-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      height: 760px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+    }
+    .log-screen {
+      flex: 1;
+      background: #08090f;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.68rem;
+      color: var(--green);
+      overflow-y: auto;
+      font-family: 'DM Mono', monospace;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    .state-box {
+      background: #151824;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.72rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    .state-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .state-label {
+      font-size: 0.6rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .state-val {
+      font-size: 0.74rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+    .otp-quick-btn {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: bold;
+      color: #000;
+      background: var(--gold);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Mobile Responsive Breakpoints */
+    @media (max-width: 991px) {
+      .sim-wrap {
+        display: flex;
+        flex-direction: column;
+        padding: 8px 12px 30px;
+        margin: 10px auto;
+        gap: 12px;
+        max-width: 100%;
+        width: 100%;
+      }
+      .sim-mobile-switcher {
+        display: flex;
+      }
+      #sim-phone-col, #sim-inspect-col {
+        width: 100%;
+        max-width: 100%;
+      }
+      .messenger-phone {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 16px;
+        height: min(720px, calc(100dvh - 180px));
+        min-height: 480px;
+      }
+      .inspect-panel {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 480px;
+        padding: 14px;
+      }
+      .log-screen {
+        height: 250px;
+        min-height: 200px;
+        max-height: 350px;
+      }
+      .fb-card {
+        width: 190px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .sim-wrap {
+        padding: 4px 6px 20px;
+        gap: 10px;
+      }
+      .messenger-phone {
+        height: calc(100dvh - 165px);
+        min-height: 440px;
+        border-radius: 14px;
+      }
+      .fb-header {
+        padding: 10px 12px;
+      }
+      .chat-scroll {
+        padding: 10px;
+      }
+      .msg {
+        max-width: 90%;
+        font-size: 0.78rem;
+      }
+      .state-box {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
   </style>
 </head>
 <body>
 
 <div class="sim-wrap">
+  <!-- Mobile Segmented View Switcher (<= 991px) -->
+  <div class="sim-mobile-switcher">
+    <button class="sim-switch-btn active" id="btn-view-phone" onclick="switchSimView('phone')">
+      💬 Messenger
+    </button>
+    <button class="sim-switch-btn" id="btn-view-logs" onclick="switchSimView('logs')">
+      📊 Telemetry <span id="mobile-log-badge" class="pill-counter">0</span>
+    </button>
+    <button class="sim-switch-btn" id="btn-view-both" onclick="switchSimView('both')">
+      📱 Split
+    </button>
+  </div>
+
   <!-- Left: Messenger Simulator UI -->
-  <div>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">📱 Messenger Simulator (Carousel Supported)</div>
-      <button class="filter-btn" onclick="resetSimulatorSession()" style="padding:4px 10px; font-size:0.65rem; background:rgba(224,92,92,0.15); color:#e05c5c; border-color:rgba(224,92,92,0.3);">🔄 Reset Session</button>
+  <div id="sim-phone-col">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; flex-wrap:wrap; gap:8px;">
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Messenger Simulator</div>
+      <button class="filter-btn" onclick="resetSimulatorSession()" style="padding:5px 12px; font-size:0.68rem; background:rgba(224,92,92,0.15); color:#e05c5c; border-color:rgba(224,92,92,0.3); min-height:30px;">Reset Session</button>
     </div>
     
     <div class="messenger-phone">
@@ -81,39 +489,64 @@
       </div>
 
       <div class="chat-scroll" id="chat-scroll">
-        <div class="msg bot">👋 Welcome to Timeless Creations Rewards Program (TCRP)!\n\n🔒 Authentication Required: Unverified users cannot bypass to the dashboard.\n\nTap '✨ Get Started' below to begin:</div>
+        <div class="msg bot">Welcome to Timeless Creations Rewards Program (TCRP)!\n\nAuthentication Required: Unverified users cannot bypass to the dashboard.\n\nTap 'Get Started' below to begin:</div>
       </div>
 
       <div id="dynamic-qr-container" style="padding: 0 16px; background: #0d0f17;"></div>
 
       <div class="static-replies-bar">
-        <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">✨ Get Started</button>
-        <button class="qr-chip" onclick="sendToBot('Dashboard', 'DISCOVER_PAYLOAD')">📊 Dashboard</button>
-        <button class="qr-chip" onclick="sendToBot('FAQs', 'FAQS_PAYLOAD')">📖 FAQs</button>
-        <button class="qr-chip" onclick="sendToBot('About', 'MENU_ABOUT_PAYLOAD')">✨ About</button>
+        <button class="qr-chip" onclick="sendToBot('Check', 'ACTION_CHECK')">Check</button>
+        <button class="qr-chip" onclick="sendToBot('Help & FAQs', 'MENU_HELP')">Help & FAQs</button>
+        <button class="qr-chip" onclick="sendToBot('Redeem Promo', 'PROMO_INFO')">Redeem Promo</button>
+        <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">Get Started</button>
       </div>
 
       <div class="chat-input-bar">
         <input type="text" class="chat-input" id="chat-input" placeholder="Type message, OTP code, or email..." onkeydown="if(event.key==='Enter') sendUserText()">
-        <button class="send-btn" onclick="sendUserText()">➤</button>
+        <button class="send-btn" onclick="sendUserText()" title="Send">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Right: Dev Logs & Turso SQL Query Inspector -->
-  <div class="inspect-panel">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">🔍 Turso SQL Query Telemetry &amp; OTP Logs</div>
-      <button class="filter-btn" onclick="inspectSessionState()" style="padding:4px 10px; font-size:0.65rem;">Refresh State</button>
+  <div class="inspect-panel" id="sim-inspect-col">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:bold; color:var(--gold);">Turso SQL Query Telemetry &amp; OTP Logs</div>
+      <button class="filter-btn" onclick="inspectSessionState()" style="padding:5px 12px; font-size:0.68rem; min-height:30px;">Refresh State</button>
     </div>
 
     <!-- DB Session & Missionary State Card -->
     <div class="state-box" id="state-box">
-      <div><strong>Session State:</strong> <span id="st-state" style="color:var(--gold);">START</span></div>
-      <div><strong>Verification Status:</strong> <span id="st-status" style="color:var(--red);">UNREGISTERED / UNVERIFIED 🔒</span></div>
-      <div><strong>Missionary Name:</strong> <span id="st-name" style="color:var(--muted);">—</span></div>
-      <div><strong>Email:</strong> <span id="st-email" style="color:var(--muted);">—</span></div>
-      <div><strong>Points Balance:</strong> <span id="st-points" style="color:var(--gold);">0 PTS</span></div>
+      <div class="state-item">
+        <span class="state-label">Session State</span>
+        <span class="state-val" id="st-state" style="color:var(--gold);">START</span>
+      </div>
+      <div class="state-item">
+        <span class="state-label">Verification</span>
+        <span class="state-val" id="st-status" style="color:var(--red);">UNREGISTERED</span>
+      </div>
+      <div class="state-item">
+        <span class="state-label">Missionary</span>
+        <span class="state-val" id="st-name" style="color:var(--muted);">—</span>
+      </div>
+      <div class="state-item">
+        <span class="state-label">Email</span>
+        <span class="state-val" id="st-email" style="color:var(--muted);">—</span>
+      </div>
+      <div class="state-item">
+        <span class="state-label">Balance</span>
+        <span class="state-val" id="st-points" style="color:var(--gold);">0 PTS</span>
+      </div>
+      <div class="state-item">
+        <span class="state-label">Daily Quota</span>
+        <span class="state-val" id="st-quota" style="color:var(--green);">0/10 msgs</span>
+      </div>
+      <div class="state-item">
+        <span class="state-label">OTP Resends</span>
+        <span class="state-val" id="st-otp" style="color:var(--gold);">0/3 used</span>
+      </div>
     </div>
 
     <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Live Turso SQL Mutations &amp; Bot Execution Stream</div>
@@ -125,22 +558,82 @@
 let currentPsid = "SIM_PSID_" + Math.floor(Math.random() * 90000 + 10000);
 document.getElementById('psid-badge').textContent = `PSID: ${currentPsid.slice(-6)}`;
 
+let currentMobileView = 'phone';
+let logCount = 0;
+
+function switchSimView(view) {
+  currentMobileView = view;
+  const phoneCol = document.getElementById('sim-phone-col');
+  const inspectCol = document.getElementById('sim-inspect-col');
+  const btnPhone = document.getElementById('btn-view-phone');
+  const btnLogs = document.getElementById('btn-view-logs');
+  const btnBoth = document.getElementById('btn-view-both');
+
+  if (btnPhone) btnPhone.classList.toggle('active', view === 'phone');
+  if (btnLogs) btnLogs.classList.toggle('active', view === 'logs');
+  if (btnBoth) btnBoth.classList.toggle('active', view === 'both');
+
+  if (window.innerWidth <= 991) {
+    if (view === 'phone') {
+      if (phoneCol) phoneCol.style.display = 'block';
+      if (inspectCol) inspectCol.style.display = 'none';
+    } else if (view === 'logs') {
+      if (phoneCol) phoneCol.style.display = 'none';
+      if (inspectCol) inspectCol.style.display = 'flex';
+    } else {
+      if (phoneCol) phoneCol.style.display = 'block';
+      if (inspectCol) inspectCol.style.display = 'flex';
+    }
+  } else {
+    if (phoneCol) phoneCol.style.display = 'block';
+    if (inspectCol) inspectCol.style.display = 'flex';
+  }
+}
+
+function autoFillOtp(code) {
+  const input = document.getElementById("chat-input");
+  if (input) {
+    input.value = code;
+    input.focus();
+  }
+  if (currentMobileView === 'logs' && window.innerWidth <= 991) {
+    switchSimView('phone');
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 991) {
+    const phoneCol = document.getElementById('sim-phone-col');
+    const inspectCol = document.getElementById('sim-inspect-col');
+    if (phoneCol) phoneCol.style.display = 'block';
+    if (inspectCol) inspectCol.style.display = 'flex';
+  } else {
+    switchSimView(currentMobileView);
+  }
+});
+
 function appendLog(level, text) {
   const screen = document.getElementById("log-screen");
   const time = new Date().toLocaleTimeString();
   let prefix = `[${time}] [${level.toUpperCase()}]`;
-  let colorStyle = "";
+
+  logCount++;
+  const badge = document.getElementById("mobile-log-badge");
+  if (badge) badge.textContent = logCount;
 
   if (level.toUpperCase() === 'OTP_DEBUG') {
-    prefix = `\n🔥 [${time}] [🔑 SIMULATED OTP PASSCODE FOUND]`;
-    colorStyle = "color: #ffcc00; font-weight: bold; display: block; margin: 8px 0; border: 1px dashed #ffcc00; padding: 4px;";
+    prefix = `\n[${time}] [SIMULATED OTP PASSCODE FOUND]`;
+    const otpMatch = String(text || '').match(/\b\d{6}\b/);
+    const fillBtnHtml = otpMatch
+      ? ` <button class="otp-quick-btn" onclick="autoFillOtp('${otpMatch[0]}')">⚡ Auto-Fill (${otpMatch[0]})</button>`
+      : "";
+    const colorStyle = "color: #ffcc00; font-weight: bold; display: block; margin: 8px 0; border: 1px dashed #ffcc00; padding: 6px; border-radius: 6px;";
+    screen.innerHTML += `<span style="${colorStyle}">${prefix} ${text}${fillBtnHtml}</span>\n`;
+    screen.scrollTop = screen.scrollHeight;
+    return;
   }
 
-  if (colorStyle) {
-    screen.innerHTML += `<span style="${colorStyle}">${prefix} ${text}</span>\n`;
-  } else {
-    screen.textContent += `${prefix} ${text}\n`;
-  }
+  screen.textContent += `${prefix} ${text}\n`;
   screen.scrollTop = screen.scrollHeight;
 }
 
@@ -163,9 +656,9 @@ function appendCarousel(products = []) {
       <img class="fb-card-img" src="${item.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" alt="Reward">
       <div class="fb-card-body">
         <div class="fb-card-title">${item.name || 'Reward Item'}</div>
-        <div class="fb-card-subtitle">⭐ Cost: ${item.price || 0} PTS</div>
+        <div class="fb-card-subtitle">Cost: ${item.price || 0} PTS</div>
       </div>
-      <button class="fb-card-btn" onclick="sendToBot('Claim ${item.name}', '${item.payload || 'CLAIM_ITEM_' + (item.id || 1)}')">🎁 Claim (${item.price || 0} PTS)</button>
+      <button class="fb-card-btn" onclick="sendToBot('Claim ${item.name}', '${item.payload || 'CLAIM_ITEM_' + (item.id || 1)}')">Claim (${item.price || 0} PTS)</button>
     </div>
   `).join('');
 
@@ -186,11 +679,29 @@ function renderQuickResponses(quickReplies = []) {
   container.appendChild(wrapper);
 }
 
+function showTypingIndicator() {
+  hideTypingIndicator();
+  const chatScroll = document.getElementById("chat-scroll");
+  const typingDiv = document.createElement("div");
+  typingDiv.className = "msg bot typing-indicator-msg";
+  typingDiv.id = "bot-typing-indicator";
+  typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  chatScroll.appendChild(typingDiv);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  const el = document.getElementById("bot-typing-indicator");
+  if (el) el.remove();
+}
+
 async function sendToBot(displayText, payload = null, rawText = null) {
   const messageText = rawText || displayText;
   appendMessage('user', displayText);
   document.getElementById("dynamic-qr-container").innerHTML = "";
   appendLog('USER', `Input: "${messageText}" | Payload: ${payload || 'None'}`);
+
+  showTypingIndicator();
 
   try {
     const res = await fetch("/api/simulator", {
@@ -203,6 +714,7 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         payload: payload
       })
     });
+    hideTypingIndicator();
     const data = await res.json();
     if (data.ok) {
       if (data.turso_logs && data.turso_logs.length > 0) {
@@ -212,42 +724,60 @@ async function sendToBot(displayText, payload = null, rawText = null) {
       }
 
       if (data.bot_responses && data.bot_responses.length > 0) {
-        const latest = data.bot_responses[0];
-        appendMessage('bot', latest.message);
-        appendLog('BOT_REPLY', latest.message);
+        data.bot_responses.forEach(latest => {
+          appendLog('BOT_REPLY', latest.message);
 
-        // If dashboard rendered, fetch and display reward products carousel automatically
-        if (latest.message.includes("MISSIONARY DASHBOARD")) {
-          try {
-            const prodRes = await fetch("/api/main?action=get_products&type=reward");
-            const prodData = await prodRes.json();
-            if (prodData.ok && prodData.products && prodData.products.length > 0) {
-              appendCarousel(prodData.products);
-            }
-          } catch(e) {}
-        }
+          // If carousel template dispatched, fetch and display reward products carousel
+          if (latest.message && latest.message.includes("[Carousel / Template]")) {
+            fetch("/api/main?action=get_products&type=reward")
+              .then(r => r.json())
+              .then(prodData => {
+                if (prodData.ok && prodData.products && prodData.products.length > 0) {
+                  appendCarousel(prodData.products);
+                }
+              })
+              .catch(() => {});
+          } else {
+            appendMessage('bot', latest.message);
+          }
+        });
       }
       
       const st = data.session_data?.state || data.session_state;
+      const isVerified = Boolean(data.missionary_profile && data.missionary_profile.email && data.missionary_profile.name && data.missionary_profile.name !== 'Missionary');
+
       if (st === 'AWAITING_TERMS') {
         renderQuickResponses([
-          { title: "✅ Agree & Continue", payload: "TERMS_AGREE" },
-          { title: "❌ Decline", payload: "TERMS_DECLINE" }
+          { title: "Agree & Continue", payload: "TERMS_AGREE" },
+          { title: "Decline", payload: "TERMS_DECLINE" }
         ]);
       } else if (st === 'AWAITING_OTP') {
         renderQuickResponses([
-          { title: "🔄 Resend Code", payload: "RESEND_OTP" },
-          { title: "✏️ Change Name/Email", payload: "REENTER_INFO" }
+          { title: "Resend Code", payload: "RESEND_OTP" },
+          { title: "Edit Details", payload: "EDIT_DETAILS" },
+          { title: "Cancel", payload: "RESET_SESSION" }
+        ]);
+      } else if (st === 'AWAITING_DETAILS' || st === 'AWAITING_ALL_IN_ONE') {
+        renderQuickResponses([
+          { title: "Cancel", payload: "RESET_SESSION" }
+        ]);
+      } else if (isVerified) {
+        renderQuickResponses([
+          { title: "Check", payload: "ACTION_CHECK" }
         ]);
       } else {
-        renderQuickResponses([]);
+        renderQuickResponses([
+          { title: "Get Started", payload: "GET_STARTED" },
+          { title: "Help & Support", payload: "MENU_HELP" }
+        ]);
       }
 
-      updateStateDisplay(st, data.missionary_profile);
+      updateStateDisplay(st, data.missionary_profile, data.quota);
     } else {
       appendLog('ERROR', data.error || "Failed to process message");
     }
   } catch (err) {
+    hideTypingIndicator();
     appendLog('NET_ERROR', err.message);
   }
 }
@@ -269,7 +799,7 @@ async function inspectSessionState() {
     });
     const data = await res.json();
     if (data.ok) {
-      updateStateDisplay(data.session?.state || 'START', data.missionary);
+      updateStateDisplay(data.session?.state || 'START', data.missionary, data.quota);
       appendLog('TURSO_INSPECT', `State: ${data.session?.state || 'START'} | Missionary Linked: ${data.missionary ? 'YES' : 'NO'}`);
       
       if (data.recent_logs && data.recent_logs.length > 0) {
@@ -289,7 +819,7 @@ async function resetSimulatorSession() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "reset_session", psid: currentPsid })
     });
-    document.getElementById("chat-scroll").innerHTML = '<div class="msg bot">🔄 Session reset! Tap \'✨ Get Started\' to begin again.</div>';
+    document.getElementById("chat-scroll").innerHTML = '<div class="msg bot">Session reset! Tap \'Get Started\' to begin again.</div>';
     document.getElementById("dynamic-qr-container").innerHTML = "";
     appendLog('TURSO_RESET', `Database sessions and missionary profile cleared for PSID ${currentPsid}`);
     inspectSessionState();
@@ -298,16 +828,35 @@ async function resetSimulatorSession() {
   }
 }
 
-function updateStateDisplay(stateName, missionary) {
+function updateStateDisplay(stateName, missionary, quota = null) {
   document.getElementById('st-state').textContent = stateName || 'START';
+  const isVerified = Boolean(missionary && missionary.email && missionary.name && missionary.name !== 'Missionary');
+  const maxQuota = isVerified ? 15 : 10;
+  const currentCount = quota?.msg_count || 0;
+  const quotaLimit = quota?.limit || maxQuota;
+  const otpResends = quota?.otp_resends || 0;
+  const maxOtpResends = quota?.max_otp_resends || 3;
+
+  const quotaEl = document.getElementById('st-quota');
+  if (quotaEl) {
+    quotaEl.textContent = `${currentCount}/${quotaLimit} msgs`;
+    quotaEl.style.color = currentCount >= quotaLimit ? "var(--red)" : "var(--green)";
+  }
+
+  const otpEl = document.getElementById('st-otp');
+  if (otpEl) {
+    otpEl.textContent = `${otpResends}/${maxOtpResends} used`;
+    otpEl.style.color = otpResends >= maxOtpResends ? "var(--red)" : "var(--gold)";
+  }
+
   if (missionary) {
-    document.getElementById('st-status').textContent = "VERIFIED & ACTIVE ✅";
+    document.getElementById('st-status').textContent = "VERIFIED & ACTIVE";
     document.getElementById('st-status').style.color = "var(--green)";
     document.getElementById('st-name').textContent = missionary.name || 'Unnamed';
     document.getElementById('st-email').textContent = missionary.email || '—';
     document.getElementById('st-points').textContent = `${missionary.points || 0} PTS`;
   } else {
-    document.getElementById('st-status').textContent = "UNREGISTERED / UNVERIFIED 🔒";
+    document.getElementById('st-status').textContent = "UNREGISTERED / UNVERIFIED";
     document.getElementById('st-status').style.color = "var(--red)";
     document.getElementById('st-name').textContent = '—';
     document.getElementById('st-email').textContent = '—';
@@ -316,8 +865,11 @@ function updateStateDisplay(stateName, missionary) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  initAppLayout('messengerbot', 'Messenger Simulator');
+  initAppLayout('simulator', 'Messenger Simulator');
   inspectSessionState();
+  if (window.innerWidth <= 991) {
+    switchSimView('phone');
+  }
 });
 </script>
 </body>

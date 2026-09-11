@@ -34,6 +34,7 @@ import 'dotenv/config';
 import { runSql } from '../lib/db.js';
 import { handleBotMessage } from '../lib/botHandler.js';
 import { log } from '../lib/logger.js';
+import { clearDebounce } from '../lib/security.js';
 
 const results = { passed: 0, failed: 0, scenarios: [] };
 
@@ -48,10 +49,12 @@ function assert(condition, message, scenario) {
 }
 
 async function cleanupTestUser(psid, email) {
+  clearDebounce(psid);
   await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
   await runSql("DELETE FROM missionaries WHERE psid = ? OR email = ?", [psid, email]);
   await runSql("DELETE FROM chat_messages WHERE psid = ?", [psid]);
   await runSql("DELETE FROM bot_rate_limits WHERE psid = ?", [psid]);
+  await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [psid]);
   await runSql("DELETE FROM bot_hourly_views WHERE psid = ?", [psid]);
   await runSql("DELETE FROM bot_daily_views WHERE sender_id = ?", [psid]);
 }

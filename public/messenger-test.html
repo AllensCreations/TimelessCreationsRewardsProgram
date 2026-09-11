@@ -114,6 +114,8 @@
       <div><strong>Missionary Name:</strong> <span id="st-name" style="color:var(--muted);">—</span></div>
       <div><strong>Email:</strong> <span id="st-email" style="color:var(--muted);">—</span></div>
       <div><strong>Points Balance:</strong> <span id="st-points" style="color:var(--gold);">0 PTS</span></div>
+      <div><strong>Daily Quota:</strong> <span id="st-quota" style="color:var(--green);">0/10 msgs</span></div>
+      <div><strong>OTP Resends Today:</strong> <span id="st-otp" style="color:var(--gold);">0/3 used</span></div>
     </div>
 
     <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Live Turso SQL Mutations &amp; Bot Execution Stream</div>
@@ -250,7 +252,7 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         renderQuickResponses([]);
       }
 
-      updateStateDisplay(st, data.missionary_profile);
+      updateStateDisplay(st, data.missionary_profile, data.quota);
     } else {
       appendLog('ERROR', data.error || "Failed to process message");
     }
@@ -276,7 +278,7 @@ async function inspectSessionState() {
     });
     const data = await res.json();
     if (data.ok) {
-      updateStateDisplay(data.session?.state || 'START', data.missionary);
+      updateStateDisplay(data.session?.state || 'START', data.missionary, data.quota);
       appendLog('TURSO_INSPECT', `State: ${data.session?.state || 'START'} | Missionary Linked: ${data.missionary ? 'YES' : 'NO'}`);
       
       if (data.recent_logs && data.recent_logs.length > 0) {
@@ -305,8 +307,27 @@ async function resetSimulatorSession() {
   }
 }
 
-function updateStateDisplay(stateName, missionary) {
+function updateStateDisplay(stateName, missionary, quota = null) {
   document.getElementById('st-state').textContent = stateName || 'START';
+  const isVerified = Boolean(missionary && missionary.email && missionary.name && missionary.name !== 'Missionary');
+  const maxQuota = isVerified ? 15 : 10;
+  const currentCount = quota?.msg_count || 0;
+  const quotaLimit = quota?.limit || maxQuota;
+  const otpResends = quota?.otp_resends || 0;
+  const maxOtpResends = quota?.max_otp_resends || 3;
+
+  const quotaEl = document.getElementById('st-quota');
+  if (quotaEl) {
+    quotaEl.textContent = `${currentCount}/${quotaLimit} msgs`;
+    quotaEl.style.color = currentCount >= quotaLimit ? "var(--red)" : "var(--green)";
+  }
+
+  const otpEl = document.getElementById('st-otp');
+  if (otpEl) {
+    otpEl.textContent = `${otpResends}/${maxOtpResends} used`;
+    otpEl.style.color = otpResends >= maxOtpResends ? "var(--red)" : "var(--gold)";
+  }
+
   if (missionary) {
     document.getElementById('st-status').textContent = "VERIFIED & ACTIVE ✅";
     document.getElementById('st-status').style.color = "var(--green)";

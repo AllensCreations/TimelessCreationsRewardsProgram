@@ -171,7 +171,8 @@ async function runCheckHubTester() {
     let msgs2 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
     assert(msgs2.length === 1, "Second check triggers rate limit notice (1 message)");
     assert(msgs2[0]?.message.includes("You have already checked your rewards dashboard today"), "Second check rate limit message contains polite explanation");
-    assert(msgs2[0]?.message.includes("12:00 AM UTC+8"), "Second check message specifies reset time 12:00 AM UTC+8");
+    assert(msgs2[0]?.message.includes("8:00 AM PHT"), "Second check message specifies reset time 8:00 AM PHT");
+    assert(msgs2[0]?.message.includes("We will not reply as of the moment"), "Second check message includes polite 'we will not reply as of the moment' note");
     assert(!EMOJI_REGEX.test(msgs2[0]?.message), "Rate limit notice contains 0 emojis");
 
   } catch (err) {

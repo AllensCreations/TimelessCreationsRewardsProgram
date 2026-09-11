@@ -82,6 +82,18 @@ async function runWebhookLoggerTests() {
     };
     assert(verifyFbSignature(invalidReq, testPayload) === false, "verifyFbSignature fails with incorrect signature");
 
+    // FB_IGNORE_SIGNATURE bypass verification
+    process.env.FB_IGNORE_SIGNATURE = 'true';
+    const bypassRes = createMockRes();
+    const bypassReq = {
+      method: 'POST',
+      headers: { 'x-hub-signature-256': 'sha256=bad_sig' },
+      body: { object: 'page', entry: [] }
+    };
+    await webhookHandler(bypassReq, bypassRes);
+    assert(bypassRes.statusCode === 200, "Webhook permits dispatch when FB_IGNORE_SIGNATURE=true even with bad signature");
+    delete process.env.FB_IGNORE_SIGNATURE;
+
     // 3. Webhook POST Inbound Logging
     console.log("\n📥 [Test 3] Webhook POST Inbound Logging to system_logs");
     delete process.env.FB_APP_SECRET; // Clear secret for test dispatch
@@ -190,7 +202,8 @@ async function runWebhookLoggerTests() {
     const secondCheckMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [referrerPsid]);
     assert(secondCheckMsgs.length === 1, "Second check triggers single rate limit notice message");
     assert(secondCheckMsgs[0]?.message.includes("You have already checked your rewards dashboard today"), "Second check displays polite rate limit warning");
-    assert(secondCheckMsgs[0]?.message.includes("12:00 AM UTC+8"), "Notice reminds user of 12:00 AM UTC+8 daily reset");
+    assert(secondCheckMsgs[0]?.message.includes("8:00 AM PHT"), "Notice reminds user of 8:00 AM PHT daily reset");
+    assert(secondCheckMsgs[0]?.message.includes("We will not reply as of the moment"), "Notice contains polite 'We will not reply as of the moment' note");
     assert(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(secondCheckMsgs[0]?.message), "Rate limit notice strictly has 0 emojis");
 
     // Cleanup

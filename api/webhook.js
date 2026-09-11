@@ -2,6 +2,13 @@ import { handleBotMessage } from '../lib/botHandler.js';
 import { verifyFbSignature } from '../lib/security.js';
 import { logSystemEvent } from '../lib/logger.js';
 
+// Disable default body parser on Vercel to preserve exact raw body bytes for HMAC-SHA256 signature verification
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 async function resolveRequestBody(req) {
   if (req.rawBody) {
     const raw = typeof req.rawBody === 'string' ? req.rawBody : req.rawBody.toString('utf8');
@@ -9,6 +16,20 @@ async function resolveRequestBody(req) {
     try { parsed = JSON.parse(raw); } catch (_) { parsed = req.body || {}; }
     return { rawBody: raw, body: parsed };
   }
+
+  // If req is an unconsumed stream (e.g. bodyParser disabled on Vercel)
+  try {
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+    if (chunks.length > 0) {
+      const raw = Buffer.concat(chunks).toString('utf8');
+      let parsed = null;
+      try { parsed = JSON.parse(raw); } catch (_) { parsed = {}; }
+      return { rawBody: raw, body: parsed };
+    }
+  } catch (_) {}
 
   if (typeof req.body === 'string') {
     let parsed = null;
@@ -26,20 +47,6 @@ async function resolveRequestBody(req) {
   if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
     return { rawBody: JSON.stringify(req.body), body: req.body };
   }
-
-  // If req is a stream (e.g. bodyParser disabled)
-  try {
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-    }
-    if (chunks.length > 0) {
-      const raw = Buffer.concat(chunks).toString('utf8');
-      let parsed = null;
-      try { parsed = JSON.parse(raw); } catch (_) { parsed = {}; }
-      return { rawBody: raw, body: parsed };
-    }
-  } catch (_) {}
 
   return { rawBody: JSON.stringify(req.body || {}), body: req.body || {} };
 }
@@ -69,12 +76,16 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { rawBody, body } = await resolveRequestBody(req);
 
-    const hasAppSecret = Boolean((process.env.FB_APP_SECRET || '').trim());
-    const ignoreSig = process.env.FB_IGNORE_SIGNATURE === 'true';
+    const rawSecret = (process.env.FB_APP_SECRET || '').trim().replace(/^["']|["']$/g, '');
+    const hasAppSecret = Boolean(rawSecret);
+    const ignoreSig = (process.env.FB_IGNORE_SIGNATURE || '').trim().toLowerCase() === 'true';
 
     if (hasAppSecret && !ignoreSig && !verifyFbSignature(req, rawBody)) {
       const sigHeader = req.headers?.['x-hub-signature-256'] || req.headers?.['X-Hub-Signature-256'] || 'none';
-      await logSystemEvent('ERROR', `[WEBHOOK_AUTH_FAIL] Unauthorized signature rejected. Header: ${sigHeader.slice(0, 16)}... Check FB_APP_SECRET in environment variables.`);
+      const secretHint = rawSecret.startsWith('EAA')
+        ? ' Note: FB_APP_SECRET appears to be a Page Access Token instead of an App Secret.'
+        : '';
+      await logSystemEvent('ERROR', `[WEBHOOK_AUTH_FAIL] Unauthorized signature rejected. Header: ${sigHeader.slice(0, 16)}... Set FB_IGNORE_SIGNATURE=true in Vercel to bypass, or check FB_APP_SECRET in Meta Developer settings.${secretHint}`);
       return res.status(401).send('Invalid signature');
     }
 

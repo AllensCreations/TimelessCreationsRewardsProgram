@@ -87,10 +87,10 @@
       <div id="dynamic-qr-container" style="padding: 0 16px; background: #0d0f17;"></div>
 
       <div class="static-replies-bar">
+        <button class="qr-chip" onclick="sendToBot('Check', 'ACTION_CHECK')">Check</button>
+        <button class="qr-chip" onclick="sendToBot('Help & FAQs', 'MENU_HELP')">Help & FAQs</button>
+        <button class="qr-chip" onclick="sendToBot('Redeem Promo', 'PROMO_INFO')">Redeem Promo</button>
         <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">Get Started</button>
-        <button class="qr-chip" onclick="sendToBot('My Dashboard', 'ACTION_DASHBOARD')">My Dashboard</button>
-        <button class="qr-chip" onclick="sendToBot('Rewards & Promos', 'MENU_REWARDS')">Rewards & Promos</button>
-        <button class="qr-chip" onclick="sendToBot('Help & Support', 'MENU_HELP')">Help & Support</button>
       </div>
 
       <div class="chat-input-bar">
@@ -217,11 +217,10 @@ async function sendToBot(displayText, payload = null, rawText = null) {
 
       if (data.bot_responses && data.bot_responses.length > 0) {
         data.bot_responses.forEach(latest => {
-          appendMessage('bot', latest.message);
           appendLog('BOT_REPLY', latest.message);
 
-          // If dashboard rendered, fetch and display reward products carousel automatically
-          if (latest.message && latest.message.includes("MISSIONARY DASHBOARD")) {
+          // If carousel template dispatched, fetch and display reward products carousel
+          if (latest.message && latest.message.includes("[Carousel / Template]")) {
             fetch("/api/main?action=get_products&type=reward")
               .then(r => r.json())
               .then(prodData => {
@@ -230,6 +229,8 @@ async function sendToBot(displayText, payload = null, rawText = null) {
                 }
               })
               .catch(() => {});
+          } else {
+            appendMessage('bot', latest.message);
           }
         });
       }
@@ -254,11 +255,7 @@ async function sendToBot(displayText, payload = null, rawText = null) {
         ]);
       } else if (isVerified) {
         renderQuickResponses([
-          { title: "Rewards Catalog", payload: "MENU_REWARDS" },
-          { title: "Invite (+1 Pt)", payload: "INVITE_COMPANION" },
-          { title: "Redeem Promo", payload: "PROMO_INFO" },
-          { title: "Help & FAQs", payload: "MENU_HELP" },
-          { title: "My Dashboard", payload: "ACTION_DASHBOARD" }
+          { title: "Check", payload: "ACTION_CHECK" }
         ]);
       } else {
         renderQuickResponses([

@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     if (action === "reset_session") {
       await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
       await runSql("DELETE FROM missionaries WHERE psid = ?", [psid]);
+      await runSql("DELETE FROM chat_messages WHERE psid = ?", [psid]);
       await runSql("INSERT INTO system_logs (level, message) VALUES ('TURSO', ?)", [`RESET session for PSID ${psid}`]);
       return res.status(200).json({ ok: true, message: "Session and test user reset successfully." });
     }
@@ -36,17 +37,22 @@ export default async function handler(req, res) {
       const text = bodyData.text || "";
       const payload = bodyData.payload || null;
 
+      const lastMsg = (await runSql("SELECT MAX(id) as max_id FROM chat_messages WHERE psid = ?", [psid]))[0];
+      const maxId = Number(lastMsg?.max_id) || 0;
+
       await handleBotMessage(psid, text, payload);
 
       const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0] || null;
       const missionary = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [psid]))[0] || null;
       const recentTursoQueries = await runSql("SELECT id, level, message, created_at FROM system_logs ORDER BY id DESC LIMIT 5");
+      const botResponses = await runSql("SELECT message, created_at FROM chat_messages WHERE psid = ? AND sender = 'bot' AND id > ? ORDER BY id ASC", [psid, maxId]);
 
       return res.status(200).json({
         ok: true,
         session_state: session?.state || "START",
         session_data: session || null,
         missionary_profile: missionary,
+        bot_responses: botResponses || [],
         turso_logs: recentTursoQueries || []
       });
     }

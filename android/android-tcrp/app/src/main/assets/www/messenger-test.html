@@ -88,9 +88,9 @@
 
       <div class="static-replies-bar">
         <button class="qr-chip" onclick="sendToBot('Get Started', 'GET_STARTED')">✨ Get Started</button>
-        <button class="qr-chip" onclick="sendToBot('Dashboard', 'DISCOVER_PAYLOAD')">📊 Dashboard</button>
-        <button class="qr-chip" onclick="sendToBot('FAQs', 'FAQS_PAYLOAD')">📖 FAQs</button>
-        <button class="qr-chip" onclick="sendToBot('About', 'MENU_ABOUT_PAYLOAD')">✨ About</button>
+        <button class="qr-chip" onclick="sendToBot('My Dashboard', 'ACTION_DASHBOARD')">📊 My Dashboard</button>
+        <button class="qr-chip" onclick="sendToBot('Rewards & Promos', 'MENU_REWARDS')">🎁 Rewards & Promos</button>
+        <button class="qr-chip" onclick="sendToBot('Help & Support', 'MENU_HELP')">📖 Help & Support</button>
       </div>
 
       <div class="chat-input-bar">
@@ -212,20 +212,22 @@ async function sendToBot(displayText, payload = null, rawText = null) {
       }
 
       if (data.bot_responses && data.bot_responses.length > 0) {
-        const latest = data.bot_responses[0];
-        appendMessage('bot', latest.message);
-        appendLog('BOT_REPLY', latest.message);
+        data.bot_responses.forEach(latest => {
+          appendMessage('bot', latest.message);
+          appendLog('BOT_REPLY', latest.message);
 
-        // If dashboard rendered, fetch and display reward products carousel automatically
-        if (latest.message.includes("MISSIONARY DASHBOARD")) {
-          try {
-            const prodRes = await fetch("/api/main?action=get_products&type=reward");
-            const prodData = await prodRes.json();
-            if (prodData.ok && prodData.products && prodData.products.length > 0) {
-              appendCarousel(prodData.products);
-            }
-          } catch(e) {}
-        }
+          // If dashboard rendered, fetch and display reward products carousel automatically
+          if (latest.message && latest.message.includes("MISSIONARY DASHBOARD")) {
+            fetch("/api/main?action=get_products&type=reward")
+              .then(r => r.json())
+              .then(prodData => {
+                if (prodData.ok && prodData.products && prodData.products.length > 0) {
+                  appendCarousel(prodData.products);
+                }
+              })
+              .catch(() => {});
+          }
+        });
       }
       
       const st = data.session_data?.state || data.session_state;
@@ -237,7 +239,12 @@ async function sendToBot(displayText, payload = null, rawText = null) {
       } else if (st === 'AWAITING_OTP') {
         renderQuickResponses([
           { title: "🔄 Resend Code", payload: "RESEND_OTP" },
-          { title: "✏️ Change Name/Email", payload: "REENTER_INFO" }
+          { title: "✏️ Edit Details", payload: "EDIT_DETAILS" },
+          { title: "❌ Cancel", payload: "RESET_SESSION" }
+        ]);
+      } else if (st === 'AWAITING_DETAILS' || st === 'AWAITING_ALL_IN_ONE') {
+        renderQuickResponses([
+          { title: "❌ Cancel", payload: "RESET_SESSION" }
         ]);
       } else {
         renderQuickResponses([]);

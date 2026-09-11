@@ -176,6 +176,7 @@ const NAV_ITEMS = [
   { key: 'invoicing', label: '🧾 Order Summary & POS', url: '/invoicing.html' },
   { key: 'drips', label: '💌 24M Drips', url: '/drips.html' },
   { key: 'messengerbot', label: '🎁 Bot Rewards', url: '/messengerbot.html' },
+  { key: 'simulator', label: '💬 Bot Simulator', url: '/messenger-test.html' },
   { key: 'gallery', label: '🖼️ CDN Gallery', url: '/gallery.html' },
   { key: 'logs', label: '📜 Logs', url: '/logs.html' },
   { key: 'settings', label: '⚙️ Settings', url: '/settings.html' }

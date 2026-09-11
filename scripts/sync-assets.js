@@ -109,6 +109,22 @@ if (fs.existsSync(pkgPath)) {
         fs.writeFileSync(path.join(wwwDir, 'version.json'), JSON.stringify(versionData, null, 2) + '\n', 'utf8');
       }
     }
+
+    // Sync settings.html version badge hardcoded for offline reliability
+    const settingsFiles = [
+      path.join(rootDir, 'views', 'settings.html'),
+      path.join(publicDir, 'settings.html'),
+      ...targetWwwDirs.map(d => path.join(d, 'settings.html'))
+    ];
+    const badgeRegex = /(<span[^>]*id=["']app-version-badge["'][^>]*>)(.*?)(<\/span>)/i;
+    for (const sf of settingsFiles) {
+      if (fs.existsSync(sf)) {
+        let sContent = fs.readFileSync(sf, 'utf8');
+        sContent = sContent.replace(badgeRegex, `$1v${cleanVer} (Build ${currentCode})$3`);
+        fs.writeFileSync(sf, sContent, 'utf8');
+      }
+    }
+
     console.log(`[sync-assets] Unified version from package.json: v${cleanVer} (Build ${currentCode})`);
   } catch (err) {
     console.error('[sync-assets] Error syncing version from package.json:', err);

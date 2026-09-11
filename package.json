@@ -1,7 +1,7 @@
 {
   "name": "timelesscreationsrewardsprogram",
-  "version": "2.51.0",
-  "versionCode": 64,
+  "version": "2.52.0",
+  "versionCode": 65,
   "description": "TCRP Missionary Rewards & Automated Drip Program",
   "main": "server.js",
   "type": "module",

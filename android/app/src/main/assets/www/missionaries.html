@@ -847,7 +847,8 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
   }
 
   let isDue = false;
-  if (!isCompleted && !isSentToday) {
+  const isSentThisMonth = m.schedule_status === 'SENT_THIS_MONTH' || (m.last_sent_at && m.last_sent_at.slice(0, 7) === phtNowIso.slice(0, 7));
+  if (!isCompleted && !isSentToday && !isSentThisMonth) {
     if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso.slice(0, 7)) {
       isDue = false;
     } else {
@@ -877,6 +878,18 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
       isWithin24h: false,
       badgeHtml: '<span class="est-countdown-pill sent-today">✅ Sent Today</span>',
       intelHtml: `<span style="color:var(--green); font-weight:bold;">✅ Dispatched Today (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`
+    };
+  }
+
+  if (isSentThisMonth) {
+    const sentEpoch = m.last_sent_at ? new Date(m.last_sent_at).getTime() : nowPht;
+    return {
+      tier: 2,
+      statusType: 'SENT_THIS_MONTH',
+      targetEpochMs: sentEpoch,
+      isWithin24h: false,
+      badgeHtml: '<span class="est-countdown-pill sent-today">✅ Sent This Month</span>',
+      intelHtml: `<span style="color:var(--green); font-weight:bold;">✅ Dispatched This Month (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`
     };
   }
 
@@ -1113,9 +1126,10 @@ function renderPaginatedCards() {
     }
 
     const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    const isSentThisMonth = m.schedule_status === 'SENT_THIS_MONTH' || (m.last_sent_at && m.last_sent_at.slice(0, 7) === phtNowIso.slice(0, 7));
     
     let isDue = false;
-    if (!m.is_completed && !isSentToday) {
+    if (!m.is_completed && !isSentToday && !isSentThisMonth) {
       if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso.slice(0, 7)) {
         isDue = false;
       } else {
@@ -1151,7 +1165,9 @@ function renderPaginatedCards() {
     if (m.is_completed) {
       badge = `<span style="font-size:0.62rem; color:#c084fc; font-weight:bold; background:rgba(168,85,247,0.18); border:1px solid #a855f7; padding:2px 7px; border-radius:4px;">🎓 Completed (${totalMonths}M)</span>`;
     } else if (isSentToday) {
-      badge = `<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
+      badge = `<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent Today (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
+    } else if (isSentThisMonth) {
+      badge = `<span style="font-size:0.62rem; color:var(--green); font-weight:bold; background:rgba(76,175,130,0.18); border:1px solid var(--green); padding:2px 7px; border-radius:4px;">✅ Sent This Month (${formatMonthYear(m.last_sent_at || phtNowIso)})</span>`;
     } else if (!state.isOnline && isDue) {
       badge = '<span style="font-size:0.62rem; color:#ff6b6b; font-weight:bold; background:rgba(239,68,68,0.18); border:1px solid #ff6b6b; padding:2px 7px; border-radius:4px;">💤 Offline Paused</span>';
     } else if (isDue) {
@@ -1168,6 +1184,7 @@ function renderPaginatedCards() {
 
     const estBoxLabel = m.is_completed ? '🎓 Completion Status'
       : isSentToday ? '✅ Dispatched Today'
+      : isSentThisMonth ? '✅ Dispatched This Month'
       : (isDue && state.isOnline) ? '⏳ Estimated Send Today'
       : (!state.isOnline && isDue) ? '💤 Offline Paused'
       : est.isWithin24h ? '⏳ Estimated Dispatch'
@@ -1242,7 +1259,12 @@ function renderPaginatedCards() {
 
           <div class="card-actions-wrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div class="card-actions-group" style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button class="btn ${isDue && state.isOnline ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.68rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})">✉️ Send ${escapeHtml(nextDripDisplay)}</button>
+              ${isSentToday
+                ? `<button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; opacity:0.6; cursor:not-allowed;" disabled>✓ Sent Today</button>`
+                : isSentThisMonth
+                ? `<button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem; opacity:0.6; cursor:not-allowed;" disabled>✓ Sent This Month</button>`
+                : `<button class="btn ${isDue && state.isOnline ? 'btn-gold' : 'btn-dark'}" style="padding:4px 10px; font-size:0.68rem;" onclick="dispatchMissionaryEmail('${m.email}', '${escapeHtml(m.name)}', ${nextMonthNum})">✉️ Send ${escapeHtml(nextDripDisplay)}</button>`
+              }
               <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openPreviewModal('${m.email}', ${nextMonthNum}, '${escapeHtml(m.name)}')">👁️ Preview</button>
               <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.68rem;" onclick="openRescheduleModal('${m.email}', '${escapeHtml(m.name)}', '${m.next_send_date || ''}')">📅 Reschedule</button>
             </div>

@@ -137,7 +137,7 @@
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:12px;">
               <script>
                 
-const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public";
+const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@NewVersion/public";
 const KNOWN_DRIVE_MAP = {
   "1IkagW3wWhIhfaG01mBL4wNF-1j2lP6YG": "drips/temple_hero.jpg",
   "1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE": "drips/essential_nametag.jpg",
@@ -155,8 +155,11 @@ const KNOWN_DRIVE_MAP = {
 
 function getCdnImageUrl(urlOrPath, fallbackName = "image.jpg") {
   if (!urlOrPath || typeof urlOrPath !== "string") return JSDELIVR_BASE + "/drips/" + fallbackName;
-  const trimmed = urlOrPath.trim();
+  let trimmed = urlOrPath.trim();
   if (!trimmed) return JSDELIVR_BASE + "/drips/" + fallbackName;
+  if (trimmed.includes("@Appversion")) {
+    trimmed = trimmed.replace(/@Appversion/g, "@NewVersion");
+  }
   if (trimmed.includes("cdn.jsdelivr.net")) return trimmed;
   if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
     const cleanPath = trimmed.replace(/^\/+/, "");
@@ -173,23 +176,23 @@ function getCdnImageUrl(urlOrPath, fallbackName = "image.jpg") {
 }
 
 const defaultGrids = [
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_1.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_2.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_3.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_4.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_5.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_6.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_7.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_8.jpg",
-    "https://cdn.jsdelivr.net/gh/AllensCreations/TimelessCreationsRewardsProgram@Appversion/public/drips/grid_9.jpg"
-  ];
+  `${JSDELIVR_BASE}/drips/grid_1.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_2.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_3.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_4.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_5.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_6.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_7.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_8.jpg`,
+  `${JSDELIVR_BASE}/drips/grid_9.jpg`
+];
                 for (let i = 1; i <= 9; i++) {
                   document.write(`
                     <div class="img-picker-card">
                       <span style="font-size:0.6rem; color:var(--muted);">Grid ${i}</span>
                       <input type="hidden" id="inp-grid-${i}" value="${defaultGrids[i-1]}">
                       <div class="picker-thumb-wrap" style="max-width:75px;">
-                        <img id="thumb-grid-${i}" src="${defaultGrids[i-1]}" alt="Grid ${i}">
+                        <img id="thumb-grid-${i}" src="${defaultGrids[i-1]}" alt="Grid ${i}" onerror="if(!this.dataset.fallback){this.dataset.fallback=1;this.src='/drips/grid_${i}.jpg';}">
                       </div>
                       <div class="picker-btn-group">
                         <button class="btn btn-gold" onclick="openGalleryModal('inp-grid-${i}', 'thumb-grid-${i}')">🖼️</button>
@@ -530,7 +533,11 @@ function selectImage(url) {
 
 function revertImage(inputId, thumbId, defaultUrl) {
   document.getElementById(inputId).value = defaultUrl;
-  document.getElementById(thumbId).src = defaultUrl;
+  const thumb = document.getElementById(thumbId);
+  if (thumb) {
+    delete thumb.dataset.fallback;
+    thumb.src = defaultUrl;
+  }
   onLiveEdit();
 }
 

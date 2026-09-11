@@ -52,6 +52,7 @@ const server = http.createServer(async (req, res) => {
     let bodyStr = '';
     req.on('data', chunk => { bodyStr += chunk; });
     await new Promise(resolve => req.on('end', resolve));
+    req.rawBody = bodyStr;
     try {
       req.body = JSON.parse(bodyStr);
     } catch (e) {

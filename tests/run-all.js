@@ -15,6 +15,7 @@ const suites = [
   { name: 'Bot Anti-Spam, Quotas & OTP Protection', file: 'tests/botAntiSpamAndQuotas.test.js' },
   { name: 'Consolidated Real-World Flows (New, Invited, Existing)', file: 'tests/tester.consolidated.js', args: ['all'] },
   { name: 'Backend Suggestions & Cohort Timing', file: 'tests/backendSuggestionsAndCohort.test.js' },
+  { name: 'Webhook Ingress & Telemetry Logger', file: 'tests/test-webhook-logger.js' },
   { name: 'HTML & UI Integrity Verification', file: 'tests/test-html.js' },
   { name: 'Email Templates & </html> Detection', file: 'tests/test-templates.js' }
 ];

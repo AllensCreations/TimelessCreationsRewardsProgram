@@ -380,7 +380,7 @@ function renderPromoCards() {
   }
 
   container.innerHTML = promoCodesList.map(p => {
-    const snippet = `Type /redeem ${p.code} to get free points worth ${p.points}`;
+    const snippet = `Send ${p.code} in Messenger to claim +${p.points} Free Points (or /redeem ${p.code})`;
     return `
       <div class="promo-card" onclick="this.classList.toggle('open')">
         <div class="promo-header-row">
@@ -390,7 +390,15 @@ function renderPromoCards() {
         <div class="promo-details-collapse">
           <div>👥 <strong>Claim Cap:</strong> <span style="color:${p.claimed_count >= p.max_users ? 'var(--red)' : 'var(--green)'};">${p.claimed_count}/${p.max_users} claimed</span></div>
           <div>💬 <strong>Messenger Snippet:</strong> <code style="background:var(--bg); padding:3px 6px; border-radius:4px; color:var(--gold2);">${snippet}</code></div>
-          <div style="display:flex; gap:6px; margin-top:6px; justify-content:flex-end;" onclick="event.stopPropagation()">
+
+          <div style="margin-top:8px; padding:10px; background:#0d0f17; border:1px dashed var(--border-gold); border-radius:6px;">
+            <div style="font-size:0.68rem; font-weight:bold; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">👁️ Live Preview (Messenger &amp; Email Banner)</div>
+            <div style="font-size:0.75rem; color:#e2e8f0; margin-bottom:4px;">Claim <strong>+${p.points} Free Reward Points</strong> right now!</div>
+            <div style="display:inline-block; font-family:'DM Mono', monospace; font-size:0.85rem; font-weight:800; background:#1e202e; color:var(--gold); padding:4px 10px; border-radius:4px; border:1px solid var(--border-gold); letter-spacing:1px; margin-bottom:4px;">${p.code}</div>
+            <div style="font-size:0.68rem; color:var(--muted); margin-top:2px;">Send <strong>${p.code}</strong> in Messenger to claim +${p.points} Free Points (or /redeem ${p.code})</div>
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end;" onclick="event.stopPropagation()">
             <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="navigator.clipboard.writeText('${snippet}').then(() => showToast('Snippet copied!'))">📋 Copy Snippet</button>
             <button class="btn-danger" style="padding:4px 8px; font-size:0.65rem; border-radius:4px;" onclick="deletePromo('${p.code}')">🗑️ Delete</button>
           </div>

@@ -3,7 +3,7 @@
 import 'dotenv/config';
 import { handleBotMessage, toUnicodeBold } from '../lib/botHandler.js';
 import { runSql } from '../lib/db.js';
-import { clearDebounce } from '../lib/security.js';
+import { clearDebounce, clearRapidDebounce } from '../lib/security.js';
 
 console.log("🤖 ==================================================");
 console.log("🤖 TIMELESS CREATIONS REWARDS PROGRAM - BOT HUB & CHECK TESTER");
@@ -153,6 +153,26 @@ async function runCheckHubTester() {
     let gateMsg = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [unverifiedPsid]))[0];
     assert(gateMsg?.message.includes(toUnicodeBold("TCRP Verification Required")), "Unverified user blocked by Gatekeeper");
     assert(!gateMsg?.message.includes(toUnicodeBold("MISSIONARY DASHBOARD")), "Unverified user cannot view Dashboard");
+
+    // ----------------------------------------------------
+    // TEST 7: 1-Check per day limit enforcement
+    // ----------------------------------------------------
+    console.log("\n📌 [Test 7] 1-Check per day limit enforcement");
+    clearDebounce(verifiedPsid); // clean start
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [verifiedPsid]);
+    await handleBotMessage(verifiedPsid, 'Check', 'ACTION_CHECK');
+    let msgs1 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
+    assert(msgs1.length === 3, `First check yields 3-in-1 sequence (got ${msgs1.length})`);
+
+    // Second check without clearing daily views
+    clearRapidDebounce(verifiedPsid);
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [verifiedPsid]);
+    await handleBotMessage(verifiedPsid, 'Check', 'ACTION_CHECK');
+    let msgs2 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
+    assert(msgs2.length === 1, "Second check triggers rate limit notice (1 message)");
+    assert(msgs2[0]?.message.includes("You have already checked your rewards dashboard today"), "Second check rate limit message contains polite explanation");
+    assert(msgs2[0]?.message.includes("12:00 AM UTC+8"), "Second check message specifies reset time 12:00 AM UTC+8");
+    assert(!EMOJI_REGEX.test(msgs2[0]?.message), "Rate limit notice contains 0 emojis");
 
   } catch (err) {
     console.error(`\n💥 Fatal Test Error: ${err.message}`);

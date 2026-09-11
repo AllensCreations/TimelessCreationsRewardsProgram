@@ -2,7 +2,7 @@ import 'dotenv/config';
 import crypto from 'crypto';
 import { runSql } from '../lib/db.js';
 import webhookHandler from '../api/webhook.js';
-import { verifyFbSignature } from '../lib/security.js';
+import { verifyFbSignature, clearRapidDebounce } from '../lib/security.js';
 import { handleBotMessage } from '../lib/botHandler.js';
 
 async function runWebhookLoggerTests() {
@@ -127,11 +127,79 @@ async function runWebhookLoggerTests() {
     assert(updatedSession.temp_title === "Elder Two", "Updated title/name captured accurately");
     assert(Number(updatedSession.failed_otp_count) === 0, "Failed OTP count reset to 0 instead of penalizing missionary");
 
+    // 5. Month Batch onboarding parser verification
+    console.log("\n📅 [Test 5] Month Batch registration prompt and parsing");
+    const batchPsid = "TEST_BATCH_" + Date.now().toString().slice(-4);
+    const batchEmail = `sister.batch${Date.now().toString().slice(-4)}@missionary.org`;
+
+    await runSql("DELETE FROM sessions WHERE psid = ?", [batchPsid]);
+    await handleBotMessage(batchPsid, "Get Started", "GET_STARTED");
+
+    const startMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [batchPsid]);
+    assert(startMsgs?.[0]?.message.includes("Month Batch (e.g. December 2026)"), "Registration prompt includes Month Batch prompt");
+
+    await handleBotMessage(batchPsid, `Sister Emma Davis\n${batchEmail}\nDecember 2026\nTCRP50`);
+    let batchSession = (await runSql("SELECT state, temp_email, temp_title, temp_batch, invite_code FROM sessions WHERE psid = ?", [batchPsid]))[0];
+    assert(batchSession && batchSession.state === 'AWAITING_OTP', "Batch details advanced to AWAITING_OTP");
+    assert(batchSession.temp_email === batchEmail, "Batch registration captured email");
+    assert(batchSession.temp_title === "Sister Emma Davis", "Batch registration captured title/name");
+    assert(batchSession.temp_batch === "December 2026", "Batch registration captured 'December 2026' batch month accurately");
+    assert(batchSession.invite_code === "TCRP50", "Batch registration captured referral code");
+
+    // 6. Referral code notification & Pending notices delivery on 'check'
+    console.log("\n🎉 [Test 6] Referral code alert delivery upon sending 'check'");
+    const referrerPsid = "TEST_REFERRER_" + Date.now().toString().slice(-4);
+    const referrerEmail = `elder.referrer${Date.now().toString().slice(-4)}@missionary.org`;
+    const refCodeA = "REF" + Date.now().toString().slice(-4);
+
+    await runSql("DELETE FROM missionaries WHERE email IN (?, ?)", [referrerEmail, batchEmail]);
+    await runSql("DELETE FROM bot_daily_views WHERE sender_id IN (?, ?)", [referrerPsid, batchPsid]);
+    await runSql(
+      "INSERT INTO missionaries (email, name, cohort, batch_month, points, referral_code, psid, status, max_months) VALUES (?, ?, ?, ?, 1, ?, ?, 'active', 24)",
+      [referrerEmail, 'Elder Referrer', 'elder', 'September 2026', refCodeA, referrerPsid]
+    );
+
+    // Complete verification for batchPsid using refCodeA
+    await runSql("UPDATE sessions SET invite_code = ? WHERE psid = ?", [refCodeA, batchPsid]);
+    const otpToVerify = batchSession.otp_code;
+    await handleBotMessage(batchPsid, otpToVerify);
+
+    // Verify referrer received point and pending referral notice
+    const referrerM = (await runSql("SELECT points, pending_ref_notices FROM missionaries WHERE psid = ?", [referrerPsid]))[0];
+    assert(Number(referrerM?.points) === 2, "Referrer points incremented to 2");
+    assert(Number(referrerM?.pending_ref_notices) === 1, "Referrer pending_ref_notices incremented to 1");
+
+    // Referrer sends 'Check'
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [referrerPsid]);
+    await handleBotMessage(referrerPsid, "Check", "ACTION_CHECK");
+
+    const refCheckMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [referrerPsid]);
+    assert(refCheckMsgs.length === 3, `Referrer received full hub (3 messages, got ${refCheckMsgs.length})`);
+    assert(refCheckMsgs[0]?.message.includes("Someone used your referral code (+1 Point added to your balance)!"), "Dashboard displays 'Someone used your referral code (+1 Point added to your balance)!' notification");
+
+    // Verify pending_ref_notices reset to 0
+    const referrerM2 = (await runSql("SELECT pending_ref_notices FROM missionaries WHERE psid = ?", [referrerPsid]))[0];
+    assert(Number(referrerM2?.pending_ref_notices) === 0, "pending_ref_notices reset to 0 after notification displayed");
+
+    // 7. 1-Check-per-day rate limit enforcement
+    console.log("\n⏱️ [Test 7] 1-Check-per-day rate limit enforcement");
+    clearRapidDebounce(referrerPsid);
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [referrerPsid]);
+    await handleBotMessage(referrerPsid, "Check", "ACTION_CHECK");
+
+    const secondCheckMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [referrerPsid]);
+    assert(secondCheckMsgs.length === 1, "Second check triggers single rate limit notice message");
+    assert(secondCheckMsgs[0]?.message.includes("You have already checked your rewards dashboard today"), "Second check displays polite rate limit warning");
+    assert(secondCheckMsgs[0]?.message.includes("12:00 AM UTC+8"), "Notice reminds user of 12:00 AM UTC+8 daily reset");
+    assert(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(secondCheckMsgs[0]?.message), "Rate limit notice strictly has 0 emojis");
+
     // Cleanup
-    await runSql("DELETE FROM sessions WHERE psid IN (?, ?)", [testPsid, recoveryPsid]);
-    await runSql("DELETE FROM chat_messages WHERE psid IN (?, ?)", [testPsid, recoveryPsid]);
-    await runSql("DELETE FROM bot_rate_limits WHERE psid IN (?, ?)", [testPsid, recoveryPsid]);
-    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid IN (?, ?)", [testPsid, recoveryPsid]);
+    await runSql("DELETE FROM missionaries WHERE psid IN (?, ?)", [batchPsid, referrerPsid]);
+    await runSql("DELETE FROM sessions WHERE psid IN (?, ?, ?)", [testPsid, recoveryPsid, batchPsid]);
+    await runSql("DELETE FROM chat_messages WHERE psid IN (?, ?, ?, ?)", [testPsid, recoveryPsid, batchPsid, referrerPsid]);
+    await runSql("DELETE FROM bot_rate_limits WHERE psid IN (?, ?, ?, ?)", [testPsid, recoveryPsid, batchPsid, referrerPsid]);
+    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid IN (?, ?, ?, ?)", [testPsid, recoveryPsid, batchPsid, referrerPsid]);
+    await runSql("DELETE FROM bot_daily_views WHERE sender_id IN (?, ?)", [batchPsid, referrerPsid]);
 
   } catch (err) {
     console.error(`💥 Fatal error: ${err.message}`);

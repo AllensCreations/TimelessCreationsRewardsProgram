@@ -329,64 +329,70 @@ let masterTemplateCode = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-  .email-wrapper { width: 100%; background-color: #f9f7f2; display: flex; justify-content: center; padding: 20px 0; }
-  .email-container { width: 100%; max-width: 450px; background: #ffffff; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.03); margin: 0 auto; overflow: hidden; }
-  .brand-header { padding: 30px 20px 15px; text-align: center; background-color: #ffffff; }
+  .email-wrapper { width: 100%; background-color: #f9f7f2; display: flex; justify-content: center; padding: 25px 0; }
+  .email-container { width: 100%; max-width: 450px; background: #ffffff; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.04); margin: 0 auto; overflow: hidden; border-radius: 6px; }
+  .brand-header { padding: 35px 20px 20px; text-align: center; background: linear-gradient(to bottom, #ffffff, #fdfbf8); }
   .logo-text { font-size: 22px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
   .temple-img { width: 100%; height: auto; object-fit: cover; display: block; border: 0; }
-  .main-content { padding: 20px 18px; text-align: center; line-height: 1.6; }
-  .quote-container { margin: 18px 0; padding: 16px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
-  .transition-zone { margin: 20px 0; padding: 12px 10px; font-style: italic; color: #8c7e5d; font-size: 12.5px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
-  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; border: 1px solid #f0eadd; }
-  .footer { padding: 36px 20px; background-color: #1a1a1a; color: #ffffff; text-align: center; }
+  .main-content { padding: 25px 20px; text-align: center; line-height: 1.65; }
+  .quote-container { margin: 20px 0; padding: 18px; background-color: #fdfbf8; border-left: 2px solid #d4c197; border-right: 2px solid #d4c197; border-radius: 2px; }
+  .transition-zone { margin: 22px 0; padding: 14px 12px; font-style: italic; color: #736545; font-size: 13px; background-color: #faf7f2; border-top: 1px solid #efe6d5; border-bottom: 1px solid #efe6d5; border-radius: 2px; }
+  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; border: 1px solid #f0eadd; border-radius: 3px; }
+  .footer { padding: 35px 20px; background-color: #1a1a1a; color: #ffffff; text-align: center; }
+  .btn-primary { display: inline-block; width: 100%; max-width: 320px; box-sizing: border-box; padding: 16px 20px; background-color: #1a1a1a; color: #ffffff !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 3px; transition: background-color 0.2s ease; }
+  .btn-primary:hover { background-color: #333333; }
 </style>
 </head>
 <body>
 <div class="email-wrapper">
   <div class="email-container">
+    
+    <!-- Brand Header -->
     <div class="brand-header">
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #8c7e5d; text-transform: uppercase; margin-bottom: 8px; display: block;">{{MONTH}} • Dedicated Service</span>
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 2.5px; color: #8c7e5d; text-transform: uppercase; margin-bottom: 8px; display: block;">✨ {{MONTH}} • Warm Greetings ✨</span>
       <h1 class="logo-text">Timeless Creations</h1>
       <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 6px; text-transform: uppercase;">Most Trusted Online LDS Store by Members &amp; Missionaries Across the Philippines</div>
     </div>
-    <img src="{{TEMPLE_IMG}}" alt="Temple" class="temple-img">
+
+    <!-- Temple Image Banner (Flexible Height) -->
+    <img src="{{TEMPLE_IMG}}" alt="Temple Banner" class="temple-img">
+
     <div class="main-content">
-      <div style="font-size: 18px; font-style: italic; margin-bottom: 10px; color: #1a1a1a;">Hello {{NAME}},</div>
-      <div style="font-size: 13.5px; color: #333; margin-bottom: 16px;">{{MESSAGE}}</div>
+      
+      <!-- Friendly Greeting & Message -->
+      <div style="font-size: 19px; font-style: italic; margin-bottom: 12px; color: #1a1a1a;">Warm hello, {{NAME}}! 🕊️</div>
+      <div style="font-size: 13.5px; color: #444; margin-bottom: 18px;">{{MESSAGE}}</div>
+
+      <!-- Scripture Quote Card -->
       <div class="quote-container">
-        <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 6px;">"{{SCRIPTURE}}"</div>
-        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+        <div style="font-size: 14.5px; font-style: italic; color: #1a1a1a; margin-bottom: 8px;">"{{SCRIPTURE}}"</div>
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">— {{THEME}}</div>
       </div>
 
+      <!-- Gentle Transition Note -->
       <div class="transition-zone">
-        As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
+        As you focus on your sacred work and joyful everyday moments, let us lovingly handle the small details that help you shine.
       </div>
 
-      <!-- 2 Missionary Essentials & Assurance -->
-      <div style="padding: 20px 14px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 4px; margin: 20px 0;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin: 0 0 16px 0; color: #1a1a1a; text-align: center;">Missionary Essentials</h2>
+      <!-- Missionary Essentials Section (Strict 1:1 Images) -->
+      <div style="padding: 22px 14px; border: 1px solid #eadecc; background-color: #ffffff; border-radius: 6px; margin: 22px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <h2 style="font-weight: 400; letter-spacing: 2.5px; text-transform: uppercase; font-size: 13px; margin: 0 0 16px 0; color: #1a1a1a; text-align: center;">✦ Missionary Essentials ✦</h2>
         <table width="100%" border="0" cellspacing="0" cellpadding="0">
           <tr>
             <td align="center" width="48%" valign="top">
-              <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
+              <img src="{{ESS1_IMG}}" class="strict-1-1" style="max-width: 125px; border: 1px solid #d4c197; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
               <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS1_NAME}}</div>
             </td>
             <td width="4%"></td>
             <td align="center" width="48%" valign="top">
-              <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
+              <img src="{{ESS2_IMG}}" class="strict-1-1" style="max-width: 125px; border: 1px solid #d4c197; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
               <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS2_NAME}}</div>
             </td>
           </tr>
         </table>
-        <p style="font-size: 12px; margin-top: 18px; color: #555; line-height: 1.5; text-align: center;">
-          If you have doubts with us as scams, we offer our first time customers with a <strong>"Gawa muna bago bayad"</strong> assurance.
-        </p>
-        <div style="background-color: #1a1a1a; color: #d4c197; padding: 10px; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; margin: 14px 0 16px; font-weight: bold; text-align: center; border-radius: 2px;">
-          Work, Confirm, Pay
-        </div>
-        <div style="text-align: center;">
-          <a href="https://m.me/timeless.creations.06" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
-            Inquire via Messenger
+        <div style="margin-top: 22px; text-align: center;">
+          <a href="https://m.me/timeless.creations.06" target="_blank" class="btn-primary">
+            💬 Inquire via Messenger
           </a>
         </div>
       </div>
@@ -394,13 +400,13 @@ let masterTemplateCode = `<!DOCTYPE html>
       <!-- Top 1 & Top 2 Showcase in 2 Columns -->
       {{TOP_PRODUCTS_HTML}}
 
-      <!-- 9 Community Photos & Google Photos Link -->
-      <div style="margin: 26px auto 20px; text-align: center;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 6px; color: #1a1a1a;">Engrave Your Legacy</h2>
-        <p style="font-size: 12px; color: #666; font-style: italic; line-height: 1.5; margin-bottom: 14px; padding: 0 10px;">
-          Your service is a story that deserves to be told. We are archiving the moments that define a mission—one missionary, one memory, and one creation at a time.
+      <!-- 9 Community Photos & Google Photos Link (Strict 1:1 Grid) -->
+      <div style="margin: 28px auto 22px; text-align: center;">
+        <h2 style="font-weight: 400; letter-spacing: 2.5px; text-transform: uppercase; font-size: 13px; margin-bottom: 6px; color: #1a1a1a;">✦ Engrave Your Legacy ✦</h2>
+        <p style="font-size: 12px; color: #666; font-style: italic; line-height: 1.5; margin-bottom: 16px; padding: 0 10px;">
+          Your service is a story worth cherishing. We love archiving the wonderful memories that define a mission—one creation at a time.
         </p>
-        <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
+        <table width="100%" border="0" cellspacing="4" cellpadding="0" style="table-layout: fixed; margin-bottom: 18px;">
           <tr>
             <td><img src="{{GRID1}}" class="strict-1-1" alt="Community Photo 1"></td>
             <td><img src="{{GRID2}}" class="strict-1-1" alt="Community Photo 2"></td>
@@ -417,26 +423,40 @@ let masterTemplateCode = `<!DOCTYPE html>
             <td><img src="{{GRID9}}" class="strict-1-1" alt="Community Photo 9"></td>
           </tr>
         </table>
-        <p style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; letter-spacing: 1.5px; color: #8c7e5d; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0;">
-          Engrave Your Memory. Be the Memory. Be You.
+        <p style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; letter-spacing: 1.5px; color: #8c7e5d; text-transform: uppercase; font-weight: bold; margin: 0 0 12px 0;">
+          Engrave Your Memory • Be the Memory • Be You
         </p>
-        <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" style="display: inline-block; padding: 10px 22px; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
-          Enter the Gallery ↗
+        <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" class="btn-primary">
+          🖼️ Enter the Gallery ↗
         </a>
       </div>
 
       <!-- Combined Rewards & Promo Box -->
       {{REWARD_SECTION_HTML}}
+
+      <!-- Email Troubleshooting & Support Section (Updated Economics Template) -->
+      <div style="margin: 32px 0 10px; padding: 22px 16px; background-color: #fdfbf8; border: 1px solid #e0d6bc; text-align: center; border-radius: 6px;">
+        <p style="font-size: 12px; color: #555; line-height: 1.6; margin: 0 0 14px 0;">
+          Having trouble clicking any of the links above? No worries at all! Feel free to email us directly at <a href="mailto:timelesscreations.ph@gmail.com?subject=Inquiry%20Regarding%20My%20Order%20%E2%80%94%20Pricing%20%26%20Payment%20Options&body=Hello%20Timeless%20Creations%20Team,%0A%0AI%20am%20interested%20in%20your%20custom-engraved%20keepsakes%20and%20would%20like%20to%20learn%20more%20about%20the%20costs%20and%20how%20ordering%20works.%20Here%20are%20my%20details:%0A%0A-%20Name:%20%0A-%20Product%20of%20Interest:%20%0A-%20Budget%20/%20Quantity%20(if%20applicable):%20%0A-%20Question%20/%20Concern:%20%0A%0APlease%20let%20me%20know%20your%20pricing%20details%20and%20how%20we%20can%20proceed%20with%20an%20order.%20Thank%20you!" style="color: #1a1a1a; font-weight: bold; text-decoration: underline;">timelesscreations.ph@gmail.com</a>. 
+          <br><span style="font-size: 11px; color: #777; font-style: italic;">Kindly note that support requests take about 1–5 business days to process.</span>
+        </p>
+        <a href="mailto:timelesscreations.ph@gmail.com?subject=Inquiry%20Regarding%20My%20Order%20%E2%80%94%20Pricing%20%26%20Payment%20Options&body=Hello%20Timeless%20Creations%20Team,%0A%0AI%20am%20interested%20in%20your%20custom-engraved%20keepsakes%20and%20would%20like%20to%20learn%20more%20about%20the%20costs%20and%20how%20ordering%20works.%20Here%20are%20my%20details:%0A%0A-%20Name:%20%0A-%20Product%20of%20Interest:%20%0A-%20Budget%20/%20Quantity%20(if%20applicable):%20%0A-%20Question%20/%20Concern:%20%0A%0APlease%20let%20me%20know%20your%20pricing%20details%20and%20how%20we%20can%20proceed%20with%20an%20order.%20Thank%20you!" class="btn-primary">
+          ✉️ Email Us Directly
+        </a>
+      </div>
+
     </div>
 
     <!-- Footer -->
     <div class="footer">
       <div style="color: #d4c197; letter-spacing: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold;">Timeless Creations</div>
-      <div style="font-size: 9px; opacity: 0.6; margin-top: 10px; font-family: Arial, sans-serif; line-height: 1.4;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
-      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="font-size: 9.5px; color: #b8955a; text-decoration: none; margin-top: 18px; display: inline-block; font-family: 'Helvetica', Arial, sans-serif; letter-spacing: 1px;">
-        Redeem Rewards &amp; Support in Messenger →
+      <div style="font-size: 9px; opacity: 0.65; margin-top: 10px; font-family: Arial, sans-serif; line-height: 1.4;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
+      <div style="font-size: 8.5px; opacity: 0.5; margin-top: 8px; font-family: Arial, sans-serif; text-transform: uppercase; letter-spacing: 1px;">Please do not reply to this email.</div>
+      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="font-size: 9.5px; color: #d4c197; text-decoration: none; margin-top: 18px; display: inline-block; font-family: 'Helvetica', Arial, sans-serif; letter-spacing: 1px;">
+        ✨ Redeem Rewards &amp; Support in Messenger →
       </a>
     </div>
+    
   </div>
 </div>
 </body>
@@ -618,11 +638,16 @@ async function applyTopSalesToAllMonths() {
 
 async function fetchFromTurso() {
   try {
-    const [dripRes, promoRes, rewardsVisRes] = await Promise.all([
+    const [dripRes, promoRes, rewardsVisRes, templateRes] = await Promise.all([
       fetch("/api/main?action=get_drips").then(r => r.json()).catch(() => ({})),
       fetch("/api/main?action=get_promo_codes").then(r => r.json()).catch(() => ({})),
-      fetch("/api/main?action=get_drip_rewards_visibility").then(r => r.json()).catch(() => ({}))
+      fetch("/api/main?action=get_drip_rewards_visibility").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_master_template").then(r => r.json()).catch(() => ({}))
     ]);
+
+    if (templateRes && templateRes.ok && templateRes.template) {
+      masterTemplateCode = templateRes.template;
+    }
 
     if (rewardsVisRes.ok && rewardsVisRes.visible !== undefined) {
       LocalStore.set('drip_rewards_visible', rewardsVisRes.visible);
@@ -972,7 +997,13 @@ function renderPreview() {
   doc.close();
 }
 
-function loadMasterTemplateIntoEditor() {
+async function loadMasterTemplateIntoEditor() {
+  try {
+    const res = await fetch("/api/main?action=get_master_template").then(r => r.json());
+    if (res && res.ok && res.template) {
+      masterTemplateCode = res.template;
+    }
+  } catch(e) {}
   document.getElementById("inp-custom-html").value = masterTemplateCode;
   onLiveEdit();
   showToast("Master Template Loaded!");

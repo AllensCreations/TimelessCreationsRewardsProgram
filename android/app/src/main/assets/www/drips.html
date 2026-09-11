@@ -288,8 +288,15 @@ const defaultGrids = [
   <!-- TAB 5: Dedicated Live Preview -->
   <div id="tab-preview" class="tab-content">
       <div class="preview-wrapper">
-          <div style="font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px; text-align:center; font-weight:bold;">
-              ✦ Live Mobile Email Sandbox
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+              <div style="font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; font-weight:bold;">
+                  ✦ Live Mobile Email Sandbox
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:0.68rem; color:var(--muted);">
+                  <span>Simulated Points:</span>
+                  <input type="number" id="preview-simulated-points" min="0" max="100" style="width:55px; padding:3px 6px; text-align:center; font-size:0.72rem; font-weight:bold; color:var(--gold); background:var(--surface2); border:1px solid var(--border-gold); border-radius:4px;" oninput="renderPreview()">
+                  <button class="btn btn-dark" style="font-size:0.62rem; padding:3px 6px;" onclick="resetSimulatedPoints()" title="Auto-calculate points from month number">⚡ Auto (M<span id="label-auto-month-points">1</span>)</button>
+              </div>
           </div>
           <div class="preview-frame">
               <iframe id="preview-iframe" style="width:100%; min-height:850px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
@@ -322,6 +329,7 @@ const defaultGrids = [
 let currentMonth = new Date().getMonth() + 1;
 let liveDripMap = {};
 let latestPromo = null;
+let liveRewardProducts = null;
 
 let masterTemplateCode = `<!DOCTYPE html>
 <html lang="en">
@@ -639,11 +647,12 @@ async function applyTopSalesToAllMonths() {
 
 async function fetchFromTurso() {
   try {
-    const [dripRes, promoRes, rewardsVisRes, templateRes] = await Promise.all([
+    const [dripRes, promoRes, rewardsVisRes, templateRes, rewardsCatalogRes] = await Promise.all([
       fetch("/api/main?action=get_drips").then(r => r.json()).catch(() => ({})),
       fetch("/api/main?action=get_promo_codes").then(r => r.json()).catch(() => ({})),
       fetch("/api/main?action=get_drip_rewards_visibility").then(r => r.json()).catch(() => ({})),
-      fetch("/api/main?action=get_master_template").then(r => r.json()).catch(() => ({}))
+      fetch("/api/main?action=get_master_template").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_products&type=reward").then(r => r.json()).catch(() => ({}))
     ]);
 
     if (templateRes && templateRes.ok && templateRes.template) {
@@ -652,6 +661,14 @@ async function fetchFromTurso() {
 
     if (rewardsVisRes.ok && rewardsVisRes.visible !== undefined) {
       LocalStore.set('drip_rewards_visible', rewardsVisRes.visible);
+    }
+
+    if (rewardsCatalogRes && rewardsCatalogRes.ok && Array.isArray(rewardsCatalogRes.products)) {
+      liveRewardProducts = rewardsCatalogRes.products;
+      LocalStore.set('temp_products', liveRewardProducts);
+      if (rewardsCatalogRes.drip_rewards_visible !== undefined) {
+        LocalStore.set('drip_rewards_visible', rewardsCatalogRes.drip_rewards_visible);
+      }
     }
 
     if (dripRes.ok && Array.isArray(dripRes.drips)) {
@@ -696,10 +713,23 @@ async function fetchFromTurso() {
   } catch(e) {}
 }
 
+function resetSimulatedPoints() {
+  const simInput = document.getElementById("preview-simulated-points");
+  if (simInput) simInput.value = currentMonth;
+  const labelAuto = document.getElementById("label-auto-month-points");
+  if (labelAuto) labelAuto.textContent = currentMonth;
+  renderPreview();
+}
+
 function onSelectMonth(m) {
   currentMonth = parseInt(m, 10);
   const label = getCalendarMonthLabel(currentMonth);
   document.getElementById("unsaved-month-label").textContent = currentMonth <= 12 ? label : `${label} (Year 2)`;
+
+  const simInput = document.getElementById("preview-simulated-points");
+  if (simInput) simInput.value = currentMonth;
+  const labelAuto = document.getElementById("label-auto-month-points");
+  if (labelAuto) labelAuto.textContent = currentMonth;
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,
@@ -888,17 +918,20 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
   }
 
   let goalHtml = "";
-  if (validProducts.length > 0) {
-    const sorted = [...validProducts].sort((a, b) => Number(a.price) - Number(b.price));
-    const nearestItem = sorted.find(p => Number(p.price) > userPoints) || sorted[0];
-    const needed = Math.max(1, (Number(nearestItem.price) || 6) - userPoints);
+  const unreached = validProducts
+    .filter(p => Number(p.price) > userPoints)
+    .sort((a, b) => Number(a.price) - Number(b.price));
+
+  if (unreached.length > 0) {
+    const nearestItem = unreached[0];
+    const needed = Math.max(1, Number(nearestItem.price) - userPoints);
 
     goalHtml = `
       <div style="background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; padding: 12px; text-align: center; margin-bottom: 10px;">
         <span style="font-size: 9px; color: #8b1a1a; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 6px;">
           🎯 Nearest Reward Goal:
         </span>
-        <img src="${nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width: 50px; height: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; display: block; margin: 0 auto 6px auto; border: 1px solid #d4c197;">
+        <img src="${getCdnImageUrl(nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png')}" style="width: 50px; height: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; display: block; margin: 0 auto 6px auto; border: 1px solid #d4c197;">
         <div style="font-weight: bold; font-size: 11.5px; color: #1a1a1a;">${nearestItem.name} (${nearestItem.price} PTS)</div>
         <div style="font-size: 11px; color: #8c7e5d; margin-top: 4px; font-weight: bold;">⚡ Only <strong>${needed} more point${needed > 1 ? 's' : ''}</strong> needed!</div>
       </div>
@@ -998,7 +1031,16 @@ function renderPreview() {
   const message = (document.getElementById("inp-msg").value || data.message || "").replace(/\n/g, "<br>");
   const cleanedQuote = (document.getElementById("inp-quote").value || data.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.").replace(/^["'“](.*)["'”]$/, '$1').trim();
   const theme = document.getElementById("inp-theme").value || data.theme || "Elder Jeffrey R. Holland";
-  const points = 2;
+  const simInput = document.getElementById("preview-simulated-points");
+  let points = currentMonth;
+  if (simInput && simInput.value.trim() !== "" && !isNaN(Number(simInput.value))) {
+    points = Math.max(0, parseInt(simInput.value, 10));
+  } else {
+    points = currentMonth;
+    if (simInput) simInput.value = currentMonth;
+  }
+  const labelAuto = document.getElementById("label-auto-month-points");
+  if (labelAuto) labelAuto.textContent = currentMonth;
 
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
   const rawP1 = document.getElementById("inp-highlight-name").value.trim();
@@ -1014,10 +1056,12 @@ function renderPreview() {
 
   const topProductsHtml = isHigh ? buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) : "";
 
-  let catalogProducts = LocalStore.get('temp_products', [
-    { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
-    { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
-  ]);
+  let catalogProducts = (liveRewardProducts !== null && Array.isArray(liveRewardProducts))
+    ? liveRewardProducts
+    : LocalStore.get('temp_products', [
+        { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
+        { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
+      ]);
   const isRewardsCategoryVisible = LocalStore.get('drip_rewards_visible', true);
   const rewardSectionHtml = isRewardsCategoryVisible ? buildCombinedRewardSectionHtml(points, catalogProducts, latestPromo) : '';
 

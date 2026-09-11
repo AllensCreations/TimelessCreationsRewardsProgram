@@ -17,7 +17,8 @@ const suites = [
   { name: 'Backend Suggestions & Cohort Timing', file: 'tests/backendSuggestionsAndCohort.test.js' },
   { name: 'Webhook Ingress & Telemetry Logger', file: 'tests/test-webhook-logger.js' },
   { name: 'HTML & UI Integrity Verification', file: 'tests/test-html.js' },
-  { name: 'Email Templates & </html> Detection', file: 'tests/test-templates.js' }
+  { name: 'Email Templates & </html> Detection', file: 'tests/test-templates.js' },
+  { name: 'Drip Rewards Dynamic Auto-Calculation', file: 'tests/test-drip-rewards-autocalc.js' }
 ];
 
 async function runSuite(suite) {

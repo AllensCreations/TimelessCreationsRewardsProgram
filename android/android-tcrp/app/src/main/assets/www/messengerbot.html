@@ -354,6 +354,8 @@ async function saveRewardSettings() {
     if (data.ok) {
       showToast("Reward catalog & drip settings saved to Turso!");
       rewardCatalog = updated;
+      LocalStore.set('temp_products', updated);
+      LocalStore.set('drip_rewards_visible', isRewardsCategoryVisible);
     } else {
       showToast("Error saving rewards: " + (data.error || "Failed"), "error");
     }

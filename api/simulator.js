@@ -1,7 +1,7 @@
 import { handleBotMessage } from '../lib/botHandler.js';
 import { runSql } from '../lib/db.js';
 import { requireAdmin } from '../lib/auth.js';
-import { clearDebounce, hasUsedDailyCheck } from '../lib/security.js';
+import { clearDebounce, hasUsedDailyCheck, getTodayDateStr } from '../lib/security.js';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: "Session and test user reset successfully." });
     }
 
-    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    const todayStr = getTodayDateStr();
 
     if (action === "inspect_session") {
       const session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0] || null;

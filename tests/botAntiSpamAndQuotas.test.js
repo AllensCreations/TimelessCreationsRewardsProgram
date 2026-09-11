@@ -169,12 +169,103 @@ async function runAntiSpamTests() {
     const lockedSession = (await runSql("SELECT failed_otp_count, state FROM sessions WHERE psid = ?", [lockoutPsid]))[0];
     assert(lockedSession && lockedSession.state === 'START' && Number(lockedSession.failed_otp_count) === 0, "5th failed attempt triggers session lockout and reset to START");
 
+    // ----------------------------------------------------
+    // TEST 6: Registration Exemption from Daily Conversation Limit
+    // ----------------------------------------------------
+    console.log("\n6️⃣ Testing Registration Exemption from 10-Message Quota...");
+    const regPsid = `REG_EXEMPT_${Date.now()}`;
+    await runSql("DELETE FROM sessions WHERE psid = ?", [regPsid]);
+    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [regPsid]);
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [regPsid]);
+    clearDebounce(regPsid);
+
+    // Setup session in AWAITING_ALL_IN_ONE
+    await runSql("INSERT INTO sessions (psid, state, last_otp_at, failed_otp_count) VALUES (?, 'AWAITING_ALL_IN_ONE', 0, 0)", [regPsid]);
+
+    // Send 12 messages during registration (more than the 10 limit)
+    for (let i = 1; i <= 12; i++) {
+      clearDebounce(regPsid);
+      await handleBotMessage(regPsid, "Incomplete data attempt " + i);
+    }
+
+    const regQuotaRows = await runSql("SELECT msg_count FROM bot_daily_user_quotas WHERE psid = ? AND quota_date = ?", [regPsid, todayStr]);
+    assert(!regQuotaRows || regQuotaRows.length === 0 || Number(regQuotaRows[0].msg_count) === 0, "Registration messages do not increment casual conversation quota");
+
+    const quotaWarning = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND message LIKE '%conversation limit%'", [regPsid]);
+    assert(quotaWarning.length === 0, "Registration messages never receive conversation limit notice");
+
+    // ----------------------------------------------------
+    // TEST 7: Direct Promo Code Redemption (No /redeem Needed)
+    // ----------------------------------------------------
+    console.log("\n7️⃣ Testing Direct Promo Code Redemption without /redeem...");
+    const testPromoCode = "DIRECTPROMO" + Date.now().toString().slice(-4);
+    await runSql("INSERT INTO promo_codes (code, points, max_users, claimed_count) VALUES (?, ?, ?, ?)", [testPromoCode, 2, 20, 0]);
+
+    // Unverified user sends direct promo code
+    const unverifiedPromoPsid = `TEST_UNVER_PROMO_${Date.now()}`;
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [unverifiedPromoPsid]);
+    clearDebounce(unverifiedPromoPsid);
+    await handleBotMessage(unverifiedPromoPsid, testPromoCode);
+    const unverReply = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [unverifiedPromoPsid]))[0];
+    assert(unverReply?.message.includes(`Promo code "${testPromoCode}" recognized`), "Unverified user receives promo recognition message");
+    assert(unverReply?.message.includes("Please verify your missionary account first"), "Unverified user prompted to verify account before redeeming");
+
+    // Verified missionary sends direct promo code
+    const verPromoPsid = `TEST_VER_PROMO_${Date.now()}`;
+    const verPromoEmail = `promo.tester.${Date.now()}@missionary.org`;
+    await runSql("DELETE FROM missionaries WHERE psid = ? OR email = ?", [verPromoPsid, verPromoEmail]);
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [verPromoPsid]);
+    await runSql(
+      "INSERT INTO missionaries (email, name, cohort, batch_month, points, referral_code, psid, status, max_months) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [verPromoEmail, 'Elder DirectPromo', 'elder', 'October 2026', 1, 'DIR123', verPromoPsid, 'active', 24]
+    );
+
+    clearDebounce(verPromoPsid);
+    await handleBotMessage(verPromoPsid, testPromoCode);
+    const verReply = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [verPromoPsid]))[0];
+    assert(verReply?.message.includes("PROMO CODE REDEEMED") || verReply?.message.includes("successfully claimed promo code"), "Direct promo code successfully redeems for verified missionary");
+    assert(verReply?.message.includes("+2 Reward Point(s)"), "Direct promo code adds bonus points to verified missionary");
+
+    const updatedMissionary = (await runSql("SELECT points FROM missionaries WHERE psid = ?", [verPromoPsid]))[0];
+    assert(Number(updatedMissionary?.points) === 3, "Missionary balance incremented from 1 to 3 PTS");
+
+    // Duplicate direct redemption
+    clearDebounce(verPromoPsid);
+    await handleBotMessage(verPromoPsid, testPromoCode);
+    const dupReply = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [verPromoPsid]))[0];
+    assert(dupReply?.message.includes(`You have already redeemed promo code "${testPromoCode}"`), "Duplicate direct redemption properly rejected");
+
+    // Explicit /redeem with invalid code
+    clearDebounce(verPromoPsid);
+    await handleBotMessage(verPromoPsid, "/redeem INVALIDCODE99");
+    const invalidReply = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [verPromoPsid]))[0];
+    assert(invalidReply?.message.includes('Promo code "INVALIDCODE99" is invalid or has expired'), "Explicit /redeem with invalid code returns polite rejection");
+
+    // ----------------------------------------------------
+    // TEST 8: 8:00 AM PHT Daily Reset Messaging
+    // ----------------------------------------------------
+    console.log("\n8️⃣ Testing 8:00 AM PHT Reset Messaging...");
+    const casualPsid = `CASUAL_PSID_${Date.now()}`;
+    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [casualPsid]);
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [casualPsid]);
+    clearDebounce(casualPsid);
+
+    // Hit the 10 casual messages limit
+    for (let i = 1; i <= 11; i++) {
+      clearDebounce(casualPsid);
+      await handleBotMessage(casualPsid, "Casual chat " + i);
+    }
+    const limitNotice = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND message LIKE '%conversation limit%' ORDER BY id DESC LIMIT 1", [casualPsid]))[0];
+    assert(limitNotice?.message.includes("8:00 AM PHT"), "Daily conversation limit notice mentions 'tomorrow at 8:00 AM PHT'");
+
     // Cleanup
-    await runSql("DELETE FROM sessions WHERE psid = ?", [lockoutPsid]);
+    await runSql("DELETE FROM sessions WHERE psid IN (?, ?)", [lockoutPsid, regPsid]);
+    await runSql("DELETE FROM missionaries WHERE psid = ?", [verPromoPsid]);
+    await runSql("DELETE FROM promo_codes WHERE code = ?", [testPromoCode]);
+    await runSql("DELETE FROM promo_redemptions WHERE code = ?", [testPromoCode]);
+    await runSql("DELETE FROM chat_messages WHERE psid IN (?, ?, ?, ?)", [regPsid, unverifiedPromoPsid, verPromoPsid, casualPsid]);
     await runSql("DELETE FROM bot_rate_limits WHERE psid = ?", [burstPsid]);
-    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [quotaPsid]);
-    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [verifiedPsid]);
-    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [otpPsid]);
+    await runSql("DELETE FROM bot_daily_user_quotas WHERE psid IN (?, ?, ?, ?, ?)", [quotaPsid, verifiedPsid, otpPsid, regPsid, casualPsid]);
     clearDebounce();
 
   } catch (err) {

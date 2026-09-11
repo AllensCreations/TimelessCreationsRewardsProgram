@@ -170,16 +170,27 @@ async function runCheckHubTester() {
     const activeQrs = await getVerifiedQuickReplies(verifiedPsid);
     assert(activeQrs.length === 0, "Quick replies temporarily hidden once daily check is used");
 
-    // Second check without clearing daily views: MUST SILENTLY DROP (0 messages)
+    // Second check without clearing daily views: MUST DISPATCH WARNING NOTICE (1 message)
     clearRapidDebounce(verifiedPsid);
     await runSql("DELETE FROM chat_messages WHERE psid = ?", [verifiedPsid]);
     await handleBotMessage(verifiedPsid, 'Check', 'ACTION_CHECK');
     let msgs2 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
-    assert(msgs2.length === 0, "Second check produces 0 replies (silent drop until 8:00 AM PHT)");
+    assert(msgs2.length === 1, `Second check produces 1 warning notice (got ${msgs2.length})`);
+    assert(msgs2[0].message.includes("8:00 AM PHT"), "Warning notice mentions 8:00 AM PHT reset");
+
+    const warnedLogs = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_WARNED%' ORDER BY id DESC LIMIT 1", [verifiedPsid]);
+    assert(warnedLogs.length > 0, "Warning logged in system_logs with [CHECK_LIMIT_WARNED]");
+
+    // Third check: MUST SILENTLY DROP (0 messages)
+    clearRapidDebounce(verifiedPsid);
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [verifiedPsid]);
+    await handleBotMessage(verifiedPsid, 'Check', 'ACTION_CHECK');
+    let msgs3 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
+    assert(msgs3.length === 0, "Third check produces 0 replies (silent drop until 8:00 AM PHT)");
 
     // Verify silent drop was logged in system_logs
     const silentLogs = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_SILENT%' ORDER BY id DESC LIMIT 1", [verifiedPsid]);
-    assert(silentLogs.length > 0, "Silent drop logged in system_logs");
+    assert(silentLogs.length > 0, "Silent drop logged in system_logs with [CHECK_LIMIT_SILENT]");
 
   } catch (err) {
     console.error(`\n💥 Fatal Test Error: ${err.message}`);

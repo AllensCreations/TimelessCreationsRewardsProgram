@@ -193,8 +193,8 @@ async function runWebhookLoggerTests() {
     const referrerM2 = (await runSql("SELECT pending_ref_notices FROM missionaries WHERE psid = ?", [referrerPsid]))[0];
     assert(Number(referrerM2?.pending_ref_notices) === 0, "pending_ref_notices reset to 0 after notification displayed");
 
-    // 7. 1-Check-per-day rate limit enforcement (Silent drop until 8:00 AM PHT)
-    console.log("\n⏱️ [Test 7] 1-Check-per-day rate limit enforcement (Silent drop until 8:00 AM PHT)");
+    // 7. 1-Check-per-day rate limit enforcement (Warning on 2nd, silent drop on 3rd+ until 8:00 AM PHT)
+    console.log("\n⏱️ [Test 7] 1-Check-per-day rate limit enforcement (Warning on 2nd, silent drop on 3rd+ until 8:00 AM PHT)");
     const checkUsedAfterFirst = await hasUsedDailyCheck(referrerPsid);
     assert(checkUsedAfterFirst === true, "Daily check usage is flagged as active for today");
 
@@ -203,7 +203,18 @@ async function runWebhookLoggerTests() {
     await handleBotMessage(referrerPsid, "Check", "ACTION_CHECK");
 
     const secondCheckMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [referrerPsid]);
-    assert(secondCheckMsgs.length === 0, "Second check produces 0 messages (silent drop until 8:00 AM PHT)");
+    assert(secondCheckMsgs.length === 1, `Second check produces 1 warning notice (got ${secondCheckMsgs.length})`);
+    assert(secondCheckMsgs[0].message.includes("8:00 AM PHT"), "Warning notice mentions 8:00 AM PHT reset");
+
+    const warnedLog = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_WARNED%' ORDER BY id DESC LIMIT 1", [referrerPsid]);
+    assert(warnedLog.length > 0, "Warning logged in system_logs with [CHECK_LIMIT_WARNED]");
+
+    clearRapidDebounce(referrerPsid);
+    await runSql("DELETE FROM chat_messages WHERE psid = ?", [referrerPsid]);
+    await handleBotMessage(referrerPsid, "Check", "ACTION_CHECK");
+
+    const thirdCheckMsgs = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [referrerPsid]);
+    assert(thirdCheckMsgs.length === 0, "Third check produces 0 messages (silent drop until 8:00 AM PHT)");
 
     const silentLog = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_SILENT%' ORDER BY id DESC LIMIT 1", [referrerPsid]);
     assert(silentLog.length > 0, "Silent drop logged in system_logs with [CHECK_LIMIT_SILENT]");

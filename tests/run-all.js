@@ -11,6 +11,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const suites = [
   { name: '500-Point Architecture & Bug Auditor', file: 'tests/test-master.js' },
   { name: 'Messenger Bot 3-in-1 Onboarding', file: 'tests/test-messenger-bot.js' },
+  { name: 'Messenger Bot Check Hub & Carousel Flow', file: 'tests/test-bot-check-hub.js' },
   { name: 'Bot Anti-Spam, Quotas & OTP Protection', file: 'tests/botAntiSpamAndQuotas.test.js' },
   { name: 'Consolidated Real-World Flows (New, Invited, Existing)', file: 'tests/tester.consolidated.js', args: ['all'] },
   { name: 'Backend Suggestions & Cohort Timing', file: 'tests/backendSuggestionsAndCohort.test.js' },

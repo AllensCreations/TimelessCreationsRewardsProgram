@@ -10,6 +10,8 @@
     "test": "node tests/test-master.js",
     "test:all": "node tests/run-all.js",
     "test:bot": "node tests/test-messenger-bot.js",
+    "test:hub": "node tests/test-bot-check-hub.js",
+    "test:replies": "node tests/test-all-replies.js",
     "test:antispam": "node tests/botAntiSpamAndQuotas.test.js",
     "test:templates": "node tests/test-templates.js",
     "test:html": "node tests/test-html.js",

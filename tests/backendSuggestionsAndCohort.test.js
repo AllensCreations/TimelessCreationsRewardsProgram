@@ -67,7 +67,7 @@ async function runTests() {
   assert(monthSeptFromSep === 0, "Missionary in arrival month (September 2026) has mission month 0");
 
   const septDispatchDate = getFirstDispatchDate("September 2026", phtSept9);
-  assert(septDispatchDate === "2026-10-09", "First dispatch date for September cohort is 2026-10-09");
+  assert(septDispatchDate === "2026-10", "First dispatch date for September cohort is 2026-10 (no day preset)");
 
   const mSept = {
     email: "elder.september@test.org",
@@ -87,6 +87,26 @@ async function runTests() {
 
   const eligibleOct = isMissionaryEligibleForDispatch(mSept, phtOct9, "2026-10-09");
   assert(eligibleOct === true, "September 2026 cohort missionary IS eligible for dispatch in October");
+
+  // Verify that an April missionary due in September with next_send_date = '2026-09' can be dispatched on the 6th
+  const mAprilDueSept = {
+    email: "elder.april@test.org",
+    name: "Elder April",
+    cohort: "elder",
+    batch_month: "April 2026",
+    months_sent: 4,
+    max_months: 24,
+    status: "active",
+    next_send_date: "2026-09"
+  };
+  const phtSept6 = new Date("2026-09-06T08:00:00Z");
+  const eligibleSept6 = isMissionaryEligibleForDispatch(mAprilDueSept, phtSept6, "2026-09-06");
+  assert(eligibleSept6 === true, "Missionary with next_send_date '2026-09' is eligible on September 6 (no day preset)");
+
+  // Legacy format with day '2026-09-09' also does not block dispatch on September 6
+  const mAprilLegacyDate = { ...mAprilDueSept, next_send_date: "2026-09-09" };
+  const eligibleLegacySept6 = isMissionaryEligibleForDispatch(mAprilLegacyDate, phtSept6, "2026-09-06");
+  assert(eligibleLegacySept6 === true, "Missionary with legacy next_send_date '2026-09-09' is eligible on September 6 (no day block)");
 
   // ----------------------------------------------------
   // Test 1b: Calendar-Synchronized Drip & Missed Month Skip

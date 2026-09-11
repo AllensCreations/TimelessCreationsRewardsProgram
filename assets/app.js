@@ -562,9 +562,7 @@ function getFirstDispatchDate(batchMonthStr, baseDate = new Date()) {
   const info = getFirstMonthInfo(batchMonthStr);
   const y = info.firstMonthYear;
   const m = info.firstMonthNum;
-  const maxDays = new Date(y, m, 0).getDate();
-  const targetDay = Math.min(Math.max(1, baseDate.getDate()), maxDays);
-  return `${y}-${String(m).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+  return `${y}-${String(m).padStart(2, '0')}`;
 }
 
 function isMissionaryEligibleForDispatch(m, targetDate = new Date(), todayIso = null) {
@@ -583,7 +581,9 @@ function isMissionaryEligibleForDispatch(m, targetDate = new Date(), todayIso = 
 
   const todayStr = todayIso || targetDate.toISOString().slice(0, 10);
   if (m.last_sent_at && m.last_sent_at.slice(0, 10) === todayStr) return false;
-  if (m.next_send_date && m.next_send_date.slice(0, 10) > todayStr) return false;
+  if (m.last_sent_at && m.last_sent_at.slice(0, 7) === todayStr.slice(0, 7)) return false;
+  // Compare month (YYYY-MM) so there is NO day preset blocking dispatch during the due month
+  if (m.next_send_date && m.next_send_date.slice(0, 7) > todayStr.slice(0, 7)) return false;
 
   return true;
 }

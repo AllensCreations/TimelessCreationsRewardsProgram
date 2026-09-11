@@ -86,22 +86,22 @@ async function fixDatabase() {
     const firstDispatchDate = getFirstDispatchDate(batchMonth, phtNow);
     const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
 
-    // Calculate proper next_send_date without jumping to distant years
-    let cleanNextSendDate = m.next_send_date;
+    // Calculate proper next_send_date without jumping to distant years (YYYY-MM with no day preset)
+    let cleanNextSendDate = m.next_send_date ? m.next_send_date.slice(0, 7) : null;
     if (monthsSent === 0 || !m.last_sent_at) {
-      if (!cleanNextSendDate || cleanNextSendDate.slice(0, 7) !== firstMonthPrefix) {
+      if (!cleanNextSendDate || cleanNextSendDate !== firstMonthPrefix) {
         cleanNextSendDate = firstDispatchDate;
       }
     } else if (m.last_sent_at) {
       try {
         const lastD = new Date(m.last_sent_at);
         lastD.setMonth(lastD.getMonth() + 1);
-        const expectedNext = lastD.toISOString().slice(0, 10);
-        if (!cleanNextSendDate || cleanNextSendDate.slice(0, 7) > expectedNext.slice(0, 7)) {
+        const expectedNext = `${lastD.getFullYear()}-${String(lastD.getMonth() + 1).padStart(2, '0')}`;
+        if (!cleanNextSendDate || cleanNextSendDate > expectedNext) {
           cleanNextSendDate = expectedNext;
         }
       } catch (_) {
-        cleanNextSendDate = todayPhtIso;
+        cleanNextSendDate = todayPhtIso.slice(0, 7);
       }
     }
 

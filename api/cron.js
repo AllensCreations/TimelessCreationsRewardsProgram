@@ -42,9 +42,9 @@ export default async function handler(req, res) {
       WHERE status = 'active'
         AND months_sent < max_months
         AND (last_sent_at IS NULL OR substr(last_sent_at, 1, 7) < strftime('%Y-%m', date('now', '+8 hours')))
-        AND (next_send_date <= date('now', '+8 hours') OR next_send_date IS NULL)
+        AND (substr(next_send_date, 1, 7) <= strftime('%Y-%m', date('now', '+8 hours')) OR next_send_date IS NULL)
       ORDER BY 
-        CASE WHEN next_send_date IS NOT NULL AND next_send_date <= date('now', '+8 hours') THEN 0 ELSE 1 END ASC,
+        CASE WHEN next_send_date IS NOT NULL AND substr(next_send_date, 1, 7) <= strftime('%Y-%m', date('now', '+8 hours')) THEN 0 ELSE 1 END ASC,
         next_send_date ASC,
         CASE WHEN last_sent_at IS NULL THEN 0 ELSE 1 END ASC,
         last_sent_at ASC,
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
               UPDATE missionaries 
               SET months_sent = ?,
                   last_sent_at = CURRENT_TIMESTAMP,
-                  next_send_date = date('now', '+1 month')
+                  next_send_date = strftime('%Y-%m', date('now', '+8 hours', '+1 month'))
               WHERE LOWER(email) = LOWER(?)
             `, [newMonthsSent, m.email]);
 

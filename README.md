@@ -65,18 +65,19 @@ To guarantee automated monthly drip dispatches, configure your `cron-jobs.org` t
 [SQL Query Candidate Fetch]
    │ • Status: 'active'
    │ • Not dispatched yet in current calendar month (YYYY-MM)
-   │ • Priority: Overdue next_send_date <= today first, then batch order
+   │ • Priority: Overdue target month (YYYY-MM <= current month) first, then batch order
    │ • LIMIT 100 rows
    ▼
 [Batch Filter & Eligibility Guard]
    │ • Calculates mission month: Arrival month = Month 0 (not due)
    │ • Months 1..24 (or 18): Due if months_sent < currentMissionMonth
+   │ • No day preset: can be dispatched on any operational day in due month
    │ • Caps batch at 45 missionaries per run
    ▼
 [Brevo Email Dispatch + Turso Update]
    │ • Dispatches personalized monthly encouragement email
    │ • Increments months_sent
-   │ • Advances next_send_date to the 9th of following month
+   │ • Advances next_send_date to following month (YYYY-MM, no day preset)
    │ • Logs dispatch to Turso system_logs
    ▼
 [JSON Response: { ok: true, sentCount: N, message: "..." }]

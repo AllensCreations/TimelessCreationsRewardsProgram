@@ -379,8 +379,9 @@
       Adjust next estimated send date for <strong id="reschedule-name" style="color:#fff;">--</strong>:
     </p>
     <div class="form-group">
-      <label class="form-label">Next Send Date (PHT)</label>
-      <input type="date" id="reschedule-date-input" class="form-input" style="font-family:'DM Mono',monospace;">
+      <label class="form-label">Next Target Month (PHT)</label>
+      <input type="month" id="reschedule-date-input" class="form-input" style="font-family:'DM Mono',monospace;">
+      <div style="font-size:0.66rem; color:var(--muted); margin-top:4px;">No day preset — missionary becomes eligible for dispatch anytime during this calendar month.</div>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
       <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
@@ -836,18 +837,18 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
 
   const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
   const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
-  let effectiveNextSendDate = m.next_send_date;
+  let effectiveNextSendDate = m.next_send_date ? m.next_send_date.slice(0, 7) : null;
   if (sentCount === 0) {
-    if (!effectiveNextSendDate || effectiveNextSendDate.slice(0, 7) < firstMonthPrefix) {
+    if (!effectiveNextSendDate || effectiveNextSendDate < firstMonthPrefix) {
       effectiveNextSendDate = (typeof getFirstDispatchDate === 'function')
         ? getFirstDispatchDate(m.batch_month || 'August 2026')
-        : `${firstMonthPrefix}-09`;
+        : firstMonthPrefix;
     }
   }
 
   let isDue = false;
   if (!isCompleted && !isSentToday) {
-    if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
+    if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso.slice(0, 7)) {
       isDue = false;
     } else {
       isDue = m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY'));
@@ -1102,12 +1103,12 @@ function renderPaginatedCards() {
     const nextTenureNum = upcomingInfo ? upcomingInfo.tenureMonth : (m.next_drip ? m.next_drip.tenure_month : Math.min(sentCount + 1, totalMonths));
 
     const firstMonthPrefix = `${batchInfo.firstMonthYear}-${String(batchInfo.firstMonthNum).padStart(2, '0')}`;
-    let effectiveNextSendDate = m.next_send_date;
+    let effectiveNextSendDate = m.next_send_date ? m.next_send_date.slice(0, 7) : null;
     if (sentCount === 0) {
-      if (!effectiveNextSendDate || effectiveNextSendDate.slice(0, 7) < firstMonthPrefix) {
+      if (!effectiveNextSendDate || effectiveNextSendDate < firstMonthPrefix) {
         effectiveNextSendDate = (typeof getFirstDispatchDate === 'function')
           ? getFirstDispatchDate(m.batch_month || 'August 2026')
-          : `${firstMonthPrefix}-09`;
+          : firstMonthPrefix;
       }
     }
 
@@ -1115,7 +1116,7 @@ function renderPaginatedCards() {
     
     let isDue = false;
     if (!m.is_completed && !isSentToday) {
-      if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso) {
+      if (sentCount === 0 && effectiveNextSendDate && effectiveNextSendDate > phtNowIso.slice(0, 7)) {
         isDue = false;
       } else {
         isDue = m.schedule_status === 'DUE_TODAY' || (m.is_due && (!m.schedule_status || m.schedule_status === 'DUE_TODAY'));
@@ -1332,7 +1333,7 @@ async function saveMissionaryChanges() {
 function openRescheduleModal(email, name, currentDate) {
   document.getElementById('reschedule-email').value = email;
   document.getElementById('reschedule-name').textContent = name;
-  document.getElementById('reschedule-date-input').value = currentDate || new Date().toISOString().slice(0, 10);
+  document.getElementById('reschedule-date-input').value = (currentDate || new Date().toISOString()).slice(0, 7);
   document.getElementById('reschedule-modal').style.display = 'flex';
 }
 
@@ -1342,11 +1343,12 @@ function closeRescheduleModal() {
 
 async function submitReschedule() {
   const email = document.getElementById('reschedule-email').value;
-  const dateVal = document.getElementById('reschedule-date-input').value;
-  if (!email || !dateVal) {
-    showToast("Please choose a valid date", "error");
+  const rawDateVal = document.getElementById('reschedule-date-input').value;
+  if (!email || !rawDateVal) {
+    showToast("Please choose a valid month", "error");
     return;
   }
+  const dateVal = rawDateVal.slice(0, 7); // Store YYYY-MM with no day preset
 
   try {
     const res = await fetch('/api/main', {

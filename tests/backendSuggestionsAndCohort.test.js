@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { runSql } from '../lib/db.js';
 import { handleEmailAction } from '../lib/handlers/emailHandler.js';
+import { handleDripAction } from '../lib/handlers/dripHandler.js';
+import { handleCdnAction } from '../lib/handlers/cdnHandler.js';
 import { 
   getFirstMonthInfo, 
   calculateMissionMonth, 
@@ -189,6 +191,49 @@ async function runTests() {
   const dbJs = fs.readFileSync(path.resolve('lib/db.js'), 'utf-8');
   assert(dbJs.includes('executeInMemoryFallback'), "lib/db.js includes executeInMemoryFallback");
   assert(dbJs.includes('system_settings') && dbJs.includes('power_state'), "lib/db.js in-memory store pre-populates default system settings");
+
+  // ----------------------------------------------------
+  // Test 6: Essentials & Grid "Apply to All" and Cloudflare R2 CDN Acceleration
+  // ----------------------------------------------------
+  console.log("\n🖼️ [Test 6] Essentials & Grid All-Months Application and Cloudflare R2 CDN Acceleration");
+  
+  const applyEgRes = await handleDripAction("apply_essentials_grid_all_months", {}, {
+    ess1_name: "Test Wooden Nametag",
+    ess1_img: "https://example.com/nametag.jpg",
+    ess2_name: "Test POS Kit",
+    ess2_img: "https://example.com/pos.jpg",
+    grid1: "https://example.com/g1.jpg",
+    grid2: "https://example.com/g2.jpg",
+    grid3: "https://example.com/g3.jpg",
+    grid4: "https://example.com/g4.jpg",
+    grid5: "https://example.com/g5.jpg",
+    grid6: "https://example.com/g6.jpg",
+    grid7: "https://example.com/g7.jpg",
+    grid8: "https://example.com/g8.jpg",
+    grid9: "https://example.com/g9.jpg"
+  });
+  assert(applyEgRes?.status === 200 && applyEgRes?.json?.ok === true, "apply_essentials_grid_all_months responds with ok: true");
+
+  const dripsListRes = await handleDripAction("get_drips", {}, {});
+  assert(dripsListRes?.status === 200 && Array.isArray(dripsListRes?.json?.drips), "get_drips returns drip messages array");
+  const dripM1 = dripsListRes?.json?.drips.find(d => Number(d.month) === 1);
+  const dripM12 = dripsListRes?.json?.drips.find(d => Number(d.month) === 12);
+  assert(dripM1 && dripM1.ess1_name === "Test Wooden Nametag" && dripM1.grid1 === "https://example.com/g1.jpg", "Month 1 received applied essentials & grid");
+  assert(dripM12 && dripM12.ess1_name === "Test Wooden Nametag" && dripM12.grid9 === "https://example.com/g9.jpg", "Month 12 received applied essentials & grid");
+
+  await handleCdnAction("save_cdn_config", {}, {
+    cdn_r2_worker_url: "https://tcrp.2ndsalviejomark2019.workers.dev"
+  });
+  const cdnCfgRes = await handleCdnAction("get_cdn_config", {}, {});
+  assert(cdnCfgRes?.json?.config?.cdn_r2_worker_url === "https://tcrp.2ndsalviejomark2019.workers.dev", "CDN config correctly saves and reads cdn_r2_worker_url");
+
+  const addDirectRes = await handleCdnAction("add_direct_image", {}, {
+    url: "https://cdn.jsdelivr.net/gh/AllensCreations/Gallery@main/assets/rewards/sample.webp",
+    filename: "sample.webp"
+  });
+  assert(addDirectRes?.status === 200 && addDirectRes?.json?.ok === true, "add_direct_image succeeds");
+  assert(addDirectRes?.json?.direct_url.startsWith("https://tcrp.2ndsalviejomark2019.workers.dev/"), "Direct jsDelivr URL is accelerated with Cloudflare R2 worker prefix");
+  assert(addDirectRes?.json?.direct_url.includes("origin="), "Cloudflare R2 accelerated URL includes origin parameter");
 
   console.log(`\n========================================`);
   console.log(`Results: ${passed} Passed, ${failed} Failed`);

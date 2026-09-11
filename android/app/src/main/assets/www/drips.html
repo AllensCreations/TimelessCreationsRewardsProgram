@@ -160,7 +160,7 @@ function getCdnImageUrl(urlOrPath, fallbackName = "image.jpg") {
   if (trimmed.includes("@Appversion") || trimmed.includes("@NewVersion")) {
     trimmed = trimmed.replace(/@(Appversion|NewVersion)/g, "@main");
   }
-  if (trimmed.includes("cdn.jsdelivr.net")) return trimmed;
+  if (trimmed.includes("cdn.jsdelivr.net") || trimmed.includes("workers.dev") || trimmed.includes(".r2.cloudflarestorage.com")) return trimmed;
   if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
     const cleanPath = trimmed.replace(/^\/+/, "");
     return JSDELIVR_BASE + "/" + cleanPath;
@@ -206,7 +206,8 @@ const defaultGrids = [
 
           <div style="display:flex; justify-content:flex-end; gap:8px;">
               <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset</button>
-              <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save</button>
+              <button class="btn btn-secondary" style="font-size:0.68rem; padding:5px 12px;" onclick="applyEssentialsGridToAllMonths()">🌐 Apply to All 24 Months</button>
+              <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save Month</button>
           </div>
       </div>
   </div>
@@ -669,7 +670,20 @@ async function fetchFromTurso() {
           highlight_label_2: d.highlight_label_2 || (isExplicitlyDisabled ? "" : "LDS Temple Keychain"),
           highlight_sold_2: d.highlight_sold_2 || "950+ Sold",
           highlight_enabled: !isExplicitlyDisabled,
-          custom_html: d.custom_html || ""
+          custom_html: d.custom_html || "",
+          ess1_name: d.ess1_name || "Wooden Nametag",
+          ess1_img: d.ess1_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+          ess2_name: d.ess2_name || "POS Kit",
+          ess2_img: d.ess2_img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+          grid1: d.grid1 || defaultGrids[0],
+          grid2: d.grid2 || defaultGrids[1],
+          grid3: d.grid3 || defaultGrids[2],
+          grid4: d.grid4 || defaultGrids[3],
+          grid5: d.grid5 || defaultGrids[4],
+          grid6: d.grid6 || defaultGrids[5],
+          grid7: d.grid7 || defaultGrids[6],
+          grid8: d.grid8 || defaultGrids[7],
+          grid9: d.grid9 || defaultGrids[8]
         };
       });
     }
@@ -700,7 +714,20 @@ function onSelectMonth(m) {
     highlight_label_2: "LDS Temple Keychain",
     highlight_sold_2: "950+ Sold",
     highlight_enabled: true,
-    custom_html: ""
+    custom_html: "",
+    ess1_name: "Wooden Nametag",
+    ess1_img: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+    ess2_name: "POS Kit",
+    ess2_img: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+    grid1: defaultGrids[0],
+    grid2: defaultGrids[1],
+    grid3: defaultGrids[2],
+    grid4: defaultGrids[3],
+    grid5: defaultGrids[4],
+    grid6: defaultGrids[5],
+    grid7: defaultGrids[6],
+    grid8: defaultGrids[7],
+    grid9: defaultGrids[8]
   };
 
   document.getElementById("inp-subject").value = data.subject || "";
@@ -708,6 +735,24 @@ function onSelectMonth(m) {
   document.getElementById("inp-msg").value = data.message || "";
   document.getElementById("inp-quote").value = data.scripture || "";
   document.getElementById("inp-custom-html").value = data.custom_html || "";
+
+  if (document.getElementById("inp-ess1-name")) document.getElementById("inp-ess1-name").value = data.ess1_name || "Wooden Nametag";
+  if (document.getElementById("inp-img-ess1")) document.getElementById("inp-img-ess1").value = data.ess1_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  if (document.getElementById("thumb-ess1")) document.getElementById("thumb-ess1").src = data.ess1_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+
+  if (document.getElementById("inp-ess2-name")) document.getElementById("inp-ess2-name").value = data.ess2_name || "POS Kit";
+  if (document.getElementById("inp-img-ess2")) document.getElementById("inp-img-ess2").value = data.ess2_img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+  if (document.getElementById("thumb-ess2")) document.getElementById("thumb-ess2").src = data.ess2_img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+
+  for (let i = 1; i <= 9; i++) {
+    const gVal = data[`grid${i}`] || defaultGrids[i-1];
+    if (document.getElementById(`inp-grid-${i}`)) {
+      document.getElementById(`inp-grid-${i}`).value = gVal;
+    }
+    if (document.getElementById(`thumb-grid-${i}`)) {
+      document.getElementById(`thumb-grid-${i}`).src = gVal;
+    }
+  }
 
   const isExplicitlyDisabled = data.highlight_enabled === false || data.highlight_label === "__DISABLED__";
   const isHigh = !isExplicitlyDisabled;
@@ -758,7 +803,9 @@ function onLiveEdit() {
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
   const customHtmlVal = document.getElementById("inp-custom-html").value;
 
+  const curMap = liveDripMap[currentMonth] || {};
   liveDripMap[currentMonth] = {
+    ...curMap,
     month: currentMonth,
     subject: document.getElementById("inp-subject").value.trim(),
     theme: document.getElementById("inp-theme").value.trim(),
@@ -771,8 +818,16 @@ function onLiveEdit() {
     highlight_label_2: isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "",
     highlight_sold_2: document.getElementById("inp-highlight-sold-2").value.trim() || "950+ Sold",
     highlight_img_2: document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
-    custom_html: customHtmlVal
+    custom_html: customHtmlVal,
+    ess1_name: document.getElementById("inp-ess1-name") ? document.getElementById("inp-ess1-name").value.trim() : "Wooden Nametag",
+    ess1_img: document.getElementById("inp-img-ess1") ? document.getElementById("inp-img-ess1").value.trim() : "",
+    ess2_name: document.getElementById("inp-ess2-name") ? document.getElementById("inp-ess2-name").value.trim() : "POS Kit",
+    ess2_img: document.getElementById("inp-img-ess2") ? document.getElementById("inp-img-ess2").value.trim() : ""
   };
+  for (let i = 1; i <= 9; i++) {
+    const el = document.getElementById(`inp-grid-${i}`);
+    if (el) liveDripMap[currentMonth][`grid${i}`] = el.value.trim();
+  }
 
   document.getElementById("save-banner").style.display = "flex";
   renderPreview();
@@ -1025,10 +1080,54 @@ function resetTab1Defaults() {
 }
 
 function resetTab2Defaults() {
+  document.getElementById("inp-ess1-name").value = "Wooden Nametag";
+  document.getElementById("inp-ess2-name").value = "POS Kit";
   revertImage('inp-img-ess1', 'thumb-ess1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE');
   revertImage('inp-img-ess2', 'thumb-ess2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ');
   for (let i = 1; i <= 9; i++) {
     revertImage(`inp-grid-${i}`, `thumb-grid-${i}`, defaultGrids[i-1]);
+  }
+  onLiveEdit();
+  showToast("Reset to default Essentials & Grid photos.");
+}
+
+async function applyEssentialsGridToAllMonths() {
+  const ess1Name = document.getElementById("inp-ess1-name").value.trim() || "Wooden Nametag";
+  const ess1Img = document.getElementById("inp-img-ess1").value.trim();
+  const ess2Name = document.getElementById("inp-ess2-name").value.trim() || "POS Kit";
+  const ess2Img = document.getElementById("inp-img-ess2").value.trim();
+
+  const payload = {
+    action: "apply_essentials_grid_all_months",
+    ess1_name: ess1Name,
+    ess1_img: ess1Img,
+    ess2_name: ess2Name,
+    ess2_img: ess2Img
+  };
+
+  for (let i = 1; i <= 9; i++) {
+    const el = document.getElementById(`inp-grid-${i}`);
+    payload[`grid${i}`] = el ? el.value.trim() : "";
+  }
+
+  if (!confirm("Apply these 2 Missionary Essentials and 9 Community Photos across all 24 months in the database?")) return;
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(r => r.json());
+
+    if (res.ok) {
+      showToast("Successfully applied Essentials & Grid across all 24 months!");
+      await fetchFromTurso();
+      onSelectMonth(currentMonth);
+    } else {
+      showToast(res.error || "Failed to apply across all months", "error");
+    }
+  } catch (e) {
+    showToast("Failed to apply across all months", "error");
   }
 }
 
@@ -1050,25 +1149,36 @@ async function saveActiveMonth(sectionName = 'global') {
   const data = liveDripMap[currentMonth] || {};
   const label = getCalendarMonthLabel(currentMonth);
 
+  const payload = {
+    action: "save_drip",
+    month: currentMonth,
+    subject: data.subject,
+    theme: data.theme,
+    scripture: data.scripture,
+    message: data.message,
+    highlight_img: data.highlight_img,
+    highlight_label: data.highlight_label,
+    highlight_sold_1: formatK(data.highlight_sold_1),
+    highlight_label_2: data.highlight_label_2,
+    highlight_img_2: data.highlight_img_2,
+    highlight_sold_2: formatK(data.highlight_sold_2),
+    custom_html: data.custom_html,
+    ess1_name: data.ess1_name || (document.getElementById("inp-ess1-name") ? document.getElementById("inp-ess1-name").value.trim() : "Wooden Nametag"),
+    ess1_img: data.ess1_img || (document.getElementById("inp-img-ess1") ? document.getElementById("inp-img-ess1").value.trim() : ""),
+    ess2_name: data.ess2_name || (document.getElementById("inp-ess2-name") ? document.getElementById("inp-ess2-name").value.trim() : "POS Kit"),
+    ess2_img: data.ess2_img || (document.getElementById("inp-img-ess2") ? document.getElementById("inp-img-ess2").value.trim() : "")
+  };
+
+  for (let i = 1; i <= 9; i++) {
+    const el = document.getElementById(`inp-grid-${i}`);
+    payload[`grid${i}`] = data[`grid${i}`] || (el ? el.value.trim() : "");
+  }
+
   try {
     const res = await fetch("/api/main", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "save_drip",
-        month: currentMonth,
-        subject: data.subject,
-        theme: data.theme,
-        scripture: data.scripture,
-        message: data.message,
-        highlight_img: data.highlight_img,
-        highlight_label: data.highlight_label,
-        highlight_sold_1: formatK(data.highlight_sold_1),
-        highlight_label_2: data.highlight_label_2,
-        highlight_img_2: data.highlight_img_2,
-        highlight_sold_2: formatK(data.highlight_sold_2),
-        custom_html: data.custom_html
-      })
+      body: JSON.stringify(payload)
     }).then(r => r.json());
 
     if (res.ok) {

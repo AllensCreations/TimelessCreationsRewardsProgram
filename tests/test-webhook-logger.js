@@ -114,13 +114,13 @@ async function runWebhookLoggerTests() {
 
     await runSql("DELETE FROM sessions WHERE psid = ?", [recoveryPsid]);
     await handleBotMessage(recoveryPsid, "Get Started", "GET_STARTED");
-    await handleBotMessage(recoveryPsid, `Elder One\n${email1}\nTCRP50`);
+    await handleBotMessage(recoveryPsid, `Elder One\n${email1}\nDecember 2026\nTCRP50`);
 
     let sessionState = (await runSql("SELECT state, temp_email, otp_code FROM sessions WHERE psid = ?", [recoveryPsid]))[0];
     assert(sessionState && sessionState.state === 'AWAITING_OTP' && sessionState.temp_email === email1, "Initial details entered AWAITING_OTP");
 
     // User re-submits details with different missionary info instead of OTP
-    await handleBotMessage(recoveryPsid, `Elder Two\n${email2}\nTCRP50`);
+    await handleBotMessage(recoveryPsid, `Elder Two\n${email2}\nDecember 2026\nTCRP50`);
     let updatedSession = (await runSql("SELECT state, temp_email, temp_title, failed_otp_count FROM sessions WHERE psid = ?", [recoveryPsid]))[0];
     assert(updatedSession && updatedSession.state === 'AWAITING_OTP', "Remains in AWAITING_OTP state");
     assert(updatedSession.temp_email === email2, "Updated email captured accurately");

@@ -40,12 +40,21 @@ async function runFullBotTester() {
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
     assert(session && session.state === 'AWAITING_ALL_IN_ONE', "Advanced to 3-in-1 submission (AWAITING_ALL_IN_ONE)");
 
-    // TEST 3: Combined 3-in-1 Submission
-    console.log("\n✉️ [Test 3] Combined Submission (Name + Email + RefCode)");
-    await handleBotMessage(testPsid, `Elder Smith\n${testEmail}\nTCRP50`);
+    // TEST 3: Incomplete Submission Rejected -> All 4 Details Strictly Needed
+    console.log("\n✉️ [Test 3] All 4 Informations Strictly Needed Validation");
+    await handleBotMessage(testPsid, `Elder Smith\n${testEmail}\nTCRP50`); // Missing Month Batch
     session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
-    assert(session && session.state === 'AWAITING_OTP', "Parsed 3-in-1 payload, generated OTP, advanced to AWAITING_OTP");
+    assert(session && session.state === 'AWAITING_ALL_IN_ONE', "Incomplete submission (missing month batch) rejected, remains in AWAITING_ALL_IN_ONE");
+
+    const rejectMsg = (await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id DESC LIMIT 1", [testPsid]))[0];
+    assert(rejectMsg?.message.includes("All 4 missionary details are strictly required"), "Prompt clearly specifies all 4 details are strictly required");
+
+    // Complete 4-in-1 Submission (Name + Email + Month Batch + Referral Code)
+    await handleBotMessage(testPsid, `Elder Smith\n${testEmail}\nDecember 2026\nTCRP50`);
+    session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [testPsid]))[0];
+    assert(session && session.state === 'AWAITING_OTP', "Parsed 4-in-1 payload, generated OTP, advanced to AWAITING_OTP");
     assert(session.temp_email === testEmail, "Email captured accurately");
+    assert(session.temp_batch === "December 2026", "Month batch captured accurately");
     assert(session.invite_code === "TCRP50", "Referral code captured accurately");
 
     // TEST 4: OTP Verification

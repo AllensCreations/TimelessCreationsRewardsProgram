@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
-import { checkDashboardRateLimit, buildCatalogCarousel, buildDashboardPayload } from './lib/bot.js';
+import { runSql } from '../lib/db.js';
+import { checkDashboardRateLimit, buildCatalogCarousel, buildDashboardPayload } from '../lib/bot.js';
 
 console.log("\n📡 STARTING END-TO-END TCRP CONNECTIONS TESTER...\n");
 

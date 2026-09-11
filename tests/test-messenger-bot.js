@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
-import { handleBotMessage } from './lib/botHandler.js';
+import { runSql } from '../lib/db.js';
+import { handleBotMessage } from '../lib/botHandler.js';
 
 async function runFullBotTester() {
   console.log("🤖 ==================================================");

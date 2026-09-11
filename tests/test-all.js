@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
-import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit } from './lib/bot.js';
-import { sendDripEmail } from './lib/mailer.js';
+import { runSql } from '../lib/db.js';
+import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit } from '../lib/bot.js';
+import { sendDripEmail } from '../lib/mailer.js';
 
 console.log("\n🧪 STARTING COMPREHENSIVE TCRP SUITE TEST...\n");
 

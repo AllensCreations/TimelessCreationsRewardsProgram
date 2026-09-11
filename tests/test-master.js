@@ -1,21 +1,21 @@
 import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
-import { runSql } from './lib/db.js';
-import { renderMonthlyDripTemplate, sendOTPEmail, sendReceiptEmail, sendThankYouEmail, sendOrderStatusEmail } from './lib/mailer.js';
-import { checkDashboardRateLimit } from './lib/bot.js';
-import { isRateLimited, verifyFbSignature } from './lib/security.js';
-import { handleBotMessage } from './lib/botHandler.js';
+import { runSql } from '../lib/db.js';
+import { renderMonthlyDripTemplate, sendOTPEmail, sendReceiptEmail, sendThankYouEmail, sendOrderStatusEmail } from '../lib/mailer.js';
+import { checkDashboardRateLimit } from '../lib/bot.js';
+import { isRateLimited, verifyFbSignature } from '../lib/security.js';
+import { handleBotMessage } from '../lib/botHandler.js';
 
-import { handleSystemAction } from './lib/handlers/systemHandler.js';
-import { handleMissionaryAction } from './lib/handlers/missionaryHandler.js';
-import { handlePromoAction } from './lib/handlers/promoHandler.js';
-import { handleEmailAction } from './lib/handlers/emailHandler.js';
-import { handleCatalogAction } from './lib/handlers/catalogHandler.js';
-import { handleDripAction } from './lib/handlers/dripHandler.js';
-import { handleInvoiceAction } from './lib/handlers/invoiceHandler.js';
-import { handleCdnAction } from './lib/handlers/cdnHandler.js';
-import { handleBotApiAction } from './lib/handlers/botApiHandler.js';
+import { handleSystemAction } from '../lib/handlers/systemHandler.js';
+import { handleMissionaryAction } from '../lib/handlers/missionaryHandler.js';
+import { handlePromoAction } from '../lib/handlers/promoHandler.js';
+import { handleEmailAction } from '../lib/handlers/emailHandler.js';
+import { handleCatalogAction } from '../lib/handlers/catalogHandler.js';
+import { handleDripAction } from '../lib/handlers/dripHandler.js';
+import { handleInvoiceAction } from '../lib/handlers/invoiceHandler.js';
+import { handleCdnAction } from '../lib/handlers/cdnHandler.js';
+import { handleBotApiAction } from '../lib/handlers/botApiHandler.js';
 
 async function run500PointAuditor() {
   console.log("🕵️ ==========================================================");

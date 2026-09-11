@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
-import { executeBotAction } from './api/bot.js';
-import { buildDashboardPayload, buildCatalogCarousel, FIXED_QUICK_REPLIES } from './lib/bot.js';
+import { runSql } from '../lib/db.js';
+import { executeBotAction } from '../api/bot.js';
+import { buildDashboardPayload, buildCatalogCarousel, FIXED_QUICK_REPLIES } from '../lib/bot.js';
 
 console.log("\n=======================================================");
 console.log("👤 STARTING NEW USER MESSENGER ONBOARDING FLOW TESTER");

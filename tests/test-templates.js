@@ -34,11 +34,11 @@ import {
   renderOutOfWindowDripTemplate,
   renderDeliveredTemplate,
   sendEmail
-} from './lib/mailer.js';
+} from '../lib/mailer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const OUTPUT_DIR = path.resolve(__dirname, 'test-output');
+const OUTPUT_DIR = path.resolve(__dirname, '../test-output');
 
 // Colors for terminal output
 const C = {

@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
-import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit, FIXED_QUICK_REPLIES } from './lib/bot.js';
+import { runSql } from '../lib/db.js';
+import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit, FIXED_QUICK_REPLIES } from '../lib/bot.js';
 
 console.log("\n🤖 STARTING MESSENGER BOT CONVERSATION & REPLIES TESTER...\n");
 

@@ -170,19 +170,29 @@ function showToast(message, type = "success") {
 }
 
 const NAV_ITEMS = [
-  { key: 'dashboard', label: '📊 Dashboard', url: '/index.html' },
-  { key: 'missionaries', label: '👥 Missionaries', url: '/missionaries.html' },
-  { key: 'pusher', label: '➕ Add Batch', url: '/pusher.html' },
-  { key: 'invoicing', label: '🧾 Order Summary & POS', url: '/invoicing.html' },
-  { key: 'drips', label: '💌 24M Drips', url: '/drips.html' },
-  { key: 'messengerbot', label: '🎁 Bot Rewards', url: '/messengerbot.html' },
-  { key: 'simulator', label: '💬 Bot Simulator', url: '/messenger-test.html' },
-  { key: 'gallery', label: '🖼️ CDN Gallery', url: '/gallery.html' },
-  { key: 'logs', label: '📜 Logs', url: '/logs.html' },
-  { key: 'settings', label: '⚙️ Settings', url: '/settings.html' }
+  { key: 'dashboard', label: '✦ Overview', url: '/index.html' },
+  { key: 'roster', label: '◈ Roster', url: '/roster.html' },
+  { key: 'enrollment', label: '＋ Enrollment', url: '/enrollment.html' },
+  { key: 'invoicing', label: '▤ Invoicing & POS', url: '/invoicing.html' },
+  { key: 'campaigns', label: '✉ Campaigns & Drips', url: '/campaigns.html' },
+  { key: 'simulator', label: '⚡ Simulator', url: '/simulator.html' },
+  { key: 'gallery', label: '◫ Media Gallery', url: '/gallery.html' },
+  { key: 'logs', label: '≡ Telemetry Logs', url: '/logs.html' },
+  { key: 'settings', label: '⚙ Settings', url: '/settings.html' }
 ];
 
 function initAppLayout(activeKey = 'dashboard', pageTitle = 'Dashboard') {
+  const keyAliases = {
+    'missionaries': 'roster',
+    'pusher': 'enrollment',
+    'drips': 'campaigns',
+    'messengerbot': 'campaigns',
+    'messenger-test': 'simulator'
+  };
+  if (keyAliases[activeKey]) {
+    activeKey = keyAliases[activeKey];
+  }
+
   const header = document.createElement('header');
   header.className = 'app-header';
   header.innerHTML = `

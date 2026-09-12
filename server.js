@@ -77,6 +77,20 @@ const server = http.createServer(async (req, res) => {
     targetFile += '.html';
   }
 
+  // Professional route redirects for backward compatibility
+  const LEGACY_REDIRECTS = {
+    'messengerbot.html': '/campaigns.html?tab=rewards',
+    'drips.html': '/campaigns.html',
+    'missionaries.html': '/roster.html',
+    'pusher.html': '/enrollment.html',
+    'messenger-test.html': '/simulator.html'
+  };
+
+  if (LEGACY_REDIRECTS[targetFile]) {
+    res.writeHead(302, { 'Location': LEGACY_REDIRECTS[targetFile] });
+    return res.end();
+  }
+
   const searchPaths = [
     path.resolve(__dirname, 'public', targetFile),
     path.resolve(__dirname, 'views', targetFile)

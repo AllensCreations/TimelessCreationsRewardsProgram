@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tcrp-cache-v6';
+const CACHE_NAME = 'tcrp-cache-v7';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -9,16 +9,20 @@ const PRECACHE_ASSETS = [
   '/assets/fonts/DMSans-Variable.ttf',
   '/assets/fonts/DMMono-Regular.ttf',
   '/assets/fonts/DMMono-Medium.ttf',
-  '/pusher.html',
+  '/campaigns.html',
+  '/roster.html',
+  '/enrollment.html',
+  '/simulator.html',
   '/invoicing.html',
-  '/claims.html',
-  '/drips.html',
   '/gallery.html',
-  '/messengerbot.html',
-  '/missionaries.html',
-  '/changelog.html',
   '/settings.html',
-  '/logs.html'
+  '/logs.html',
+  '/changelog.html',
+  '/pusher.html',
+  '/drips.html',
+  '/missionaries.html',
+  '/messengerbot.html',
+  '/messenger-test.html'
 ];
 
 self.addEventListener('install', event => {

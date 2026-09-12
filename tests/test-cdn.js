@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
+import { runSql } from '../lib/db.js';
 
 async function testGitHubCdnConnection() {
   console.log("🔍 ==================================================");

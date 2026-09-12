@@ -5,50 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>24-Month Drips & Media Hub | Timeless Creations</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
-    <link rel="stylesheet" href="/assets/app.css?v=2.7.0">
-    <script src="/assets/app.js?v=2.7.0"></script>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js"></script>
     <style>
-      .toggle-wrap { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 12px; }
-      .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-      .switch input { opacity: 0; width: 0; height: 0; }
-      .slider { position: absolute; cursor: pointer; inset: 0; background-color: #2a2a38; transition: .3s; border-radius: 24px; border: 1px solid var(--border); }
-      .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--muted); transition: .3s; border-radius: 50%; }
-      input:checked + .slider { background-color: var(--gold-dim); border-color: var(--gold); }
-      input:checked + .slider:before { transform: translateX(20px); background-color: var(--gold); }
-
       .img-picker-card {
         background: var(--surface2);
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
-        padding: 10px;
+        padding: 12px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
         align-items: center;
         text-align: center;
         position: relative;
+        transition: border-color var(--duration-fast) var(--ease-out);
+      }
+      .img-picker-card:hover {
+        border-color: var(--border-gold);
       }
       .picker-thumb-wrap {
         width: 100%;
         aspect-ratio: 1 / 1;
         max-width: 110px;
         background: #08080d;
-        border-radius: 6px;
+        border-radius: 8px;
         overflow: hidden;
         border: 1px solid var(--border);
       }
       .picker-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-      .picker-btn-group { display: flex; gap: 4px; width: 100%; }
-      .picker-btn-group button { flex: 1; padding: 5px 4px; font-size: 0.65rem; min-height: 32px; }
+      .picker-btn-group { display: flex; gap: 6px; width: 100%; }
+      .picker-btn-group button { flex: 1; padding: 6px 8px; font-size: 0.72rem; min-height: 40px; }
 
       .tab-content { display: none !important; }
       .tab-content.active { display: block !important; }
 
-      .preview-wrapper { width: 100%; max-width: 480px; margin: 0 auto; background: #12121a; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 20px; box-sizing: border-box; }
-      .preview-frame { width: 100%; background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+      .preview-wrapper { width: 100%; max-width: 520px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-sizing: border-box; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+      .preview-frame { width: 100%; background: #ffffff; border: 1px solid #e0d6bc; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
       .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; overflow-y: auto; padding: 10px 0; max-height: 50vh; }
-      .modal-img-card { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; cursor: pointer; background: #08080d; display: flex; align-items: center; justify-content: center; }
+      .modal-img-card { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; background: #08080d; display: flex; align-items: center; justify-content: center; transition: border-color var(--duration-fast) var(--ease-out); }
+      .modal-img-card:hover { border-color: var(--gold); }
       .modal-img-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
     </style>
 </head>
@@ -160,7 +157,7 @@ function getCdnImageUrl(urlOrPath, fallbackName = "image.jpg") {
   if (trimmed.includes("@Appversion") || trimmed.includes("@NewVersion")) {
     trimmed = trimmed.replace(/@(Appversion|NewVersion)/g, "@main");
   }
-  if (trimmed.includes("cdn.jsdelivr.net")) return trimmed;
+  if (trimmed.includes("cdn.jsdelivr.net") || trimmed.includes("workers.dev") || trimmed.includes(".r2.cloudflarestorage.com")) return trimmed;
   if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
     const cleanPath = trimmed.replace(/^\/+/, "");
     return JSDELIVR_BASE + "/" + cleanPath;
@@ -206,7 +203,8 @@ const defaultGrids = [
 
           <div style="display:flex; justify-content:flex-end; gap:8px;">
               <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset</button>
-              <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save</button>
+              <button class="btn btn-secondary" style="font-size:0.68rem; padding:5px 12px;" onclick="applyEssentialsGridToAllMonths()">🌐 Apply to All 24 Months</button>
+              <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save Month</button>
           </div>
       </div>
   </div>
@@ -287,8 +285,15 @@ const defaultGrids = [
   <!-- TAB 5: Dedicated Live Preview -->
   <div id="tab-preview" class="tab-content">
       <div class="preview-wrapper">
-          <div style="font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px; text-align:center; font-weight:bold;">
-              ✦ Live Mobile Email Sandbox
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+              <div style="font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; font-weight:bold;">
+                  ✦ Live Mobile Email Sandbox
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:0.68rem; color:var(--muted);">
+                  <span>Simulated Points:</span>
+                  <input type="number" id="preview-simulated-points" min="0" max="100" style="width:55px; padding:3px 6px; text-align:center; font-size:0.72rem; font-weight:bold; color:var(--gold); background:var(--surface2); border:1px solid var(--border-gold); border-radius:4px;" oninput="renderPreview()">
+                  <button class="btn btn-dark" style="font-size:0.62rem; padding:3px 6px;" onclick="resetSimulatedPoints()" title="Auto-calculate points from month number">⚡ Auto (M<span id="label-auto-month-points">1</span>)</button>
+              </div>
           </div>
           <div class="preview-frame">
               <iframe id="preview-iframe" style="width:100%; min-height:850px; border:none; background:#ffffff; display:block;" src="about:blank"></iframe>
@@ -321,6 +326,7 @@ const defaultGrids = [
 let currentMonth = new Date().getMonth() + 1;
 let liveDripMap = {};
 let latestPromo = null;
+let liveRewardProducts = null;
 
 let masterTemplateCode = `<!DOCTYPE html>
 <html lang="en">
@@ -329,64 +335,70 @@ let masterTemplateCode = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { font-family: 'Garamond', 'Georgia', serif; background-color: #f9f7f2; color: #1a1a1a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-  .email-wrapper { width: 100%; background-color: #f9f7f2; display: flex; justify-content: center; padding: 20px 0; }
-  .email-container { width: 100%; max-width: 450px; background: #ffffff; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.03); margin: 0 auto; overflow: hidden; }
-  .brand-header { padding: 30px 20px 15px; text-align: center; background-color: #ffffff; }
+  .email-wrapper { width: 100%; background-color: #f9f7f2; display: flex; justify-content: center; padding: 25px 0; }
+  .email-container { width: 100%; max-width: 450px; background: #ffffff; border: 1px solid #e0d6bc; box-shadow: 0 15px 40px rgba(0,0,0,0.04); margin: 0 auto; overflow: hidden; border-radius: 6px; }
+  .brand-header { padding: 35px 20px 20px; text-align: center; background: linear-gradient(to bottom, #ffffff, #fdfbf8); }
   .logo-text { font-size: 22px; letter-spacing: 5px; text-transform: uppercase; font-weight: 300; margin: 0; color: #1a1a1a; }
   .temple-img { width: 100%; height: auto; object-fit: cover; display: block; border: 0; }
-  .main-content { padding: 20px 18px; text-align: center; line-height: 1.6; }
-  .quote-container { margin: 18px 0; padding: 16px; background-color: #fdfbf8; border-left: 1px solid #d4c197; border-right: 1px solid #d4c197; }
-  .transition-zone { margin: 20px 0; padding: 12px 10px; font-style: italic; color: #8c7e5d; font-size: 12.5px; border-top: 1px double #e0d6bc; border-bottom: 1px double #e0d6bc; }
-  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; border: 1px solid #f0eadd; }
-  .footer { padding: 36px 20px; background-color: #1a1a1a; color: #ffffff; text-align: center; }
+  .main-content { padding: 25px 20px; text-align: center; line-height: 1.65; }
+  .quote-container { margin: 20px 0; padding: 18px; background-color: #fdfbf8; border-left: 2px solid #d4c197; border-right: 2px solid #d4c197; border-radius: 2px; }
+  .transition-zone { margin: 22px 0; padding: 14px 12px; font-style: italic; color: #736545; font-size: 13px; background-color: #faf7f2; border-top: 1px solid #efe6d5; border-bottom: 1px solid #efe6d5; border-radius: 2px; }
+  .strict-1-1 { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; border: 1px solid #f0eadd; border-radius: 3px; }
+  .footer { padding: 35px 20px; background-color: #1a1a1a; color: #ffffff; text-align: center; }
+  .btn-primary { display: inline-block; width: 100%; max-width: 320px; box-sizing: border-box; padding: 16px 20px; background-color: #1a1a1a; color: #ffffff !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 3px; transition: background-color 0.2s ease; }
+  .btn-primary:hover { background-color: #333333; }
 </style>
 </head>
 <body>
 <div class="email-wrapper">
   <div class="email-container">
+    
+    <!-- Brand Header -->
     <div class="brand-header">
-      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8px; letter-spacing: 2px; color: #8c7e5d; text-transform: uppercase; margin-bottom: 8px; display: block;">{{MONTH}} • Dedicated Service</span>
+      <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 2.5px; color: #8c7e5d; text-transform: uppercase; margin-bottom: 8px; display: block;">✨ {{MONTH}} • Warm Greetings ✨</span>
       <h1 class="logo-text">Timeless Creations</h1>
       <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; color: #8c7e5d; margin-top: 6px; text-transform: uppercase;">Most Trusted Online LDS Store by Members &amp; Missionaries Across the Philippines</div>
     </div>
-    <img src="{{TEMPLE_IMG}}" alt="Temple" class="temple-img">
+
+    <!-- Temple Image Banner (Flexible Height) -->
+    <img src="{{TEMPLE_IMG}}" alt="Temple Banner" class="temple-img">
+
     <div class="main-content">
-      <div style="font-size: 18px; font-style: italic; margin-bottom: 10px; color: #1a1a1a;">Hello {{NAME}},</div>
-      <div style="font-size: 13.5px; color: #333; margin-bottom: 16px;">{{MESSAGE}}</div>
+      
+      <!-- Friendly Greeting & Message -->
+      <div style="font-size: 19px; font-style: italic; margin-bottom: 12px; color: #1a1a1a;">Warm hello, {{NAME}}! 🕊️</div>
+      <div style="font-size: 13.5px; color: #444; margin-bottom: 18px;">{{MESSAGE}}</div>
+
+      <!-- Scripture Quote Card -->
       <div class="quote-container">
-        <div style="font-size: 14px; font-style: italic; color: #1a1a1a; margin-bottom: 6px;">"{{SCRIPTURE}}"</div>
-        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">{{THEME}}</div>
+        <div style="font-size: 14.5px; font-style: italic; color: #1a1a1a; margin-bottom: 8px;">"{{SCRIPTURE}}"</div>
+        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #8c7e5d;">~ {{THEME}}</div>
       </div>
 
+      <!-- Gentle Transition Note -->
       <div class="transition-zone">
-        As you focus on your sacred work, let us handle the small details that help you present your best self to the world.
+        As you focus on your sacred work and joyful everyday moments, let us lovingly handle the small details that help you shine.
       </div>
 
-      <!-- 2 Missionary Essentials & Assurance -->
-      <div style="padding: 20px 14px; border: 1px solid #f0eadd; background-color: #ffffff; border-radius: 4px; margin: 20px 0;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin: 0 0 16px 0; color: #1a1a1a; text-align: center;">Missionary Essentials</h2>
+      <!-- Missionary Essentials Section (Strict 1:1 Images) -->
+      <div style="padding: 22px 14px; border: 1px solid #eadecc; background-color: #ffffff; border-radius: 6px; margin: 22px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <h2 style="font-weight: 400; letter-spacing: 2.5px; text-transform: uppercase; font-size: 13px; margin: 0 0 16px 0; color: #1a1a1a; text-align: center;">✦ Missionary Essentials ✦</h2>
         <table width="100%" border="0" cellspacing="0" cellpadding="0">
           <tr>
             <td align="center" width="48%" valign="top">
-              <img src="{{ESS1_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
+              <img src="{{ESS1_IMG}}" class="strict-1-1" style="max-width: 125px; border: 1px solid #d4c197; margin: 0 auto 6px auto;" alt="{{ESS1_NAME}}">
               <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS1_NAME}}</div>
             </td>
             <td width="4%"></td>
             <td align="center" width="48%" valign="top">
-              <img src="{{ESS2_IMG}}" style="width: 100%; max-width: 125px; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; border: 1px solid #d4c197; display: block; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
+              <img src="{{ESS2_IMG}}" class="strict-1-1" style="max-width: 125px; border: 1px solid #d4c197; margin: 0 auto 6px auto;" alt="{{ESS2_NAME}}">
               <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; color: #8c7e5d; font-weight: bold;">{{ESS2_NAME}}</div>
             </td>
           </tr>
         </table>
-        <p style="font-size: 12px; margin-top: 18px; color: #555; line-height: 1.5; text-align: center;">
-          If you have doubts with us as scams, we offer our first time customers with a <strong>"Gawa muna bago bayad"</strong> assurance.
-        </p>
-        <div style="background-color: #1a1a1a; color: #d4c197; padding: 10px; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; margin: 14px 0 16px; font-weight: bold; text-align: center; border-radius: 2px;">
-          Work, Confirm, Pay
-        </div>
-        <div style="text-align: center;">
-          <a href="https://m.me/timeless.creations.06" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ffffff; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
-            Inquire via Messenger
+        <div style="margin-top: 22px; text-align: center;">
+          <a href="https://m.me/timeless.creations.06" target="_blank" class="btn-primary">
+            💬 Inquire via Messenger
           </a>
         </div>
       </div>
@@ -394,13 +406,13 @@ let masterTemplateCode = `<!DOCTYPE html>
       <!-- Top 1 & Top 2 Showcase in 2 Columns -->
       {{TOP_PRODUCTS_HTML}}
 
-      <!-- 9 Community Photos & Google Photos Link -->
-      <div style="margin: 26px auto 20px; text-align: center;">
-        <h2 style="font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; margin-bottom: 6px; color: #1a1a1a;">Engrave Your Legacy</h2>
-        <p style="font-size: 12px; color: #666; font-style: italic; line-height: 1.5; margin-bottom: 14px; padding: 0 10px;">
-          Your service is a story that deserves to be told. We are archiving the moments that define a mission—one missionary, one memory, and one creation at a time.
+      <!-- 9 Community Photos & Google Photos Link (Strict 1:1 Grid) -->
+      <div style="margin: 28px auto 22px; text-align: center;">
+        <h2 style="font-weight: 400; letter-spacing: 2.5px; text-transform: uppercase; font-size: 13px; margin-bottom: 6px; color: #1a1a1a;">✦ Engrave Your Legacy ✦</h2>
+        <p style="font-size: 12px; color: #666; font-style: italic; line-height: 1.5; margin-bottom: 16px; padding: 0 10px;">
+          Your service is a story worth cherishing. We love archiving the wonderful memories that define a mission, one creation at a time.
         </p>
-        <table width="100%" border="0" cellspacing="3" cellpadding="0" style="table-layout: fixed; margin-bottom: 16px;">
+        <table width="100%" border="0" cellspacing="4" cellpadding="0" style="table-layout: fixed; margin-bottom: 18px;">
           <tr>
             <td><img src="{{GRID1}}" class="strict-1-1" alt="Community Photo 1"></td>
             <td><img src="{{GRID2}}" class="strict-1-1" alt="Community Photo 2"></td>
@@ -417,26 +429,40 @@ let masterTemplateCode = `<!DOCTYPE html>
             <td><img src="{{GRID9}}" class="strict-1-1" alt="Community Photo 9"></td>
           </tr>
         </table>
-        <p style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; letter-spacing: 1.5px; color: #8c7e5d; text-transform: uppercase; font-weight: bold; margin: 0 0 10px 0;">
-          Engrave Your Memory. Be the Memory. Be You.
+        <p style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; letter-spacing: 1.5px; color: #8c7e5d; text-transform: uppercase; font-weight: bold; margin: 0 0 12px 0;">
+          Engrave Your Memory • Be the Memory • Be You
         </p>
-        <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" style="display: inline-block; padding: 10px 22px; border: 1.5px solid #1a1a1a; color: #1a1a1a !important; text-decoration: none; font-family: 'Helvetica', Arial, sans-serif; font-size: 9.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-radius: 2px;">
-          Enter the Gallery ↗
+        <a href="https://photos.app.goo.gl/6h7UPfkHU5TuvzXU7" target="_blank" class="btn-primary">
+          🖼️ Enter the Gallery ↗
         </a>
       </div>
 
       <!-- Combined Rewards & Promo Box -->
       {{REWARD_SECTION_HTML}}
+
+      <!-- Email Troubleshooting & Support Section (Updated Economics Template) -->
+      <div style="margin: 32px 0 10px; padding: 22px 16px; background-color: #fdfbf8; border: 1px solid #e0d6bc; text-align: center; border-radius: 6px;">
+        <p style="font-size: 12px; color: #555; line-height: 1.6; margin: 0 0 14px 0;">
+          Having trouble clicking any of the links above? No worries at all! Feel free to email us directly at <a href="mailto:timelesscreations.ph@gmail.com?subject=Inquiry%20Regarding%20My%20Order%20%E2%80%94%20Pricing%20%26%20Payment%20Options&body=Hello%20Timeless%20Creations%20Team,%0A%0AI%20am%20interested%20in%20your%20custom-engraved%20keepsakes%20and%20would%20like%20to%20learn%20more%20about%20the%20costs%20and%20how%20ordering%20works.%20Here%20are%20my%20details:%0A%0A-%20Name:%20%0A-%20Product%20of%20Interest:%20%0A-%20Budget%20/%20Quantity%20(if%20applicable):%20%0A-%20Question%20/%20Concern:%20%0A%0APlease%20let%20me%20know%20your%20pricing%20details%20and%20how%20we%20can%20proceed%20with%20an%20order.%20Thank%20you!" style="color: #1a1a1a; font-weight: bold; text-decoration: underline;">timelesscreations.ph@gmail.com</a>. 
+          <br><span style="font-size: 11px; color: #777; font-style: italic;">Kindly note that support requests take about 1–5 business days to process.</span>
+        </p>
+        <a href="mailto:timelesscreations.ph@gmail.com?subject=Inquiry%20Regarding%20My%20Order%20%E2%80%94%20Pricing%20%26%20Payment%20Options&body=Hello%20Timeless%20Creations%20Team,%0A%0AI%20am%20interested%20in%20your%20custom-engraved%20keepsakes%20and%20would%20like%20to%20learn%20more%20about%20the%20costs%20and%20how%20ordering%20works.%20Here%20are%20my%20details:%0A%0A-%20Name:%20%0A-%20Product%20of%20Interest:%20%0A-%20Budget%20/%20Quantity%20(if%20applicable):%20%0A-%20Question%20/%20Concern:%20%0A%0APlease%20let%20me%20know%20your%20pricing%20details%20and%20how%20we%20can%20proceed%20with%20an%20order.%20Thank%20you!" class="btn-primary">
+          ✉️ Email Us Directly
+        </a>
+      </div>
+
     </div>
 
     <!-- Footer -->
     <div class="footer">
       <div style="color: #d4c197; letter-spacing: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold;">Timeless Creations</div>
-      <div style="font-size: 9px; opacity: 0.6; margin-top: 10px; font-family: Arial, sans-serif; line-height: 1.4;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
-      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="font-size: 9.5px; color: #b8955a; text-decoration: none; margin-top: 18px; display: inline-block; font-family: 'Helvetica', Arial, sans-serif; letter-spacing: 1px;">
-        Redeem Rewards &amp; Support in Messenger →
+      <div style="font-size: 9px; opacity: 0.65; margin-top: 10px; font-family: Arial, sans-serif; line-height: 1.4;">Supporting Members &amp; Missionaries Across the Philippines • Since 2025</div>
+      <div style="font-size: 8.5px; opacity: 0.5; margin-top: 8px; font-family: Arial, sans-serif; text-transform: uppercase; letter-spacing: 1px;">Please do not reply to this email.</div>
+      <a href="https://m.me/TimelessCreationsRP" target="_blank" style="font-size: 9.5px; color: #d4c197; text-decoration: none; margin-top: 18px; display: inline-block; font-family: 'Helvetica', Arial, sans-serif; letter-spacing: 1px;">
+        ✨ Redeem Rewards &amp; Support in Messenger →
       </a>
     </div>
+    
   </div>
 </div>
 </body>
@@ -618,14 +644,28 @@ async function applyTopSalesToAllMonths() {
 
 async function fetchFromTurso() {
   try {
-    const [dripRes, promoRes, rewardsVisRes] = await Promise.all([
+    const [dripRes, promoRes, rewardsVisRes, templateRes, rewardsCatalogRes] = await Promise.all([
       fetch("/api/main?action=get_drips").then(r => r.json()).catch(() => ({})),
       fetch("/api/main?action=get_promo_codes").then(r => r.json()).catch(() => ({})),
-      fetch("/api/main?action=get_drip_rewards_visibility").then(r => r.json()).catch(() => ({}))
+      fetch("/api/main?action=get_drip_rewards_visibility").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_master_template").then(r => r.json()).catch(() => ({})),
+      fetch("/api/main?action=get_products&type=reward").then(r => r.json()).catch(() => ({}))
     ]);
+
+    if (templateRes && templateRes.ok && templateRes.template) {
+      masterTemplateCode = templateRes.template;
+    }
 
     if (rewardsVisRes.ok && rewardsVisRes.visible !== undefined) {
       LocalStore.set('drip_rewards_visible', rewardsVisRes.visible);
+    }
+
+    if (rewardsCatalogRes && rewardsCatalogRes.ok && Array.isArray(rewardsCatalogRes.products)) {
+      liveRewardProducts = rewardsCatalogRes.products;
+      LocalStore.set('temp_products', liveRewardProducts);
+      if (rewardsCatalogRes.drip_rewards_visible !== undefined) {
+        LocalStore.set('drip_rewards_visible', rewardsCatalogRes.drip_rewards_visible);
+      }
     }
 
     if (dripRes.ok && Array.isArray(dripRes.drips)) {
@@ -644,7 +684,20 @@ async function fetchFromTurso() {
           highlight_label_2: d.highlight_label_2 || (isExplicitlyDisabled ? "" : "LDS Temple Keychain"),
           highlight_sold_2: d.highlight_sold_2 || "950+ Sold",
           highlight_enabled: !isExplicitlyDisabled,
-          custom_html: d.custom_html || ""
+          custom_html: d.custom_html || "",
+          ess1_name: d.ess1_name || "Wooden Nametag",
+          ess1_img: d.ess1_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+          ess2_name: d.ess2_name || "POS Kit",
+          ess2_img: d.ess2_img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+          grid1: d.grid1 || defaultGrids[0],
+          grid2: d.grid2 || defaultGrids[1],
+          grid3: d.grid3 || defaultGrids[2],
+          grid4: d.grid4 || defaultGrids[3],
+          grid5: d.grid5 || defaultGrids[4],
+          grid6: d.grid6 || defaultGrids[5],
+          grid7: d.grid7 || defaultGrids[6],
+          grid8: d.grid8 || defaultGrids[7],
+          grid9: d.grid9 || defaultGrids[8]
         };
       });
     }
@@ -657,10 +710,23 @@ async function fetchFromTurso() {
   } catch(e) {}
 }
 
+function resetSimulatedPoints() {
+  const simInput = document.getElementById("preview-simulated-points");
+  if (simInput) simInput.value = currentMonth;
+  const labelAuto = document.getElementById("label-auto-month-points");
+  if (labelAuto) labelAuto.textContent = currentMonth;
+  renderPreview();
+}
+
 function onSelectMonth(m) {
   currentMonth = parseInt(m, 10);
   const label = getCalendarMonthLabel(currentMonth);
   document.getElementById("unsaved-month-label").textContent = currentMonth <= 12 ? label : `${label} (Year 2)`;
+
+  const simInput = document.getElementById("preview-simulated-points");
+  if (simInput) simInput.value = currentMonth;
+  const labelAuto = document.getElementById("label-auto-month-points");
+  if (labelAuto) labelAuto.textContent = currentMonth;
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,
@@ -675,7 +741,20 @@ function onSelectMonth(m) {
     highlight_label_2: "LDS Temple Keychain",
     highlight_sold_2: "950+ Sold",
     highlight_enabled: true,
-    custom_html: ""
+    custom_html: "",
+    ess1_name: "Wooden Nametag",
+    ess1_img: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE",
+    ess2_name: "POS Kit",
+    ess2_img: "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
+    grid1: defaultGrids[0],
+    grid2: defaultGrids[1],
+    grid3: defaultGrids[2],
+    grid4: defaultGrids[3],
+    grid5: defaultGrids[4],
+    grid6: defaultGrids[5],
+    grid7: defaultGrids[6],
+    grid8: defaultGrids[7],
+    grid9: defaultGrids[8]
   };
 
   document.getElementById("inp-subject").value = data.subject || "";
@@ -683,6 +762,24 @@ function onSelectMonth(m) {
   document.getElementById("inp-msg").value = data.message || "";
   document.getElementById("inp-quote").value = data.scripture || "";
   document.getElementById("inp-custom-html").value = data.custom_html || "";
+
+  if (document.getElementById("inp-ess1-name")) document.getElementById("inp-ess1-name").value = data.ess1_name || "Wooden Nametag";
+  if (document.getElementById("inp-img-ess1")) document.getElementById("inp-img-ess1").value = data.ess1_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+  if (document.getElementById("thumb-ess1")) document.getElementById("thumb-ess1").src = data.ess1_img || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE";
+
+  if (document.getElementById("inp-ess2-name")) document.getElementById("inp-ess2-name").value = data.ess2_name || "POS Kit";
+  if (document.getElementById("inp-img-ess2")) document.getElementById("inp-img-ess2").value = data.ess2_img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+  if (document.getElementById("thumb-ess2")) document.getElementById("thumb-ess2").src = data.ess2_img || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ";
+
+  for (let i = 1; i <= 9; i++) {
+    const gVal = data[`grid${i}`] || defaultGrids[i-1];
+    if (document.getElementById(`inp-grid-${i}`)) {
+      document.getElementById(`inp-grid-${i}`).value = gVal;
+    }
+    if (document.getElementById(`thumb-grid-${i}`)) {
+      document.getElementById(`thumb-grid-${i}`).src = gVal;
+    }
+  }
 
   const isExplicitlyDisabled = data.highlight_enabled === false || data.highlight_label === "__DISABLED__";
   const isHigh = !isExplicitlyDisabled;
@@ -733,7 +830,9 @@ function onLiveEdit() {
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
   const customHtmlVal = document.getElementById("inp-custom-html").value;
 
+  const curMap = liveDripMap[currentMonth] || {};
   liveDripMap[currentMonth] = {
+    ...curMap,
     month: currentMonth,
     subject: document.getElementById("inp-subject").value.trim(),
     theme: document.getElementById("inp-theme").value.trim(),
@@ -746,8 +845,16 @@ function onLiveEdit() {
     highlight_label_2: isHigh ? document.getElementById("inp-highlight-name-2").value.trim() : "",
     highlight_sold_2: document.getElementById("inp-highlight-sold-2").value.trim() || "950+ Sold",
     highlight_img_2: document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ",
-    custom_html: customHtmlVal
+    custom_html: customHtmlVal,
+    ess1_name: document.getElementById("inp-ess1-name") ? document.getElementById("inp-ess1-name").value.trim() : "Wooden Nametag",
+    ess1_img: document.getElementById("inp-img-ess1") ? document.getElementById("inp-img-ess1").value.trim() : "",
+    ess2_name: document.getElementById("inp-ess2-name") ? document.getElementById("inp-ess2-name").value.trim() : "POS Kit",
+    ess2_img: document.getElementById("inp-img-ess2") ? document.getElementById("inp-img-ess2").value.trim() : ""
   };
+  for (let i = 1; i <= 9; i++) {
+    const el = document.getElementById(`inp-grid-${i}`);
+    if (el) liveDripMap[currentMonth][`grid${i}`] = el.value.trim();
+  }
 
   document.getElementById("save-banner").style.display = "flex";
   renderPreview();
@@ -768,11 +875,11 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
         <div style="font-size: 12px; color: #1a1a1a; margin-bottom: 5px;">
           Claim <strong>+${activePromo.points || 1} Free Reward Points</strong> right now!
         </div>
-        <div style="font-family: monospace; font-size: 12.5px; font-weight: bold; background: #1a1a1a; color: #d4c197; padding: 5px 12px; border-radius: 4px; display: inline-block; letter-spacing: 1px;">
-          /redeem ${activePromo.code}
+        <div style="font-family: monospace; font-size: 13px; font-weight: bold; background: #1a1a1a; color: #d4c197; padding: 6px 14px; border-radius: 4px; display: inline-block; letter-spacing: 1px;">
+          ${activePromo.code}
         </div>
         <div style="font-size: 9.5px; color: #777; margin-top: 5px;">
-          Type this in our Messenger chat to claim bonus points instantly!
+          Send <strong>${activePromo.code}</strong> in Messenger to claim +${activePromo.points || 1} Free Points (or /redeem ${activePromo.code})
         </div>
       </div>
     `;
@@ -808,17 +915,20 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
   }
 
   let goalHtml = "";
-  if (validProducts.length > 0) {
-    const sorted = [...validProducts].sort((a, b) => Number(a.price) - Number(b.price));
-    const nearestItem = sorted.find(p => Number(p.price) > userPoints) || sorted[0];
-    const needed = Math.max(1, (Number(nearestItem.price) || 6) - userPoints);
+  const unreached = validProducts
+    .filter(p => Number(p.price) > userPoints)
+    .sort((a, b) => Number(a.price) - Number(b.price));
+
+  if (unreached.length > 0) {
+    const nearestItem = unreached[0];
+    const needed = Math.max(1, Number(nearestItem.price) - userPoints);
 
     goalHtml = `
       <div style="background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; padding: 12px; text-align: center; margin-bottom: 10px;">
         <span style="font-size: 9px; color: #8b1a1a; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 6px;">
           🎯 Nearest Reward Goal:
         </span>
-        <img src="${nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'}" style="width: 50px; height: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; display: block; margin: 0 auto 6px auto; border: 1px solid #d4c197;">
+        <img src="${getCdnImageUrl(nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png')}" style="width: 50px; height: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; display: block; margin: 0 auto 6px auto; border: 1px solid #d4c197;">
         <div style="font-weight: bold; font-size: 11.5px; color: #1a1a1a;">${nearestItem.name} (${nearestItem.price} PTS)</div>
         <div style="font-size: 11px; color: #8c7e5d; margin-top: 4px; font-weight: bold;">⚡ Only <strong>${needed} more point${needed > 1 ? 's' : ''}</strong> needed!</div>
       </div>
@@ -918,7 +1028,16 @@ function renderPreview() {
   const message = (document.getElementById("inp-msg").value || data.message || "").replace(/\n/g, "<br>");
   const cleanedQuote = (document.getElementById("inp-quote").value || data.scripture || "Trust in the Lord with all thine heart; and lean not unto thine own understanding.").replace(/^["'“](.*)["'”]$/, '$1').trim();
   const theme = document.getElementById("inp-theme").value || data.theme || "Elder Jeffrey R. Holland";
-  const points = 2;
+  const simInput = document.getElementById("preview-simulated-points");
+  let points = currentMonth;
+  if (simInput && simInput.value.trim() !== "" && !isNaN(Number(simInput.value))) {
+    points = Math.max(0, parseInt(simInput.value, 10));
+  } else {
+    points = currentMonth;
+    if (simInput) simInput.value = currentMonth;
+  }
+  const labelAuto = document.getElementById("label-auto-month-points");
+  if (labelAuto) labelAuto.textContent = currentMonth;
 
   const isHigh = document.getElementById("inp-highlight-toggle").checked;
   const rawP1 = document.getElementById("inp-highlight-name").value.trim();
@@ -934,10 +1053,12 @@ function renderPreview() {
 
   const topProductsHtml = isHigh ? buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) : "";
 
-  let catalogProducts = LocalStore.get('temp_products', [
-    { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
-    { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
-  ]);
+  let catalogProducts = (liveRewardProducts !== null && Array.isArray(liveRewardProducts))
+    ? liveRewardProducts
+    : LocalStore.get('temp_products', [
+        { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
+        { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
+      ]);
   const isRewardsCategoryVisible = LocalStore.get('drip_rewards_visible', true);
   const rewardSectionHtml = isRewardsCategoryVisible ? buildCombinedRewardSectionHtml(points, catalogProducts, latestPromo) : '';
 
@@ -972,7 +1093,13 @@ function renderPreview() {
   doc.close();
 }
 
-function loadMasterTemplateIntoEditor() {
+async function loadMasterTemplateIntoEditor() {
+  try {
+    const res = await fetch("/api/main?action=get_master_template").then(r => r.json());
+    if (res && res.ok && res.template) {
+      masterTemplateCode = res.template;
+    }
+  } catch(e) {}
   document.getElementById("inp-custom-html").value = masterTemplateCode;
   onLiveEdit();
   showToast("Master Template Loaded!");
@@ -994,10 +1121,54 @@ function resetTab1Defaults() {
 }
 
 function resetTab2Defaults() {
+  document.getElementById("inp-ess1-name").value = "Wooden Nametag";
+  document.getElementById("inp-ess2-name").value = "POS Kit";
   revertImage('inp-img-ess1', 'thumb-ess1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE');
   revertImage('inp-img-ess2', 'thumb-ess2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ');
   for (let i = 1; i <= 9; i++) {
     revertImage(`inp-grid-${i}`, `thumb-grid-${i}`, defaultGrids[i-1]);
+  }
+  onLiveEdit();
+  showToast("Reset to default Essentials & Grid photos.");
+}
+
+async function applyEssentialsGridToAllMonths() {
+  const ess1Name = document.getElementById("inp-ess1-name").value.trim() || "Wooden Nametag";
+  const ess1Img = document.getElementById("inp-img-ess1").value.trim();
+  const ess2Name = document.getElementById("inp-ess2-name").value.trim() || "POS Kit";
+  const ess2Img = document.getElementById("inp-img-ess2").value.trim();
+
+  const payload = {
+    action: "apply_essentials_grid_all_months",
+    ess1_name: ess1Name,
+    ess1_img: ess1Img,
+    ess2_name: ess2Name,
+    ess2_img: ess2Img
+  };
+
+  for (let i = 1; i <= 9; i++) {
+    const el = document.getElementById(`inp-grid-${i}`);
+    payload[`grid${i}`] = el ? el.value.trim() : "";
+  }
+
+  if (!confirm("Apply these 2 Missionary Essentials and 9 Community Photos across all 24 months in the database?")) return;
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(r => r.json());
+
+    if (res.ok) {
+      showToast("Successfully applied Essentials & Grid across all 24 months!");
+      await fetchFromTurso();
+      onSelectMonth(currentMonth);
+    } else {
+      showToast(res.error || "Failed to apply across all months", "error");
+    }
+  } catch (e) {
+    showToast("Failed to apply across all months", "error");
   }
 }
 
@@ -1019,25 +1190,36 @@ async function saveActiveMonth(sectionName = 'global') {
   const data = liveDripMap[currentMonth] || {};
   const label = getCalendarMonthLabel(currentMonth);
 
+  const payload = {
+    action: "save_drip",
+    month: currentMonth,
+    subject: data.subject,
+    theme: data.theme,
+    scripture: data.scripture,
+    message: data.message,
+    highlight_img: data.highlight_img,
+    highlight_label: data.highlight_label,
+    highlight_sold_1: formatK(data.highlight_sold_1),
+    highlight_label_2: data.highlight_label_2,
+    highlight_img_2: data.highlight_img_2,
+    highlight_sold_2: formatK(data.highlight_sold_2),
+    custom_html: data.custom_html,
+    ess1_name: data.ess1_name || (document.getElementById("inp-ess1-name") ? document.getElementById("inp-ess1-name").value.trim() : "Wooden Nametag"),
+    ess1_img: data.ess1_img || (document.getElementById("inp-img-ess1") ? document.getElementById("inp-img-ess1").value.trim() : ""),
+    ess2_name: data.ess2_name || (document.getElementById("inp-ess2-name") ? document.getElementById("inp-ess2-name").value.trim() : "POS Kit"),
+    ess2_img: data.ess2_img || (document.getElementById("inp-img-ess2") ? document.getElementById("inp-img-ess2").value.trim() : "")
+  };
+
+  for (let i = 1; i <= 9; i++) {
+    const el = document.getElementById(`inp-grid-${i}`);
+    payload[`grid${i}`] = data[`grid${i}`] || (el ? el.value.trim() : "");
+  }
+
   try {
     const res = await fetch("/api/main", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "save_drip",
-        month: currentMonth,
-        subject: data.subject,
-        theme: data.theme,
-        scripture: data.scripture,
-        message: data.message,
-        highlight_img: data.highlight_img,
-        highlight_label: data.highlight_label,
-        highlight_sold_1: formatK(data.highlight_sold_1),
-        highlight_label_2: data.highlight_label_2,
-        highlight_img_2: data.highlight_img_2,
-        highlight_sold_2: formatK(data.highlight_sold_2),
-        custom_html: data.custom_html
-      })
+      body: JSON.stringify(payload)
     }).then(r => r.json());
 
     if (res.ok) {

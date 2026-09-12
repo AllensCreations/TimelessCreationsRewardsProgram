@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { sendOtpEmail } from './lib/mailer.js';
+import { sendOtpEmail } from '../lib/mailer.js';
 
 async function testBrevoEmailDispatch() {
   const targetEmail = "2ndsalviejomark2019@gmail.com";

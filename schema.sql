@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 	`temp_email` text,
 	`temp_batch` text,
 	`otp_code` text,
-	`last_otp_at` integer DEFAULT 0
+	`last_otp_at` integer DEFAULT 0,
+	`failed_otp_count` integer DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS `orders` (
@@ -134,7 +135,17 @@ CREATE TABLE IF NOT EXISTS `chat_messages` (
 CREATE TABLE IF NOT EXISTS `bot_rate_limits` (
   `psid` text PRIMARY KEY,
   `msg_count` integer DEFAULT 0,
-  `window_start` integer DEFAULT 0
+  `window_start` integer DEFAULT 0,
+  `warned` integer DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS `bot_daily_user_quotas` (
+  `psid` text,
+  `quota_date` text,
+  `msg_count` integer DEFAULT 0,
+  `warned` integer DEFAULT 0,
+  `otp_resend_count` integer DEFAULT 0,
+  PRIMARY KEY(`psid`, `quota_date`)
 );
 
 CREATE INDEX IF NOT EXISTS `idx_m_email` ON `missionaries` (`email`);

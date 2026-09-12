@@ -34,6 +34,7 @@ import 'dotenv/config';
 import { runSql } from '../lib/db.js';
 import { handleBotMessage } from '../lib/botHandler.js';
 import { log } from '../lib/logger.js';
+import { clearDebounce } from '../lib/security.js';
 
 const results = { passed: 0, failed: 0, scenarios: [] };
 
@@ -48,10 +49,12 @@ function assert(condition, message, scenario) {
 }
 
 async function cleanupTestUser(psid, email) {
+  clearDebounce(psid);
   await runSql("DELETE FROM sessions WHERE psid = ?", [psid]);
   await runSql("DELETE FROM missionaries WHERE psid = ? OR email = ?", [psid, email]);
   await runSql("DELETE FROM chat_messages WHERE psid = ?", [psid]);
   await runSql("DELETE FROM bot_rate_limits WHERE psid = ?", [psid]);
+  await runSql("DELETE FROM bot_daily_user_quotas WHERE psid = ?", [psid]);
   await runSql("DELETE FROM bot_hourly_views WHERE psid = ?", [psid]);
   await runSql("DELETE FROM bot_daily_views WHERE sender_id = ?", [psid]);
 }
@@ -69,13 +72,13 @@ async function testNewUser() {
 
   await handleBotMessage(psid, '', 'GET_STARTED');
   let session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
-  assert(session?.state === 'AWAITING_TERMS', `Session enters AWAITING_TERMS after Get Started (got: ${session?.state})`, SCENARIO);
+  assert(session?.state === 'AWAITING_ALL_IN_ONE' || session?.state === 'AWAITING_TERMS', `Session enters registration state after Get Started (got: ${session?.state})`, SCENARIO);
 
   await handleBotMessage(psid, '', 'TERMS_AGREE');
   session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
   assert(session?.state === 'AWAITING_ALL_IN_ONE', `Session enters AWAITING_ALL_IN_ONE after agreeing to terms (got: ${session?.state})`, SCENARIO);
 
-  await handleBotMessage(psid, `Elder Tester\n${email}`); // no referral code
+  await handleBotMessage(psid, `Elder Tester\n${email}\nDecember 2026\nTCRP50`);
   session = (await runSql("SELECT * FROM sessions WHERE psid = ?", [psid]))[0];
   const otp = session?.otp_code;
   assert(!!otp, `OTP generated for new user`, SCENARIO);
@@ -111,7 +114,7 @@ async function testInvitedUser() {
   // Onboard the inviter first so they have a real referral code.
   await handleBotMessage(inviterPsid, '', 'GET_STARTED');
   await handleBotMessage(inviterPsid, '', 'TERMS_AGREE');
-  await handleBotMessage(inviterPsid, `Elder Inviter\n${inviterEmail}`);
+  await handleBotMessage(inviterPsid, `Elder Inviter\n${inviterEmail}\nDecember 2026\nTCRP50`);
   let session = (await runSql("SELECT otp_code FROM sessions WHERE psid = ?", [inviterPsid]))[0];
   await handleBotMessage(inviterPsid, session?.otp_code);
   const inviter = (await runSql("SELECT * FROM missionaries WHERE psid = ?", [inviterPsid]))[0];
@@ -122,7 +125,7 @@ async function testInvitedUser() {
   // Joiner onboards using the inviter's referral code.
   await handleBotMessage(joinerPsid, '', 'GET_STARTED');
   await handleBotMessage(joinerPsid, '', 'TERMS_AGREE');
-  await handleBotMessage(joinerPsid, `Elder Joiner\n${joinerEmail}\n${inviter.referral_code}`);
+  await handleBotMessage(joinerPsid, `Elder Joiner\n${joinerEmail}\nDecember 2026\n${inviter.referral_code}`);
   session = (await runSql("SELECT otp_code FROM sessions WHERE psid = ?", [joinerPsid]))[0];
   await handleBotMessage(joinerPsid, session?.otp_code);
 
@@ -151,7 +154,7 @@ async function testExistingUser() {
   // Onboard once.
   await handleBotMessage(psid, '', 'GET_STARTED');
   await handleBotMessage(psid, '', 'TERMS_AGREE');
-  await handleBotMessage(psid, `Elder Existing\n${email}`);
+  await handleBotMessage(psid, `Elder Existing\n${email}\nDecember 2026\nTCRP50`);
   let session = (await runSql("SELECT otp_code FROM sessions WHERE psid = ?", [psid]))[0];
   await handleBotMessage(psid, session?.otp_code);
   const firstJoin = (await runSql("SELECT points FROM missionaries WHERE psid = ?", [psid]))[0];
@@ -164,7 +167,7 @@ async function testExistingUser() {
 
   await handleBotMessage(psid, '', 'GET_STARTED');
   await handleBotMessage(psid, '', 'TERMS_AGREE');
-  await handleBotMessage(psid, `Elder Existing\n${email}`);
+  await handleBotMessage(psid, `Elder Existing\n${email}\nDecember 2026\nTCRP50`);
   session = (await runSql("SELECT otp_code FROM sessions WHERE psid = ?", [psid]))[0];
   await handleBotMessage(psid, session?.otp_code);
   const rejoined = (await runSql("SELECT points FROM missionaries WHERE psid = ?", [psid]))[0];

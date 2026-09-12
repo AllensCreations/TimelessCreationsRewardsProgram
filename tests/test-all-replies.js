@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
-import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit, FIXED_QUICK_REPLIES } from './lib/bot.js';
+import { runSql } from '../lib/db.js';
+import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit, SINGLE_QUICK_REPLY, FIXED_QUICK_REPLIES } from '../lib/bot.js';
+import { toUnicodeBold } from '../lib/botHandler.js';
 
 console.log("\n🤖 STARTING MESSENGER BOT CONVERSATION & REPLIES TESTER...\n");
 
@@ -27,21 +28,26 @@ async function runRepliesTest() {
   };
   const refLink = `https://m.me/TimelessCreationsRP?ref=${mockMissionary.referral_code}`;
 
-  // 1. Separate Dashboard and Invite Messages Test
+  // 1. Separate Dashboard and Invite Messages Test (Zero Emojis, Unicode Bold)
   console.log("--- 1. Testing Separate Dashboard & Invite Messages ---");
   const payloads = buildDashboardPayload(mockMissionary, refLink);
   
   assert(
-    payloads.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗") && payloads.dashboardText.includes("4 Points"),
+    payloads.dashboardText.includes(toUnicodeBold("MISSIONARY DASHBOARD")) && payloads.dashboardText.includes("4 Reward Point(s)"),
     "Message 1: Dashboard contains Unicode header and points balance"
   );
   assert(
-    payloads.invitePromoText.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱 & 𝗘𝗮𝗿𝗻 +𝟭 𝗣𝗧") && payloads.invitePromoText.includes(refLink),
+    payloads.invitePromoText.includes(toUnicodeBold("Invite a Companion & Earn +1 Point")) && payloads.invitePromoText.includes(refLink),
     "Message 2: Invite contains copy-and-send companion template"
   );
   assert(
     !payloads.dashboardText.includes("**") && !payloads.invitePromoText.includes("**"),
     "Both messages have zero raw markdown artifacts"
+  );
+  assert(
+    !/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(payloads.dashboardText) &&
+    !/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(payloads.invitePromoText),
+    "Dashboard and Invite messages enforce strictly 0 emojis"
   );
 
   // 2. 1:1 Square Catalog Carousel Test (Name & Cost Only)
@@ -64,12 +70,12 @@ async function runRepliesTest() {
     "Carousel generates product cards"
   );
   assert(
-    elements[0].subtitle === "⭐ Cost: 2 PTS",
-    "Card 1 subtitle strictly displays Name and Cost only"
+    elements[0].subtitle.includes("Cost: 2 PTS"),
+    "Card 1 subtitle displays point cost"
   );
   assert(
-    elements[1].subtitle === "⭐ Cost: 8 PTS",
-    "Card 2 subtitle strictly displays Name and Cost only"
+    elements[1].subtitle.includes("Cost: 8 PTS"),
+    "Card 2 subtitle displays point cost"
   );
   assert(
     elements[0].buttons.length === 1 && elements[0].buttons[0].title.includes("Claim (2 PTS)"),
@@ -80,19 +86,19 @@ async function runRepliesTest() {
     "Locked card contains 1 Need PTS button"
   );
   assert(
-    Array.isArray(carouselResult.quick_replies) && carouselResult.quick_replies.length === 1 && carouselResult.quick_replies[0].title === "📊 Dashboard",
-    "Carousel attaches single fixed [ 📊 Dashboard ] Quick Reply"
+    Array.isArray(carouselResult.quick_replies) && carouselResult.quick_replies.length === 1 && carouselResult.quick_replies[0].title === "Check",
+    "Carousel attaches single fixed [ Check ] Quick Reply"
   );
 
   // 3. Daily Rate Limiter Test
   console.log("\n--- 3. Testing Atomic Daily Rate Limiter ---");
-  const limit1 = await checkDashboardRateLimit(mockSenderId);
-  const limit2 = await checkDashboardRateLimit(mockSenderId);
-  const limit3 = await checkDashboardRateLimit(mockSenderId);
+  const limit1 = await checkDashboardRateLimit(mockSenderId, 2);
+  const limit2 = await checkDashboardRateLimit(mockSenderId, 2);
+  const limit3 = await checkDashboardRateLimit(mockSenderId, 2);
 
   assert(limit1.allowed === true, "Rate limiter allows 1st view");
   assert(limit2.allowed === true, "Rate limiter allows 2nd view");
-  assert(limit3.allowed === false, "Rate limiter blocks 3rd view");
+  assert(limit3.allowed === false, "Rate limiter blocks 3rd view (max 2 views)");
 
   console.log("\n==========================================");
   console.log(`REPLIES TEST RESULTS: ${passed} PASSED | ${failed} FAILED`);

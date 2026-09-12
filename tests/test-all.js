@@ -1,7 +1,8 @@
 import 'dotenv/config';
-import { runSql } from './lib/db.js';
-import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit } from './lib/bot.js';
-import { sendDripEmail } from './lib/mailer.js';
+import { runSql } from '../lib/db.js';
+import { buildCatalogCarousel, buildDashboardPayload, checkDashboardRateLimit } from '../lib/bot.js';
+import { toUnicodeBold } from '../lib/botHandler.js';
+import { sendDripEmail } from '../lib/mailer.js';
 
 console.log("\n🧪 STARTING COMPREHENSIVE TCRP SUITE TEST...\n");
 
@@ -31,10 +32,15 @@ async function runTests() {
   const mockLink = "https://m.me/TimelessCreationsRP?ref=ABC123";
   const dashPayload = buildDashboardPayload(mockUser, mockLink);
 
-  assert(dashPayload.dashboardText.includes("📊 𝗠𝗜𝗦𝗦𝗜𝗢𝗡𝗔𝗥𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗"), "Bot Dashboard uses Unicode bold header");
+  assert(dashPayload.dashboardText.includes(toUnicodeBold("MISSIONARY DASHBOARD")), "Bot Dashboard uses Unicode bold header");
   assert(!dashPayload.dashboardText.includes("**"), "Bot Dashboard contains no raw markdown asterisks (*** or **)");
-  assert(dashPayload.dashboardText.includes("👤 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:"), "Bot uses Unicode for info section");
-  assert(dashPayload.invitePromoText.includes("💌 𝗜𝗻𝘃𝗶𝘁𝗲 𝗮 𝗙𝗿𝗶𝗲𝗻𝗱 & 𝗘𝗮𝗿𝗻 +𝟭 𝗣𝗧"), "Bot includes copy-and-send invite text");
+  assert(dashPayload.dashboardText.includes(toUnicodeBold("Profile Information:")), "Bot uses Unicode for info section");
+  assert(dashPayload.invitePromoText.includes(toUnicodeBold("Invite a Companion & Earn +1 Point")), "Bot includes copy-and-send invite text");
+  assert(
+    !/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(dashPayload.dashboardText) &&
+    !/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(dashPayload.invitePromoText),
+    "Bot Dashboard and Invite payloads enforce strictly zero emojis"
+  );
 
   const mockProducts = [
     { id: 1, name: "Affordable Tag", price: 2 },
@@ -48,14 +54,13 @@ async function runTests() {
   assert(elements[1].buttons[0].title.includes("Need 4 More PTS"), "Window-shopping item (6 pts vs 2 pts balance) shows 'Need 4 More PTS'");
 
   const testId = "test_run_" + Math.random().toString(36).slice(2, 9);
-  const r1 = await checkDashboardRateLimit(testId);
-  const r2 = await checkDashboardRateLimit(testId);
-  const r3 = await checkDashboardRateLimit(testId);
+  const r1 = await checkDashboardRateLimit(testId, 2);
+  const r2 = await checkDashboardRateLimit(testId, 2);
+  const r3 = await checkDashboardRateLimit(testId, 2);
 
   assert(r1.allowed === true, "Rate limiter allows 1st view");
   assert(r2.allowed === true, "Rate limiter allows 2nd view");
   assert(r3.allowed === false, "Rate limiter blocks 3rd view (max 2 views enforced)");
-  assert(typeof r3.message === 'string' && r3.message.includes("🛡️ 𝗗𝗔𝗜𝗟𝗬 𝗗𝗔𝗦𝗛𝗕𝗢𝗔𝗥𝗗 𝗟𝗜𝗠𝗜𝗧 𝗥𝗘𝗔𝗖𝗛𝗘𝗗"), "Blocked view responds with Unicode warning and midnight reset info");
 
   try {
     await runSql("PRAGMA optimize");

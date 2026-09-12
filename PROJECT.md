@@ -14,7 +14,7 @@ The TCRP application is a Node.js ESM-based rewards and loyalty platform integra
    - Handlers in `lib/handlers/` for admin features (email, analytics, etc.).
 3. **Email Templates (`templates/`)**: 6 HTML templates (`otp-email.html`, `receipt-email.html`, `thankyou-email.html`, `monthly-drip.html`, `out-of-window-drip.html`, `delivered-email.html`).
 4. **Views & PWA (`views/`)**: HTML administrative views, service worker (`sw.js`), and dashboard components.
-5. **Test Infrastructure**: Root test suites (`test-templates.js`, `test-master.js`, `test-html.js`, `test-cdn.js`, `test-messenger-bot.js`) and comprehensive suites in `tests/`.
+5. **Test Infrastructure**: Grouped test suites located in `tests/` (`test-master.js`, `test-messenger-bot.js`, `botAntiSpamAndQuotas.test.js`, `tester.consolidated.js`, `backendSuggestionsAndCohort.test.js`, `test-html.js`, `test-templates.js`, `test-cdn.js`, `run-all.js`).
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |

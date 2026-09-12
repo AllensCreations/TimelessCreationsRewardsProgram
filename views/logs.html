@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>System Logs & Telemetry | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
-  <link rel="stylesheet" href="/assets/app.css?v=2.7.0">
-  <script src="/assets/app.js?v=2.7.0"></script>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
   <style>
     .filters-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-    .filter-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
+    .filter-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; min-height: 40px; border-radius: var(--radius-sm); font-size: 0.74rem; cursor: pointer; font-family: var(--font-mono); transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
     .filter-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); font-weight: 700; }
-    .search-box { flex: 1; min-width: 200px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
+    .search-box { flex: 1; min-width: 200px; min-height: 44px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text); font-family: var(--font-mono); font-size: 0.82rem; outline: none; transition: border-color var(--duration-fast) var(--ease-out); }
     .search-box:focus { border-color: var(--gold); }
 
     .badge { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: inline-block; }
@@ -20,6 +20,9 @@
     .badge-error { background: rgba(224,92,92,0.15); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
     .badge-turso { background: rgba(92,141,224,0.15); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
     .badge-dispatch { background: rgba(201,168,76,0.25); color: #fff; border: 1px solid var(--gold); }
+    .badge-bot { background: rgba(168,85,247,0.18); color: #c084fc; border: 1px solid rgba(168,85,247,0.35); }
+    .badge-meta { background: rgba(56,189,248,0.18); color: #38bdf8; border: 1px solid rgba(56,189,248,0.35); }
+    .badge-meta-err { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
 
     /* Mobile Responsive Card Feed */
     .log-stream-container { display: flex; flex-direction: column; gap: 8px; }
@@ -48,8 +51,9 @@
   </div>
 
   <div class="filters-bar">
-    <input type="text" class="search-box" id="log-search" placeholder="Search logs or email recipients..." oninput="renderLogs()"/>
+    <input type="text" class="search-box" id="log-search" placeholder="Search logs, PSID, or email..." oninput="renderLogs()"/>
     <button class="filter-btn active" onclick="setFilter('ALL', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('BOT_WEBHOOK', this)">🤖 Bot / Webhooks</button>
     <button class="filter-btn" onclick="setFilter('TODAY', this)">📅 Today (PHT)</button>
     <button class="filter-btn" onclick="setFilter('DISPATCH', this)">✉️ Dispatches</button>
     <button class="filter-btn" onclick="setFilter('INFO', this)">Info</button>
@@ -95,20 +99,29 @@ function renderLogs() {
 
   let filtered = allLogs.filter(l => {
     const lvl = (l.level || 'INFO').toUpperCase();
-    const isDispatch = (l.message || '').includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
+    const msg = l.message || '';
+    const isDispatch = msg.includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
+    const isBotWebhook = msg.includes('[WEBHOOK_') ||
+                         msg.includes('[BOT_') ||
+                         msg.includes('[META_') ||
+                         msg.includes('[OTP') ||
+                         msg.includes('PSID:') ||
+                         lvl === 'BOT';
     const phtFormattedTime = formatPhtDate(l.created_at);
     const isToday = phtFormattedTime.includes(phtTodayStr);
 
     let matchLevel = true;
     if (currentFilter === 'TODAY') {
       matchLevel = isToday;
+    } else if (currentFilter === 'BOT_WEBHOOK') {
+      matchLevel = isBotWebhook;
     } else if (currentFilter === 'DISPATCH') {
       matchLevel = isDispatch;
     } else if (currentFilter !== 'ALL') {
       matchLevel = (lvl === currentFilter);
     }
 
-    const matchQuery = !query || (l.message || '').toLowerCase().includes(query);
+    const matchQuery = !query || msg.toLowerCase().includes(query) || lvl.toLowerCase().includes(query);
     return matchLevel && matchQuery;
   });
 
@@ -119,11 +132,19 @@ function renderLogs() {
 
   container.innerHTML = filtered.map(l => {
     const lvl = (l.level || 'INFO').toUpperCase();
-    const isDispatch = (l.message || '').includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
+    const msg = l.message || '';
+    const isDispatch = msg.includes('EMAIL_DISPATCH') || lvl === 'DISPATCH';
+    const isMetaErr = msg.includes('[META_API_ERROR]') || msg.includes('[WEBHOOK_AUTH_FAIL]') || msg.includes('[WEBHOOK_CRITICAL]');
+    const isMetaOk = msg.includes('[META_API_OK]');
+    const isBotEvent = msg.includes('[WEBHOOK_') || msg.includes('[BOT_') || msg.includes('[OTP') || lvl === 'BOT';
+
     let badgeCls = 'badge-info';
     let label = lvl;
 
     if (isDispatch) { badgeCls = 'badge-dispatch'; label = '✉️ DISPATCH'; }
+    else if (isMetaErr) { badgeCls = 'badge-meta-err'; label = '🚨 META / BOT ERROR'; }
+    else if (isMetaOk) { badgeCls = 'badge-meta'; label = '🌐 META OK'; }
+    else if (isBotEvent) { badgeCls = 'badge-bot'; label = '🤖 BOT / WEBHOOK'; }
     else if (lvl === 'WARN') badgeCls = 'badge-warn';
     else if (lvl === 'ERROR') badgeCls = 'badge-error';
     else if (lvl === 'TURSO') badgeCls = 'badge-turso';
@@ -139,7 +160,7 @@ function renderLogs() {
           </div>
           <span style="color:var(--gold); font-size:0.65rem; font-family:'DM Mono',monospace;">${formattedTime}</span>
         </div>
-        <div class="log-entry-msg">${escapeHtml(l.message)}</div>
+        <div class="log-entry-msg">${escapeHtml(msg)}</div>
       </div>
     `;
   }).join('');

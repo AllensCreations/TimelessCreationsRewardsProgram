@@ -5,24 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bot Rewards & Promos | Timeless Creations</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
-    <link rel="stylesheet" href="/assets/app.css?v=2.7.0">
-    <script src="/assets/app.js?v=2.7.0"></script>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js"></script>
     <style>
       .reward-prod-setting-row {
         background: var(--surface2);
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
-        padding: 10px;
-        margin-bottom: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
+        transition: border-color var(--duration-fast) var(--ease-out);
+      }
+      .reward-prod-setting-row:hover {
+        border-color: var(--border-gold);
       }
       .item-card-controls {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: 10px;
+        flex-wrap: wrap;
       }
 
       /* Mobile-Friendly Collapsible Promo Code Cards */
@@ -30,60 +35,50 @@
         background: var(--surface2);
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
-        padding: 12px 14px;
-        margin-bottom: 10px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
+        transition: border-color var(--duration-fast) var(--ease-out);
+      }
+      .promo-card:hover {
+        border-color: var(--border-gold);
       }
       .promo-header-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 10px;
       }
       .promo-code-title {
-        font-family: 'DM Mono', monospace;
-        font-size: 0.9rem;
+        font-family: var(--font-mono);
+        font-size: 0.95rem;
         font-weight: 800;
         color: var(--gold);
+        font-variant-numeric: tabular-nums;
       }
       .promo-details-collapse {
         display: none;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
         margin-top: 8px;
-        padding-top: 8px;
+        padding-top: 10px;
         border-top: 1px dashed var(--border);
-        font-size: 0.74rem;
-        color: var(--muted);
+        font-size: 0.78rem;
+        color: var(--text-secondary);
       }
       .promo-card.open .promo-details-collapse { display: flex; }
-
-      .toggle-wrap {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: var(--surface2);
-        padding: 12px 14px;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border);
-        margin-bottom: 14px;
-      }
-      .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
-      .switch input { opacity: 0; width: 0; height: 0; }
-      .slider { position: absolute; cursor: pointer; inset: 0; background-color: #2a2a38; transition: .3s; border-radius: 24px; border: 1px solid var(--border); }
-      .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--muted); transition: .3s; border-radius: 50%; }
-      input:checked + .slider { background-color: var(--gold-dim); border-color: var(--gold); }
-      input:checked + .slider:before { transform: translateX(20px); background-color: var(--gold); }
     </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="tab-bar">
+  <div class="tab-bar" style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
     <button class="tab-btn active" id="tab-rewards-btn" onclick="switchBotTab('rewards')">🎁 Reward Catalog</button>
     <button class="tab-btn" id="tab-promos-btn" onclick="switchBotTab('promos')">🎟️ Freebie Promos</button>
-    <button class="btn btn-dark" style="margin-left:auto; padding:6px 12px; font-size:0.72rem;" onclick="syncPersistentMenu()">📱 Sync FB Menu</button>
+    <a href="/messenger-test.html" class="btn btn-primary" style="margin-left:auto; padding:6px 12px; font-size:0.72rem; text-decoration:none; display:inline-flex; align-items:center; gap:5px;">💬 Open Bot Simulator</a>
+    <button class="btn btn-dark" style="padding:6px 12px; font-size:0.72rem;" onclick="syncPersistentMenu()">📱 Sync FB Menu</button>
   </div>
 
   <!-- TAB 1: Reward Catalog (Matching invoicing.html Cash POS Catalog UI) -->
@@ -353,6 +348,8 @@ async function saveRewardSettings() {
     if (data.ok) {
       showToast("Reward catalog & drip settings saved to Turso!");
       rewardCatalog = updated;
+      LocalStore.set('temp_products', updated);
+      LocalStore.set('drip_rewards_visible', isRewardsCategoryVisible);
     } else {
       showToast("Error saving rewards: " + (data.error || "Failed"), "error");
     }
@@ -379,7 +376,7 @@ function renderPromoCards() {
   }
 
   container.innerHTML = promoCodesList.map(p => {
-    const snippet = `Type /redeem ${p.code} to get free points worth ${p.points}`;
+    const snippet = `Send ${p.code} in Messenger to claim +${p.points} Free Points (or /redeem ${p.code})`;
     return `
       <div class="promo-card" onclick="this.classList.toggle('open')">
         <div class="promo-header-row">
@@ -389,7 +386,15 @@ function renderPromoCards() {
         <div class="promo-details-collapse">
           <div>👥 <strong>Claim Cap:</strong> <span style="color:${p.claimed_count >= p.max_users ? 'var(--red)' : 'var(--green)'};">${p.claimed_count}/${p.max_users} claimed</span></div>
           <div>💬 <strong>Messenger Snippet:</strong> <code style="background:var(--bg); padding:3px 6px; border-radius:4px; color:var(--gold2);">${snippet}</code></div>
-          <div style="display:flex; gap:6px; margin-top:6px; justify-content:flex-end;" onclick="event.stopPropagation()">
+
+          <div style="margin-top:8px; padding:10px; background:#0d0f17; border:1px dashed var(--border-gold); border-radius:6px;">
+            <div style="font-size:0.68rem; font-weight:bold; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">👁️ Live Preview (Messenger &amp; Email Banner)</div>
+            <div style="font-size:0.75rem; color:#e2e8f0; margin-bottom:4px;">Claim <strong>+${p.points} Free Reward Points</strong> right now!</div>
+            <div style="display:inline-block; font-family:'DM Mono', monospace; font-size:0.85rem; font-weight:800; background:#1e202e; color:var(--gold); padding:4px 10px; border-radius:4px; border:1px solid var(--border-gold); letter-spacing:1px; margin-bottom:4px;">${p.code}</div>
+            <div style="font-size:0.68rem; color:var(--muted); margin-top:2px;">Send <strong>${p.code}</strong> in Messenger to claim +${p.points} Free Points (or /redeem ${p.code})</div>
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end;" onclick="event.stopPropagation()">
             <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.65rem;" onclick="navigator.clipboard.writeText('${snippet}').then(() => showToast('Snippet copied!'))">📋 Copy Snippet</button>
             <button class="btn-danger" style="padding:4px 8px; font-size:0.65rem; border-radius:4px;" onclick="deletePromo('${p.code}')">🗑️ Delete</button>
           </div>

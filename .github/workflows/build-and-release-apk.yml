@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - NewVersion
+      - MessengerBotVersion
   workflow_dispatch:
 
 permissions:

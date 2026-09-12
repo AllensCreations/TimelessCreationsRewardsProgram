@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Missionaries Roster & Dispatch Hub | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
-  <link rel="stylesheet" href="/assets/app.css?v=2.9.0">
-  <script src="/assets/app.js?v=2.9.0"></script>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
   <style>
     /* Clean, Modern Missionary Card Design */
     .missionary-card {
@@ -15,18 +15,19 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
       margin-bottom: 12px;
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
       width: 100%;
       box-sizing: border-box;
     }
     .missionary-card:hover { border-color: var(--border-gold); }
-    .missionary-card.due-highlight { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(201,168,76,0.07) 0%, var(--surface2) 100%); }
-    .missionary-card.offline-paused { border-color: rgba(239,68,68,0.3); background: linear-gradient(180deg, rgba(239,68,68,0.05) 0%, var(--surface2) 100%); }
+    .missionary-card.due-highlight { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(212,175,55,0.08) 0%, var(--surface2) 100%); }
+    .missionary-card.offline-paused { border-color: var(--red-border); background: linear-gradient(180deg, rgba(248,113,113,0.06) 0%, var(--surface2) 100%); }
 
     .card-main-row {
       display: flex;
       align-items: center;
       padding: 12px 14px;
+      min-height: 52px;
       gap: 10px;
       cursor: pointer;
       user-select: none;
@@ -381,7 +382,7 @@
     <div class="form-group">
       <label class="form-label">Next Target Month (PHT)</label>
       <input type="month" id="reschedule-date-input" class="form-input" style="font-family:'DM Mono',monospace;">
-      <div style="font-size:0.66rem; color:var(--muted); margin-top:4px;">No day preset — missionary becomes eligible for dispatch anytime during this calendar month.</div>
+      <div style="font-size:0.68rem; color:var(--muted); margin-top:4px;">No day preset: missionary becomes eligible for dispatch anytime during this calendar month.</div>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
       <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
@@ -1010,7 +1011,7 @@ function applyFilterAndRender() {
   const phtNowIso = getPhtNow().toISOString().slice(0, 10);
   const dueQueue = getDueQueue(state.missionaries, phtNowIso);
 
-  // 0ms In-Memory Sorting — Strictly Soonest Next Send:
+  // 0ms In-Memory Sorting: Strictly Soonest Next Send:
   // Tier 1: Due Today (by batch order 7 AM -> 8 AM -> 9 AM -> etc.)
   // Tier 2: Sent Today
   // Tier 3: Upcoming Future (>24h chronologically 'Soon')

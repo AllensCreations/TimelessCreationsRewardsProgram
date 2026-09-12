@@ -34,11 +34,12 @@ import {
   renderOutOfWindowDripTemplate,
   renderDeliveredTemplate,
   sendEmail
-} from './lib/mailer.js';
+} from '../lib/mailer.js';
+import { handleDripAction } from '../lib/handlers/dripHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const OUTPUT_DIR = path.resolve(__dirname, 'test-output');
+const OUTPUT_DIR = path.resolve(__dirname, '../test-output');
 
 // Colors for terminal output
 const C = {
@@ -317,6 +318,35 @@ if (detectB.endsWithHtml) {
 
   if (repairPassed) {
     console.log(`\n   ${C.green}${C.bright}STATUS: ALL AUTO-REPAIR & DETECTION TESTS PASSED ✅${C.reset}\n`);
+    totalPassed++;
+  }
+
+  // -------------------------------------------------------------------------
+  // SECTION 4: Remote Live Preview Master Template API Verification
+  // -------------------------------------------------------------------------
+  console.log(`\n${C.yellow}[SECTION 4] Validating Master Template API Endpoint for Remote Live Preview...${C.reset}\n`);
+  const masterRes = await handleDripAction('get_master_template', {}, {});
+  let masterPassed = true;
+  if (masterRes && masterRes.status === 200 && masterRes.json && masterRes.json.ok && masterRes.json.template) {
+    const tpl = masterRes.json.template;
+    const hasMonth = tpl.includes('{{MONTH}}');
+    const hasHtmlEnd = tpl.trim().endsWith('</html>');
+    if (hasMonth && hasHtmlEnd) {
+      console.log(`   ${C.green}✔ get_master_template successfully served templates/monthly-drip.html (${tpl.length} bytes)${C.reset}`);
+      console.log(`   ${C.green}✔ Master template contains required tags and valid </html> ending${C.reset}`);
+    } else {
+      console.log(`   ${C.red}✖ Master template missing required tags or </html> ending${C.reset}`);
+      masterPassed = false;
+      totalFailed++;
+    }
+  } else {
+    console.log(`   ${C.red}✖ get_master_template failed or returned empty template${C.reset}`);
+    masterPassed = false;
+    totalFailed++;
+  }
+
+  if (masterPassed) {
+    console.log(`\n   ${C.green}${C.bright}STATUS: MASTER TEMPLATE API PASSED ✅${C.reset}\n`);
     totalPassed++;
   }
 

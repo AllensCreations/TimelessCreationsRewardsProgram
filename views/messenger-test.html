@@ -5,18 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Messenger Simulator & Turso Telemetry | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
-  <link rel="stylesheet" href="/assets/app.css?v=2.7.0">
-  <script src="/assets/app.js?v=2.7.0"></script>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
   <style>
-    :root {
-      --bg:#0a0a0f; --surface:#111118; --surface2:#181822;
-      --border:rgba(255,255,255,0.07);
-      --gold:#c9a84c; --gold-dim:rgba(201,168,76,0.15);
-      --green:#4caf82; --blue:#0084ff; --red:#e05c5c; --text:#e8e6f0; --muted:#716e88;
-      --radius:12px;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
     .sim-wrap {
       max-width: 1320px;
       margin: 16px auto;
@@ -529,11 +520,11 @@
       </div>
       <div class="state-item">
         <span class="state-label">Missionary</span>
-        <span class="state-val" id="st-name" style="color:var(--muted);">—</span>
+        <span class="state-val" id="st-name" style="color:var(--muted);">--</span>
       </div>
       <div class="state-item">
         <span class="state-label">Email</span>
-        <span class="state-val" id="st-email" style="color:var(--muted);">—</span>
+        <span class="state-val" id="st-email" style="color:var(--muted);">--</span>
       </div>
       <div class="state-item">
         <span class="state-label">Balance</span>
@@ -868,13 +859,13 @@ function updateStateDisplay(stateName, missionary, quota = null, dailyCheckUsed 
     document.getElementById('st-status').textContent = "VERIFIED & ACTIVE";
     document.getElementById('st-status').style.color = "var(--green)";
     document.getElementById('st-name').textContent = missionary.name || 'Unnamed';
-    document.getElementById('st-email').textContent = missionary.email || '—';
+    document.getElementById('st-email').textContent = missionary.email || '--';
     document.getElementById('st-points').textContent = `${missionary.points || 0} PTS`;
   } else {
     document.getElementById('st-status').textContent = "UNREGISTERED / UNVERIFIED";
     document.getElementById('st-status').style.color = "var(--red)";
-    document.getElementById('st-name').textContent = '—';
-    document.getElementById('st-email').textContent = '—';
+    document.getElementById('st-name').textContent = '--';
+    document.getElementById('st-email').textContent = '--';
     document.getElementById('st-points').textContent = '0 PTS';
   }
 }

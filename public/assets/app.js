@@ -162,10 +162,10 @@ function showToast(message, type = "success") {
   toast.innerHTML = `<span>${type === "error" ? "⚠️" : "✨"}</span> <span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
+    toast.style.transition = "transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.2s cubic-bezier(0.23, 1, 0.32, 1)";
     toast.style.opacity = "0";
-    toast.style.transform = "translateY(10px)";
-    toast.style.transition = "all 0.25s ease";
-    setTimeout(() => toast.remove(), 250);
+    toast.style.transform = "translateY(8px) scale(0.96)";
+    setTimeout(() => toast.remove(), 220);
   }, 3000);
 }
 

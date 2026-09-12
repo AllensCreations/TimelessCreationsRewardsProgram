@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>System Logs & Telemetry | Timeless Creations</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
-  <link rel="stylesheet" href="/assets/app.css?v=2.7.0">
-  <script src="/assets/app.js?v=2.7.0"></script>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js"></script>
   <style>
     .filters-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-    .filter-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace; }
+    .filter-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 14px; min-height: 40px; border-radius: var(--radius-sm); font-size: 0.74rem; cursor: pointer; font-family: var(--font-mono); transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
     .filter-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); font-weight: 700; }
-    .search-box { flex: 1; min-width: 200px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; outline: none; }
+    .search-box { flex: 1; min-width: 200px; min-height: 44px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text); font-family: var(--font-mono); font-size: 0.82rem; outline: none; transition: border-color var(--duration-fast) var(--ease-out); }
     .search-box:focus { border-color: var(--gold); }
 
     .badge { font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: inline-block; }

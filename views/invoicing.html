@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Invoicing & Transactions | Timeless Creations</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/></noscript>
-<link rel="stylesheet" href="/assets/app.css?v=2.7.0">
-<script src="/assets/app.js?v=2.7.0"></script>
+<link rel="stylesheet" href="/assets/app.css">
+<script src="/assets/app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   .tab-pane { display: none !important; }
@@ -15,27 +15,32 @@
   .grid-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; width: 100%; }
   @media(min-width: 1024px) { .grid-layout { grid-template-columns: 1.2fr 440px; } }
 
-  .mode-switch-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .mode-switch-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 0.72rem; cursor: pointer; text-align: center; }
+  .mode-switch-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .mode-switch-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 10px 12px; min-height: 44px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600; cursor: pointer; text-align: center; transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
   .mode-switch-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); font-weight: 700; }
 
   .item-card-row {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 10px;
-    margin-bottom: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    transition: border-color var(--duration-fast) var(--ease-out);
   }
-  .item-card-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .item-card-row:hover { border-color: var(--border-gold); }
+  .item-card-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
-  .summary-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 14px; }
-  .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; margin-bottom: 6px; color: var(--muted); }
-  .summary-row.total { font-size: 0.95rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
+  .summary-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-top: 14px; }
+  .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; color: var(--text-secondary); }
+  .summary-row.total { font-size: 1.05rem; font-weight: 800; color: var(--gold); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; font-variant-numeric: tabular-nums; }
 
-  .preview-wrapper { width: 100%; position: sticky; top: 70px; }
+  .preview-wrapper { width: 100%; }
+  @media(min-width: 1024px) {
+    .preview-wrapper { position: sticky; top: 75px; }
+  }
   .invoice-preview-card {
     width: 100%;
     background: #ffffff;
@@ -531,7 +536,7 @@ function renderTransactionsWireframeCards() {
       items: itemsList,
       primaryReward: o.item,
       totalDisplay: `${o.points_cost} Points (Free Reward)`,
-      email: o.email || '—',
+      email: o.email || '--',
       raw: o,
       isOrder: true
     };
@@ -553,7 +558,7 @@ function renderTransactionsWireframeCards() {
       items: itemsList,
       primaryReward: null,
       totalDisplay: `₱${Number(inv.total_amount).toFixed(2)}`,
-      email: inv.email || '—',
+      email: inv.email || '--',
       raw: inv,
       isOrder: false
     };

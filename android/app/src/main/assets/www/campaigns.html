@@ -134,6 +134,44 @@
         color: var(--text-secondary);
       }
       .promo-card.open .promo-details-collapse { display: flex; }
+      .month-chip {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 4px;
+        min-height: 44px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        cursor: pointer;
+        user-select: none;
+        transition: all var(--duration-fast) var(--ease-out);
+        font-size: 0.7rem;
+      }
+      .month-chip:hover {
+        border-color: var(--border-gold);
+        color: var(--text-primary);
+      }
+      .month-chip.selected {
+        background: rgba(201, 168, 76, 0.15);
+        border-color: var(--gold);
+        color: var(--gold);
+        font-weight: 700;
+        box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.3);
+      }
+      .month-chip-num {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+      .month-chip-name {
+        font-size: 0.62rem;
+        opacity: 0.85;
+        line-height: 1.1;
+      }
     </style>
 </head>
 <body>
@@ -153,7 +191,6 @@
   <div class="tab-bar">
       <button class="tab-btn active" data-tab="tab-messages" onclick="switchTab('tab-messages', this)">📝 Monthly Content</button>
       <button class="tab-btn" data-tab="tab-images" onclick="switchTab('tab-images', this)">🖼️ Essentials &amp; Archive</button>
-      <button class="tab-btn" data-tab="tab-products" onclick="switchTab('tab-products', this)">🌟 Featured Products</button>
       <button class="tab-btn" data-tab="tab-html" onclick="switchTab('tab-html', this)">💻 Template HTML</button>
       <button class="tab-btn" id="tab-btn-rewards" data-tab="tab-rewards" onclick="switchTab('tab-rewards', this)">🎁 Rewards &amp; Promos</button>
       <button class="tab-btn" data-tab="tab-preview" onclick="switchTab('tab-preview', this); renderPreview();" style="border-color:var(--gold); color:var(--gold);">👁️ Live Preview</button>
@@ -180,8 +217,8 @@
               <textarea id="inp-quote" class="form-input" rows="2" style="resize:vertical;" oninput="onLiveEdit()"></textarea>
           </div>
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-              <button class="btn btn-dark" onclick="resetTab1Defaults()">↺ Reset</button>
-              <button class="btn btn-gold" onclick="saveActiveMonth('content')">💾 Save</button>
+              <button class="btn btn-dark" style="min-height:44px;" onclick="resetTab1Defaults()">↺ Reset</button>
+              <button class="btn btn-gold" style="min-height:44px;" onclick="saveActiveMonth('content')">💾 Save Month Content</button>
           </div>
       </div>
   </div>
@@ -289,98 +326,41 @@ const defaultGrids = [
               </script>
           </div>
 
-          <div style="display:flex; justify-content:flex-end; gap:8px;">
-              <button class="btn btn-dark" onclick="resetTab2Defaults()">↺ Reset</button>
-              <button class="btn btn-secondary" style="font-size:0.68rem; padding:5px 12px;" onclick="applyEssentialsGridToAllMonths()">🌐 Apply to All 24 Months</button>
-              <button class="btn btn-gold" onclick="saveActiveMonth('grid')">💾 Save Month</button>
+          <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-dark" style="min-height:44px;" onclick="resetTab2Defaults()">↺ Reset</button>
+              <button class="btn btn-secondary" style="font-size:0.68rem; padding:5px 12px; min-height:44px;" onclick="applyEssentialsGridToAllMonths()">🌐 Apply to All 24 Months</button>
+              <button class="btn btn-gold" style="min-height:44px;" onclick="saveActiveMonth('grid')">💾 Save Month Essentials</button>
           </div>
       </div>
   </div>
 
-  <!-- TAB 3: Top 1 & Top 2 Products of Month -->
-  <div id="tab-products" class="tab-content">
-      <div class="card">
-          <div class="toggle-wrap">
-              <div>
-                  <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold);">Enable Top 1 &amp; Top 2 Products</div>
-                  <div style="font-size:0.65rem; color:var(--muted);">Side-by-side 2-column showcase with real order auto-detection.</div>
-              </div>
-              <label class="switch">
-                  <input type="checkbox" id="inp-highlight-toggle" onchange="onToggleHighlights()">
-                  <span class="slider"></span>
-              </label>
-          </div>
-
-          <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
-            <button class="btn btn-dark" style="font-size:0.68rem; padding:5px 12px;" onclick="autoDetectTopSales()">⚡ Auto Detect Real Sales</button>
-            <button class="btn btn-secondary" style="font-size:0.68rem; padding:5px 12px;" onclick="applyTopSalesToAllMonths()">🌐 Apply to All 24 Months</button>
-          </div>
-
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <!-- TOP 1 (Column 1) -->
-            <div class="img-picker-card" style="border-color:var(--gold); background:rgba(201,168,76,0.06);">
-                <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:var(--red); padding:2px 8px; border-radius:4px;">🥇 TOP 1 BESTSELLER</span>
-                <input type="text" id="inp-highlight-name" class="form-input" placeholder="e.g. Custom Wooden Nametag" value="Custom Wooden Nametag" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
-                <input type="text" id="inp-highlight-sold-1" class="form-input" placeholder="e.g. 1.5k+ Sold" value="1.5k+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
-                <input type="hidden" id="inp-highlight-img" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE">
-                <div class="picker-thumb-wrap" style="max-width:115px; margin:4px 0;">
-                  <img id="thumb-hl-1" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" alt="Top 1 Product">
-                </div>
-                <div class="picker-btn-group">
-                  <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img', 'thumb-hl-1')">🖼️ Pick</button>
-                  <button class="btn btn-dark" onclick="revertImage('inp-highlight-img', 'thumb-hl-1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE')">↺</button>
-                </div>
-            </div>
-
-            <!-- TOP 2 (Column 2) -->
-            <div class="img-picker-card">
-                <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:#555566; padding:2px 8px; border-radius:4px;">🥈 TOP 2 POPULAR</span>
-                <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="e.g. LDS Temple Keychain" value="LDS Temple Keychain" oninput="onLiveEdit()" style="margin-top:4px; font-size:0.75rem;">
-                <input type="text" id="inp-highlight-sold-2" class="form-input" placeholder="e.g. 950+ Sold" value="950+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
-                <input type="hidden" id="inp-highlight-img-2" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ">
-                <div class="picker-thumb-wrap" style="max-width:95px; margin:4px 0;">
-                  <img id="thumb-hl-2" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" alt="Top 2 Product">
-                </div>
-                <div class="picker-btn-group">
-                  <button class="btn btn-gold" onclick="openGalleryModal('inp-highlight-img-2', 'thumb-hl-2')">🖼️ Pick</button>
-                  <button class="btn btn-dark" onclick="revertImage('inp-highlight-img-2', 'thumb-hl-2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ')">↺</button>
-                </div>
-            </div>
-          </div>
-
-          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-              <button class="btn btn-dark" onclick="resetTab3Defaults()">↺ Reset</button>
-              <button class="btn btn-gold" onclick="saveActiveMonth('products')">💾 Save Month</button>
-          </div>
-      </div>
-  </div>
-
-  <!-- TAB 4: HTML Override -->
+  <!-- TAB 3: HTML Override -->
   <div id="tab-html" class="tab-content">
       <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <div style="font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:bold; color:var(--gold);">Custom HTML Override</div>
-              <button class="btn btn-dark" style="padding:4px 8px; font-size:0.65rem;" onclick="loadMasterTemplateIntoEditor()">📋 Load Master</button>
+              <button class="btn btn-dark" style="padding:4px 8px; font-size:0.65rem; min-height:44px;" onclick="loadMasterTemplateIntoEditor()">📋 Load Master</button>
           </div>
           <textarea id="inp-custom-html" class="form-input" rows="12" style="font-family:'DM Mono',monospace; font-size:0.7rem;" placeholder="Leave empty for Master Template..." oninput="onLiveEdit()"></textarea>
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-              <button class="btn btn-dark" onclick="clearCustomHtml()">↺ Clear</button>
-              <button class="btn btn-gold" onclick="saveActiveMonth('html')">💾 Save HTML</button>
+              <button class="btn btn-dark" style="min-height:44px;" onclick="clearCustomHtml()">↺ Clear</button>
+              <button class="btn btn-gold" style="min-height:44px;" onclick="saveActiveMonth('html')">💾 Save Custom HTML</button>
           </div>
       </div>
   </div>
 
-  <!-- TAB 5: Dedicated Live Preview -->
+  <!-- TAB 4: Dedicated Live Preview -->
   <div id="tab-preview" class="tab-content">
       <div class="preview-wrapper">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
               <div style="font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.1em; font-weight:bold;">
                   ✦ Live Mobile Email Sandbox
               </div>
-              <div style="display:flex; align-items:center; gap:6px; font-size:0.68rem; color:var(--muted);">
+              <div style="display:flex; align-items:center; gap:8px; font-size:0.68rem; color:var(--muted); flex-wrap:wrap;">
                   <span>Simulated Points:</span>
                   <input type="number" id="preview-simulated-points" min="0" max="100" style="width:55px; padding:3px 6px; text-align:center; font-size:0.72rem; font-weight:bold; color:var(--gold); background:var(--surface2); border:1px solid var(--border-gold); border-radius:4px;" oninput="renderPreview()">
-                  <button class="btn btn-dark" style="font-size:0.62rem; padding:3px 6px;" onclick="resetSimulatedPoints()" title="Auto-calculate points from month number">⚡ Auto (M<span id="label-auto-month-points">1</span>)</button>
+                  <button class="btn btn-dark" style="font-size:0.65rem; padding:4px 8px; min-height:44px;" onclick="resetSimulatedPoints()" title="Auto-calculate points from month number">⚡ Auto (M<span id="label-auto-month-points">1</span>)</button>
+                  <button class="btn btn-gold" style="font-size:0.75rem; padding:6px 14px; min-height:44px;" onclick="saveActiveMonth('preview')">💾 Save Month Preview</button>
               </div>
           </div>
           <div class="preview-frame">
@@ -389,12 +369,13 @@ const defaultGrids = [
       </div>
   </div>
 
-  <!-- TAB: Rewards & Promos -->
+  <!-- TAB 5: Rewards & Promos -->
   <div id="tab-rewards" class="tab-content">
       <!-- Segmented Pill Switcher & Bot Actions -->
       <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-        <div style="display:inline-flex; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px; gap:4px;">
+        <div style="display:inline-flex; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px; gap:4px; flex-wrap:wrap;">
           <button type="button" class="segmented-pill-btn active" id="subtab-rewards-btn" onclick="switchRewardsSubTab('catalog')">🎁 Catalog Rewards</button>
+          <button type="button" class="segmented-pill-btn" id="subtab-featured-btn" onclick="switchRewardsSubTab('featured')">🌟 Featured Products</button>
           <button type="button" class="segmented-pill-btn" id="subtab-promos-btn" onclick="switchRewardsSubTab('promos')">🎟️ Freebie Promos</button>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -433,7 +414,125 @@ const defaultGrids = [
         </div>
       </div>
 
-      <!-- SUB-PANE 2: Promo Codes -->
+      <!-- SUB-PANE 2: Featured Products & Monthly Drip Reward Category Settings -->
+      <div id="pane-rewards-featured" style="display:none;">
+        <div class="card" style="border-color: var(--border-gold);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h3 style="font-size:0.95rem; color:var(--gold); margin:0 0 2px 0;">🌟 Featured Products &amp; Email Drip Showcase</h3>
+              <p style="font-size:0.68rem; color:var(--muted); margin:0;">Configure Top 1 and Top 2 bestseller spotlights, control Reward Category visibility, and apply them across your selected months.</p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn btn-dark" style="font-size:0.68rem; padding:6px 12px; min-height:44px;" onclick="autoDetectTopSales()">⚡ Auto Detect Real Sales</button>
+              <button type="button" class="btn btn-secondary" style="font-size:0.68rem; padding:6px 12px; min-height:44px;" onclick="resetTab3Defaults()">↺ Reset</button>
+            </div>
+          </div>
+
+          <!-- Featured Showcase Toggle -->
+          <div class="toggle-wrap" style="margin-bottom:14px;">
+            <div>
+              <div style="font-weight:700; font-size:0.85rem; color:var(--gold);">Enable Top 1 &amp; Top 2 Products Showcase</div>
+              <div style="font-size:0.68rem; color:var(--muted);">Side-by-side 2-column spotlight rendered in monthly drip emails.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="inp-highlight-toggle" onchange="onToggleHighlights()">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- 2-Column Product Showcase Inputs -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:16px;">
+            <!-- TOP 1 (Column 1) -->
+            <div class="img-picker-card" style="border-color:var(--gold); background:rgba(201,168,76,0.06);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:var(--red); padding:2px 8px; border-radius:4px;">🥇 TOP 1 BESTSELLER</span>
+                <span style="font-size:0.65rem; color:var(--gold); font-weight:600;">Primary Feature</span>
+              </div>
+              <label class="form-label" style="font-size:0.68rem;">Product Title</label>
+              <input type="text" id="inp-highlight-name" class="form-input" placeholder="e.g. Custom Wooden Nametag" value="Custom Wooden Nametag" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.75rem;">
+              <label class="form-label" style="font-size:0.68rem; margin-top:6px;">Social Proof / Sales Tag</label>
+              <input type="text" id="inp-highlight-sold-1" class="form-input" placeholder="e.g. 1.5k+ Sold" value="1.5k+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
+              <input type="hidden" id="inp-highlight-img" value="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE">
+              <div class="picker-thumb-wrap" style="max-width:115px; margin:8px 0;">
+                <img id="thumb-hl-1" src="https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" alt="Top 1 Product">
+              </div>
+              <div class="picker-btn-group">
+                <button type="button" class="btn btn-gold" style="min-height:44px;" onclick="openGalleryModal('inp-highlight-img', 'thumb-hl-1')">🖼️ Pick</button>
+                <button type="button" class="btn btn-dark" style="min-height:44px;" onclick="revertImage('inp-highlight-img', 'thumb-hl-1', 'https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE')">↺</button>
+              </div>
+            </div>
+
+            <!-- TOP 2 (Column 2) -->
+            <div class="img-picker-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:0.7rem; font-weight:bold; color:#fff; background:#555566; padding:2px 8px; border-radius:4px;">🥈 TOP 2 POPULAR</span>
+                <span style="font-size:0.65rem; color:var(--muted); font-weight:600;">Secondary Feature</span>
+              </div>
+              <label class="form-label" style="font-size:0.68rem;">Product Title</label>
+              <input type="text" id="inp-highlight-name-2" class="form-input" placeholder="e.g. LDS Temple Keychain" value="LDS Temple Keychain" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.75rem;">
+              <label class="form-label" style="font-size:0.68rem; margin-top:6px;">Social Proof / Sales Tag</label>
+              <input type="text" id="inp-highlight-sold-2" class="form-input" placeholder="e.g. 950+ Sold" value="950+ Sold" oninput="onLiveEdit()" style="margin-top:2px; font-size:0.7rem; color:var(--gold); font-weight:bold;">
+              <input type="hidden" id="inp-highlight-img-2" value="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ">
+              <div class="picker-thumb-wrap" style="max-width:95px; margin:8px 0;">
+                <img id="thumb-hl-2" src="https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ" alt="Top 2 Product">
+              </div>
+              <div class="picker-btn-group">
+                <button type="button" class="btn btn-gold" style="min-height:44px;" onclick="openGalleryModal('inp-highlight-img-2', 'thumb-hl-2')">🖼️ Pick</button>
+                <button type="button" class="btn btn-dark" style="min-height:44px;" onclick="revertImage('inp-highlight-img-2', 'thumb-hl-2', 'https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ')">↺</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Drip Reward Category Visibility in Emails -->
+          <div class="card" style="margin-bottom:16px; background:rgba(255,255,255,0.02); border-color:var(--border);">
+            <div class="toggle-wrap">
+              <div>
+                <div style="font-weight:700; font-size:0.85rem; color:var(--gold);">Monthly Drip Reward Category in Emails</div>
+                <div style="font-size:0.68rem; color:var(--muted);" id="toggle-drip-rewards-featured-status-text">Include the Reward Catalog section and promo code snippet in drip emails.</div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="toggle-drip-rewards-featured" checked onchange="toggleMonthlyDripRewardCategory(this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Month Selection Matrix (1 to 24) -->
+          <div class="card" style="margin-bottom:16px; border-color:var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <div style="font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:bold; color:var(--gold);">Target Month Selection Matrix</div>
+                <div style="font-size:0.68rem; color:var(--muted);">Select the months (1 to 24) to which these Featured Products and Reward Category settings will apply:</div>
+              </div>
+              <div style="font-size:0.72rem; color:var(--gold); font-weight:bold;">
+                <span id="selected-months-counter">24</span> of 24 Months Selected
+              </div>
+            </div>
+
+            <!-- Quick Preset Buttons -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectMonthChipsPreset('all')">✓ Select All (1-24)</button>
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectMonthChipsPreset('year1')">Year 1 (1-12)</button>
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectMonthChipsPreset('year2')">Year 2 (13-24)</button>
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectMonthChipsPreset('current')">Active Month (M<span id="label-preset-active-month">1</span>)</button>
+              <button type="button" class="btn btn-secondary" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectMonthChipsPreset('clear')">✕ Clear All</button>
+            </div>
+
+            <!-- 24 Month Toggle Chips Grid -->
+            <div id="month-chips-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(75px, 1fr)); gap:6px;">
+              <!-- Dynamically populated via renderMonthChips() -->
+            </div>
+          </div>
+
+          <!-- Unified Save Actions -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:8px;">
+            <button type="button" class="btn btn-secondary" style="min-height:44px; font-size:0.72rem;" onclick="saveActiveMonth('products')">💾 Save to Active Month (M<span id="label-save-active-month">1</span>) Only</button>
+            <button type="button" class="btn btn-gold" id="btn-save-featured-settings" style="min-height:48px; padding:10px 20px; font-size:0.85rem; font-weight:bold;" onclick="saveFeaturedAndRewardSettings()">💾 Save Featured &amp; Reward Settings to Selected Months</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-PANE 3: Promo Codes -->
       <div id="pane-rewards-promos" style="display:none;">
         <div class="card" style="border-color: var(--border-gold);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
@@ -671,6 +770,12 @@ function getCalendarMonthLabel(monthIndex) {
 }
 
 function switchTab(tabId, btn) {
+  if (tabId === 'tab-products') {
+    const rewardsBtn = document.getElementById('tab-btn-rewards');
+    switchTab('tab-rewards', rewardsBtn);
+    switchRewardsSubTab('featured');
+    return;
+  }
   document.querySelectorAll(".tab-bar > .tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
   const target = document.getElementById(tabId);
@@ -914,6 +1019,10 @@ function onSelectMonth(m) {
   if (simInput) simInput.value = currentMonth;
   const labelAuto = document.getElementById("label-auto-month-points");
   if (labelAuto) labelAuto.textContent = currentMonth;
+  const labelPreset = document.getElementById("label-preset-active-month");
+  if (labelPreset) labelPreset.textContent = currentMonth;
+  const labelSave = document.getElementById("label-save-active-month");
+  if (labelSave) labelSave.textContent = currentMonth;
 
   const data = liveDripMap[currentMonth] || {
     month: currentMonth,
@@ -1425,24 +1534,147 @@ let promoCodesList = [];
 let currentRewardTargetImgInput = null;
 let currentRewardTargetThumb = null;
 
+let selectedTargetMonths = new Set(Array.from({ length: 24 }, (_, i) => i + 1));
+
+function renderMonthChips() {
+  const container = document.getElementById('month-chips-grid');
+  if (!container) return;
+  const shortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  let html = '';
+  for (let m = 1; m <= 24; m++) {
+    const isSelected = selectedTargetMonths.has(m);
+    const monthName = shortNames[(m - 1) % 12] + (m > 12 ? " '2" : "");
+    html += `
+      <button type="button" class="month-chip ${isSelected ? 'selected' : ''}" data-month="${m}" onclick="toggleTargetMonth(${m})" title="Month ${m} (${getCalendarMonthLabel(m)})">
+        <span class="month-chip-num">M${m}</span>
+        <span class="month-chip-name">${monthName}</span>
+      </button>
+    `;
+  }
+  container.innerHTML = html;
+  updateMonthChipsCounter();
+}
+
+function toggleTargetMonth(m) {
+  if (selectedTargetMonths.has(m)) {
+    selectedTargetMonths.delete(m);
+  } else {
+    selectedTargetMonths.add(m);
+  }
+  const btn = document.querySelector(`.month-chip[data-month="${m}"]`);
+  if (btn) {
+    btn.classList.toggle('selected', selectedTargetMonths.has(m));
+  }
+  updateMonthChipsCounter();
+}
+
+function selectMonthChipsPreset(preset) {
+  if (preset === 'all') {
+    selectedTargetMonths = new Set(Array.from({ length: 24 }, (_, i) => i + 1));
+  } else if (preset === 'year1') {
+    selectedTargetMonths = new Set(Array.from({ length: 12 }, (_, i) => i + 1));
+  } else if (preset === 'year2') {
+    selectedTargetMonths = new Set(Array.from({ length: 12 }, (_, i) => i + 13));
+  } else if (preset === 'current') {
+    selectedTargetMonths = new Set([Number(currentMonth)]);
+  } else if (preset === 'clear') {
+    selectedTargetMonths.clear();
+  }
+  renderMonthChips();
+}
+
+function updateMonthChipsCounter() {
+  const counter = document.getElementById('selected-months-counter');
+  if (counter) counter.textContent = selectedTargetMonths.size;
+  const btnActive = document.getElementById('label-preset-active-month');
+  if (btnActive) btnActive.textContent = currentMonth;
+  const btnActiveOnly = document.getElementById('label-save-active-month');
+  if (btnActiveOnly) btnActiveOnly.textContent = currentMonth;
+}
+
 function switchRewardsSubTab(tab) {
   const paneCatalog = document.getElementById('pane-rewards-catalog');
+  const paneFeatured = document.getElementById('pane-rewards-featured');
   const panePromos = document.getElementById('pane-rewards-promos');
   const btnCatalog = document.getElementById('subtab-rewards-btn');
+  const btnFeatured = document.getElementById('subtab-featured-btn');
   const btnPromos = document.getElementById('subtab-promos-btn');
 
+  if (paneCatalog) paneCatalog.style.display = tab === 'catalog' ? 'block' : 'none';
+  if (paneFeatured) paneFeatured.style.display = tab === 'featured' ? 'block' : 'none';
+  if (panePromos) panePromos.style.display = tab === 'promos' ? 'block' : 'none';
+
+  if (btnCatalog) btnCatalog.classList.toggle('active', tab === 'catalog');
+  if (btnFeatured) btnFeatured.classList.toggle('active', tab === 'featured');
+  if (btnPromos) btnPromos.classList.toggle('active', tab === 'promos');
+
   if (tab === 'catalog') {
-    if (paneCatalog) paneCatalog.style.display = 'block';
-    if (panePromos) panePromos.style.display = 'none';
-    if (btnCatalog) btnCatalog.classList.add('active');
-    if (btnPromos) btnPromos.classList.remove('active');
     loadRewardData();
-  } else {
-    if (paneCatalog) paneCatalog.style.display = 'none';
-    if (panePromos) panePromos.style.display = 'block';
-    if (btnCatalog) btnCatalog.classList.remove('active');
-    if (btnPromos) btnPromos.classList.add('active');
+  } else if (tab === 'featured') {
+    renderMonthChips();
+    updateMonthChipsCounter();
+  } else if (tab === 'promos') {
     loadPromoCodes();
+  }
+}
+
+async function saveFeaturedAndRewardSettings() {
+  const targetMonths = Array.from(selectedTargetMonths).sort((a, b) => a - b);
+  if (targetMonths.length === 0) {
+    showToast("Please select at least one month to apply settings.", "error");
+    return;
+  }
+
+  const isHigh = document.getElementById("inp-highlight-toggle").checked;
+  const p1Name = document.getElementById("inp-highlight-name").value.trim();
+  const p1Img = document.getElementById("inp-highlight-img").value.trim();
+  const p1Sold = document.getElementById("inp-highlight-sold-1").value.trim();
+
+  const p2Name = document.getElementById("inp-highlight-name-2").value.trim();
+  const p2Img = document.getElementById("inp-highlight-img-2").value.trim();
+  const p2Sold = document.getElementById("inp-highlight-sold-2").value.trim();
+
+  const dripRewardsVisible = document.getElementById("toggle-drip-rewards-featured")
+    ? document.getElementById("toggle-drip-rewards-featured").checked
+    : (document.getElementById("toggle-drip-rewards") ? document.getElementById("toggle-drip-rewards").checked : true);
+
+  const saveBtn = document.getElementById("btn-save-featured-settings");
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "⏳ Saving...";
+  }
+
+  try {
+    const res = await fetch("/api/main", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "apply_featured_and_rewards_to_months",
+        months: targetMonths,
+        p1Name, p1Img, p1Sold,
+        p2Name, p2Img, p2Sold,
+        enabled: isHigh,
+        drip_rewards_visible: dripRewardsVisible
+      })
+    }).then(r => r.json());
+
+    if (res.ok) {
+      showToast(res.message || `Saved featured & reward settings to ${targetMonths.length} month(s)!`);
+      LocalStore.set('drip_rewards_visible', dripRewardsVisible);
+      setDripRewardsToggleUI(dripRewardsVisible);
+      await fetchFromTurso();
+      onSelectMonth(currentMonth);
+    } else {
+      showToast(res.error || "Failed to save settings.", "error");
+    }
+  } catch (e) {
+    showToast("Network error saving featured settings.", "error");
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Save Featured & Reward Settings to Selected Months";
+    }
   }
 }
 
@@ -1478,12 +1710,22 @@ function setDripRewardsToggleUI(visible) {
   const isVisible = visible !== false && visible !== 'false';
   const toggle = document.getElementById('toggle-drip-rewards');
   if (toggle) toggle.checked = isVisible;
+  const toggleFeatured = document.getElementById('toggle-drip-rewards-featured');
+  if (toggleFeatured) toggleFeatured.checked = isVisible;
+
   LocalStore.set('drip_rewards_visible', isVisible);
+
   const statusText = document.getElementById('toggle-drip-rewards-status-text');
   if (statusText) {
     statusText.textContent = isVisible
       ? 'Reward Catalog category is VISIBLE in the Monthly Drip template.'
       : 'Reward Catalog category is HIDDEN from the Monthly Drip template.';
+  }
+  const statusTextFeatured = document.getElementById('toggle-drip-rewards-featured-status-text');
+  if (statusTextFeatured) {
+    statusTextFeatured.textContent = isVisible
+      ? 'Reward Catalog and promo snippet are VISIBLE in email drips.'
+      : 'Reward Catalog and promo snippet are HIDDEN from email drips.';
   }
 }
 
@@ -1716,13 +1958,20 @@ async function deletePromo(code) {
 window.addEventListener("DOMContentLoaded", async () => {
   initAppLayout('campaigns', 'Campaigns & Drips');
   initSelector();
+  renderMonthChips();
+  updateMonthChipsCounter();
   await fetchFromTurso();
   onSelectMonth(currentMonth);
 
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('tab') === 'rewards') {
+  const tabParam = urlParams.get('tab');
+  if (tabParam === 'rewards') {
     const rewardsBtn = document.getElementById('tab-btn-rewards');
     switchTab('tab-rewards', rewardsBtn);
+  } else if (tabParam === 'featured' || tabParam === 'products') {
+    const rewardsBtn = document.getElementById('tab-btn-rewards');
+    switchTab('tab-rewards', rewardsBtn);
+    switchRewardsSubTab('featured');
   }
 });
 </script>

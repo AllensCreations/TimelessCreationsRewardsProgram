@@ -2,6 +2,15 @@
 
 All notable changes to the Timeless Rewards Android APK and platform are documented in this file.
 
+## [v3.0.0] - 2026-09-12 (Build 86)
+
+### 🚀 Major Design & Motion Upgrade
+- **Emil Kowalski Motion Engine**: Added cubic-bezier spring physics, tactile touch feedback (`:active { transform: scale(0.972); }`), and GPU-accelerated micro-interactions across all views.
+- **Anti-Slop Visual Cleanups**: Abolished all AI side-stripe card borders, sanitized typography, removed em dashes, and calibrated OKLCH high-contrast tokens (>4.5:1 WCAG).
+- **Universal Multi-View Support**: Full responsive layout adaptability across compact mobile (320px), foldables, tablets, desktop workstations, and ultrawide monitors.
+- **Touch Target Safety**: Strict minimum 44px touch targets on buttons, tabs, inputs, and navigation links.
+- **Accessibility Motion Fallback**: Configured comprehensive `@media (prefers-reduced-motion: reduce)` rules for vestibular comfort.
+
 ## [v2.72.0] - 2026-09-12 (Build 85)
 
 ### 🚀 New Features & Enhancements

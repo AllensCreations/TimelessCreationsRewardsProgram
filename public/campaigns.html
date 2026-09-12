@@ -410,17 +410,45 @@ const defaultGrids = [
           <div id="rewards-settings-container">
             <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">Loading rewards catalog...</div>
           </div>
-          <button type="button" class="btn btn-gold" style="width:100%; margin-top:14px; min-height:44px;" onclick="saveRewardSettings()">💾 Save Rewards to Turso</button>
+
+          <!-- Target Month Selection Matrix (1 to 24) for Catalog Rewards Visibility -->
+          <div class="card" style="margin-top:16px; margin-bottom:14px; border-color:var(--border); background:rgba(255,255,255,0.01);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <div style="font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:bold; color:var(--gold);">Target Month Selection Matrix</div>
+                <div style="font-size:0.68rem; color:var(--muted);">Select which months (1 to 24) will apply this Reward Category visibility setting:</div>
+              </div>
+              <div style="font-size:0.72rem; color:var(--gold); font-weight:bold;">
+                <span id="catalog-selected-months-counter">24</span> of 24 Months Selected
+              </div>
+            </div>
+
+            <!-- Quick Preset Buttons -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectCatalogMonthChipsPreset('all')">✓ Select All (1-24)</button>
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectCatalogMonthChipsPreset('year1')">Year 1 (1-12)</button>
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectCatalogMonthChipsPreset('year2')">Year 2 (13-24)</button>
+              <button type="button" class="btn btn-dark" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectCatalogMonthChipsPreset('current')">Active Month (M<span id="label-catalog-preset-active-month">1</span>)</button>
+              <button type="button" class="btn btn-secondary" style="font-size:0.65rem; padding:4px 10px; min-height:44px;" onclick="selectCatalogMonthChipsPreset('clear')">✕ Clear All</button>
+            </div>
+
+            <!-- 24 Month Toggle Chips Grid -->
+            <div id="catalog-month-chips-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(75px, 1fr)); gap:6px;">
+              <!-- Dynamically populated via renderCatalogMonthChips() -->
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-gold" id="btn-save-rewards-settings" style="width:100%; margin-top:8px; min-height:48px; font-weight:700; font-size:0.85rem;" onclick="saveRewardSettings()">💾 Save Rewards &amp; Visibility to Selected Months</button>
         </div>
       </div>
 
-      <!-- SUB-PANE 2: Featured Products & Monthly Drip Reward Category Settings -->
+      <!-- SUB-PANE 2: Featured Products & Email Drip Showcase -->
       <div id="pane-rewards-featured" style="display:none;">
         <div class="card" style="border-color: var(--border-gold);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
             <div>
               <h3 style="font-size:0.95rem; color:var(--gold); margin:0 0 2px 0;">🌟 Featured Products &amp; Email Drip Showcase</h3>
-              <p style="font-size:0.68rem; color:var(--muted); margin:0;">Configure Top 1 and Top 2 bestseller spotlights, control Reward Category visibility, and apply them across your selected months.</p>
+              <p style="font-size:0.68rem; color:var(--muted); margin:0;">Configure Top 1 and Top 2 bestseller spotlights and apply them across your selected months.</p>
             </div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
               <button type="button" class="btn btn-dark" style="font-size:0.68rem; padding:6px 12px; min-height:44px;" onclick="autoDetectTopSales()">⚡ Auto Detect Real Sales</button>
@@ -483,26 +511,12 @@ const defaultGrids = [
             </div>
           </div>
 
-          <!-- Monthly Drip Reward Category Visibility in Emails -->
-          <div class="card" style="margin-bottom:16px; background:rgba(255,255,255,0.02); border-color:var(--border);">
-            <div class="toggle-wrap">
-              <div>
-                <div style="font-weight:700; font-size:0.85rem; color:var(--gold);">Monthly Drip Reward Category in Emails</div>
-                <div style="font-size:0.68rem; color:var(--muted);" id="toggle-drip-rewards-featured-status-text">Include the Reward Catalog section and promo code snippet in drip emails.</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="toggle-drip-rewards-featured" checked onchange="toggleMonthlyDripRewardCategory(this.checked)">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-
           <!-- Month Selection Matrix (1 to 24) -->
           <div class="card" style="margin-bottom:16px; border-color:var(--border);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
               <div>
                 <div style="font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:bold; color:var(--gold);">Target Month Selection Matrix</div>
-                <div style="font-size:0.68rem; color:var(--muted);">Select the months (1 to 24) to which these Featured Products and Reward Category settings will apply:</div>
+                <div style="font-size:0.68rem; color:var(--muted);">Select the months (1 to 24) to which these Featured Products will apply:</div>
               </div>
               <div style="font-size:0.72rem; color:var(--gold); font-weight:bold;">
                 <span id="selected-months-counter">24</span> of 24 Months Selected
@@ -527,7 +541,7 @@ const defaultGrids = [
           <!-- Unified Save Actions -->
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:8px;">
             <button type="button" class="btn btn-secondary" style="min-height:44px; font-size:0.72rem;" onclick="saveActiveMonth('products')">💾 Save to Active Month (M<span id="label-save-active-month">1</span>) Only</button>
-            <button type="button" class="btn btn-gold" id="btn-save-featured-settings" style="min-height:48px; padding:10px 20px; font-size:0.85rem; font-weight:bold;" onclick="saveFeaturedAndRewardSettings()">💾 Save Featured &amp; Reward Settings to Selected Months</button>
+            <button type="button" class="btn btn-gold" id="btn-save-featured-settings" style="min-height:48px; padding:10px 20px; font-size:0.85rem; font-weight:bold;" onclick="saveFeaturedProductsSettings()">💾 Save Featured Products to Selected Months</button>
           </div>
         </div>
       </div>
@@ -989,7 +1003,8 @@ async function fetchFromTurso() {
           grid6: d.grid6 || defaultGrids[5],
           grid7: d.grid7 || defaultGrids[6],
           grid8: d.grid8 || defaultGrids[7],
-          grid9: d.grid9 || defaultGrids[8]
+          grid9: d.grid9 || defaultGrids[8],
+          drip_rewards_visible: d.drip_rewards_visible
         };
       });
     }
@@ -1021,6 +1036,8 @@ function onSelectMonth(m) {
   if (labelAuto) labelAuto.textContent = currentMonth;
   const labelPreset = document.getElementById("label-preset-active-month");
   if (labelPreset) labelPreset.textContent = currentMonth;
+  const labelCatalogPreset = document.getElementById("label-catalog-preset-active-month");
+  if (labelCatalogPreset) labelCatalogPreset.textContent = currentMonth;
   const labelSave = document.getElementById("label-save-active-month");
   if (labelSave) labelSave.textContent = currentMonth;
 
@@ -1355,7 +1372,9 @@ function renderPreview() {
         { name: "Wooden Nametag", price: 6, image_url: "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE" },
         { name: "Temple Keychain", price: 6, image_url: "https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png" }
       ]);
-  const isRewardsCategoryVisible = LocalStore.get('drip_rewards_visible', true);
+  const isRewardsCategoryVisible = (data && data.drip_rewards_visible !== undefined)
+    ? Boolean(data.drip_rewards_visible)
+    : LocalStore.get('drip_rewards_visible', true);
   const rewardSectionHtml = isRewardsCategoryVisible ? buildCombinedRewardSectionHtml(points, catalogProducts, latestPromo) : '';
 
   let sourceTemplate = (document.getElementById("inp-custom-html").value.trim() !== "") 
@@ -1535,6 +1554,7 @@ let currentRewardTargetImgInput = null;
 let currentRewardTargetThumb = null;
 
 let selectedTargetMonths = new Set(Array.from({ length: 24 }, (_, i) => i + 1));
+let selectedCatalogTargetMonths = new Set(Array.from({ length: 24 }, (_, i) => i + 1));
 
 function renderMonthChips() {
   const container = document.getElementById('month-chips-grid');
@@ -1593,6 +1613,61 @@ function updateMonthChipsCounter() {
   if (btnActiveOnly) btnActiveOnly.textContent = currentMonth;
 }
 
+function renderCatalogMonthChips() {
+  const container = document.getElementById('catalog-month-chips-grid');
+  if (!container) return;
+  const shortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  let html = '';
+  for (let m = 1; m <= 24; m++) {
+    const isSelected = selectedCatalogTargetMonths.has(m);
+    const monthName = shortNames[(m - 1) % 12] + (m > 12 ? " '2" : "");
+    html += `
+      <button type="button" class="month-chip ${isSelected ? 'selected' : ''}" data-catalog-month="${m}" onclick="toggleCatalogTargetMonth(${m})" title="Month ${m} (${getCalendarMonthLabel(m)})">
+        <span class="month-chip-num">M${m}</span>
+        <span class="month-chip-name">${monthName}</span>
+      </button>
+    `;
+  }
+  container.innerHTML = html;
+  updateCatalogMonthChipsCounter();
+}
+
+function toggleCatalogTargetMonth(m) {
+  if (selectedCatalogTargetMonths.has(m)) {
+    selectedCatalogTargetMonths.delete(m);
+  } else {
+    selectedCatalogTargetMonths.add(m);
+  }
+  const btn = document.querySelector(`.month-chip[data-catalog-month="${m}"]`);
+  if (btn) {
+    btn.classList.toggle('selected', selectedCatalogTargetMonths.has(m));
+  }
+  updateCatalogMonthChipsCounter();
+}
+
+function selectCatalogMonthChipsPreset(preset) {
+  if (preset === 'all') {
+    selectedCatalogTargetMonths = new Set(Array.from({ length: 24 }, (_, i) => i + 1));
+  } else if (preset === 'year1') {
+    selectedCatalogTargetMonths = new Set(Array.from({ length: 12 }, (_, i) => i + 1));
+  } else if (preset === 'year2') {
+    selectedCatalogTargetMonths = new Set(Array.from({ length: 12 }, (_, i) => i + 13));
+  } else if (preset === 'current') {
+    selectedCatalogTargetMonths = new Set([Number(currentMonth)]);
+  } else if (preset === 'clear') {
+    selectedCatalogTargetMonths.clear();
+  }
+  renderCatalogMonthChips();
+}
+
+function updateCatalogMonthChipsCounter() {
+  const counter = document.getElementById('catalog-selected-months-counter');
+  if (counter) counter.textContent = selectedCatalogTargetMonths.size;
+  const btnActive = document.getElementById('label-catalog-preset-active-month');
+  if (btnActive) btnActive.textContent = currentMonth;
+}
+
 function switchRewardsSubTab(tab) {
   const paneCatalog = document.getElementById('pane-rewards-catalog');
   const paneFeatured = document.getElementById('pane-rewards-featured');
@@ -1611,6 +1686,7 @@ function switchRewardsSubTab(tab) {
 
   if (tab === 'catalog') {
     loadRewardData();
+    renderCatalogMonthChips();
   } else if (tab === 'featured') {
     renderMonthChips();
     updateMonthChipsCounter();
@@ -1619,10 +1695,10 @@ function switchRewardsSubTab(tab) {
   }
 }
 
-async function saveFeaturedAndRewardSettings() {
+async function saveFeaturedProductsSettings() {
   const targetMonths = Array.from(selectedTargetMonths).sort((a, b) => a - b);
   if (targetMonths.length === 0) {
-    showToast("Please select at least one month to apply settings.", "error");
+    showToast("Please select at least one month to apply featured products.", "error");
     return;
   }
 
@@ -1635,10 +1711,6 @@ async function saveFeaturedAndRewardSettings() {
   const p2Img = document.getElementById("inp-highlight-img-2").value.trim();
   const p2Sold = document.getElementById("inp-highlight-sold-2").value.trim();
 
-  const dripRewardsVisible = document.getElementById("toggle-drip-rewards-featured")
-    ? document.getElementById("toggle-drip-rewards-featured").checked
-    : (document.getElementById("toggle-drip-rewards") ? document.getElementById("toggle-drip-rewards").checked : true);
-
   const saveBtn = document.getElementById("btn-save-featured-settings");
   if (saveBtn) {
     saveBtn.disabled = true;
@@ -1650,19 +1722,16 @@ async function saveFeaturedAndRewardSettings() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "apply_featured_and_rewards_to_months",
+        action: "apply_featured_products_to_months",
         months: targetMonths,
         p1Name, p1Img, p1Sold,
         p2Name, p2Img, p2Sold,
-        enabled: isHigh,
-        drip_rewards_visible: dripRewardsVisible
+        enabled: isHigh
       })
     }).then(r => r.json());
 
     if (res.ok) {
-      showToast(res.message || `Saved featured & reward settings to ${targetMonths.length} month(s)!`);
-      LocalStore.set('drip_rewards_visible', dripRewardsVisible);
-      setDripRewardsToggleUI(dripRewardsVisible);
+      showToast(res.message || `Saved featured products to ${targetMonths.length} month(s)!`);
       await fetchFromTurso();
       onSelectMonth(currentMonth);
     } else {
@@ -1673,10 +1742,11 @@ async function saveFeaturedAndRewardSettings() {
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
-      saveBtn.textContent = "💾 Save Featured & Reward Settings to Selected Months";
+      saveBtn.textContent = "💾 Save Featured Products to Selected Months";
     }
   }
 }
+const saveFeaturedAndRewardSettings = saveFeaturedProductsSettings;
 
 async function syncPersistentMenu() {
   showToast("Syncing Persistent Menu with Meta...");
@@ -1710,8 +1780,6 @@ function setDripRewardsToggleUI(visible) {
   const isVisible = visible !== false && visible !== 'false';
   const toggle = document.getElementById('toggle-drip-rewards');
   if (toggle) toggle.checked = isVisible;
-  const toggleFeatured = document.getElementById('toggle-drip-rewards-featured');
-  if (toggleFeatured) toggleFeatured.checked = isVisible;
 
   LocalStore.set('drip_rewards_visible', isVisible);
 
@@ -1720,12 +1788,6 @@ function setDripRewardsToggleUI(visible) {
     statusText.textContent = isVisible
       ? 'Reward Catalog category is VISIBLE in the Monthly Drip template.'
       : 'Reward Catalog category is HIDDEN from the Monthly Drip template.';
-  }
-  const statusTextFeatured = document.getElementById('toggle-drip-rewards-featured-status-text');
-  if (statusTextFeatured) {
-    statusTextFeatured.textContent = isVisible
-      ? 'Reward Catalog and promo snippet are VISIBLE in email drips.'
-      : 'Reward Catalog and promo snippet are HIDDEN from email drips.';
   }
 }
 
@@ -1834,6 +1896,12 @@ function selectRewardImage(url) {
 }
 
 async function saveRewardSettings() {
+  const targetMonths = Array.from(selectedCatalogTargetMonths).sort((a, b) => a - b);
+  if (targetMonths.length === 0) {
+    showToast("Please select at least one month to apply reward settings.", "error");
+    return;
+  }
+
   const rows = document.querySelectorAll('#rewards-settings-container .reward-prod-setting-row');
   const updated = [];
   rows.forEach(r => {
@@ -1845,6 +1913,12 @@ async function saveRewardSettings() {
 
   const isRewardsCategoryVisible = document.getElementById('toggle-drip-rewards')?.checked ?? true;
 
+  const saveBtn = document.getElementById("btn-save-rewards-settings");
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "⏳ Saving...";
+  }
+
   try {
     const res = await fetch('/api/main', {
       method: 'POST',
@@ -1853,12 +1927,13 @@ async function saveRewardSettings() {
         action: 'sync_catalog', 
         type: 'reward', 
         products: updated,
-        drip_rewards_visible: isRewardsCategoryVisible
+        drip_rewards_visible: isRewardsCategoryVisible,
+        months: targetMonths
       })
     });
     const data = await res.json();
     if (data.ok) {
-      showToast("Reward catalog & drip settings saved to Turso!");
+      showToast(data.message || `Saved reward catalog & visibility to ${targetMonths.length} month(s)!`);
       rewardCatalog = updated;
       liveRewardProducts = updated;
       LocalStore.set('temp_products', updated);
@@ -1868,6 +1943,11 @@ async function saveRewardSettings() {
     }
   } catch(e) {
     showToast("Error saving rewards", "error");
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Save Rewards & Visibility to Selected Months";
+    }
   }
 }
 
@@ -1960,6 +2040,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   initSelector();
   renderMonthChips();
   updateMonthChipsCounter();
+  renderCatalogMonthChips();
+  updateCatalogMonthChipsCounter();
   await fetchFromTurso();
   onSelectMonth(currentMonth);
 

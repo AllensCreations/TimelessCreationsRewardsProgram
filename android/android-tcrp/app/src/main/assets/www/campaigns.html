@@ -681,10 +681,6 @@ function switchTab(tabId, btn) {
     const matchingBtn = document.querySelector(`.tab-bar > .tab-btn[data-tab="${tabId}"]`);
     if (matchingBtn) matchingBtn.classList.add("active");
   }
-  const monthCard = document.getElementById("month-cycle-card");
-  if (monthCard) {
-    monthCard.style.display = tabId === 'tab-rewards' ? 'none' : 'flex';
-  }
   if (tabId === 'tab-rewards') {
     loadRewardData();
   }

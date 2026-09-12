@@ -277,6 +277,169 @@
         gap: 6px;
       }
     }
+
+    /* Share File Dialog Component (uvaishmohamedn/share-file-dialog spec) */
+    .share-dialog-card {
+      max-width: 540px !important;
+      width: 95vw !important;
+      padding: 0 !important;
+      border: 1px solid var(--border-gold) !important;
+      border-radius: var(--radius) !important;
+      overflow: hidden !important;
+      background: var(--surface) !important;
+      box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.75) !important;
+    }
+    .share-dialog-header {
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      background: linear-gradient(180deg, rgba(201, 168, 76, 0.08) 0%, transparent 100%);
+    }
+    .share-file-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.15);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .share-dialog-body {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: calc(85vh - 140px);
+      overflow-y: auto;
+    }
+    .share-invite-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color var(--duration-fast) var(--ease-out);
+    }
+    .share-invite-box:focus-within {
+      border-color: var(--border-gold);
+    }
+    .share-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      min-height: 38px;
+    }
+    .share-email-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.12);
+      border: 1px solid rgba(201, 168, 76, 0.35);
+      border-radius: 4px;
+      animation: chipFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes chipFadeIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .share-email-chip button {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+    .share-email-chip button:hover {
+      color: var(--red);
+    }
+    .share-chip-input {
+      flex: 1;
+      min-width: 160px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.78rem;
+      outline: none;
+      padding: 4px 0;
+    }
+    .share-chip-input::placeholder {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .share-invite-controls {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border);
+    }
+    .share-people-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .collaborator-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      transition: border-color var(--duration-fast) var(--ease-out);
+    }
+    .collaborator-item:hover {
+      border-color: rgba(201, 168, 76, 0.3);
+    }
+    .collab-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(201, 168, 76, 0.4) 0%, rgba(201, 168, 76, 0.1) 100%);
+      border: 1px solid var(--border-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.72rem;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .share-dialog-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: #090a12;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .share-link-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body id="body-root">
@@ -298,6 +461,7 @@
       </p>
     </div>
     <div class="roster-header-actions">
+      <button class="btn btn-secondary" onclick="openShareRosterModal()" style="padding:6px 12px; font-size:0.72rem; display:inline-flex; align-items:center; gap:6px;">🔗 Share Roster</button>
       <button class="btn btn-secondary" onclick="openPusherModal()" style="padding:6px 12px; font-size:0.72rem;">📥 CSV Importer</button>
       <button class="btn btn-dark" id="toggle-select-mode" onclick="toggleSelectMode()" style="padding:6px 10px; font-size:0.72rem;">☑️ Select Mode</button>
       <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Sync</button>
@@ -409,6 +573,87 @@
       <div style="display:flex; gap:8px;">
         <button class="btn btn-secondary" onclick="closeEmailPreviewModal()">Close</button>
         <button class="btn btn-gold" id="modal-preview-send-btn" onclick="sendFromPreviewModal()">✉️ Dispatch Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Share File Dialog Modal (uvaishmohamedn/share-file-dialog spec) -->
+<div class="modal-overlay" id="share-file-dialog-modal" style="display:none;" onclick="if(event.target===this)closeShareRosterModal()">
+  <div class="modal-content share-dialog-card">
+    <div class="share-dialog-header">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <span style="font-size:1.15rem;">📁</span>
+          <h3 style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.05rem; margin:0; font-weight:800;">Missionary Roster</h3>
+          <span class="share-file-badge">CSV • Active</span>
+        </div>
+        <p style="font-size:0.70rem; color:var(--muted); margin:0;">Invite team coordinators, grant access roles, or copy secure roster links.</p>
+      </div>
+      <button type="button" onclick="closeShareRosterModal()" class="modal-close-btn" aria-label="Close">✕</button>
+    </div>
+
+    <div class="share-dialog-body">
+      <!-- Invite Input with Tag Chips -->
+      <div class="share-invite-box">
+        <label class="form-label" style="margin:0; font-size:0.70rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px;">Add Collaborators by Email</label>
+        <div class="share-chips-wrap" onclick="document.getElementById('share-email-chip-input').focus()">
+          <div id="share-chips-container" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+          <input type="email" id="share-email-chip-input" class="share-chip-input" placeholder="Type email and press Enter or comma..." onkeydown="handleShareInputKeyDown(event)" onblur="addCurrentShareEmail()">
+        </div>
+        <div class="share-invite-controls">
+          <select id="share-invite-role" class="form-select" style="width:auto; padding:6px 10px; font-size:0.72rem; min-height:44px;">
+            <option value="editor">Can edit (Admin/POS)</option>
+            <option value="viewer" selected>Can view (Read only)</option>
+          </select>
+          <button type="button" class="btn btn-gold" onclick="submitShareInvites()" style="padding:6px 14px; font-size:0.75rem; min-height:44px; display:inline-flex; align-items:center; gap:6px;">
+            ✉️ Invite
+          </button>
+        </div>
+      </div>
+
+      <!-- People with Access List -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:0.72rem; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.5px;">👥 People with access</span>
+          <span id="share-collab-count" style="font-size:0.68rem; color:var(--muted); font-family:var(--font-mono);">1 member</span>
+        </div>
+        <div class="share-people-list" id="share-collaborators-list"></div>
+      </div>
+
+      <!-- General Access Link Settings -->
+      <div style="padding:12px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:1.1rem;" id="general-access-icon">🔒</span>
+            <div>
+              <div style="font-size:0.75rem; font-weight:700; color:#fff;">General access</div>
+              <div style="font-size:0.65rem; color:var(--muted);" id="general-access-hint">Only people invited can access with this link.</div>
+            </div>
+          </div>
+          <select id="share-general-access-select" class="form-select" style="width:auto; font-size:0.72rem; min-height:44px; padding:6px 10px;" onchange="updateGeneralAccess(this.value)">
+            <option value="restricted">Restricted</option>
+            <option value="anyone">Anyone with link</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dialog Footer with Actions & Link Copy -->
+    <div class="share-dialog-footer">
+      <div class="share-link-row">
+        <input type="text" id="share-link-display" class="form-input" readonly style="flex:1; font-family:var(--font-mono); font-size:0.70rem; min-height:44px; background:#000; border-color:var(--border);" value="">
+        <button type="button" class="btn btn-secondary" onclick="copyShareRosterLink()" style="min-height:44px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+          📋 Copy Link
+        </button>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:6px; border-top:1px solid var(--border);">
+        <button type="button" class="btn btn-dark" onclick="exportRosterCsv()" style="font-size:0.72rem; min-height:44px; display:inline-flex; align-items:center; gap:6px;">
+          📥 Download CSV
+        </button>
+        <button type="button" class="btn btn-gold" onclick="closeShareRosterModal()" style="font-size:0.72rem; min-height:44px; padding:8px 18px;">
+          Done
+        </button>
       </div>
     </div>
   </div>
@@ -1600,6 +1845,231 @@ function tickLiveCountdowns() {
       }
     }
   });
+}
+
+// Share File Dialog State & Logic (uvaishmohamedn/share-file-dialog)
+let shareChipEmails = [];
+let rosterCollaborators = LocalStore.get('roster_collaborators', [
+  { name: 'TCRP Administrator', email: 'admin@timelesscreations.com', role: 'owner', isOwner: true }
+]);
+let generalAccessSetting = LocalStore.get('roster_general_access', 'restricted');
+
+function openShareRosterModal() {
+  const modal = document.getElementById('share-file-dialog-modal');
+  if (!modal) return;
+  const linkInput = document.getElementById('share-link-display');
+  if (linkInput) linkInput.value = window.location.origin + '/roster.html';
+  
+  const generalSelect = document.getElementById('share-general-access-select');
+  if (generalSelect) generalSelect.value = generalAccessSetting;
+  updateGeneralAccessUI(generalAccessSetting);
+
+  shareChipEmails = [];
+  renderShareChips();
+  renderCollaboratorsList();
+
+  modal.style.display = 'flex';
+  const input = document.getElementById('share-email-chip-input');
+  if (input) setTimeout(() => input.focus(), 50);
+}
+
+function closeShareRosterModal() {
+  const modal = document.getElementById('share-file-dialog-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function handleShareInputKeyDown(e) {
+  if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
+    e.preventDefault();
+    addCurrentShareEmail();
+  } else if (e.key === 'Backspace') {
+    const input = document.getElementById('share-email-chip-input');
+    if (input && input.value === '' && shareChipEmails.length > 0) {
+      shareChipEmails.pop();
+      renderShareChips();
+    }
+  }
+}
+
+function addCurrentShareEmail() {
+  const input = document.getElementById('share-email-chip-input');
+  if (!input) return;
+  const raw = input.value.trim();
+  if (!raw) return;
+
+  const emails = raw.split(/[\s,]+/).filter(Boolean);
+  emails.forEach(em => {
+    const clean = em.trim().toLowerCase();
+    if (clean && !shareChipEmails.includes(clean)) {
+      shareChipEmails.push(clean);
+    }
+  });
+  input.value = '';
+  renderShareChips();
+}
+
+function removeShareChip(email) {
+  shareChipEmails = shareChipEmails.filter(e => e !== email);
+  renderShareChips();
+}
+
+function renderShareChips() {
+  const container = document.getElementById('share-chips-container');
+  if (!container) return;
+  container.innerHTML = shareChipEmails.map(email => `
+    <span class="share-email-chip">
+      <span>✉</span>
+      <span>${email}</span>
+      <button type="button" onclick="removeShareChip('${email}')" title="Remove">✕</button>
+    </span>
+  `).join('');
+}
+
+function submitShareInvites() {
+  addCurrentShareEmail();
+  if (!shareChipEmails.length) {
+    showToast('Please enter at least one email address', 'error');
+    return;
+  }
+  const role = document.getElementById('share-invite-role')?.value || 'viewer';
+  let addedCount = 0;
+  shareChipEmails.forEach(email => {
+    const existing = rosterCollaborators.find(c => c.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      existing.role = role;
+    } else {
+      const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
+      const name = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+      rosterCollaborators.push({ name, email, role, isOwner: false });
+      addedCount++;
+    }
+  });
+
+  LocalStore.set('roster_collaborators', rosterCollaborators);
+  shareChipEmails = [];
+  renderShareChips();
+  renderCollaboratorsList();
+  showToast(`✓ Invited ${addedCount > 0 ? addedCount : 'updated'} collaborator(s)!`);
+}
+
+function renderCollaboratorsList() {
+  const container = document.getElementById('share-collaborators-list');
+  const countBadge = document.getElementById('share-collab-count');
+  if (!container) return;
+
+  if (countBadge) {
+    countBadge.textContent = `${rosterCollaborators.length} member${rosterCollaborators.length === 1 ? '' : 's'}`;
+  }
+
+  container.innerHTML = rosterCollaborators.map(c => {
+    const initials = (c.name || c.email || 'TC')
+      .split(' ')
+      .map(p => p[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+
+    const isOwner = c.isOwner || c.role === 'owner';
+
+    return `
+      <div class="collaborator-item">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+          <div class="collab-avatar">${initials}</div>
+          <div style="min-width:0;">
+            <div style="font-size:0.76rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${c.name} ${isOwner ? '<span style="font-size:0.62rem; color:var(--gold); margin-left:4px;">(Owner)</span>' : ''}
+            </div>
+            <div style="font-size:0.68rem; color:var(--muted); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${c.email}
+            </div>
+          </div>
+        </div>
+        <div>
+          ${isOwner ? `
+            <span style="font-size:0.70rem; color:var(--gold); font-weight:bold; padding:4px 8px; font-family:var(--font-mono);">Owner</span>
+          ` : `
+            <select class="form-select" style="width:auto; font-size:0.70rem; padding:4px 8px; min-height:40px;" onchange="updateCollaboratorRole('${c.email}', this.value)">
+              <option value="editor" ${c.role === 'editor' ? 'selected' : ''}>Can edit</option>
+              <option value="viewer" ${c.role === 'viewer' ? 'selected' : ''}>Can view</option>
+              <option value="remove" style="color:var(--red);">Remove</option>
+            </select>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateCollaboratorRole(email, newRole) {
+  if (newRole === 'remove') {
+    rosterCollaborators = rosterCollaborators.filter(c => c.email.toLowerCase() !== email.toLowerCase());
+    LocalStore.set('roster_collaborators', rosterCollaborators);
+    renderCollaboratorsList();
+    showToast(`✓ Removed access for ${email}`);
+    return;
+  }
+  const target = rosterCollaborators.find(c => c.email.toLowerCase() === email.toLowerCase());
+  if (target) {
+    target.role = newRole;
+    LocalStore.set('roster_collaborators', rosterCollaborators);
+    renderCollaboratorsList();
+    showToast(`✓ Updated permissions for ${email}`);
+  }
+}
+
+function updateGeneralAccess(val) {
+  generalAccessSetting = val;
+  LocalStore.set('roster_general_access', val);
+  updateGeneralAccessUI(val);
+  showToast(`✓ General access set to: ${val === 'anyone' ? 'Anyone with link' : 'Restricted'}`);
+}
+
+function updateGeneralAccessUI(val) {
+  const icon = document.getElementById('general-access-icon');
+  const hint = document.getElementById('general-access-hint');
+  if (val === 'anyone') {
+    if (icon) icon.textContent = '🌐';
+    if (hint) hint.textContent = 'Anyone on the internet with this link can view the roster.';
+  } else {
+    if (icon) icon.textContent = '🔒';
+    if (hint) hint.textContent = 'Only people invited can access with this link.';
+  }
+}
+
+function copyShareRosterLink() {
+  const linkInput = document.getElementById('share-link-display');
+  const url = linkInput ? linkInput.value : window.location.origin + '/roster.html';
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('✓ Roster link copied to clipboard!');
+  }).catch(() => {
+    showToast('Link copied!');
+  });
+}
+
+function exportRosterCsv() {
+  if (!state.missionaries || !state.missionaries.length) {
+    showToast('No missionary records to export', 'error');
+    return;
+  }
+  const headers = ['Name', 'Email', 'Cohort', 'Batch Month', 'Points', 'Referral Code', 'Last Sent Date'];
+  const rows = state.missionaries.map(m => [
+    `"${(m.name || '').replace(/"/g, '""')}"`,
+    `"${(m.email || '').replace(/"/g, '""')}"`,
+    `"${(m.cohort || '').replace(/"/g, '""')}"`,
+    `"${(m.batch_month || '').replace(/"/g, '""')}"`,
+    m.points || 0,
+    `"${(m.referral_code || '').replace(/"/g, '""')}"`,
+    `"${(m.last_sent_date || '').replace(/"/g, '""')}"`
+  ]);
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `missionary_roster_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('✓ Missionary Roster CSV downloaded!');
 }
 
 // 0ms Synchronous Initial Render

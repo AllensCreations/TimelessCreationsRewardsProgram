@@ -2,6 +2,7 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import {
+  extractTemplateTheme,
   buildRewardSectionComponents,
   buildCombinedRewardSectionHtml,
   buildTopProductsComponents,
@@ -13,7 +14,7 @@ import {
 
 async function runGranularTagTests() {
   console.log("==================================================");
-  console.log("Testing Granular Template Tags for Custom Templates");
+  console.log("Testing Dynamic Template Style Blending for {{}} Blocks");
   console.log("==================================================");
 
   // Test 1: buildRewardSectionComponents structure and data calculation
@@ -35,7 +36,7 @@ async function runGranularTagTests() {
   assert.strictEqual(rewardComps.promoCode, "SPRING2026", "Promo code extracted");
   assert.strictEqual(rewardComps.promoPoints, "3", "Promo points extracted");
   assert(rewardComps.promoSnippetHtml.includes("SPRING2026"), "Promo snippet contains promo code");
-  assert(rewardComps.combinedHtml.includes("Your TCRP Reward Balance"), "Combined HTML maintains complete backward-compatible block");
+  assert(rewardComps.combinedHtml.includes("Your TCRP Reward Balance"), "Combined HTML maintains complete block");
 
   console.log("  [PASS] buildRewardSectionComponents returns complete granular reward properties");
 
@@ -68,103 +69,86 @@ async function runGranularTagTests() {
 
   console.log("  [PASS] buildTopProductsComponents handles present and empty products cleanly");
 
-  // Test 3: Custom Template rendering with ONLY granular tags (No macro blocks)
-  const customTemplateHtml = `<!DOCTYPE html>
+  // Test 3: Dynamic Style Blending - extractTemplateTheme & Custom Template adaptation
+  const emeraldCustomTemplate = `<!DOCTYPE html>
 <html>
-<head><title>Custom Drip</title></head>
+<head>
+<style>
+  body { font-family: 'Poppins', sans-serif; background-color: #f0fdf4; color: #14532d; }
+  .email-container { border: 1px solid #d5e1d7; }
+  .btn-primary { background-color: #2e4a35; color: #ffffff; }
+  .info-card { background-color: #f7faf7; }
+</style>
+</head>
 <body>
-  <h1>Hello {{NAME}}</h1>
-  <p>Your current reward points: <span id="pts">{{USER_POINTS}}</span></p>
-
-  <!-- Granular Top Products in custom card layout -->
-  <div class="my-custom-product-card" style="{{TOP_PRODUCTS_DISPLAY}}">
-    <h2>Hot Item: {{PRODUCT_1_NAME}}</h2>
-    <img src="{{PRODUCT_1_IMG}}" alt="{{PRODUCT_1_NAME}}" />
-    <span class="sold-badge">{{PRODUCT_1_SOLD}}</span>
-  </div>
-
-  <!-- Granular Goal in custom styling -->
-  <div class="my-custom-goal">
-    <h3>Target: {{NEAREST_GOAL_NAME}} ({{NEAREST_GOAL_POINTS}} pts)</h3>
-    <p>Only {{NEAREST_GOAL_NEEDED}} points away!</p>
-    <img src="{{NEAREST_GOAL_IMG}}" />
-  </div>
-
-  <!-- Granular Promo in custom banner -->
-  <div class="custom-promo">
-    Promo: <b>{{PROMO_CODE}}</b> gives +{{PROMO_POINTS}} pts!
-  </div>
+  <h1>Welcome {{NAME}}</h1>
+  {{TOP_PRODUCTS_HTML}}
+  {{REWARD_SECTION_HTML}}
 </body>
 </html>`;
 
-  // We test using interpolatePlaceholders with drip renderer dictionary
-  const renderedOutput = renderMonthlyDripTemplate({
-    name: "Elder Tyler",
-    month: 5,
-    points: 5,
+  const extractedTheme = extractTemplateTheme(emeraldCustomTemplate);
+  assert.strictEqual(extractedTheme.btnBg, "#2e4a35", "Extracted custom button background color");
+  assert.strictEqual(extractedTheme.btnColor, "#ffffff", "Extracted custom button text color");
+  assert.strictEqual(extractedTheme.cardBg, "#f7faf7", "Extracted custom card background");
+  assert.strictEqual(extractedTheme.cardBorder, "#d5e1d7", "Extracted custom card border");
+  assert.strictEqual(extractedTheme.fontFamily, "'Poppins', sans-serif", "Extracted custom font family");
+
+  const renderedWithTheme = renderMonthlyDripTemplate({
+    name: "Elder Green",
+    custom_html: emeraldCustomTemplate,
     ...dripDataWithProducts
   }, catalog, promo);
 
-  // Validate that default template still works and includes USER_POINTS and macro blocks
-  assert(renderedOutput.includes("Elder Tyler"), "Default template rendered recipient");
-  assert(renderedOutput.includes("5 Points"), "Default template rendered points");
-  assert(renderedOutput.includes("CTR Ring Deluxe"), "Default template contains top product");
+  // Assert that the generated {{REWARD_SECTION_HTML}} and {{TOP_PRODUCTS_HTML}} adopted the custom template colors
+  assert(renderedWithTheme.includes("background-color: #f7faf7"), "Reward section adopted custom card background");
+  assert(renderedWithTheme.includes("border: 1px solid #d5e1d7"), "Reward section adopted custom card border");
+  assert(renderedWithTheme.includes("background-color: #2e4a35"), "Redeem button adopted custom btn-primary color");
+  assert(renderedWithTheme.includes("class=\"btn-primary reward-redeem-btn\""), "Redeem button has btn-primary class to match template");
+  assert(renderedWithTheme.includes("class=\"reward-section-card\""), "Reward section has semantic class");
+  assert(renderedWithTheme.includes("class=\"top-products-section\""), "Top products section has semantic class");
 
-  // Test custom template compilation with interpolatePlaceholders directly
-  const customRendered = interpolatePlaceholders(customTemplateHtml, {
-    NAME: "Elder Tyler",
-    USER_POINTS: "5",
-    TOP_PRODUCTS_DISPLAY: topComps.display,
-    PRODUCT_1_NAME: topComps.p1Name,
-    PRODUCT_1_IMG: topComps.p1Img,
-    PRODUCT_1_SOLD: topComps.p1Sold,
-    NEAREST_GOAL_NAME: rewardComps.nearestItem.name,
-    NEAREST_GOAL_POINTS: String(rewardComps.nearestItem.price),
-    NEAREST_GOAL_NEEDED: String(rewardComps.needed),
-    NEAREST_GOAL_IMG: rewardComps.nearestItem.image_url,
-    PROMO_CODE: rewardComps.promoCode,
-    PROMO_POINTS: rewardComps.promoPoints
-  });
+  console.log("  [PASS] {{REWARD_SECTION_HTML}} and {{TOP_PRODUCTS_HTML}} dynamically adapt to custom template <style>");
 
-  assert(customRendered.includes("Your current reward points: <span id=\"pts\">5</span>"), "Custom points rendered");
-  assert(customRendered.includes("Hot Item: CTR Ring Deluxe"), "Granular product name rendered in custom layout");
-  assert(customRendered.includes("Target: Leather Journal (8 pts)"), "Granular goal name and points rendered");
-  assert(customRendered.includes("Only 3 points away!"), "Granular goal needed points rendered");
-  assert(customRendered.includes("Promo: <b>SPRING2026</b> gives +3 pts!"), "Granular promo rendered");
-  assert(!customRendered.includes("{{"), "No unparsed template tags remain in custom template");
+  // Test 4: renderOutOfWindowDripTemplate supports custom template style blending
+  const outOfWindowCustom = `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  .btn-primary { background-color: #1e3a8a; color: #ffffff; }
+  .info-card { background-color: #eff6ff; border: 1px solid #bfdbfe; }
+</style>
+</head>
+<body>
+  {{REWARD_SECTION_HTML}}
+</body>
+</html>`;
 
-  console.log("  [PASS] Custom template renders granular tags without requiring monolithic HTML blocks");
-
-  // Test 4: renderOutOfWindowDripTemplate supports granular tags
   const outOfWindowOutput = renderOutOfWindowDripTemplate(
-    { name: "Elder OutOfWindow", points: 7 },
+    { name: "Elder OutOfWindow", points: 7, custom_html: outOfWindowCustom },
     catalog,
     promo
   );
-  assert(outOfWindowOutput.includes("Elder OutOfWindow"), "Recipient rendered in out of window template");
-  assert(outOfWindowOutput.includes("7 Points"), "Points rendered in out of window template");
-  assert(outOfWindowOutput.includes("SPRING2026"), "Promo code rendered in out of window template");
+  assert(outOfWindowOutput.includes("background-color: #eff6ff"), "Out-of-window adopted custom blue card background");
+  assert(outOfWindowOutput.includes("border: 1px solid #bfdbfe"), "Out-of-window adopted custom blue border");
+  assert(outOfWindowOutput.includes("background-color: #1e3a8a"), "Out-of-window adopted custom blue button");
 
-  console.log("  [PASS] renderOutOfWindowDripTemplate supports granular tags");
+  console.log("  [PASS] renderOutOfWindowDripTemplate dynamically adapts to custom template styles");
 
-  // Test 5: Verify tag chips and insertTag existence in UI files
+  // Test 5: Verify click-to-insert toolbar is cleanly removed from campaigns.html
   const viewsFile = fs.readFileSync(path.resolve('./views/campaigns.html'), 'utf8');
   const publicFile = fs.readFileSync(path.resolve('./public/campaigns.html'), 'utf8');
 
   for (const [name, content] of [["views/campaigns.html", viewsFile], ["public/campaigns.html", publicFile]]) {
-    assert(content.includes("insertTag('{{USER_POINTS}}')"), `${name} has USER_POINTS tag chip`);
-    assert(content.includes("insertTag('{{PRODUCT_1_NAME}}')"), `${name} has PRODUCT_1_NAME tag chip`);
-    assert(content.includes("insertTag('{{PRODUCT_1_IMG}}')"), `${name} has PRODUCT_1_IMG tag chip`);
-    assert(content.includes("insertTag('{{NEAREST_GOAL_NAME}}')"), `${name} has NEAREST_GOAL_NAME tag chip`);
-    assert(content.includes("insertTag('{{PROMO_CODE}}')"), `${name} has PROMO_CODE tag chip`);
-    assert(content.includes("window.insertTag = function"), `${name} has insertTag helper`);
-    assert(content.includes(".tag-chip"), `${name} has tag-chip CSS class`);
+    assert(!content.includes("class=\"tag-chip\""), `${name} cleanly removed tag-chip buttons`);
+    assert(!content.includes("Granular Placeholders Assistant"), `${name} cleanly removed Granular Placeholders toolbar`);
+    assert(content.includes("extractTemplateTheme"), `${name} contains extractTemplateTheme client-side`);
   }
 
-  console.log("  [PASS] Campaigns UI files (views and public) contain tag chips and insertTag helpers");
+  console.log("  [PASS] Campaigns UI files cleanly removed click-to-insert toolbar and integrated extractTemplateTheme");
 
   console.log("\n==================================================");
-  console.log("ALL GRANULAR TEMPLATE TAG TESTS PASSED! (5/5)");
+  console.log("ALL TEMPLATE STYLE BLENDING TESTS PASSED! (5/5)");
   console.log("==================================================");
 }
 

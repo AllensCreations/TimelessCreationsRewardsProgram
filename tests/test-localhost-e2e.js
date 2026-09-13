@@ -188,13 +188,17 @@ async function run() {
     vm.createContext(sandbox);
     vm.runInContext(scriptCode, sandbox);
 
-    // Test live data injection
+    // Test live data injection with prior year history
     const testPayload = {
       stats: {
         emails_month: 350,
         emails_today: 25,
         total_orders: 19,
         active_missionaries: 64
+      },
+      yearly_dispatch_history: {
+        "2026": { 1: 180, 2: 210, 3: 260, 4: 290, 5: 310, 6: 305, 7: 325, 8: 340, 9: 350 },
+        "2025": { 10: 288, 11: 295, 12: 320 }
       }
     };
 
@@ -212,6 +216,11 @@ async function run() {
     const barHtml = elements['bento-bar-container'].innerHTML;
     const barCount = (barHtml.match(/class="bento-bar-col"/g) || []).length;
     assert(barCount === 12, `Monthly Bar Chart generated 12 monthly columns (Got: ${barCount})`);
+
+    // Verify future months use last year's value instead of giving estimate
+    assert(barHtml.includes('OCT \'25: 288 (Last Year)'), `Future month (OCT) displays last year value: "OCT '25: 288 (Last Year)"`);
+    assert(barHtml.includes('NOV \'25: 295 (Last Year)'), `Future month (NOV) displays last year value: "NOV '25: 295 (Last Year)"`);
+    assert(barHtml.includes('DEC \'25: 320 (Last Year)'), `Future month (DEC) displays last year value: "DEC '25: 320 (Last Year)"`);
 
     // Verify Donut Chart generated SVG slice paths
     const donutHtml = elements['bento-donut-svg'].innerHTML;

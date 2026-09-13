@@ -44,8 +44,18 @@ assert(indexHtml.includes('[ MONTHLY_LOAD // COMPOSITION ]'), 'Donut card contai
 assert(indexHtml.includes('box-shadow: 0 0 0 1px rgba(0,0,0,0.8)'), 'Doppelrand double-bezel card borders applied');
 assert(!indexHtml.includes('from-purple-600 to-indigo-600'), 'Free of generic AI-slop purple gradient meshes');
 
-// 4. Audit React Component Responsive Hardening
-console.log("\n--- 4. React Component Responsiveness (bento-dashboard.tsx) ---");
+// 4. Audit TasteSkill Industrial Brutalist Button System (assets/app.css)
+console.log("\n--- 4. TasteSkill Tactile Button System (assets/app.css) ---");
+const cssPath = path.resolve('assets/app.css');
+const cssContent = fs.readFileSync(cssPath, 'utf8');
+assert(cssContent.includes('text-transform: uppercase'), 'Buttons utilize uppercase tracked typography');
+assert(cssContent.includes('border-radius: 6px'), 'Buttons employ crisp 6px micro-radius architecture');
+assert(cssContent.includes('.btn-gold:active, .btn-primary:active'), 'Gold buttons implement tactile mechanical active compression');
+assert(cssContent.includes('box-shadow: 0 0 0 1px #7c5f0f, 0 3px 0 0 #543f07'), 'Gold buttons feature industrial Doppelrand bottom edge');
+assert(cssContent.includes('.btn-secondary:hover'), 'Secondary buttons feature stealth hover with gold border highlight');
+
+// 5. Audit React Component Responsive Hardening
+console.log("\n--- 5. React Component Responsiveness (bento-dashboard.tsx) ---");
 assert(!bentoReactCode.includes('text-3xl font-bold uppercase text-black dark:text-white'), 'Eliminated oversized text-3xl in React legend');
 assert(bentoReactCode.includes('min-h-[130px] sm:min-h-[160px]'), 'Fluid responsive minimum heights in Bar chart');
 assert(bentoReactCode.includes('p-4 sm:p-6'), 'Responsive card padding in React Brutalist components');

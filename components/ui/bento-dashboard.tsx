@@ -17,9 +17,9 @@ const BAR_DATA = [
   { label: "JUL", shortLabel: "J", value: 85, color: "bg-cyan-400" },
   { label: "AUG", shortLabel: "A", value: 90, color: "bg-blue-400" },
   { label: "SEP", shortLabel: "S", value: 96, color: "bg-amber-400" },
-  { label: "OCT", shortLabel: "O", value: 65, color: "bg-indigo-400" },
-  { label: "NOV", shortLabel: "N", value: 58, color: "bg-purple-400" },
-  { label: "DEC", shortLabel: "D", value: 80, color: "bg-rose-400" },
+  { label: "OCT", shortLabel: "O", value: 65, color: "bg-indigo-400", isLastYear: true },
+  { label: "NOV", shortLabel: "N", value: 58, color: "bg-purple-400", isLastYear: true },
+  { label: "DEC", shortLabel: "D", value: 80, color: "bg-rose-400", isLastYear: true },
 ];
 
 const BrutalistBarChart = () => {
@@ -50,7 +50,10 @@ const BrutalistBarChart = () => {
               onHoverStart={() => setHovered(i)}
               onHoverEnd={() => setHovered(null)}
               className={cn(
-                "w-full border-[2px] sm:border-[2.5px] border-black dark:border-white relative z-10 cursor-pointer origin-bottom flex items-center justify-center overflow-hidden min-h-[14px]",
+                "w-full border-[2px] sm:border-[2.5px] relative z-10 cursor-pointer origin-bottom flex items-center justify-center overflow-hidden min-h-[14px]",
+                item.isLastYear 
+                  ? "border-dashed border-black/70 dark:border-white/70 opacity-80" 
+                  : "border-black dark:border-white",
                 item.color
               )}
               whileHover={{ scaleY: 1.08, scaleX: 1.04 }}
@@ -72,7 +75,7 @@ const BrutalistBarChart = () => {
                   exit={{ opacity: 0, y: 8 }}
                   className="absolute bottom-full -mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black px-1.5 sm:px-2.5 py-0.5 text-[9px] sm:text-xs font-black whitespace-nowrap border-[2px] border-black dark:border-white z-30 pointer-events-none"
                 >
-                  {item.label}: {item.value}%
+                  {item.label}: {item.value}% {item.isLastYear ? "(Last Year)" : ""}
                 </motion.div>
               )}
             </AnimatePresence>

@@ -790,6 +790,9 @@ function renderBentoBarChart(payload) {
   const phtDate = new Date(Date.now() + 8 * 3600 * 1000);
   const currentYr = phtDate.getFullYear();
   const currentMoNum = phtDate.getMonth() + 1; // 1-12 (e.g. 9 for Sept)
+  const prevYear = currentYr - 1;
+  const yearKey = String(currentYr);
+  const prevYearKey = String(prevYear);
 
   const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   const monthColors = [
@@ -807,7 +810,6 @@ function renderBentoBarChart(payload) {
     '#f472b6'  // DEC - rose
   ];
 
-  const yearKey = String(currentYr);
   const monthsData = [];
 
   for (let mo = 1; mo <= 12; mo++) {
@@ -816,31 +818,40 @@ function renderBentoBarChart(payload) {
     const isPast = mo < currentMoNum;
     const isFuture = mo > currentMoNum;
 
-    // Look up historical count for this month from yearlyHistory
     let count = 0;
-    if (yearlyHistory[yearKey] && yearlyHistory[yearKey][mo] !== undefined) {
-      count = Number(yearlyHistory[yearKey][mo]) || 0;
-    }
 
-    // Ensure current month accurately reflects live emails_month
-    if (isCurrentMonth) {
-      count = Math.max(count, emailsMonth);
-    }
+    if (isFuture) {
+      // User requirement: When the month has not come yet, use the last year value instead of giving estimate
+      if (yearlyHistory[prevYearKey] && yearlyHistory[prevYearKey][mo] !== undefined) {
+        count = Number(yearlyHistory[prevYearKey][mo]) || 0;
+      } else if (payload?.last_year_dispatch_history && payload.last_year_dispatch_history[mo] !== undefined) {
+        count = Number(payload.last_year_dispatch_history[mo]) || 0;
+      } else {
+        count = 0;
+      }
+    } else {
+      // Current year: past or current month
+      if (yearlyHistory[yearKey] && yearlyHistory[yearKey][mo] !== undefined) {
+        count = Number(yearlyHistory[yearKey][mo]) || 0;
+      }
 
-    // If past month with 0, provide realistic historical baseline proportional to monthly volume
-    if (count === 0 && emailsMonth > 0 && isPast) {
-      const pastMultipliers = [0.35, 0.45, 0.55, 0.65, 0.75, 0.8, 0.88, 0.92];
-      const mIdx = Math.min(mo - 1, pastMultipliers.length - 1);
-      count = Math.max(1, Math.round(emailsMonth * (pastMultipliers[mIdx] || 0.7)));
-    }
+      // Ensure current month accurately reflects live emails_month
+      if (isCurrentMonth) {
+        count = Math.max(count, emailsMonth);
+      }
 
-    // For future months, planned target or upcoming cadence
-    if (isFuture && count === 0) {
-      count = Math.max(0, Math.round(emailsMonth * 0.95));
+      // If past month with 0, provide realistic historical baseline proportional to monthly volume
+      if (count === 0 && emailsMonth > 0 && isPast) {
+        const pastMultipliers = [0.35, 0.45, 0.55, 0.65, 0.75, 0.8, 0.88, 0.92];
+        const mIdx = Math.min(mo - 1, pastMultipliers.length - 1);
+        count = Math.max(1, Math.round(emailsMonth * (pastMultipliers[mIdx] || 0.7)));
+      }
     }
 
     const fullMonthName = new Date(currentYr, mo - 1, 1).toLocaleString('en-US', { month: 'short' });
-    const fullLabel = `${fullMonthName} ${currentYr}`;
+    const fullLabel = isFuture 
+      ? `${fullMonthName} ${prevYear} (Last Year)` 
+      : `${fullMonthName} ${currentYr}`;
 
     monthsData.push({
       label,
@@ -861,17 +872,26 @@ function renderBentoBarChart(payload) {
   }
 
   container.innerHTML = monthsData.map(b => {
-    const heightPercent = Math.max(10, Math.round((b.value / maxVal) * 92));
+    const heightPercent = maxVal > 0 && b.value > 0 
+      ? Math.max(8, Math.round((b.value / maxVal) * 92)) 
+      : 5;
+
     let activeStyle = 'border: 1px solid rgba(255,255,255,0.12);';
     if (b.isCurrentMonth) {
       activeStyle = 'border: 2px solid var(--gold); box-shadow: 0 0 14px rgba(212,175,55,0.45);';
     } else if (b.isFuture) {
-      activeStyle = 'border: 1px dashed rgba(255,255,255,0.2); opacity: 0.6;';
+      activeStyle = 'border: 1px dashed rgba(255,255,255,0.25); opacity: 0.75;';
     }
 
+    const tooltipText = b.isCurrentMonth 
+      ? `${b.label} ${currentYr}: ${b.value.toLocaleString()} (Active)` 
+      : (b.isFuture 
+          ? `${b.label} '${String(prevYear).slice(-2)}: ${b.value.toLocaleString()} (Last Year)` 
+          : `${b.label} ${currentYr}: ${b.value.toLocaleString()} Sent`);
+
     return `
-      <div class="bento-bar-col" title="${b.fullLabel}: ${b.value} ${b.isFuture ? 'projected' : 'sent'}">
-        <div class="bento-bar-tooltip">${b.fullLabel}: ${b.value} ${b.isFuture ? 'Plan' : 'Sent'}</div>
+      <div class="bento-bar-col" title="${b.fullLabel}: ${b.value.toLocaleString()} dispatches">
+        <div class="bento-bar-tooltip">${tooltipText}</div>
         <div class="bento-bar-fill" style="height:${heightPercent}%; background:${b.color}; ${activeStyle}"></div>
         <span style="font-size:clamp(0.44rem, 1.1vw, 0.58rem); font-family:var(--font-mono); color:${b.isCurrentMonth ? 'var(--gold)' : (b.isFuture ? 'var(--muted)' : '#cbd5e1')}; font-weight:${b.isCurrentMonth ? '800' : '600'}; margin-top:6px; white-space:nowrap;">
           <span class="bento-bar-label-full">${b.label}</span>

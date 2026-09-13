@@ -273,6 +273,13 @@
       <input type="text" id="modal-cdn-path" class="form-input" placeholder="assets/rewards">
     </div>
     <div class="form-group">
+      <label class="form-label">Cloudflare R2 Worker URL (Edge Acceleration)</label>
+      <input type="text" id="modal-cdn-r2-url" class="form-input" placeholder="https://tcrp.your-account.workers.dev">
+      <div style="font-size:0.62rem; color:var(--muted); margin-top:3px;">
+        Accelerates uploaded jsDelivr images through Cloudflare RAM edge cache and R2 storage. Leave blank to use direct jsDelivr URLs.
+      </div>
+    </div>
+    <div class="form-group">
       <label class="form-label">GitHub Personal Access Token (PAT)</label>
       <input type="password" id="modal-cdn-token" class="form-input" placeholder="ghp_... or github_pat_...">
       <div style="font-size:0.62rem; color:var(--muted); margin-top:3px;">
@@ -353,8 +360,18 @@ async function loadCdnStatus() {
     if (data.ok && data.config) {
       cdnConfig = data.config;
       if (statusPill) {
-        if (cdnConfig.has_token) {
+        if (cdnConfig.cdn_r2_worker_url && cdnConfig.has_token) {
+          statusPill.textContent = `🟢 Connected (GitHub + Cloudflare R2)`;
+          statusPill.style.background = 'rgba(76,175,130,0.15)';
+          statusPill.style.borderColor = 'rgba(76,175,130,0.4)';
+          statusPill.style.color = 'var(--green)';
+        } else if (cdnConfig.has_token) {
           statusPill.textContent = `🟢 Connected (${cdnConfig.cdn_github_owner}/${cdnConfig.cdn_github_repo})`;
+          statusPill.style.background = 'rgba(76,175,130,0.15)';
+          statusPill.style.borderColor = 'rgba(76,175,130,0.4)';
+          statusPill.style.color = 'var(--green)';
+        } else if (cdnConfig.cdn_r2_worker_url) {
+          statusPill.textContent = `⚡ Cloudflare R2 Edge Connected`;
           statusPill.style.background = 'rgba(76,175,130,0.15)';
           statusPill.style.borderColor = 'rgba(76,175,130,0.4)';
           statusPill.style.color = 'var(--green)';
@@ -375,6 +392,7 @@ function openCdnConfigModal() {
     document.getElementById('modal-cdn-repo').value = cdnConfig.cdn_github_repo || 'Gallery';
     document.getElementById('modal-cdn-branch').value = cdnConfig.cdn_github_branch || 'main';
     document.getElementById('modal-cdn-path').value = cdnConfig.cdn_upload_path || 'assets/rewards';
+    if (document.getElementById('modal-cdn-r2-url')) document.getElementById('modal-cdn-r2-url').value = cdnConfig.cdn_r2_worker_url || '';
     document.getElementById('modal-cdn-token').value = cdnConfig.cdn_github_token || '';
   }
   document.getElementById('cdn-modal').style.display = 'flex';
@@ -392,6 +410,7 @@ async function saveCdnConfigFromModal() {
     cdn_github_repo: document.getElementById('modal-cdn-repo').value.trim() || 'Gallery',
     cdn_github_branch: document.getElementById('modal-cdn-branch').value.trim() || 'main',
     cdn_upload_path: document.getElementById('modal-cdn-path').value.trim() || 'assets/rewards',
+    cdn_r2_worker_url: document.getElementById('modal-cdn-r2-url') ? document.getElementById('modal-cdn-r2-url').value.trim() : '',
     cdn_github_token: document.getElementById('modal-cdn-token').value.trim()
   };
 

@@ -208,10 +208,10 @@ async function run() {
     const badgeTodayText = elements['bento-sent-today-badge'].textContent;
     assert(badgeTodayText.includes('25 Today'), `Today badge displays '25 Today' (Got: "${badgeTodayText}")`);
 
-    // Verify Weekly Bar Chart generated 7 columns
+    // Verify Monthly Bar Chart generated 6 monthly columns
     const barHtml = elements['bento-bar-container'].innerHTML;
     const barCount = (barHtml.match(/class="bento-bar-col"/g) || []).length;
-    assert(barCount === 7, `Weekly Bar Chart generated 7 day columns MON-SUN (Got: ${barCount})`);
+    assert(barCount === 6, `Monthly Bar Chart generated 6 monthly columns (Got: ${barCount})`);
 
     // Verify Donut Chart generated SVG slice paths
     const donutHtml = elements['bento-donut-svg'].innerHTML;

@@ -38,7 +38,7 @@ assert(indexHtml.includes('@media(max-width: 400px)'), 'Ultra-small mobile break
 // 3. Audit Anti-Slop & Tactical Telemetry Aesthetics (Leonxlnx/taste-skill)
 console.log("\n--- 3. Anti-Slop & Taste Skill Compliance ---");
 assert(indexHtml.includes('[ TELEMETRY // DISPATCH_VELOCITY ]'), 'Header contains tactical monospace bracket framing');
-assert(indexHtml.includes('[ VELOCITY // MON-SUN ]'), 'Bar chart card contains tactical velocity eyebrow marker');
+assert(indexHtml.includes('[ VELOCITY // MONTHLY_CADENCE ]'), 'Bar chart card contains tactical monthly cadence eyebrow marker');
 assert(indexHtml.includes('[ SLA // HEALTH_MATRIX ]'), 'Radar chart card contains tactical SLA health matrix marker');
 assert(indexHtml.includes('[ MONTHLY_LOAD // COMPOSITION ]'), 'Donut card contains tactical composition marker');
 assert(indexHtml.includes('box-shadow: 0 0 0 1px rgba(0,0,0,0.8)'), 'Doppelrand double-bezel card borders applied');

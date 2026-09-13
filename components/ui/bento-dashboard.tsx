@@ -8,11 +8,12 @@ import { useState } from "react";
 // 1. BRUTALIST BAR CHART
 // =========================================
 const BAR_DATA = [
-  { label: "MON", value: 40, color: "bg-red-400" },
-  { label: "TUE", value: 60, color: "bg-blue-400" },
-  { label: "WED", value: 25, color: "bg-green-400" },
-  { label: "THU", value: 80, color: "bg-yellow-400" },
-  { label: "FRI", value: 65, color: "bg-purple-400" },
+  { label: "APR", value: 45, color: "bg-red-400" },
+  { label: "MAY", value: 60, color: "bg-blue-400" },
+  { label: "JUN", value: 35, color: "bg-green-400" },
+  { label: "JUL", value: 80, color: "bg-yellow-400" },
+  { label: "AUG", value: 65, color: "bg-purple-400" },
+  { label: "SEP", value: 95, color: "bg-amber-400" },
 ];
 
 const BrutalistBarChart = () => {
@@ -21,7 +22,7 @@ const BrutalistBarChart = () => {
   return (
     <div className="w-full h-full bg-white dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] relative flex flex-col p-4 sm:p-6 transition-colors duration-200 overflow-hidden">
       <h3 className="font-black uppercase text-base sm:text-xl mb-4 sm:mb-6 border-b-[3px] border-black dark:border-white pb-2 text-black dark:text-white tracking-tight">
-        Weekly Traffic
+        Monthly Traffic
       </h3>
       <div className="flex justify-between items-end flex-1 gap-1.5 sm:gap-3 md:gap-4 min-h-[130px] sm:min-h-[160px]">
         {BAR_DATA.map((item, i) => (

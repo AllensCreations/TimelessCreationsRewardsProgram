@@ -19,11 +19,11 @@ const BrutalistBarChart = () => {
   const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <div className="w-full h-full bg-white dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] relative flex flex-col p-6 transition-colors duration-200">
-      <h3 className="font-black uppercase text-xl mb-6 border-b-[3px] border-black dark:border-white pb-2 text-black dark:text-white">
+    <div className="w-full h-full bg-white dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] relative flex flex-col p-4 sm:p-6 transition-colors duration-200 overflow-hidden">
+      <h3 className="font-black uppercase text-base sm:text-xl mb-4 sm:mb-6 border-b-[3px] border-black dark:border-white pb-2 text-black dark:text-white tracking-tight">
         Weekly Traffic
       </h3>
-      <div className="flex justify-between items-end flex-1 gap-2 sm:gap-4 min-h-[150px]">
+      <div className="flex justify-between items-end flex-1 gap-1.5 sm:gap-3 md:gap-4 min-h-[130px] sm:min-h-[160px]">
         {BAR_DATA.map((item, i) => (
           <div key={i} className="relative flex-1 h-full flex items-end group">
             <motion.div
@@ -38,16 +38,16 @@ const BrutalistBarChart = () => {
               onHoverStart={() => setHovered(i)}
               onHoverEnd={() => setHovered(null)}
               className={cn(
-                "w-full border-[3px] border-black dark:border-white relative z-10 cursor-pointer origin-bottom flex items-center justify-center overflow-hidden",
+                "w-full border-[2px] sm:border-[3px] border-black dark:border-white relative z-10 cursor-pointer origin-bottom flex items-center justify-center overflow-hidden min-h-[12px]",
                 item.color
               )}
-              whileHover={{ scaleY: 1.1, scaleX: 1.05 }}
+              whileHover={{ scaleY: 1.08, scaleX: 1.04 }}
               whileTap={{ scaleY: 0.95 }}
             >
               <div
                 className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]"
               />
-              <span className="relative z-20 font-bold text-xs font-mono text-black/80 dark:text-black/80 group-hover:text-black transition-colors">
+              <span className="relative z-20 font-bold text-[10px] sm:text-xs font-mono text-black/80 dark:text-black/80 group-hover:text-black transition-colors">
                 {item.label}
               </span>
             </motion.div>
@@ -57,7 +57,7 @@ const BrutalistBarChart = () => {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
-                  className="absolute bottom-full -mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black px-3 py-1 text-sm font-black whitespace-nowrap border-[3px] border-black dark:border-white z-30 pointer-events-none"
+                  className="absolute bottom-full -mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-black whitespace-nowrap border-[2px] sm:border-[3px] border-black dark:border-white z-30 pointer-events-none"
                 >
                   {item.value}%
                 </motion.div>
@@ -108,9 +108,9 @@ const BrutalistRadarChart = () => {
   const gridLevels = [100, 75, 50, 25];
 
   return (
-    <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-6 flex flex-col sm:flex-row gap-6 relative overflow-hidden transition-colors duration-200">
+    <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-4 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-6 relative overflow-hidden transition-colors duration-200">
       {/* LEFT: CHART AREA */}
-      <div className="flex-1 flex items-center justify-center relative min-h-[250px]">
+      <div className="flex-1 flex items-center justify-center relative min-h-[190px] sm:min-h-[240px]">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 dark:opacity-10">
           <span className="text-8xl font-black uppercase text-black dark:text-white">
             STATS
@@ -264,15 +264,15 @@ const BrutalistDonut = () => {
   let cumulativePercent = 0;
 
   return (
-    <div className="w-full h-full bg-white dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-6 flex flex-col items-center justify-between overflow-hidden relative transition-colors duration-200">
+    <div className="w-full h-full bg-white dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-4 sm:p-6 flex flex-col items-center justify-between overflow-hidden relative transition-colors duration-200">
       <div
         className="absolute inset-0 opacity-[0.07] pointer-events-none z-0 bg-[radial-gradient(#000_1.5px,transparent_1.5px)] dark:bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:12px_12px]"
       />
-      <h3 className="font-black uppercase tracking-tighter text-2xl border-b-[3px] border-black dark:border-white pb-2 mb-8 w-full text-center z-10 text-black dark:text-white">
+      <h3 className="font-black uppercase tracking-tighter text-base sm:text-2xl border-b-[3px] border-black dark:border-white pb-2 mb-4 sm:mb-8 w-full text-center z-10 text-black dark:text-white">
         System Load
       </h3>
       <div className="z-10 flex flex-col items-center w-full h-full justify-center">
-        <div className="relative w-64 h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 xl:w-96 xl:h-96">
+        <div className="relative w-44 h-44 sm:w-56 sm:h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 max-w-full">
           <motion.svg
             viewBox="-1.2 -1.2 2.4 2.4"
             className="-rotate-90 overflow-visible w-full h-full"
@@ -344,10 +344,10 @@ const BrutalistDonut = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className="flex flex-col items-center"
                 >
-                  <span className="text-xl font-black leading-none text-black dark:text-white">
+                  <span className="text-lg sm:text-2xl font-black leading-none text-black dark:text-white">
                     {PIE_DATA.find((d) => d.label === hoveredSlice)?.value}%
                   </span>
-                  <span className="text-[10px] font-black uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black px-1 mt-1">
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black px-1.5 py-0.5 mt-1">
                     {hoveredSlice}
                   </span>
                 </motion.div>
@@ -360,10 +360,10 @@ const BrutalistDonut = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className="flex flex-col items-center"
                 >
-                  <span className="text-3xl font-black leading-none text-black dark:text-white">
+                  <span className="text-xl sm:text-3xl font-black leading-none text-black dark:text-white">
                     100%
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                     TOTAL
                   </span>
                 </motion.div>
@@ -371,7 +371,7 @@ const BrutalistDonut = () => {
             </AnimatePresence>
           </div>
         </div>
-        <div className="w-full mt-6 grid grid-cols-2 gap-2">
+        <div className="w-full mt-4 sm:mt-6 grid grid-cols-1 xs:grid-cols-2 gap-2 border-t-[2px] sm:border-t-[3px] border-black dark:border-white pt-4">
           {PIE_DATA.map((item) => (
             <motion.div
               key={item.label}
@@ -379,16 +379,21 @@ const BrutalistDonut = () => {
               onMouseLeave={() => setHoveredSlice(null)}
               animate={{
                 opacity: hoveredSlice && hoveredSlice !== item.label ? 0.3 : 1,
-                scale: hoveredSlice === item.label ? 1.05 : 1,
+                scale: hoveredSlice === item.label ? 1.03 : 1,
               }}
-              className="flex items-center gap-2 p-2 border-2 border-transparent hover:border-black dark:hover:border-white hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+              className="flex items-center justify-between p-1.5 sm:p-2 border-2 border-transparent hover:border-black dark:hover:border-white hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors rounded-none"
             >
-              <div
-                className="w-3 h-3 border-2 border-black dark:border-white"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-3xl font-bold uppercase text-black dark:text-white">
-                {item.label}
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 border-2 border-black dark:border-white shrink-0"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-xs sm:text-sm font-bold font-mono uppercase text-black dark:text-white">
+                  {item.label}
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm font-mono font-bold text-zinc-500 dark:text-zinc-400">
+                {item.value}%
               </span>
             </motion.div>
           ))}

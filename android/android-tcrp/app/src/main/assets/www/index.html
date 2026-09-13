@@ -218,51 +218,67 @@
   </div>
 
   <!-- ==========================================================================
-       COLLAPSIBLE BENTO INTELLIGENCE & DISPATCH TRENDS (Bento Architecture)
+       COLLAPSIBLE BENTO INTELLIGENCE & DISPATCH TRENDS (Tactical Telemetry & Taste Skill)
        ========================================================================== -->
   <div class="year-card open" id="bento-analytics-card" style="margin-bottom:20px; border-color:var(--border-gold);">
-    <button class="year-header-btn" onclick="toggleBentoAnalytics()" type="button" aria-expanded="true">
+    <button class="year-header-btn bento-header-btn" onclick="toggleBentoAnalytics()" type="button" aria-expanded="true">
       <div class="year-title-wrap">
         <span style="font-size:1.15rem;">📊</span>
         <div>
-          <div class="year-title-text" style="font-size:0.98rem; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div class="year-title-text" style="font-size:clamp(0.86rem, 2.2vw, 0.98rem); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             Monthly Intelligence &amp; Dispatch Trends
-            <span class="eyebrow-tag" style="margin-bottom:0; padding:2px 7px; font-size:0.58rem;">Live Bento Analytics</span>
+            <span class="eyebrow-tag" style="margin-bottom:0; padding:2px 7px; font-size:0.56rem; font-family:var(--font-mono); letter-spacing:0.06em;">[ TELEMETRY // DISPATCH_VELOCITY ]</span>
           </div>
-          <div style="font-size:0.68rem; color:var(--muted); font-weight:normal;">Weekly traffic velocity, telemetry radar, and monthly volume distribution</div>
+          <div style="font-size:clamp(0.62rem, 1.6vw, 0.68rem); color:var(--muted); font-weight:normal;">Weekly traffic velocity, telemetry radar, and monthly volume distribution</div>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <span class="year-total-badge" id="bento-sent-month-badge">🗓️ 0 Sent This Month</span>
-        <span class="year-total-badge" style="background:var(--green-dim); color:var(--green); border-color:var(--green-border);" id="bento-sent-today-badge">⚡ 0 Today</span>
+        <span class="year-total-badge" id="bento-sent-month-badge" style="font-size:clamp(0.60rem, 1.8vw, 0.72rem);">🗓️ 0 Sent This Month</span>
+        <span class="year-total-badge" style="background:var(--green-dim); color:var(--green); border-color:var(--green-border); font-size:clamp(0.60rem, 1.8vw, 0.72rem);" id="bento-sent-today-badge">⚡ 0 Today</span>
         <span class="year-toggle-arrow">▼</span>
       </div>
     </button>
 
-    <div class="year-body-collapse" id="bento-analytics-body" style="display:block; padding:14px 16px 18px;">
+    <div class="year-body-collapse" id="bento-analytics-body" style="display:block; padding:clamp(10px, 2vw, 16px);">
       <!-- Bento Grid Layout -->
-      <div style="display:grid; grid-template-columns:1fr; gap:14px;" class="bento-layout-grid">
+      <div class="bento-layout-grid">
         <style>
+          .bento-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: clamp(10px, 2vw, 16px);
+          }
           @media(min-width: 1024px) {
-            .bento-layout-grid { grid-template-columns: 1.1fr 0.9fr !important; }
+            .bento-layout-grid { grid-template-columns: 1.15fr 0.85fr !important; align-items: stretch; }
           }
           .bento-card-wrap {
-            background: linear-gradient(180deg, rgba(16, 17, 27, 0.94) 0%, rgba(10, 11, 18, 0.98) 100%);
-            border: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(14, 16, 26, 0.96) 0%, rgba(9, 10, 17, 0.99) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.8), inset 0 1px 0 rgba(212, 175, 55, 0.12), 0 8px 30px rgba(0,0,0,0.5);
             border-radius: var(--radius-sm);
-            padding: 16px 18px;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.4), var(--card-inner-highlight);
+            padding: clamp(12px, 2vw, 18px);
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
-            transition: border-color var(--duration-fast) var(--ease-out);
+            transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
           }
           .bento-card-wrap:hover {
-            border-color: var(--border-gold);
+            border-color: rgba(212, 175, 55, 0.45);
+            box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(212, 175, 55, 0.25), 0 12px 36px rgba(0,0,0,0.65);
+          }
+          .bento-bar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: clamp(2px, 1.2vw, 10px);
+            height: clamp(110px, 18vw, 135px);
+            padding: 10px 2px 0 2px;
+            width: 100%;
           }
           .bento-bar-col {
             flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -274,44 +290,103 @@
           .bento-bar-fill {
             width: 100%;
             max-width: 38px;
-            border-radius: 6px 6px 2px 2px;
-            transition: all 0.3s var(--ease-spring);
+            border-radius: 4px 4px 1px 1px;
+            transition: transform 0.25s var(--ease-spring), filter 0.2s ease;
             position: relative;
             min-height: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
           }
-          .bento-bar-fill:hover {
-            transform: scaleY(1.08) scaleX(1.05);
-            filter: brightness(1.2);
+          .bento-bar-col:hover .bento-bar-fill {
+            transform: scaleY(1.08) scaleX(1.04);
+            filter: brightness(1.25);
           }
           .bento-bar-tooltip {
             position: absolute;
             bottom: calc(100% + 6px);
             left: 50%;
             transform: translateX(-50%) translateY(4px);
-            background: #181926;
+            background: #12131d;
             border: 1px solid var(--border-gold);
             color: #ffffff;
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-family: var(--font-mono);
             font-weight: 700;
-            padding: 3px 7px;
+            padding: 3px 6px;
             border-radius: 4px;
             white-space: nowrap;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.15s ease, transform 0.15s ease;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.7);
             z-index: 10;
           }
           .bento-bar-col:hover .bento-bar-tooltip {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
           }
+          .bento-radar-flex {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(10px, 2vw, 18px);
+            width: 100%;
+          }
+          .bento-radar-svg-box {
+            width: clamp(115px, 28vw, 140px);
+            height: clamp(115px, 28vw, 140px);
+            flex-shrink: 0;
+            position: relative;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .bento-radar-metrics {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 100%;
+          }
+          @media(max-width: 520px) {
+            .bento-radar-flex {
+              flex-direction: column !important;
+              gap: 12px;
+            }
+          }
+          .radar-metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 8px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            border-left: 2px solid transparent;
+            background: rgba(255,255,255,0.02);
+            transition: all 0.15s ease;
+          }
           .radar-metric-row:hover {
             background: rgba(212, 175, 55, 0.08);
-            border-color: var(--border-gold);
-            transform: translateX(4px);
+            border-color: rgba(212, 175, 55, 0.25);
+            border-left-color: var(--gold);
+            transform: translateX(3px);
+          }
+          .bento-donut-area {
+            position: relative;
+            width: 100%;
+            min-height: clamp(155px, 28vw, 210px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 4px 0;
+          }
+          .bento-donut-svg {
+            width: clamp(140px, 34vw, 190px);
+            height: clamp(140px, 34vw, 190px);
+            transform: rotate(-90deg);
+            overflow: visible;
           }
           .donut-slice-path {
             transition: transform 0.25s var(--ease-spring), opacity 0.2s ease, filter 0.2s ease;
@@ -319,104 +394,132 @@
           }
           .donut-slice-path:hover {
             transform: scale(1.05);
-            filter: drop-shadow(0 0 8px rgba(212,175,55,0.4));
+            filter: drop-shadow(0 0 8px rgba(212,175,55,0.45));
+          }
+          .bento-legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(6px, 1.5vw, 8px);
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+          }
+          @media(max-width: 400px) {
+            .bento-legend-grid {
+              grid-template-columns: 1fr !important;
+            }
+          }
+          .bento-legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface2);
+            padding: 7px 9px;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+          }
+          .bento-legend-item:hover {
+            border-color: var(--border-gold);
+            background: rgba(212, 175, 55, 0.08);
+            transform: translateY(-1px);
           }
         </style>
 
         <!-- COLUMN 1: WEEKLY TRAFFIC BAR CHART + RADAR CHART -->
-        <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; flex-direction:column; gap:clamp(10px, 2vw, 14px);">
           <!-- 1. Weekly Traffic Bar Chart -->
           <div class="bento-card-wrap">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; gap:8px;">
               <div>
-                <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.56rem;">Weekly Dispatch Velocity</span>
-                <h3 style="font-size:0.92rem; color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">Daily Delivery Traffic</h3>
+                <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.54rem; font-family:var(--font-mono);">[ VELOCITY // MON-SUN ]</span>
+                <h3 style="font-size:clamp(0.82rem, 2vw, 0.92rem); color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">Daily Delivery Traffic</h3>
               </div>
-              <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--gold); font-weight:700;" id="bento-weekly-total-badge">-- Dispatches / Wk</span>
+              <span style="font-family:var(--font-mono); font-size:clamp(0.60rem, 1.6vw, 0.68rem); color:var(--gold); font-weight:700; white-space:nowrap;" id="bento-weekly-total-badge">-- Dispatches / Wk</span>
             </div>
 
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:8px; height:130px; padding:10px 4px 0 4px;" id="bento-bar-container">
+            <div class="bento-bar-container" id="bento-bar-container">
               <!-- Dynamically populated Mon-Sun bars -->
             </div>
           </div>
 
           <!-- 2. System Health & Drip Quality Radar Chart -->
           <div class="bento-card-wrap">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; gap:8px;">
               <div>
-                <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.56rem;">Telemetry &amp; SLA</span>
-                <h3 style="font-size:0.92rem; color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">System &amp; Drip Health</h3>
+                <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.54rem; font-family:var(--font-mono);">[ SLA // HEALTH_MATRIX ]</span>
+                <h3 style="font-size:clamp(0.82rem, 2vw, 0.92rem); color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">System &amp; Drip Health</h3>
               </div>
-              <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--green); font-weight:700;">● 99.8% Operational</span>
+              <span style="font-family:var(--font-mono); font-size:clamp(0.60rem, 1.6vw, 0.68rem); color:var(--green); font-weight:700; white-space:nowrap;">● 99.8% Operational</span>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:14px; align-items:center;">
-              <div style="display:flex; width:100%; gap:14px; align-items:center; flex-wrap:wrap;">
-                <!-- Radar SVG -->
-                <div style="width:140px; height:140px; flex-shrink:0; position:relative; margin:0 auto; display:flex; align-items:center; justify-content:center;">
-                  <svg viewBox="0 0 200 200" style="width:100%; height:100%; overflow:visible;">
-                    <!-- Radar Levels -->
-                    <polygon points="100,20 176,75 147,164 53,164 24,75" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
-                    <polygon points="100,40 157,81 135,148 65,148 43,81" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
-                    <polygon points="100,60 138,88 123,132 77,132 62,88" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
-                    <polygon points="100,80 119,94 112,116 88,116 81,94" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
-                    
-                    <!-- Axes -->
-                    <line x1="100" y1="100" x2="100" y2="20" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
-                    <line x1="100" y1="100" x2="176" y2="75" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
-                    <line x1="100" y1="100" x2="147" y2="164" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
-                    <line x1="100" y1="100" x2="53" y2="164" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
-                    <line x1="100" y1="100" x2="24" y2="75" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+            <div class="bento-radar-flex">
+              <!-- Radar SVG -->
+              <div class="bento-radar-svg-box">
+                <svg viewBox="0 0 200 200" style="width:100%; height:100%; overflow:visible;">
+                  <!-- Radar Levels -->
+                  <polygon points="100,20 176,75 147,164 53,164 24,75" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                  <polygon points="100,40 157,81 135,148 65,148 43,81" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                  <polygon points="100,60 138,88 123,132 77,132 62,88" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                  <polygon points="100,80 119,94 112,116 88,116 81,94" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                  
+                  <!-- Axes -->
+                  <line x1="100" y1="100" x2="100" y2="20" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                  <line x1="100" y1="100" x2="176" y2="75" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                  <line x1="100" y1="100" x2="147" y2="164" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                  <line x1="100" y1="100" x2="53" y2="164" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                  <line x1="100" y1="100" x2="24" y2="75" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
 
-                    <!-- Data Shape (Brutalist Gold / Violet Web) -->
-                    <polygon points="100,28 168,78 143,158 58,158 32,80" fill="rgba(212, 175, 55, 0.22)" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>
-                    
-                    <!-- Interactive Dots -->
-                    <circle cx="100" cy="28" r="4.5" fill="var(--gold)" stroke="#06070a" stroke-width="2"/>
-                    <circle cx="168" cy="78" r="4.5" fill="var(--green)" stroke="#06070a" stroke-width="2"/>
-                    <circle cx="143" cy="158" r="4.5" fill="var(--blue)" stroke="#06070a" stroke-width="2"/>
-                    <circle cx="58" cy="158" r="4.5" fill="#fbbf24" stroke="#06070a" stroke-width="2"/>
-                    <circle cx="32" cy="80" r="4.5" fill="var(--purple)" stroke="#06070a" stroke-width="2"/>
-                  </svg>
+                  <!-- Data Shape (Brutalist Gold / Violet Web) -->
+                  <polygon points="100,28 168,78 143,158 58,158 32,80" fill="rgba(212, 175, 55, 0.22)" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>
+                  
+                  <!-- Interactive Dots -->
+                  <circle cx="100" cy="28" r="4.5" fill="var(--gold)" stroke="#06070a" stroke-width="2"/>
+                  <circle cx="168" cy="78" r="4.5" fill="var(--green)" stroke="#06070a" stroke-width="2"/>
+                  <circle cx="143" cy="158" r="4.5" fill="var(--blue)" stroke="#06070a" stroke-width="2"/>
+                  <circle cx="58" cy="158" r="4.5" fill="#fbbf24" stroke="#06070a" stroke-width="2"/>
+                  <circle cx="32" cy="80" r="4.5" fill="var(--purple)" stroke="#06070a" stroke-width="2"/>
+                </svg>
+              </div>
+
+              <!-- Metrics List -->
+              <div class="bento-radar-metrics">
+                <div class="radar-metric-row">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:7px; height:7px; border-radius:2px; background:var(--gold); shrink:0;"></span>
+                    <span style="font-size:clamp(0.60rem, 1.5vw, 0.68rem); font-family:var(--font-mono); font-weight:700; color:var(--text);">SPEED / LATENCY</span>
+                  </div>
+                  <span style="font-family:var(--font-mono); font-weight:800; font-size:clamp(0.64rem, 1.5vw, 0.72rem); color:var(--gold);">92% (120ms)</span>
                 </div>
-
-                <!-- Metrics List -->
-                <div style="flex:1; min-width:180px; display:flex; flex-direction:column; gap:5px;">
-                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="width:7px; height:7px; border-radius:2px; background:var(--gold);"></span>
-                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">SPEED / LATENCY</span>
-                    </div>
-                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--gold);">92% (120ms)</span>
+                <div class="radar-metric-row">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:7px; height:7px; border-radius:2px; background:var(--green); shrink:0;"></span>
+                    <span style="font-size:clamp(0.60rem, 1.5vw, 0.68rem); font-family:var(--font-mono); font-weight:700; color:var(--text);">UPTIME &amp; DB</span>
                   </div>
-                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="width:7px; height:7px; border-radius:2px; background:var(--green);"></span>
-                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">UPTIME &amp; DB</span>
-                    </div>
-                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--green);">99.8%</span>
+                  <span style="font-family:var(--font-mono); font-weight:800; font-size:clamp(0.64rem, 1.5vw, 0.72rem); color:var(--green);">99.8%</span>
+                </div>
+                <div class="radar-metric-row">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:7px; height:7px; border-radius:2px; background:var(--blue); shrink:0;"></span>
+                    <span style="font-size:clamp(0.60rem, 1.5vw, 0.68rem); font-family:var(--font-mono); font-weight:700; color:var(--text);">DISPATCH ACCURACY</span>
                   </div>
-                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="width:7px; height:7px; border-radius:2px; background:var(--blue);"></span>
-                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">DISPATCH ACCURACY</span>
-                    </div>
-                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--blue);">100%</span>
+                  <span style="font-family:var(--font-mono); font-weight:800; font-size:clamp(0.64rem, 1.5vw, 0.72rem); color:var(--blue);">100%</span>
+                </div>
+                <div class="radar-metric-row">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:7px; height:7px; border-radius:2px; background:#fbbf24; shrink:0;"></span>
+                    <span style="font-size:clamp(0.60rem, 1.5vw, 0.68rem); font-family:var(--font-mono); font-weight:700; color:var(--text);">ON-TIME COHORT</span>
                   </div>
-                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="width:7px; height:7px; border-radius:2px; background:#fbbf24;"></span>
-                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">ON-TIME COHORT</span>
-                    </div>
-                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:#fbbf24;">94%</span>
+                  <span style="font-family:var(--font-mono); font-weight:800; font-size:clamp(0.64rem, 1.5vw, 0.72rem); color:#fbbf24;">94%</span>
+                </div>
+                <div class="radar-metric-row">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:7px; height:7px; border-radius:2px; background:var(--purple); shrink:0;"></span>
+                    <span style="font-size:clamp(0.60rem, 1.5vw, 0.68rem); font-family:var(--font-mono); font-weight:700; color:var(--text);">QUEUE CAPACITY</span>
                   </div>
-                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="width:7px; height:7px; border-radius:2px; background:var(--purple);"></span>
-                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">QUEUE CAPACITY</span>
-                    </div>
-                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--purple);">85%</span>
-                  </div>
+                  <span style="font-family:var(--font-mono); font-weight:800; font-size:clamp(0.64rem, 1.5vw, 0.72rem); color:var(--purple);">85%</span>
                 </div>
               </div>
             </div>
@@ -425,59 +528,59 @@
 
         <!-- COLUMN 2: FULL-HEIGHT MONTHLY DONUT & DISPATCH COMPOSITION -->
         <div class="bento-card-wrap" style="justify-content:space-between;">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:10px; gap:8px;">
             <div>
-              <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.56rem;">Monthly Load</span>
-              <h3 style="font-size:0.92rem; color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">Dispatched This Month</h3>
+              <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.54rem; font-family:var(--font-mono);">[ MONTHLY_LOAD // COMPOSITION ]</span>
+              <h3 style="font-size:clamp(0.82rem, 2vw, 0.92rem); color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">Dispatched This Month</h3>
             </div>
-            <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--gold); font-weight:700;" id="bento-month-name-badge">--</span>
+            <span style="font-family:var(--font-mono); font-size:clamp(0.60rem, 1.6vw, 0.68rem); color:var(--gold); font-weight:700; white-space:nowrap;" id="bento-month-name-badge">--</span>
           </div>
 
           <!-- Donut SVG Area -->
-          <div style="position:relative; width:100%; min-height:210px; display:flex; align-items:center; justify-content:center; margin:8px 0;">
-            <svg viewBox="-1.2 -1.2 2.4 2.4" style="width:190px; height:190px; transform:rotate(-90deg); overflow:visible;" id="bento-donut-svg">
+          <div class="bento-donut-area">
+            <svg viewBox="-1.2 -1.2 2.4 2.4" class="bento-donut-svg" id="bento-donut-svg">
               <!-- Slices dynamically rendered via renderBentoAnalytics() -->
             </svg>
             
             <!-- Center Label -->
             <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;" id="bento-donut-center">
-              <span style="font-size:1.95rem; font-weight:900; font-family:var(--font-display); color:#ffffff; line-height:1;" id="bento-center-count">0</span>
-              <span style="font-size:0.58rem; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:var(--gold); margin-top:4px;" id="bento-center-sub">Sent This Month</span>
+              <span style="font-size:clamp(1.6rem, 4.5vw, 2.1rem); font-weight:900; font-family:var(--font-display); color:#ffffff; line-height:1;" id="bento-center-count">0</span>
+              <span style="font-size:clamp(0.50rem, 1.3vw, 0.60rem); font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:var(--gold); margin-top:4px;" id="bento-center-sub">Sent This Month</span>
             </div>
           </div>
 
           <!-- Legend Grid -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; border-top:1px solid var(--border); padding-top:12px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('drips')" onmouseleave="resetDonut()">
+          <div class="bento-legend-grid">
+            <div class="bento-legend-item" onmouseenter="highlightDonut('drips')" onmouseleave="resetDonut()">
               <div style="display:flex; align-items:center; gap:6px;">
-                <span style="width:8px; height:8px; border-radius:2px; background:var(--gold);"></span>
-                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">Monthly Drips</span>
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--gold); shrink:0;"></span>
+                <span style="font-size:clamp(0.62rem, 1.6vw, 0.68rem); font-weight:700; color:var(--text);">Monthly Drips</span>
               </div>
-              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--gold);" id="legend-count-drips">--</span>
+              <span style="font-family:var(--font-mono); font-size:clamp(0.66rem, 1.6vw, 0.72rem); font-weight:800; color:var(--gold);" id="legend-count-drips">--</span>
             </div>
 
-            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('reconnects')" onmouseleave="resetDonut()">
+            <div class="bento-legend-item" onmouseenter="highlightDonut('reconnects')" onmouseleave="resetDonut()">
               <div style="display:flex; align-items:center; gap:6px;">
-                <span style="width:8px; height:8px; border-radius:2px; background:var(--blue);"></span>
-                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">Reconnects</span>
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--blue); shrink:0;"></span>
+                <span style="font-size:clamp(0.62rem, 1.6vw, 0.68rem); font-weight:700; color:var(--text);">Reconnects</span>
               </div>
-              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--blue);" id="legend-count-reconnects">--</span>
+              <span style="font-family:var(--font-mono); font-size:clamp(0.66rem, 1.6vw, 0.72rem); font-weight:800; color:var(--blue);" id="legend-count-reconnects">--</span>
             </div>
 
-            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('receipts')" onmouseleave="resetDonut()">
+            <div class="bento-legend-item" onmouseenter="highlightDonut('receipts')" onmouseleave="resetDonut()">
               <div style="display:flex; align-items:center; gap:6px;">
-                <span style="width:8px; height:8px; border-radius:2px; background:var(--green);"></span>
-                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">POS Receipts</span>
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--green); shrink:0;"></span>
+                <span style="font-size:clamp(0.62rem, 1.6vw, 0.68rem); font-weight:700; color:var(--text);">POS Receipts</span>
               </div>
-              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--green);" id="legend-count-receipts">--</span>
+              <span style="font-family:var(--font-mono); font-size:clamp(0.66rem, 1.6vw, 0.72rem); font-weight:800; color:var(--green);" id="legend-count-receipts">--</span>
             </div>
 
-            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('security')" onmouseleave="resetDonut()">
+            <div class="bento-legend-item" onmouseenter="highlightDonut('security')" onmouseleave="resetDonut()">
               <div style="display:flex; align-items:center; gap:6px;">
-                <span style="width:8px; height:8px; border-radius:2px; background:var(--purple);"></span>
-                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">Security / OTP</span>
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--purple); shrink:0;"></span>
+                <span style="font-size:clamp(0.62rem, 1.6vw, 0.68rem); font-weight:700; color:var(--text);">Security / OTP</span>
               </div>
-              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--purple);" id="legend-count-security">--</span>
+              <span style="font-family:var(--font-mono); font-size:clamp(0.66rem, 1.6vw, 0.72rem); font-weight:800; color:var(--purple);" id="legend-count-security">--</span>
             </div>
           </div>
         </div>
@@ -732,7 +835,7 @@ function renderBentoBarChart(payload) {
       <div class="bento-bar-col" title="${b.label}: ${b.value} dispatches">
         <div class="bento-bar-tooltip">${b.label}: ${b.value} Sent</div>
         <div class="bento-bar-fill" style="height:${heightPercent}%; background:${b.color}; ${activeBorder}"></div>
-        <span style="font-size:0.62rem; font-family:var(--font-mono); color:${b.isToday ? 'var(--gold)' : 'var(--muted)'}; font-weight:${b.isToday ? '800' : '600'}; margin-top:6px;">
+        <span style="font-size:clamp(0.50rem, 1.4vw, 0.62rem); font-family:var(--font-mono); color:${b.isToday ? 'var(--gold)' : 'var(--muted)'}; font-weight:${b.isToday ? '800' : '600'}; margin-top:6px; letter-spacing:0.02em; white-space:nowrap;">
           ${b.label}${b.isToday ? ' •' : ''}
         </span>
       </div>

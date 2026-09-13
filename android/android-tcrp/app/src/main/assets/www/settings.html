@@ -152,7 +152,7 @@
         <h3 style="font-size:0.95rem; color:var(--gold);">📱 Android App &amp; System Updates</h3>
         <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Fast hybrid offline/online runtime with automatic OTA deployment synchronization.</p>
       </div>
-      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);" id="app-version-badge">v3.3.0 (Build 89)</span>
+      <span class="badge" style="background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--border-gold);" id="app-version-badge">v3.5.0 (Build 91)</span>
     </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
@@ -163,10 +163,13 @@
     <div id="update-status-msg" style="font-size:0.75rem; color:var(--green); margin-top:10px; display:none; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:6px; padding:10px 14px; word-break:break-word;"></div>
   </div>
 
-  <!-- CDN Setup (Hidden) -->
-  <div class="card" id="cdn-setup-card" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-      <h3 style="font-size:0.95rem; color:var(--gold);">⚡ jsDelivr &amp; GitHub CDN Setup</h3>
+  <!-- CDN Setup -->
+  <div class="card" id="cdn-setup-card" style="border-color: rgba(201,168,76,0.3);">
+    <div class="card-header-flex" style="margin-bottom:12px;">
+      <div>
+        <h3 style="font-size:0.95rem; color:var(--gold);">⚡ CDN, GitHub &amp; Cloudflare R2 Edge Acceleration</h3>
+        <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Configure image hosting, jsDelivr global delivery, and Cloudflare R2 edge cache acceleration.</p>
+      </div>
       <button class="btn btn-gold" onclick="saveCdnSettings()">💾 Save Variables</button>
     </div>
     <div class="cdn-grid">

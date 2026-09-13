@@ -53,9 +53,12 @@
     <button id="power-toggle-btn" class="btn btn-dark" onclick="startPowerCaptcha()">⏳ Loading Status...</button>
   </div>
 
-  <div class="card" id="cdn-setup-card" style="display:none;">
+  <div class="card" id="cdn-setup-card" style="border-color: rgba(201,168,76,0.3);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-      <h3 style="font-size:0.95rem; color:var(--gold);">⚡ jsDelivr &amp; GitHub CDN Setup</h3>
+      <div>
+        <h3 style="font-size:0.95rem; color:var(--gold);">⚡ CDN, GitHub &amp; Cloudflare R2 Edge Acceleration</h3>
+        <p style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Configure image hosting, jsDelivr global delivery, and Cloudflare R2 edge cache acceleration.</p>
+      </div>
       <button class="btn btn-gold" onclick="saveCdnSettings()">💾 Save Variables</button>
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
@@ -63,6 +66,7 @@
       <div class="form-group"><label class="form-label">Repo Name</label><input id="set-cdn-repo" class="form-input" placeholder="Gallery"></div>
       <div class="form-group"><label class="form-label">Branch</label><input id="set-cdn-branch" class="form-input" value="main"></div>
       <div class="form-group"><label class="form-label">Upload Path</label><input id="set-cdn-path" class="form-input" value="assets/rewards"></div>
+      <div class="form-group" style="grid-column: 1 / -1;"><label class="form-label">Cloudflare R2 Worker URL (Edge Acceleration)</label><input id="set-cdn-r2-url" class="form-input" placeholder="https://tcrp.your-account.workers.dev"><div style="font-size:0.65rem; color:var(--muted); margin-top:3px;">Accelerates uploaded jsDelivr images through Cloudflare RAM edge cache and R2 storage. Leave blank to use direct jsDelivr URLs.</div></div>
       <div class="form-group" style="grid-column: 1 / -1;"><label class="form-label">Personal Access Token</label><input id="set-cdn-token" type="password" class="form-input" placeholder="ghp_xxxxxxxxxxxx"></div>
     </div>
   </div>
@@ -170,6 +174,7 @@ async function loadCdnSettings() {
       if (document.getElementById("set-cdn-repo")) document.getElementById("set-cdn-repo").value = d.config.cdn_github_repo || "";
       if (document.getElementById("set-cdn-branch")) document.getElementById("set-cdn-branch").value = d.config.cdn_github_branch || "main";
       if (document.getElementById("set-cdn-path")) document.getElementById("set-cdn-path").value = d.config.cdn_upload_path || "assets/rewards";
+      if (document.getElementById("set-cdn-r2-url")) document.getElementById("set-cdn-r2-url").value = d.config.cdn_r2_worker_url || "";
       if (document.getElementById("set-cdn-token")) document.getElementById("set-cdn-token").value = d.config.cdn_github_token || "";
     }
   } catch (_) {}
@@ -181,6 +186,7 @@ async function saveCdnSettings() {
     cdn_github_repo: document.getElementById("set-cdn-repo").value.trim(),
     cdn_github_branch: document.getElementById("set-cdn-branch").value.trim() || "main",
     cdn_upload_path: document.getElementById("set-cdn-path").value.trim() || "assets/rewards",
+    cdn_r2_worker_url: document.getElementById("set-cdn-r2-url") ? document.getElementById("set-cdn-r2-url").value.trim() : "",
     cdn_github_token: document.getElementById("set-cdn-token").value.trim()
   };
   try {

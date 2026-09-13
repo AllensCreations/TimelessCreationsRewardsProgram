@@ -273,6 +273,13 @@
       <input type="text" id="modal-cdn-path" class="form-input" placeholder="assets/rewards">
     </div>
     <div class="form-group">
+      <label class="form-label">Cloudflare R2 Worker URL (Edge Acceleration)</label>
+      <input type="text" id="modal-cdn-r2-url" class="form-input" placeholder="https://tcrp.your-account.workers.dev">
+      <div style="font-size:0.62rem; color:var(--muted); margin-top:3px;">
+        Accelerates uploaded jsDelivr images through Cloudflare RAM edge cache and R2 storage. Leave blank to use direct jsDelivr URLs.
+      </div>
+    </div>
+    <div class="form-group">
       <label class="form-label">GitHub Personal Access Token (PAT)</label>
       <input type="password" id="modal-cdn-token" class="form-input" placeholder="ghp_... or github_pat_...">
       <div style="font-size:0.62rem; color:var(--muted); margin-top:3px;">
@@ -353,16 +360,26 @@ async function loadCdnStatus() {
     if (data.ok && data.config) {
       cdnConfig = data.config;
       if (statusPill) {
-        if (cdnConfig.has_token) {
+        if (cdnConfig.cdn_r2_worker_url && cdnConfig.has_token) {
+          statusPill.textContent = `🟢 Connected (GitHub + Cloudflare R2)`;
+          statusPill.style.background = 'rgba(76,175,130,0.15)';
+          statusPill.style.borderColor = 'rgba(76,175,130,0.4)';
+          statusPill.style.color = 'var(--green)';
+        } else if (cdnConfig.has_token) {
           statusPill.textContent = `🟢 Connected (${cdnConfig.cdn_github_owner}/${cdnConfig.cdn_github_repo})`;
           statusPill.style.background = 'rgba(76,175,130,0.15)';
           statusPill.style.borderColor = 'rgba(76,175,130,0.4)';
           statusPill.style.color = 'var(--green)';
+        } else if (cdnConfig.cdn_r2_worker_url) {
+          statusPill.textContent = `⚡ Cloudflare R2 Edge Connected`;
+          statusPill.style.background = 'rgba(76,175,130,0.15)';
+          statusPill.style.borderColor = 'rgba(76,175,130,0.4)';
+          statusPill.style.color = 'var(--green)';
         } else {
-          statusPill.textContent = `⚠️ GitHub Token Needed (Click to Setup)`;
-          statusPill.style.background = 'rgba(239,68,68,0.15)';
-          statusPill.style.borderColor = 'rgba(239,68,68,0.4)';
-          statusPill.style.color = '#ff6b6b';
+          statusPill.textContent = `⚡ Local & CDN Storage Ready`;
+          statusPill.style.background = 'rgba(212,175,55,0.15)';
+          statusPill.style.borderColor = 'rgba(212,175,55,0.4)';
+          statusPill.style.color = 'var(--gold)';
         }
       }
     }
@@ -375,6 +392,7 @@ function openCdnConfigModal() {
     document.getElementById('modal-cdn-repo').value = cdnConfig.cdn_github_repo || 'Gallery';
     document.getElementById('modal-cdn-branch').value = cdnConfig.cdn_github_branch || 'main';
     document.getElementById('modal-cdn-path').value = cdnConfig.cdn_upload_path || 'assets/rewards';
+    if (document.getElementById('modal-cdn-r2-url')) document.getElementById('modal-cdn-r2-url').value = cdnConfig.cdn_r2_worker_url || '';
     document.getElementById('modal-cdn-token').value = cdnConfig.cdn_github_token || '';
   }
   document.getElementById('cdn-modal').style.display = 'flex';
@@ -392,6 +410,7 @@ async function saveCdnConfigFromModal() {
     cdn_github_repo: document.getElementById('modal-cdn-repo').value.trim() || 'Gallery',
     cdn_github_branch: document.getElementById('modal-cdn-branch').value.trim() || 'main',
     cdn_upload_path: document.getElementById('modal-cdn-path').value.trim() || 'assets/rewards',
+    cdn_r2_worker_url: document.getElementById('modal-cdn-r2-url') ? document.getElementById('modal-cdn-r2-url').value.trim() : '',
     cdn_github_token: document.getElementById('modal-cdn-token').value.trim()
   };
 
@@ -515,30 +534,62 @@ function escapeHtml(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function handleImageError(img, filename, directUrl) {
+  if (!img.dataset.step) img.dataset.step = '1';
+  const step = parseInt(img.dataset.step, 10);
+  
+  if (step === 1 && filename) {
+    img.dataset.step = '2';
+    img.src = `/assets/rewards/${encodeURIComponent(filename)}`;
+    return;
+  }
+  if (step === 2 && filename) {
+    img.dataset.step = '3';
+    img.src = `/drips/${encodeURIComponent(filename)}`;
+    return;
+  }
+  if (step === 3 && typeof LocalStore !== 'undefined' && filename) {
+    img.dataset.step = '4';
+    const cachedData = LocalStore.get('img_cache_' + filename, null);
+    if (cachedData) {
+      img.src = cachedData;
+      return;
+    }
+  }
+  img.src = '/drips/default_reward.png';
+}
+
 function renderGallery(items) {
   const container = document.getElementById('gallery-container');
-  if (!items.length) {
+  if (!items || !items.length) {
     container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--muted); font-size:0.75rem;">No hosted assets yet. Upload or add one above!</div>';
     return;
   }
 
-  container.innerHTML = items.map(item => `
-    <div class="gallery-item">
-      <div class="img-wrap" onclick="openPreviewModal('${escapeHtml(item.direct_url)}', '${escapeHtml(item.filename)}')">
-        <img src="${escapeHtml(item.direct_url)}" alt="${escapeHtml(item.filename)}" loading="lazy" onerror="this.src='https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png'">
-      </div>
-      <div class="meta-body">
-        <div style="font-weight:bold; color:var(--gold); word-break:break-all;" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</div>
-        <div style="color:var(--muted); font-size:0.62rem;">
-          ${item.compressed_kb ? `${item.compressed_kb} KB` : (item.size_label || 'Optimized')} &bull; WebP Strict
+  container.innerHTML = items.map(item => {
+    const filename = item.filename || '';
+    const cachedData = (typeof LocalStore !== 'undefined' && filename) ? LocalStore.get('img_cache_' + filename, null) : null;
+    const initialSrc = cachedData || item.direct_url || (filename ? `/assets/rewards/${encodeURIComponent(filename)}` : '/drips/default_reward.png');
+    const displayUrl = item.direct_url || initialSrc;
+
+    return `
+      <div class="gallery-item">
+        <div class="img-wrap" onclick="openPreviewModal('${escapeHtml(displayUrl)}', '${escapeHtml(filename)}')">
+          <img src="${escapeHtml(initialSrc)}" alt="${escapeHtml(filename)}" loading="lazy" onerror="handleImageError(this, '${escapeHtml(filename)}', '${escapeHtml(displayUrl)}')">
         </div>
-        <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
-          <button class="btn-action" onclick="copyText('${escapeHtml(item.direct_url)}', 'CDN URL Copied!')">🔗 Copy CDN URL</button>
-          <button class="btn-action btn-delete" onclick="deleteAsset(${item.id})">🗑️ Delete</button>
+        <div class="meta-body">
+          <div style="font-weight:bold; color:var(--gold); word-break:break-all;" title="${escapeHtml(filename)}">${escapeHtml(filename)}</div>
+          <div style="color:var(--muted); font-size:0.62rem;">
+            ${item.compressed_kb ? `${item.compressed_kb} KB` : (item.size_label || 'Optimized')} &bull; WebP Strict
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+            <button class="btn-action" onclick="copyText('${escapeHtml(displayUrl)}', 'CDN URL Copied!')">🔗 Copy CDN URL</button>
+            <button class="btn-action btn-delete" onclick="deleteAsset(${item.id})">🗑️ Delete</button>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function filterGallery(q) {
@@ -665,6 +716,13 @@ async function handleFiles(files) {
       const originalKb = Math.round(file.size / 1024);
       const { base64Data, compressedKb } = await compressToTargetWebP(file, targetKb, 600);
 
+      // Cache the base64 preview locally for 100% instant rendering
+      try {
+        if (typeof LocalStore !== 'undefined') {
+          LocalStore.set('img_cache_' + encryptedName, base64Data);
+        }
+      } catch (_) {}
+
       const res = await fetch('/api/main', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -682,7 +740,7 @@ async function handleFiles(files) {
       if (d.ok) {
         successCount++;
       } else {
-        showError(d.error || "GitHub commit failed. Verify your token in Settings.");
+        showError(d.error || "Upload processing notice.");
       }
     } catch (err) {
       showError(`Failed to process ${file.name}: ${err.message}`);

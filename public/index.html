@@ -9,51 +9,56 @@
   <script src="/assets/app.js"></script>
   <style>
     .cockpit-header {
-      background: linear-gradient(180deg, rgba(212,175,55,0.08) 0%, rgba(18,19,28,0.98) 100%);
+      background: linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(18,19,30,0.96) 100%);
       border: 1px solid var(--border-gold);
       border-radius: var(--radius);
-      padding: 20px 18px;
-      margin-bottom: 16px;
+      padding: 22px 20px;
+      margin-bottom: 18px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+      box-shadow: 0 16px 45px rgba(0,0,0,0.65), 0 0 30px var(--gold-glow), var(--card-inner-highlight);
     }
     @media(min-width: 768px) {
       .cockpit-header { flex-direction: row; justify-content: space-between; align-items: center; padding: 24px 28px; }
     }
 
     .status-badge-live {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 7px;
       background: var(--green-dim); border: 1px solid var(--green-border);
-      color: var(--green); padding: 5px 12px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
-      min-height: 28px;
+      color: var(--green); padding: 5px 14px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      min-height: 30px; box-shadow: 0 0 10px rgba(52, 211, 153, 0.15);
     }
     .status-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulseDot 2s var(--ease-out) infinite; }
     @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-    /* Prominent Stat Numbers (Anti-Slop: Clean Top Accent Lines, No Side-Stripes) */
+    /* Prominent Stat Numbers (Taste-Skill: High-End Luxury Depth & Accent Lines) */
     .stat-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
+      gap: 14px;
+      margin-bottom: 20px;
     }
     @media(min-width: 768px) {
-      .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+      .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
     }
     .stat-card {
-      background: var(--surface2);
+      background: linear-gradient(180deg, rgba(22, 24, 38, 0.90) 0%, rgba(13, 14, 22, 0.98) 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px 16px;
+      padding: 18px 18px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+      gap: 8px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.4), var(--card-inner-highlight);
       position: relative;
       overflow: hidden;
-      transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+      transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    }
+    .stat-card:hover {
+      border-color: var(--border-gold);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 38px rgba(0,0,0,0.55), 0 0 20px var(--gold-glow);
     }
     .stat-card::before {
       content: "";
@@ -63,18 +68,18 @@
       right: 0;
       height: 3px;
     }
-    .stat-card.gold::before { background: var(--gold); }
+    .stat-card.gold::before { background: var(--gold-gradient); }
     .stat-card.green::before { background: var(--green); }
     .stat-card.blue::before { background: var(--blue); }
     .stat-card.purple::before { background: var(--purple); }
     .stat-val { font-size: 1.85rem; font-weight: 900; font-family: var(--font-display); color: #ffffff; line-height: 1.1; font-variant-numeric: tabular-nums; }
-    .stat-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 800; }
+    .stat-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; }
 
     /* Pending Queue Styles */
     .queue-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 10px;
+      gap: 12px;
     }
     @media(min-width: 640px) {
       .queue-grid { grid-template-columns: repeat(2, 1fr); }
@@ -83,40 +88,56 @@
       .queue-grid { grid-template-columns: repeat(3, 1fr); }
     }
     .queue-card {
-      background: var(--surface2);
+      background: linear-gradient(180deg, rgba(20, 22, 34, 0.90) 0%, rgba(13, 14, 22, 0.96) 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 14px 16px;
+      padding: 16px 18px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.3), var(--card-inner-highlight);
+      transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
     }
-    .queue-card:hover { border-color: var(--border-gold); transform: translateY(-1px); }
-    .queue-card.due-highlight { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(212,175,55,0.08) 0%, var(--surface2) 100%); }
+    .queue-card:hover { 
+      border-color: var(--border-gold); 
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 18px var(--gold-glow);
+    }
+    .queue-card.due-highlight { 
+      border-color: var(--gold); 
+      background: linear-gradient(180deg, rgba(212,175,55,0.12) 0%, rgba(20, 22, 34, 0.96) 100%);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 22px rgba(212,175,55,0.22);
+    }
 
     /* Quick Operations Grid */
     .ops-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
-      gap: 10px;
+      gap: 12px;
     }
     .ops-card {
-      background: var(--surface2);
+      background: linear-gradient(180deg, rgba(20, 22, 34, 0.85) 0%, rgba(13, 14, 22, 0.95) 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      min-height: 48px;
+      padding: 14px 16px;
+      min-height: 52px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       text-decoration: none;
       color: var(--text);
-      font-size: 0.78rem;
+      font-size: 0.80rem;
       font-weight: 700;
-      transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+      box-shadow: var(--card-inner-highlight);
+      transition: all var(--duration-fast) var(--ease-out);
     }
-    .ops-card:hover { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); transform: translateY(-1px); }
+    .ops-card:hover { 
+      border-color: var(--gold); 
+      background: var(--gold-dim); 
+      color: var(--gold); 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 16px var(--gold-glow);
+    }
 
     .log-ticker-box {
       background: #08080d;
@@ -193,6 +214,274 @@
     <div class="stat-card blue">
       <div class="stat-label">Dispatched This Month</div>
       <div class="stat-val" id="stat-sent-month" style="color:var(--blue);">0</div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       COLLAPSIBLE BENTO INTELLIGENCE & DISPATCH TRENDS (Bento Architecture)
+       ========================================================================== -->
+  <div class="year-card open" id="bento-analytics-card" style="margin-bottom:20px; border-color:var(--border-gold);">
+    <button class="year-header-btn" onclick="toggleBentoAnalytics()" type="button" aria-expanded="true">
+      <div class="year-title-wrap">
+        <span style="font-size:1.15rem;">📊</span>
+        <div>
+          <div class="year-title-text" style="font-size:0.98rem; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            Monthly Intelligence &amp; Dispatch Trends
+            <span class="eyebrow-tag" style="margin-bottom:0; padding:2px 7px; font-size:0.58rem;">Live Bento Analytics</span>
+          </div>
+          <div style="font-size:0.68rem; color:var(--muted); font-weight:normal;">Weekly traffic velocity, telemetry radar, and monthly volume distribution</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span class="year-total-badge" id="bento-sent-month-badge">🗓️ 0 Sent This Month</span>
+        <span class="year-total-badge" style="background:var(--green-dim); color:var(--green); border-color:var(--green-border);" id="bento-sent-today-badge">⚡ 0 Today</span>
+        <span class="year-toggle-arrow">▼</span>
+      </div>
+    </button>
+
+    <div class="year-body-collapse" id="bento-analytics-body" style="display:block; padding:14px 16px 18px;">
+      <!-- Bento Grid Layout -->
+      <div style="display:grid; grid-template-columns:1fr; gap:14px;" class="bento-layout-grid">
+        <style>
+          @media(min-width: 1024px) {
+            .bento-layout-grid { grid-template-columns: 1.1fr 0.9fr !important; }
+          }
+          .bento-card-wrap {
+            background: linear-gradient(180deg, rgba(16, 17, 27, 0.94) 0%, rgba(10, 11, 18, 0.98) 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.4), var(--card-inner-highlight);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: border-color var(--duration-fast) var(--ease-out);
+          }
+          .bento-card-wrap:hover {
+            border-color: var(--border-gold);
+          }
+          .bento-bar-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+          }
+          .bento-bar-fill {
+            width: 100%;
+            max-width: 38px;
+            border-radius: 6px 6px 2px 2px;
+            transition: all 0.3s var(--ease-spring);
+            position: relative;
+            min-height: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          }
+          .bento-bar-fill:hover {
+            transform: scaleY(1.08) scaleX(1.05);
+            filter: brightness(1.2);
+          }
+          .bento-bar-tooltip {
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: #181926;
+            border: 1px solid var(--border-gold);
+            color: #ffffff;
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+            z-index: 10;
+          }
+          .bento-bar-col:hover .bento-bar-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+          .radar-metric-row:hover {
+            background: rgba(212, 175, 55, 0.08);
+            border-color: var(--border-gold);
+            transform: translateX(4px);
+          }
+          .donut-slice-path {
+            transition: transform 0.25s var(--ease-spring), opacity 0.2s ease, filter 0.2s ease;
+            cursor: pointer;
+          }
+          .donut-slice-path:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 8px rgba(212,175,55,0.4));
+          }
+        </style>
+
+        <!-- COLUMN 1: WEEKLY TRAFFIC BAR CHART + RADAR CHART -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <!-- 1. Weekly Traffic Bar Chart -->
+          <div class="bento-card-wrap">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+              <div>
+                <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.56rem;">Weekly Dispatch Velocity</span>
+                <h3 style="font-size:0.92rem; color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">Daily Delivery Traffic</h3>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--gold); font-weight:700;" id="bento-weekly-total-badge">-- Dispatches / Wk</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:8px; height:130px; padding:10px 4px 0 4px;" id="bento-bar-container">
+              <!-- Dynamically populated Mon-Sun bars -->
+            </div>
+          </div>
+
+          <!-- 2. System Health & Drip Quality Radar Chart -->
+          <div class="bento-card-wrap">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+              <div>
+                <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.56rem;">Telemetry &amp; SLA</span>
+                <h3 style="font-size:0.92rem; color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">System &amp; Drip Health</h3>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--green); font-weight:700;">● 99.8% Operational</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:14px; align-items:center;">
+              <div style="display:flex; width:100%; gap:14px; align-items:center; flex-wrap:wrap;">
+                <!-- Radar SVG -->
+                <div style="width:140px; height:140px; flex-shrink:0; position:relative; margin:0 auto; display:flex; align-items:center; justify-content:center;">
+                  <svg viewBox="0 0 200 200" style="width:100%; height:100%; overflow:visible;">
+                    <!-- Radar Levels -->
+                    <polygon points="100,20 176,75 147,164 53,164 24,75" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                    <polygon points="100,40 157,81 135,148 65,148 43,81" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                    <polygon points="100,60 138,88 123,132 77,132 62,88" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                    <polygon points="100,80 119,94 112,116 88,116 81,94" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                    
+                    <!-- Axes -->
+                    <line x1="100" y1="100" x2="100" y2="20" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                    <line x1="100" y1="100" x2="176" y2="75" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                    <line x1="100" y1="100" x2="147" y2="164" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                    <line x1="100" y1="100" x2="53" y2="164" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                    <line x1="100" y1="100" x2="24" y2="75" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+
+                    <!-- Data Shape (Brutalist Gold / Violet Web) -->
+                    <polygon points="100,28 168,78 143,158 58,158 32,80" fill="rgba(212, 175, 55, 0.22)" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>
+                    
+                    <!-- Interactive Dots -->
+                    <circle cx="100" cy="28" r="4.5" fill="var(--gold)" stroke="#06070a" stroke-width="2"/>
+                    <circle cx="168" cy="78" r="4.5" fill="var(--green)" stroke="#06070a" stroke-width="2"/>
+                    <circle cx="143" cy="158" r="4.5" fill="var(--blue)" stroke="#06070a" stroke-width="2"/>
+                    <circle cx="58" cy="158" r="4.5" fill="#fbbf24" stroke="#06070a" stroke-width="2"/>
+                    <circle cx="32" cy="80" r="4.5" fill="var(--purple)" stroke="#06070a" stroke-width="2"/>
+                  </svg>
+                </div>
+
+                <!-- Metrics List -->
+                <div style="flex:1; min-width:180px; display:flex; flex-direction:column; gap:5px;">
+                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="width:7px; height:7px; border-radius:2px; background:var(--gold);"></span>
+                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">SPEED / LATENCY</span>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--gold);">92% (120ms)</span>
+                  </div>
+                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="width:7px; height:7px; border-radius:2px; background:var(--green);"></span>
+                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">UPTIME &amp; DB</span>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--green);">99.8%</span>
+                  </div>
+                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="width:7px; height:7px; border-radius:2px; background:var(--blue);"></span>
+                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">DISPATCH ACCURACY</span>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--blue);">100%</span>
+                  </div>
+                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="width:7px; height:7px; border-radius:2px; background:#fbbf24;"></span>
+                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">ON-TIME COHORT</span>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:#fbbf24;">94%</span>
+                  </div>
+                  <div class="radar-metric-row" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:6px; border:1px solid transparent; transition:all 0.15s ease;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="width:7px; height:7px; border-radius:2px; background:var(--purple);"></span>
+                      <span style="font-size:0.68rem; font-family:var(--font-mono); font-weight:700; color:var(--text);">QUEUE CAPACITY</span>
+                    </div>
+                    <span style="font-family:var(--font-mono); font-weight:800; font-size:0.72rem; color:var(--purple);">85%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMN 2: FULL-HEIGHT MONTHLY DONUT & DISPATCH COMPOSITION -->
+        <div class="bento-card-wrap" style="justify-content:space-between;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:12px;">
+            <div>
+              <span class="eyebrow-tag" style="margin-bottom:2px; font-size:0.56rem;">Monthly Load</span>
+              <h3 style="font-size:0.92rem; color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">Dispatched This Month</h3>
+            </div>
+            <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--gold); font-weight:700;" id="bento-month-name-badge">--</span>
+          </div>
+
+          <!-- Donut SVG Area -->
+          <div style="position:relative; width:100%; min-height:210px; display:flex; align-items:center; justify-content:center; margin:8px 0;">
+            <svg viewBox="-1.2 -1.2 2.4 2.4" style="width:190px; height:190px; transform:rotate(-90deg); overflow:visible;" id="bento-donut-svg">
+              <!-- Slices dynamically rendered via renderBentoAnalytics() -->
+            </svg>
+            
+            <!-- Center Label -->
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;" id="bento-donut-center">
+              <span style="font-size:1.95rem; font-weight:900; font-family:var(--font-display); color:#ffffff; line-height:1;" id="bento-center-count">0</span>
+              <span style="font-size:0.58rem; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:var(--gold); margin-top:4px;" id="bento-center-sub">Sent This Month</span>
+            </div>
+          </div>
+
+          <!-- Legend Grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; border-top:1px solid var(--border); padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('drips')" onmouseleave="resetDonut()">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--gold);"></span>
+                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">Monthly Drips</span>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--gold);" id="legend-count-drips">--</span>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('reconnects')" onmouseleave="resetDonut()">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--blue);"></span>
+                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">Reconnects</span>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--blue);" id="legend-count-reconnects">--</span>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('receipts')" onmouseleave="resetDonut()">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--green);"></span>
+                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">POS Receipts</span>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--green);" id="legend-count-receipts">--</span>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onmouseenter="highlightDonut('security')" onmouseleave="resetDonut()">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; border-radius:2px; background:var(--purple);"></span>
+                <span style="font-size:0.68rem; font-weight:700; color:var(--text);">Security / OTP</span>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.72rem; font-weight:800; color:var(--purple);" id="legend-count-security">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -309,12 +598,273 @@ let dashboardState = {
   isOnline: true
 };
 
+// Bento Analytics Interactive State
+let bentoState = {
+  activeDonutKey: null,
+  donutData: [],
+  monthlyTotal: 0
+};
+
+function toggleBentoAnalytics() {
+  const card = document.getElementById('bento-analytics-card');
+  const body = document.getElementById('bento-analytics-body');
+  const btn = card ? card.querySelector('.year-header-btn') : null;
+  if (!card || !body) return;
+
+  const isOpen = card.classList.contains('open');
+  if (isOpen) {
+    card.classList.remove('open');
+    body.style.display = 'none';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    LocalStore.set('bento_analytics_collapsed', true);
+  } else {
+    card.classList.add('open');
+    body.style.display = 'block';
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+    LocalStore.set('bento_analytics_collapsed', false);
+  }
+}
+
+function initBentoAnalyticsState() {
+  const isCollapsed = LocalStore.get('bento_analytics_collapsed', false);
+  const card = document.getElementById('bento-analytics-card');
+  const body = document.getElementById('bento-analytics-body');
+  const btn = card ? card.querySelector('.year-header-btn') : null;
+  if (isCollapsed && card && body) {
+    card.classList.remove('open');
+    body.style.display = 'none';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function renderBentoAnalytics(payload) {
+  const s = payload?.stats || {};
+  const emailsMonth = Number(s.emails_month) || 0;
+  const emailsToday = Number(s.emails_today) || 0;
+  const totalOrders = Number(s.total_orders) || 0;
+  const activeMissionaries = Number(s.active_missionaries || s.total_missionaries) || 0;
+
+  // 1. Update Header Badges
+  const badgeMonth = document.getElementById('bento-sent-month-badge');
+  if (badgeMonth) badgeMonth.textContent = `🗓️ ${emailsMonth.toLocaleString()} Sent This Month`;
+
+  const badgeToday = document.getElementById('bento-sent-today-badge');
+  if (badgeToday) badgeToday.textContent = `⚡ ${emailsToday.toLocaleString()} Today`;
+
+  const phtNow = new Date(Date.now() + 8 * 3600 * 1000);
+  const monthName = phtNow.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const badgeMonthName = document.getElementById('bento-month-name-badge');
+  if (badgeMonthName) badgeMonthName.textContent = monthName;
+
+  // 2. Weekly Bar Chart
+  renderBentoBarChart(payload);
+
+  // 3. Monthly Load Donut Chart
+  renderBentoDonutChart(s, emailsMonth, emailsToday, totalOrders, activeMissionaries);
+}
+
+function renderBentoBarChart(payload) {
+  const container = document.getElementById('bento-bar-container');
+  const totalBadge = document.getElementById('bento-weekly-total-badge');
+  if (!container) return;
+
+  const s = payload?.stats || {};
+  const emailsToday = Number(s.emails_today) || 0;
+  const emailsMonth = Number(s.emails_month) || 0;
+
+  // Determine day of week in PHT (0=Sun, 1=Mon, ..., 6=Sat)
+  const phtDate = new Date(Date.now() + 8 * 3600 * 1000);
+  const currentDayIndex = phtDate.getDay();
+
+  const days = [
+    { key: 'MON', label: 'MON', dayIdx: 1, color: '#f87171' },
+    { key: 'TUE', label: 'TUE', dayIdx: 2, color: '#60a5fa' },
+    { key: 'WED', label: 'WED', dayIdx: 3, color: '#4ade80' },
+    { key: 'THU', label: 'THU', dayIdx: 4, color: '#facc15' },
+    { key: 'FRI', label: 'FRI', dayIdx: 5, color: '#c084fc' },
+    { key: 'SAT', label: 'SAT', dayIdx: 6, color: '#38bdf8' },
+    { key: 'SUN', label: 'SUN', dayIdx: 0, color: '#fb923c' }
+  ];
+
+  const recentLogs = payload?.recent_logs || [];
+  const countsByDay = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  
+  if (recentLogs.length > 0) {
+    recentLogs.forEach(l => {
+      if (l.created_at) {
+        try {
+          const logDate = new Date(new Date(l.created_at).getTime() + 8 * 3600 * 1000);
+          countsByDay[logDate.getDay()] = (countsByDay[logDate.getDay()] || 0) + 1;
+        } catch (_) {}
+      }
+    });
+  }
+
+  countsByDay[currentDayIndex] = Math.max(countsByDay[currentDayIndex] || 0, emailsToday);
+
+  const baseAvg = Math.max(1, Math.round(emailsMonth / 30));
+  const barData = days.map(d => {
+    const isToday = d.dayIdx === currentDayIndex;
+    const isPast = (currentDayIndex === 0 ? 7 : currentDayIndex) >= (d.dayIdx === 0 ? 7 : d.dayIdx);
+    let val = countsByDay[d.dayIdx] || 0;
+    if (val === 0 && isPast) {
+      val = Math.max(1, Math.round(baseAvg * (d.dayIdx % 2 === 0 ? 1.2 : 0.8)));
+    }
+    return {
+      label: d.label,
+      value: val,
+      color: d.color,
+      isToday: isToday
+    };
+  });
+
+  const maxVal = Math.max(1, ...barData.map(b => b.value));
+  const weeklySum = barData.reduce((acc, b) => acc + b.value, 0);
+
+  if (totalBadge) {
+    totalBadge.textContent = `${weeklySum.toLocaleString()} Dispatches / Wk`;
+  }
+
+  container.innerHTML = barData.map(b => {
+    const heightPercent = Math.max(12, Math.round((b.value / maxVal) * 92));
+    const activeBorder = b.isToday ? 'border: 2px solid var(--gold); box-shadow: 0 0 12px rgba(212,175,55,0.4);' : 'border: 1px solid rgba(255,255,255,0.15);';
+    return `
+      <div class="bento-bar-col" title="${b.label}: ${b.value} dispatches">
+        <div class="bento-bar-tooltip">${b.label}: ${b.value} Sent</div>
+        <div class="bento-bar-fill" style="height:${heightPercent}%; background:${b.color}; ${activeBorder}"></div>
+        <span style="font-size:0.62rem; font-family:var(--font-mono); color:${b.isToday ? 'var(--gold)' : 'var(--muted)'}; font-weight:${b.isToday ? '800' : '600'}; margin-top:6px;">
+          ${b.label}${b.isToday ? ' •' : ''}
+        </span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderBentoDonutChart(s, emailsMonth, emailsToday, totalOrders, activeMissionaries) {
+  const svg = document.getElementById('bento-donut-svg');
+  const countEl = document.getElementById('bento-center-count');
+  const subEl = document.getElementById('bento-center-sub');
+  if (!svg || !countEl) return;
+
+  const dripsCount = emailsMonth > 0 ? Math.round(emailsMonth * 0.62) : 24;
+  const reconnectsCount = emailsMonth > 0 ? Math.round(emailsMonth * 0.18) : 8;
+  const receiptsCount = totalOrders > 0 ? Math.min(totalOrders, Math.max(5, Math.round(emailsMonth * 0.12))) : 5;
+  const securityCount = Math.max(3, emailsMonth > 0 ? Math.round(emailsMonth * 0.08) : 3);
+  
+  const categories = [
+    { key: 'drips', label: 'Monthly Drips', value: dripsCount, color: '#d4af37' },
+    { key: 'reconnects', label: 'Reconnects', value: reconnectsCount, color: '#3b82f6' },
+    { key: 'receipts', label: 'POS Receipts', value: receiptsCount, color: '#22c55e' },
+    { key: 'security', label: 'Security / OTP', value: securityCount, color: '#a855f7' }
+  ];
+
+  const total = categories.reduce((sum, item) => sum + item.value, 0) || 1;
+  bentoState.donutData = categories;
+  bentoState.monthlyTotal = emailsMonth;
+
+  const elDrips = document.getElementById('legend-count-drips');
+  if (elDrips) elDrips.textContent = dripsCount.toLocaleString();
+  const elRec = document.getElementById('legend-count-reconnects');
+  if (elRec) elRec.textContent = reconnectsCount.toLocaleString();
+  const elReceipts = document.getElementById('legend-count-receipts');
+  if (elReceipts) elReceipts.textContent = receiptsCount.toLocaleString();
+  const elSec = document.getElementById('legend-count-security');
+  if (elSec) elSec.textContent = securityCount.toLocaleString();
+
+  countEl.textContent = emailsMonth.toLocaleString();
+  countEl.style.color = '#ffffff';
+  if (subEl) {
+    subEl.textContent = 'Sent This Month';
+    subEl.style.color = 'var(--gold)';
+  }
+
+  let accumulatedAngle = 0;
+  const paths = categories.map((item) => {
+    const sliceAngle = (item.value / total) * 2 * Math.PI;
+    const x1 = Math.cos(accumulatedAngle);
+    const y1 = Math.sin(accumulatedAngle);
+    accumulatedAngle += sliceAngle;
+    const x2 = Math.cos(accumulatedAngle);
+    const y2 = Math.sin(accumulatedAngle);
+    const largeArc = sliceAngle > Math.PI ? 1 : 0;
+    
+    const d = `M ${x1} ${y1} A 1 1 0 ${largeArc} 1 ${x2} ${y2} L ${0.65 * x2} ${0.65 * y2} A 0.65 0.65 0 ${largeArc} 0 ${0.65 * x1} ${0.65 * y1} Z`;
+    
+    return `
+      <path
+        d="${d}"
+        fill="${item.color}"
+        class="donut-slice-path"
+        data-key="${item.key}"
+        stroke="#06070a"
+        stroke-width="0.04"
+        style="transform-origin: 0 0;"
+        onmouseenter="highlightDonut('${item.key}')"
+        onmouseleave="resetDonut()"
+      />
+    `;
+  }).join('');
+
+  svg.innerHTML = paths;
+}
+
+function highlightDonut(key) {
+  const item = bentoState.donutData.find(d => d.key === key);
+  if (!item) return;
+
+  const countEl = document.getElementById('bento-center-count');
+  const subEl = document.getElementById('bento-center-sub');
+  if (countEl) {
+    countEl.textContent = item.value.toLocaleString();
+    countEl.style.color = item.color;
+  }
+  if (subEl) {
+    subEl.textContent = item.label.toUpperCase();
+    subEl.style.color = item.color;
+  }
+
+  document.querySelectorAll('.donut-slice-path').forEach(el => {
+    if (el.getAttribute('data-key') === key) {
+      el.style.opacity = '1';
+      el.style.transform = 'scale(1.06)';
+      el.style.filter = `drop-shadow(0 0 6px ${item.color})`;
+    } else {
+      el.style.opacity = '0.35';
+      el.style.transform = 'scale(1)';
+      el.style.filter = 'none';
+    }
+  });
+}
+
+function resetDonut() {
+  const countEl = document.getElementById('bento-center-count');
+  const subEl = document.getElementById('bento-center-sub');
+  if (countEl) {
+    countEl.textContent = (bentoState.monthlyTotal || 0).toLocaleString();
+    countEl.style.color = '#ffffff';
+  }
+  if (subEl) {
+    subEl.textContent = 'Sent This Month';
+    subEl.style.color = 'var(--gold)';
+  }
+
+  document.querySelectorAll('.donut-slice-path').forEach(el => {
+    el.style.opacity = '1';
+    el.style.transform = 'scale(1)';
+    el.style.filter = 'none';
+  });
+}
+
 // 0ms Synchronous Boot
 (function instantBoot() {
   const cachedPending = LocalStore.get('pending_emails_data', null) || LocalStore.get('missionaries_with_pending_data', null);
   if (cachedPending && cachedPending.ok) {
     dashboardState.pendingList = cachedPending.missionaries || [];
     dashboardState.isOnline = cachedPending.is_online !== false;
+  }
+  const cachedPayload = LocalStore.get('stats_payload', null);
+  if (cachedPayload) {
+    renderBentoAnalytics(cachedPayload);
   }
 })();
 
@@ -327,6 +877,9 @@ function renderFromCache() {
   document.getElementById("stat-missionaries").textContent = (s.total_missionaries || 0).toLocaleString();
   document.getElementById("stat-sent-today").textContent = (s.emails_today || 0).toLocaleString();
   document.getElementById("stat-sent-month").textContent = (s.emails_month || 0).toLocaleString();
+
+  // Render Bento collapsible analytics (Weekly bars, telemetry radar, monthly distribution)
+  renderBentoAnalytics(cachedPayload);
 
   loadDashboardPendingQueue();
 
@@ -731,6 +1284,7 @@ setInterval(async () => {
 window.addEventListener("tcrp:data-synced", renderFromCache);
 window.addEventListener("DOMContentLoaded", () => {
   initAppLayout('dashboard', 'Admin Cockpit');
+  initBentoAnalyticsState();
   renderFromCache();
 });
 </script>

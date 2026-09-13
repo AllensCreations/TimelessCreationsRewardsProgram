@@ -8,27 +8,39 @@
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/app.js"></script>
   <style>
-    /* Clean, Modern Missionary Card Design */
+    /* Taste-Skill: High-End Luxury & Gold Editorial Missionary Card */
     .missionary-card {
-      background: var(--surface2);
+      background: linear-gradient(180deg, rgba(20, 22, 34, 0.90) 0%, rgba(13, 14, 22, 0.98) 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       overflow: hidden;
       margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35), var(--card-inner-highlight);
       transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
       width: 100%;
       box-sizing: border-box;
     }
-    .missionary-card:hover { border-color: var(--border-gold); }
-    .missionary-card.due-highlight { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(212,175,55,0.08) 0%, var(--surface2) 100%); }
-    .missionary-card.offline-paused { border-color: var(--red-border); background: linear-gradient(180deg, rgba(248,113,113,0.06) 0%, var(--surface2) 100%); }
+    .missionary-card:hover { 
+      border-color: var(--border-gold);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 32px rgba(0,0,0,0.5), 0 0 20px var(--gold-glow), var(--card-inner-highlight);
+    }
+    .missionary-card.due-highlight { 
+      border-color: var(--gold); 
+      background: linear-gradient(180deg, rgba(212,175,55,0.12) 0%, rgba(20, 22, 34, 0.96) 100%); 
+      box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 22px rgba(212,175,55,0.22);
+    }
+    .missionary-card.offline-paused { 
+      border-color: var(--red-border); 
+      background: linear-gradient(180deg, rgba(248,113,113,0.08) 0%, rgba(20, 22, 34, 0.96) 100%); 
+    }
 
     .card-main-row {
       display: flex;
       align-items: center;
-      padding: 12px 14px;
-      min-height: 52px;
-      gap: 10px;
+      padding: 13px 16px;
+      min-height: 54px;
+      gap: 12px;
       cursor: pointer;
       user-select: none;
       min-width: 0;
@@ -46,18 +58,19 @@
 
     .card-details {
       display: none;
-      padding: 14px 16px;
-      background: rgba(0,0,0,0.3);
+      padding: 16px 18px;
+      background: rgba(8, 9, 15, 0.65);
       border-top: 1px solid var(--border);
       font-size: 0.74rem;
       box-sizing: border-box;
       width: 100%;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
     }
     .missionary-card.open .card-details { display: block; }
     
-    .cohort-pill { font-size: 0.62rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-    .cohort-elder { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(92,141,224,0.3); }
-    .cohort-sister { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.3); }
+    .cohort-pill { font-size: 0.62rem; padding: 2px 8px; border-radius: var(--radius-pill); font-weight: 700; text-transform: uppercase; white-space: nowrap; letter-spacing: 0.04em; }
+    .cohort-elder { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(92,141,224,0.35); box-shadow: 0 0 8px rgba(92,141,224,0.15); }
+    .cohort-sister { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,92,0.35); box-shadow: 0 0 8px rgba(224,92,92,0.15); }
 
     .est-countdown-pill {
       font-size: 0.62rem;
@@ -101,29 +114,36 @@
       .intel-grid { grid-template-columns: repeat(3, 1fr); }
     }
     .intel-box {
-      background: #090a12;
+      background: linear-gradient(180deg, rgba(14, 15, 23, 0.95) 0%, rgba(9, 10, 16, 0.98) 100%);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 8px 10px;
+      border-radius: var(--radius-xs);
+      padding: 9px 12px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
       min-width: 0;
       box-sizing: border-box;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+      transition: border-color var(--duration-fast) var(--ease-out);
     }
-    .intel-label { font-size: 0.60rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .intel-box:hover {
+      border-color: var(--border-gold);
+    }
+    .intel-label { font-size: 0.60rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
     .intel-val { font-size: 0.74rem; color: #fff; font-weight: 600; min-width: 0; word-break: break-word; overflow-wrap: anywhere; }
 
     /* Progress bar */
-    .drip-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 4px; }
-    .drip-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold) 0%, #e0c878 100%); border-radius: 99px; }
+    .drip-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+    .drip-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold) 0%, #faebb0 100%); border-radius: 99px; box-shadow: 0 0 10px var(--gold-glow); }
 
-    /* Floating Batch Toolbar */
+    /* Floating Batch Toolbar - Luxury Island Glass */
     .batch-toolbar {
-      position: fixed; bottom: 0; left: 0; right: 0; background: #151824; border-top: 1px solid var(--gold);
-      padding: 10px 14px calc(10px + var(--safe-bottom)); display: flex; justify-content: space-between; align-items: center; z-index: 999;
-      box-shadow: 0 -10px 30px rgba(0,0,0,0.8); transform: translateY(100%); transition: transform 0.3s ease;
-      flex-wrap: wrap; gap: 8px; box-sizing: border-box; width: 100%;
+      position: fixed; bottom: calc(12px + var(--safe-bottom)); left: 16px; right: 16px; max-width: 1200px; margin: 0 auto;
+      background: rgba(18, 19, 30, 0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-gold); border-radius: var(--radius);
+      padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; z-index: 999;
+      box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px var(--gold-glow); transform: translateY(140%); transition: transform var(--duration-normal) var(--ease-spring);
+      flex-wrap: wrap; gap: 10px; box-sizing: border-box;
     }
     .batch-toolbar.active { transform: translateY(0); }
     .select-checkbox { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; display: none; flex-shrink: 0; }

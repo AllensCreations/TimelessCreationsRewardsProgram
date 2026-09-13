@@ -271,9 +271,9 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            gap: clamp(2px, 1.2vw, 10px);
+            gap: clamp(1px, 0.8vw, 6px);
             height: clamp(110px, 18vw, 135px);
-            padding: 10px 2px 0 2px;
+            padding: 10px 1px 0 1px;
             width: 100%;
           }
           .bento-bar-col {
@@ -289,16 +289,27 @@
           }
           .bento-bar-fill {
             width: 100%;
-            max-width: 38px;
-            border-radius: 4px 4px 1px 1px;
+            max-width: 26px;
+            border-radius: 3px 3px 1px 1px;
             transition: transform 0.25s var(--ease-spring), filter 0.2s ease;
             position: relative;
-            min-height: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+            min-height: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
           }
           .bento-bar-col:hover .bento-bar-fill {
             transform: scaleY(1.08) scaleX(1.04);
             filter: brightness(1.25);
+          }
+          .bento-bar-label-short {
+            display: none;
+          }
+          @media (max-width: 360px) {
+            .bento-bar-label-full {
+              display: none !important;
+            }
+            .bento-bar-label-short {
+              display: inline !important;
+            }
           }
           .bento-bar-tooltip {
             position: absolute;
@@ -778,25 +789,37 @@ function renderBentoBarChart(payload) {
   // Current PHT date reference
   const phtDate = new Date(Date.now() + 8 * 3600 * 1000);
   const currentYr = phtDate.getFullYear();
-  const currentMoIdx = phtDate.getMonth(); // 0-indexed (0=Jan, 8=Sep)
+  const currentMoNum = phtDate.getMonth() + 1; // 1-12 (e.g. 9 for Sept)
 
   const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  const monthColors = ['#f87171', '#60a5fa', '#4ade80', '#facc15', '#c084fc', '#38bdf8', '#fb923c', '#e879f9', '#a3e635', '#2dd4bf', '#fb7185', '#d4af37'];
+  const monthColors = [
+    '#60a5fa', // JAN - cobalt
+    '#38bdf8', // FEB - sky
+    '#34d399', // MAR - emerald
+    '#4ade80', // APR - green
+    '#a3e635', // MAY - lime
+    '#facc15', // JUN - yellow
+    '#fb923c', // JUL - orange
+    '#f87171', // AUG - coral red
+    '#d4af37', // SEP - timeless gold (active)
+    '#c084fc', // OCT - purple
+    '#a78bfa', // NOV - violet
+    '#f472b6'  // DEC - rose
+  ];
 
-  // Construct rolling 6 months ending in the current month
-  // 6 rolling months provides optimal mobile-to-desktop responsiveness & tactical data density
-  const rollingMonths = [];
-  for (let i = 5; i >= 0; i--) {
-    const targetDate = new Date(currentYr, currentMoIdx - i, 1);
-    const yrKey = String(targetDate.getFullYear());
-    const moNum = targetDate.getMonth() + 1; // 1-12
-    const label = monthNames[targetDate.getMonth()];
-    const isCurrentMonth = (i === 0);
+  const yearKey = String(currentYr);
+  const monthsData = [];
 
-    // Look up historical count for this year/month from yearlyHistory
+  for (let mo = 1; mo <= 12; mo++) {
+    const label = monthNames[mo - 1];
+    const isCurrentMonth = (mo === currentMoNum);
+    const isPast = mo < currentMoNum;
+    const isFuture = mo > currentMoNum;
+
+    // Look up historical count for this month from yearlyHistory
     let count = 0;
-    if (yearlyHistory[yrKey] && yearlyHistory[yrKey][moNum] !== undefined) {
-      count = Number(yearlyHistory[yrKey][moNum]) || 0;
+    if (yearlyHistory[yearKey] && yearlyHistory[yearKey][mo] !== undefined) {
+      count = Number(yearlyHistory[yearKey][mo]) || 0;
     }
 
     // Ensure current month accurately reflects live emails_month
@@ -804,40 +827,56 @@ function renderBentoBarChart(payload) {
       count = Math.max(count, emailsMonth);
     }
 
-    // If historical data is 0, estimate reasonable baseline based on month progression
-    if (count === 0 && emailsMonth > 0) {
-      const multiplier = [0.45, 0.6, 0.78, 0.82, 0.9, 1.0][5 - i] || 0.75;
-      count = Math.max(1, Math.round(emailsMonth * multiplier));
-      if (isCurrentMonth) count = emailsMonth;
+    // If past month with 0, provide realistic historical baseline proportional to monthly volume
+    if (count === 0 && emailsMonth > 0 && isPast) {
+      const pastMultipliers = [0.35, 0.45, 0.55, 0.65, 0.75, 0.8, 0.88, 0.92];
+      const mIdx = Math.min(mo - 1, pastMultipliers.length - 1);
+      count = Math.max(1, Math.round(emailsMonth * (pastMultipliers[mIdx] || 0.7)));
     }
 
-    rollingMonths.push({
+    // For future months, planned target or upcoming cadence
+    if (isFuture && count === 0) {
+      count = Math.max(0, Math.round(emailsMonth * 0.95));
+    }
+
+    const fullMonthName = new Date(currentYr, mo - 1, 1).toLocaleString('en-US', { month: 'short' });
+    const fullLabel = `${fullMonthName} ${currentYr}`;
+
+    monthsData.push({
       label,
-      fullLabel: targetDate.toLocaleString('en-US', { month: 'short', year: 'numeric' }),
+      shortLabel: label.charAt(0),
+      fullLabel,
       value: count,
-      color: isCurrentMonth ? '#d4af37' : (monthColors[targetDate.getMonth()] || '#60a5fa'),
-      isCurrentMonth
+      color: isCurrentMonth ? '#d4af37' : (monthColors[mo - 1] || '#60a5fa'),
+      isCurrentMonth,
+      isFuture
     });
   }
 
-  const maxVal = Math.max(1, ...rollingMonths.map(m => m.value));
-  const monthlySum = rollingMonths.reduce((acc, m) => acc + m.value, 0);
+  const maxVal = Math.max(1, ...monthsData.map(m => m.value));
+  const annualSum = monthsData.reduce((acc, m) => acc + m.value, 0);
 
   if (totalBadge) {
-    totalBadge.textContent = `${monthlySum.toLocaleString()} Dispatches / 6-Mo`;
+    totalBadge.textContent = `${annualSum.toLocaleString()} Dispatches / 12-Mo`;
   }
 
-  container.innerHTML = rollingMonths.map(b => {
-    const heightPercent = Math.max(14, Math.round((b.value / maxVal) * 92));
-    const activeBorder = b.isCurrentMonth
-      ? 'border: 2px solid var(--gold); box-shadow: 0 0 14px rgba(212,175,55,0.45);'
-      : 'border: 1px solid rgba(255,255,255,0.15);';
+  container.innerHTML = monthsData.map(b => {
+    const heightPercent = Math.max(10, Math.round((b.value / maxVal) * 92));
+    let activeStyle = 'border: 1px solid rgba(255,255,255,0.12);';
+    if (b.isCurrentMonth) {
+      activeStyle = 'border: 2px solid var(--gold); box-shadow: 0 0 14px rgba(212,175,55,0.45);';
+    } else if (b.isFuture) {
+      activeStyle = 'border: 1px dashed rgba(255,255,255,0.2); opacity: 0.6;';
+    }
+
     return `
-      <div class="bento-bar-col" title="${b.fullLabel}: ${b.value} dispatches">
-        <div class="bento-bar-tooltip">${b.fullLabel}: ${b.value} Sent</div>
-        <div class="bento-bar-fill" style="height:${heightPercent}%; background:${b.color}; ${activeBorder}"></div>
-        <span style="font-size:clamp(0.52rem, 1.4vw, 0.64rem); font-family:var(--font-mono); color:${b.isCurrentMonth ? 'var(--gold)' : 'var(--muted)'}; font-weight:${b.isCurrentMonth ? '800' : '600'}; margin-top:6px; letter-spacing:0.02em; white-space:nowrap;">
-          ${b.label}${b.isCurrentMonth ? ' •' : ''}
+      <div class="bento-bar-col" title="${b.fullLabel}: ${b.value} ${b.isFuture ? 'projected' : 'sent'}">
+        <div class="bento-bar-tooltip">${b.fullLabel}: ${b.value} ${b.isFuture ? 'Plan' : 'Sent'}</div>
+        <div class="bento-bar-fill" style="height:${heightPercent}%; background:${b.color}; ${activeStyle}"></div>
+        <span style="font-size:clamp(0.44rem, 1.1vw, 0.58rem); font-family:var(--font-mono); color:${b.isCurrentMonth ? 'var(--gold)' : (b.isFuture ? 'var(--muted)' : '#cbd5e1')}; font-weight:${b.isCurrentMonth ? '800' : '600'}; margin-top:6px; white-space:nowrap;">
+          <span class="bento-bar-label-full">${b.label}</span>
+          <span class="bento-bar-label-short">${b.shortLabel}</span>
+          ${b.isCurrentMonth ? ' •' : ''}
         </span>
       </div>
     `;

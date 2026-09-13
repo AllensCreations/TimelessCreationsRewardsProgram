@@ -5,15 +5,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
 // =========================================
-// 1. BRUTALIST BAR CHART
+// 1. BRUTALIST BAR CHART (12 MONTHS)
 // =========================================
 const BAR_DATA = [
-  { label: "APR", value: 45, color: "bg-red-400" },
-  { label: "MAY", value: 60, color: "bg-blue-400" },
-  { label: "JUN", value: 35, color: "bg-green-400" },
-  { label: "JUL", value: 80, color: "bg-yellow-400" },
-  { label: "AUG", value: 65, color: "bg-purple-400" },
-  { label: "SEP", value: 95, color: "bg-amber-400" },
+  { label: "JAN", shortLabel: "J", value: 45, color: "bg-red-400" },
+  { label: "FEB", shortLabel: "F", value: 52, color: "bg-amber-400" },
+  { label: "MAR", shortLabel: "M", value: 68, color: "bg-yellow-400" },
+  { label: "APR", shortLabel: "A", value: 60, color: "bg-lime-400" },
+  { label: "MAY", shortLabel: "M", value: 75, color: "bg-emerald-400" },
+  { label: "JUN", shortLabel: "J", value: 70, color: "bg-teal-400" },
+  { label: "JUL", shortLabel: "J", value: 85, color: "bg-cyan-400" },
+  { label: "AUG", shortLabel: "A", value: 90, color: "bg-blue-400" },
+  { label: "SEP", shortLabel: "S", value: 96, color: "bg-amber-400" },
+  { label: "OCT", shortLabel: "O", value: 65, color: "bg-indigo-400" },
+  { label: "NOV", shortLabel: "N", value: 58, color: "bg-purple-400" },
+  { label: "DEC", shortLabel: "D", value: 80, color: "bg-rose-400" },
 ];
 
 const BrutalistBarChart = () => {
@@ -21,12 +27,17 @@ const BrutalistBarChart = () => {
 
   return (
     <div className="w-full h-full bg-white dark:bg-zinc-900 border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] relative flex flex-col p-4 sm:p-6 transition-colors duration-200 overflow-hidden">
-      <h3 className="font-black uppercase text-base sm:text-xl mb-4 sm:mb-6 border-b-[3px] border-black dark:border-white pb-2 text-black dark:text-white tracking-tight">
-        Monthly Traffic
-      </h3>
-      <div className="flex justify-between items-end flex-1 gap-1.5 sm:gap-3 md:gap-4 min-h-[130px] sm:min-h-[160px]">
+      <div className="flex justify-between items-center mb-3 sm:mb-5 border-b-[3px] border-black dark:border-white pb-2">
+        <h3 className="font-black uppercase text-sm sm:text-lg text-black dark:text-white tracking-tight">
+          Monthly Traffic (12 Months)
+        </h3>
+        <span className="text-[10px] sm:text-xs font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 border border-black dark:border-white">
+          ANNUAL CYCLE
+        </span>
+      </div>
+      <div className="flex justify-between items-end flex-1 gap-1 sm:gap-1.5 md:gap-2 min-h-[130px] sm:min-h-[160px]">
         {BAR_DATA.map((item, i) => (
-          <div key={i} className="relative flex-1 h-full flex items-end group">
+          <div key={i} className="relative flex-1 h-full flex items-end group min-w-0">
             <motion.div
               initial={{ height: 0 }}
               animate={{ height: `${item.value}%` }}
@@ -34,12 +45,12 @@ const BrutalistBarChart = () => {
                 type: "spring",
                 stiffness: 200,
                 damping: 20,
-                delay: i * 0.1,
+                delay: i * 0.05,
               }}
               onHoverStart={() => setHovered(i)}
               onHoverEnd={() => setHovered(null)}
               className={cn(
-                "w-full border-[2px] sm:border-[3px] border-black dark:border-white relative z-10 cursor-pointer origin-bottom flex items-center justify-center overflow-hidden min-h-[12px]",
+                "w-full border-[2px] sm:border-[2.5px] border-black dark:border-white relative z-10 cursor-pointer origin-bottom flex items-center justify-center overflow-hidden min-h-[14px]",
                 item.color
               )}
               whileHover={{ scaleY: 1.08, scaleX: 1.04 }}
@@ -48,8 +59,9 @@ const BrutalistBarChart = () => {
               <div
                 className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]"
               />
-              <span className="relative z-20 font-bold text-[10px] sm:text-xs font-mono text-black/80 dark:text-black/80 group-hover:text-black transition-colors">
-                {item.label}
+              <span className="relative z-20 font-bold text-[7px] sm:text-[9px] md:text-[11px] font-mono text-black/90 dark:text-black/90 group-hover:text-black transition-colors truncate px-0.5">
+                <span className="hidden sm:inline">{item.label}</span>
+                <span className="inline sm:hidden">{item.shortLabel}</span>
               </span>
             </motion.div>
             <AnimatePresence>
@@ -58,9 +70,9 @@ const BrutalistBarChart = () => {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
-                  className="absolute bottom-full -mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-black whitespace-nowrap border-[2px] sm:border-[3px] border-black dark:border-white z-30 pointer-events-none"
+                  className="absolute bottom-full -mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black px-1.5 sm:px-2.5 py-0.5 text-[9px] sm:text-xs font-black whitespace-nowrap border-[2px] border-black dark:border-white z-30 pointer-events-none"
                 >
-                  {item.value}%
+                  {item.label}: {item.value}%
                 </motion.div>
               )}
             </AnimatePresence>

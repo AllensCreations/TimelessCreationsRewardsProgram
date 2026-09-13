@@ -167,10 +167,22 @@
         font-weight: 800;
         line-height: 1.1;
       }
-      .month-chip-name {
-        font-size: 0.62rem;
-        opacity: 0.85;
-        line-height: 1.1;
+      .tag-chip {
+        background: var(--surface2);
+        border: 1px solid rgba(201, 168, 76, 0.4);
+        color: var(--gold);
+        font-family: var(--font-mono);
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.65rem;
+        transition: all var(--duration-fast) var(--ease-out);
+        user-select: none;
+      }
+      .tag-chip:hover {
+        background: rgba(201, 168, 76, 0.2);
+        border-color: var(--gold);
+        transform: translateY(-1px);
       }
     </style>
 </head>
@@ -342,6 +354,36 @@ const defaultGrids = [
               <button class="btn btn-dark" style="padding:4px 8px; font-size:0.65rem; min-height:44px;" onclick="loadMasterTemplateIntoEditor()">📋 Load Master</button>
           </div>
           <textarea id="inp-custom-html" class="form-input" rows="12" style="font-family:'DM Mono',monospace; font-size:0.7rem;" placeholder="Leave empty for Master Template..." oninput="onLiveEdit()"></textarea>
+
+          <!-- Granular Placeholders Assistant -->
+          <div style="margin-top:10px; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+              <span style="font-size:0.7rem; font-weight:bold; color:var(--gold);">✦ Granular Tags (Click to Insert into Template)</span>
+              <span style="font-size:0.65rem; color:var(--muted);">Style rewards &amp; top products freely per month</span>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; font-size:0.65rem;">
+              <button type="button" class="tag-chip" onclick="insertTag('{{USER_POINTS}}')" title="Current missionary reward points">{{USER_POINTS}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{AFFORDABLE_REWARDS_HTML}}')" title="List of rewards user can afford right now">{{AFFORDABLE_REWARDS_HTML}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{AFFORDABLE_COUNT}}')" title="Count of claimable rewards">{{AFFORDABLE_COUNT}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{NEAREST_GOAL_NAME}}')" title="Nearest goal product name">{{NEAREST_GOAL_NAME}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{NEAREST_GOAL_POINTS}}')" title="Nearest goal point cost">{{NEAREST_GOAL_POINTS}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{NEAREST_GOAL_NEEDED}}')" title="Points needed to reach nearest goal">{{NEAREST_GOAL_NEEDED}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{NEAREST_GOAL_IMAGE}}')" title="Nearest goal image URL">{{NEAREST_GOAL_IMAGE}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{NEAREST_GOAL_HTML}}')" title="Nearest goal pre-built card">{{NEAREST_GOAL_HTML}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PROMO_CODE}}')" title="Active promo code">{{PROMO_CODE}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PROMO_POINTS}}')" title="Bonus points from promo">{{PROMO_POINTS}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PROMO_SNIPPET_HTML}}')" title="Promo code banner HTML">{{PROMO_SNIPPET_HTML}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PRODUCT_1_NAME}}')" title="Featured product 1 name">{{PRODUCT_1_NAME}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PRODUCT_1_IMG}}')" title="Featured product 1 image URL">{{PRODUCT_1_IMG}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PRODUCT_1_SOLD}}')" title="Featured product 1 sold count">{{PRODUCT_1_SOLD}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PRODUCT_2_NAME}}')" title="Featured product 2 name">{{PRODUCT_2_NAME}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PRODUCT_2_IMG}}')" title="Featured product 2 image URL">{{PRODUCT_2_IMG}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{PRODUCT_2_SOLD}}')" title="Featured product 2 sold count">{{PRODUCT_2_SOLD}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{REWARD_SECTION_HTML}}')" title="Full pre-built rewards section block">{{REWARD_SECTION_HTML}}</button>
+              <button type="button" class="tag-chip" onclick="insertTag('{{TOP_PRODUCTS_HTML}}')" title="Full pre-built top products section block">{{TOP_PRODUCTS_HTML}}</button>
+            </div>
+          </div>
+
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
               <button class="btn btn-dark" style="min-height:44px;" onclick="clearCustomHtml()">↺ Clear</button>
               <button class="btn btn-gold" style="min-height:44px;" onclick="saveActiveMonth('html')">💾 Save Custom HTML</button>
@@ -1173,26 +1215,30 @@ function onLiveEdit() {
   renderPreview();
 }
 
-function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo = null) {
+function buildRewardSectionComponents(points = 2, products = [], activePromo = null) {
   const userPoints = Number(points) || 0;
   const validProducts = Array.isArray(products) ? products : [];
   const affordable = validProducts.filter(p => Number(p.price) <= userPoints);
 
   let promoSnippetHtml = "";
+  let promoCode = "";
+  let promoPoints = "0";
   if (activePromo && activePromo.code && activePromo.code.trim() !== "") {
+    promoCode = activePromo.code.trim();
+    promoPoints = String(activePromo.points || 1);
     promoSnippetHtml = `
       <div style="margin: 0 0 14px 0; padding: 12px 14px; background-color: #fff9e6; border: 1.5px dashed #c9a84c; border-radius: 6px; text-align: center;">
         <span style="font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; display: block; margin-bottom: 3px;">
           🎟️ Exclusive Monthly Freebie Promo
         </span>
         <div style="font-size: 12px; color: #1a1a1a; margin-bottom: 5px;">
-          Claim <strong>+${activePromo.points || 1} Free Reward Points</strong> right now!
+          Claim <strong>+${promoPoints} Free Reward Points</strong> right now!
         </div>
         <div style="font-family: monospace; font-size: 13px; font-weight: bold; background: #1a1a1a; color: #d4c197; padding: 6px 14px; border-radius: 4px; display: inline-block; letter-spacing: 1px;">
-          ${activePromo.code}
+          ${promoCode}
         </div>
         <div style="font-size: 9.5px; color: #777; margin-top: 5px;">
-          Send <strong>${activePromo.code}</strong> in Messenger to claim +${activePromo.points || 1} Free Points (or /redeem ${activePromo.code})
+          Send <strong>${promoCode}</strong> in Messenger to claim +${promoPoints} Free Points (or /redeem ${promoCode})
         </div>
       </div>
     `;
@@ -1232,9 +1278,11 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
     .filter(p => Number(p.price) > userPoints)
     .sort((a, b) => Number(a.price) - Number(b.price));
 
+  let nearestItem = null;
+  let needed = 0;
   if (unreached.length > 0) {
-    const nearestItem = unreached[0];
-    const needed = Math.max(1, Number(nearestItem.price) - userPoints);
+    nearestItem = unreached[0];
+    needed = Math.max(1, Number(nearestItem.price) - userPoints);
 
     goalHtml = `
       <div style="background: #ffffff; border: 1px solid #e0d6bc; border-radius: 6px; padding: 12px; text-align: center; margin-bottom: 10px;">
@@ -1248,7 +1296,7 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
     `;
   }
 
-  return `
+  const combinedHtml = `
     <div style="margin: 24px 0; padding: 18px 14px; background-color: #fffcf5; border: 1px solid #c9a84c; border-radius: 6px; text-align: center;">
       <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 13px; font-weight: bold; color: #8b1a1a; margin-bottom: 4px;">
         🎁 Your TCRP Reward Balance
@@ -1266,70 +1314,53 @@ function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo =
       </a>
     </div>
   `;
+
+  return {
+    pts: userPoints,
+    affordable,
+    affordableCount: affordable.length,
+    affordableHtml,
+    nearestItem,
+    needed,
+    goalHtml,
+    promoCode,
+    promoPoints,
+    promoSnippetHtml,
+    combinedHtml
+  };
 }
 
-function buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) {
+function buildCombinedRewardSectionHtml(points = 2, products = [], activePromo = null) {
+  return buildRewardSectionComponents(points, products, activePromo).combinedHtml;
+}
+
+function buildTopProductsComponents(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) {
   const name1 = (p1Name || "").trim();
   const name2 = (p2Name || "").trim();
-  if (!name1 && !name2) return "";
-
-  if (name1 && !name2) {
-    return `
-      <div style="margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1.5px solid #c9a84c; border-radius: 6px; text-align: center;">
-        <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: bold; padding: 3px 8px; border-radius: 3px; margin-bottom: 8px;">
-          🥇 #1 TOP BESTSELLER
-        </span>
-        <img src="${p1Img}" style="width: 100%; max-width: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${name1}">
-        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11.5px; font-weight: bold; color: #1a1a1a;">${name1}</div>
-        <div style="font-size: 10px; color: #8c7e5d; font-weight: bold; margin-top: 2px;">🔥 ${formatK(p1Sold)}</div>
-      </div>
-    `;
-  }
-
-  if (!name1 && name2) {
-    return `
-      <div style="margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1.5px solid #c9a84c; border-radius: 6px; text-align: center;">
-        <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 8.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: bold; padding: 3px 8px; border-radius: 3px; margin-bottom: 8px;">
-          🥇 #1 TOP BESTSELLER
-        </span>
-        <img src="${p2Img}" style="width: 100%; max-width: 130px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${name2}">
-        <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11.5px; font-weight: bold; color: #1a1a1a;">${name2}</div>
-        <div style="font-size: 10px; color: #8c7e5d; font-weight: bold; margin-top: 2px;">🔥 ${formatK(p2Sold)}</div>
-      </div>
-    `;
-  }
-
-  return `
-    <div style="margin: 20px 0; padding: 16px 12px; background: #faf7f0; border: 1.5px solid #c9a84c; border-radius: 6px;">
-      <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #8b1a1a; font-weight: bold; text-align: center; margin-bottom: 12px;">
-        ⭐ Top Products of the Month
-      </div>
-      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="table-layout: fixed;">
-        <tr>
-          <!-- TOP 1 (Column 1) -->
-          <td align="center" width="48%" valign="top" style="background: #ffffff; border: 1.5px solid #c9a84c; border-radius: 6px; padding: 12px 8px; box-shadow: 0 4px 10px rgba(201,168,76,0.12);">
-            <span style="display: inline-block; background: #8b1a1a; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 7.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-bottom: 6px;">
-              🥇 #1 TOP SELLER
-            </span>
-            <img src="${p1Img}" style="width: 100%; max-width: 110px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1.5px solid #c9a84c; display: block; margin: 0 auto 6px auto;" alt="${name1}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; font-weight: bold; color: #1a1a1a; line-height: 1.2;">${name1}</div>
-            <div style="font-size: 9.5px; color: #8c7e5d; font-weight: bold; margin-top: 3px;">🔥 ${formatK(p1Sold)}</div>
-          </td>
-          <td width="4%"></td>
-          <!-- TOP 2 (Column 2) -->
-          <td align="center" width="48%" valign="top" style="background: #fdfdfd; border: 1px dashed #d4c197; border-radius: 6px; padding: 12px 8px;">
-            <span style="display: inline-block; background: #555566; color: #ffffff; font-family: 'Helvetica', Arial, sans-serif; font-size: 7.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-bottom: 6px;">
-              🥈 #2 POPULAR
-            </span>
-            <img src="${p2Img}" style="width: 100%; max-width: 95px; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; border: 1px solid #d4c197; display: block;" alt="${name2}">
-            <div style="font-family: 'Helvetica', Arial, sans-serif; font-size: 10.5px; font-weight: bold; color: #1a1a1a; line-height: 1.2;">${name2}</div>
-            <div style="font-size: 9px; color: #8c7e5d; font-weight: bold; margin-top: 3px;">⭐ ${formatK(p2Sold)}</div>
-          </td>
-        </tr>
-      </table>
-    </div>
-  `;
+  const combinedHtml = buildTopProductsHtml(name1, p1Img, p1Sold, name2, p2Img, p2Sold);
+  return {
+    p1Name: name1,
+    p1Img: p1Img || "",
+    p1Sold: p1Sold || "",
+    p2Name: name2,
+    p2Img: p2Img || "",
+    p2Sold: p2Sold || "",
+    display: combinedHtml ? "display:block" : "display:none",
+    combinedHtml
+  };
 }
+
+window.insertTag = function(tag) {
+  const el = document.getElementById("inp-custom-html");
+  if (!el) return;
+  const start = el.selectionStart || el.value.length;
+  const end = el.selectionEnd || el.value.length;
+  el.value = el.value.substring(0, start) + tag + el.value.substring(end);
+  el.focus();
+  el.selectionStart = el.selectionEnd = start + tag.length;
+  onLiveEdit();
+  if (typeof showToast === 'function') showToast("Inserted " + tag);
+};
 
 function renderPreview() {
   const data = liveDripMap[currentMonth] || {};
@@ -1364,7 +1395,10 @@ function renderPreview() {
   const p2Img = getCdnImageUrl(document.getElementById("inp-highlight-img-2").value.trim() || "https://lh3.googleusercontent.com/u/0/d/101jY71PjxCwiuNznTgn7Xyc0HoXwB3WQ", "product_2.jpg");
   const p2Sold = document.getElementById("inp-highlight-sold-2").value.trim() || "950+ Sold";
 
-  const topProductsHtml = isHigh ? buildTopProductsHtml(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold) : "";
+  const topProductsComp = isHigh
+    ? buildTopProductsComponents(p1Name, p1Img, p1Sold, p2Name, p2Img, p2Sold)
+    : { p1Name: "", p1Img: "", p1Sold: "", p2Name: "", p2Img: "", p2Sold: "", display: "display:none", combinedHtml: "" };
+  const topProductsHtml = topProductsComp.combinedHtml;
 
   let catalogProducts = (liveRewardProducts !== null && Array.isArray(liveRewardProducts))
     ? liveRewardProducts
@@ -1375,7 +1409,8 @@ function renderPreview() {
   const isRewardsCategoryVisible = (data && data.drip_rewards_visible !== undefined)
     ? Boolean(data.drip_rewards_visible)
     : LocalStore.get('drip_rewards_visible', true);
-  const rewardSectionHtml = isRewardsCategoryVisible ? buildCombinedRewardSectionHtml(points, catalogProducts, latestPromo) : '';
+  const rewardComp = buildRewardSectionComponents(points, catalogProducts, latestPromo);
+  const rewardSectionHtml = isRewardsCategoryVisible ? rewardComp.combinedHtml : '';
 
   let sourceTemplate = (document.getElementById("inp-custom-html").value.trim() !== "") 
     ? document.getElementById("inp-custom-html").value 
@@ -1389,8 +1424,27 @@ function renderPreview() {
     .replace(/{{SCRIPTURE}}/g, cleanedQuote)
     .replace(/{{THEME}}/g, theme)
     .replace(/{{POINTS}}/g, String(points))
+    .replace(/{{USER_POINTS}}/g, String(points))
     .replace(/{{TOP_PRODUCTS_HTML}}/g, topProductsHtml)
     .replace(/{{REWARD_SECTION_HTML}}/g, rewardSectionHtml)
+    .replace(/{{PRODUCT_1_NAME}}/g, topProductsComp.p1Name)
+    .replace(/{{PRODUCT_1_IMG}}/g, topProductsComp.p1Img)
+    .replace(/{{PRODUCT_1_SOLD}}/g, topProductsComp.p1Sold)
+    .replace(/{{PRODUCT_2_NAME}}/g, topProductsComp.p2Name)
+    .replace(/{{PRODUCT_2_IMG}}/g, topProductsComp.p2Img)
+    .replace(/{{PRODUCT_2_SOLD}}/g, topProductsComp.p2Sold)
+    .replace(/{{TOP_PRODUCTS_DISPLAY}}/g, topProductsComp.display)
+    .replace(/{{AFFORDABLE_REWARDS_HTML}}/g, isRewardsCategoryVisible ? rewardComp.affordableHtml : '')
+    .replace(/{{AFFORDABLE_COUNT}}/g, isRewardsCategoryVisible ? String(rewardComp.affordableCount) : '0')
+    .replace(/{{NEAREST_GOAL_HTML}}/g, isRewardsCategoryVisible ? rewardComp.goalHtml : '')
+    .replace(/{{NEAREST_GOAL_NAME}}/g, (isRewardsCategoryVisible && rewardComp.nearestItem) ? rewardComp.nearestItem.name : '')
+    .replace(/{{NEAREST_GOAL_POINTS}}/g, (isRewardsCategoryVisible && rewardComp.nearestItem) ? String(rewardComp.nearestItem.price) : '')
+    .replace(/{{NEAREST_GOAL_NEEDED}}/g, (isRewardsCategoryVisible && rewardComp.nearestItem) ? String(rewardComp.needed) : '0')
+    .replace(/{{NEAREST_GOAL_IMAGE}}/g, (isRewardsCategoryVisible && rewardComp.nearestItem) ? getCdnImageUrl(rewardComp.nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png') : '')
+    .replace(/{{NEAREST_GOAL_IMG}}/g, (isRewardsCategoryVisible && rewardComp.nearestItem) ? getCdnImageUrl(rewardComp.nearestItem.image_url || 'https://i.postimg.cc/FFdrCNqq/Untitled56-20260820115353.png') : '')
+    .replace(/{{PROMO_CODE}}/g, rewardComp.promoCode)
+    .replace(/{{PROMO_POINTS}}/g, rewardComp.promoPoints)
+    .replace(/{{PROMO_SNIPPET_HTML}}/g, isRewardsCategoryVisible ? rewardComp.promoSnippetHtml : '')
     .replace(/{{ESS1_NAME}}/g, document.getElementById("inp-ess1-name").value.trim())
     .replace(/{{ESS1_IMG}}/g, getCdnImageUrl(document.getElementById("inp-img-ess1").value.trim() || "https://lh3.googleusercontent.com/u/0/d/1F7Yb0OzuCmPO2LyZ0cMoaTM4d4rs5RFE", "ess1.jpg"))
     .replace(/{{ESS2_NAME}}/g, document.getElementById("inp-ess2-name").value.trim())

@@ -16,7 +16,16 @@ export default async function handler(req, res) {
   }
 
   const action = req.query?.action || bodyData.action;
-  const psid = bodyData.psid || "SIM_PSID_9999";
+  const psid = String(bodyData.psid || req.query?.psid || "SIM_PSID_9999").trim();
+
+  // Guard: Simulator actions are strictly permitted ONLY for mock/test PSIDs to prevent tampering with real accounts
+  const isMockPsid = psid.startsWith('SIM_') || psid.startsWith('TEST_') || psid.startsWith('AUDIT_');
+  if (!isMockPsid) {
+    return res.status(403).json({
+      ok: false,
+      error: "Forbidden: Simulator endpoint is restricted exclusively to mock PSIDs (starting with SIM_, TEST_, or AUDIT_)."
+    });
+  }
 
   try {
     if (action === "reset_session") {

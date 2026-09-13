@@ -6,10 +6,13 @@ import 'dotenv/config';
 import mainHandler from './api/main.js';
 import webhookHandler from './api/webhook.js';
 import simulatorHandler from './api/simulator.js';
+import cronHandler from './api/cron.js';
+import brevoWebhookHandler from './api/brevo-webhook.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
+const MAX_BODY_SIZE = 20 * 1024 * 1024; // 20MB limit for high-res base64 image uploads & DoS protection
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -30,7 +33,7 @@ const ALLOWED_ROOTS = [
 ];
 
 function isSafePath(resolvedPath) {
-  return ALLOWED_ROOTS.some(root => resolvedPath.startsWith(root));
+  return ALLOWED_ROOTS.some(root => resolvedPath === root || resolvedPath.startsWith(root + path.sep));
 }
 
 const server = http.createServer(async (req, res) => {
@@ -43,6 +46,16 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify(data));
     return res;
   };
+  res.send = function(data) {
+    if (typeof data === 'object' && !Buffer.isBuffer(data)) {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(data));
+    } else {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.end(data);
+    }
+    return res;
+  };
 
   const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = urlObj.pathname;
@@ -50,8 +63,29 @@ const server = http.createServer(async (req, res) => {
 
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     let bodyStr = '';
-    req.on('data', chunk => { bodyStr += chunk; });
-    await new Promise(resolve => req.on('end', resolve));
+    let receivedBytes = 0;
+    let bodyTooLarge = false;
+
+    await new Promise((resolve) => {
+      req.on('data', chunk => {
+        receivedBytes += chunk.length;
+        if (receivedBytes > MAX_BODY_SIZE) {
+          bodyTooLarge = true;
+          req.destroy();
+          resolve();
+          return;
+        }
+        bodyStr += chunk;
+      });
+      req.on('end', resolve);
+      req.on('error', () => resolve());
+    });
+
+    if (bodyTooLarge) {
+      res.writeHead(413, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Payload Too Large (max 20MB)' }));
+    }
+
     req.rawBody = bodyStr;
     try {
       req.body = JSON.parse(bodyStr);
@@ -62,6 +96,12 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname.startsWith('/api/webhook')) {
     return webhookHandler(req, res);
+  }
+  if (pathname.startsWith('/api/brevo-webhook')) {
+    return brevoWebhookHandler(req, res);
+  }
+  if (pathname.startsWith('/api/cron')) {
+    return cronHandler(req, res);
   }
   if (pathname.startsWith('/api/simulator')) {
     return simulatorHandler(req, res);

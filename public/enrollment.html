@@ -18,9 +18,24 @@
     flex-direction: column;
     gap: 8px;
     position: relative;
+    transition: border-color 0.2s ease;
+  }
+  .manual-card-row:focus-within {
+    border-color: var(--border-gold);
   }
   @media(min-width: 768px) {
-    .manual-card-row { display: grid; grid-template-columns: 1.3fr 1.1fr 1.8fr 40px; align-items: center; }
+    .manual-card-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1.6fr 40px; align-items: center; }
+  }
+  .row-meta-strip {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.68rem;
+    color: var(--muted);
+    padding-top: 6px;
+    border-top: 1px dashed rgba(255,255,255,0.06);
+    flex-wrap: wrap;
   }
   .dropzone {
     border: 2px dashed var(--border-gold);
@@ -107,30 +122,198 @@
 let parsedCsvData = [];
 let pushHistoryData = [];
 
+// Philippine & international multi-word surname particles
+const MULTI_WORD_PREFIXES = [
+  'de la', 'dela',
+  'de los', 'delos',
+  'del', 'de',
+  'san', 'santa', 'sto', 'sta',
+  'van', 'von', 'al', 'el'
+];
+
+/**
+ * Auto Capitalizes first letter of each word (E in Elder, S in Sister, and each name word)
+ */
 function toTitleCase(str) {
   if (!str) return '';
-  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, char => char.toUpperCase()).trim();
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .replace(/(?:^|[\s\-\.\/])\S/g, char => char.toUpperCase());
 }
 
+/**
+ * Strictly all lower case email address
+ */
 function sanitizeEmail(email) {
   if (!email) return '';
-  let clean = email.trim().toLowerCase();
+  let clean = String(email).trim().toLowerCase();
   if (clean && !clean.includes('@')) clean += '@missionary.org';
   return clean;
 }
 
-function autoGenerateEmail(row) {
+function generateMissionaryEmail(firstName, lastName) {
+  const cleanParts = [];
+  if (firstName) {
+    const fParts = firstName.toLowerCase().split(/[\s\-\.]+/).filter(Boolean);
+    if (fParts.length > 0) cleanParts.push(...fParts);
+  }
+  if (lastName) {
+    const lParts = lastName.toLowerCase().split(/[\s\-\.]+/).filter(Boolean);
+    if (lParts.length > 0) cleanParts.push(...lParts);
+  }
+  if (cleanParts.length === 0) return '';
+  return `${cleanParts.join('.')}@missionary.org`.toLowerCase();
+}
+
+/**
+ * Parses raw text into constituent components:
+ * Title (Elder/Sister), First Name, Last Name, Title & Name ('Elder Dela Cruz'), cohort, max_months
+ */
+function parseMissionaryName(rawInput) {
+  if (!rawInput || typeof rawInput !== 'string') {
+    return { valid: false, error: "Missionary name cannot be empty." };
+  }
+
+  let text = rawInput.trim();
+  let title = null;
+  let cohort = null;
+  let maxMonths = 24;
+
+  const parenTitleMatch = text.match(/\((elder|sister)\)/i);
+  if (parenTitleMatch) {
+    const matched = parenTitleMatch[1].toLowerCase();
+    title = matched === 'elder' ? 'Elder' : 'Sister';
+    text = text.replace(parenTitleMatch[0], '').trim();
+  }
+
+  if (!title) {
+    if (/^elder\b/i.test(text)) {
+      title = 'Elder';
+      text = text.replace(/^elder\b[\.\s,]*/i, '').trim();
+    } else if (/^sister\b/i.test(text)) {
+      title = 'Sister';
+      text = text.replace(/^sister\b[\.\s,]*/i, '').trim();
+    } else if (/^e[\.\s]+/i.test(text)) {
+      title = 'Elder';
+      text = text.replace(/^e[\.\s,]+/i, '').trim();
+    } else if (/^s[\.\s]+/i.test(text)) {
+      title = 'Sister';
+      text = text.replace(/^s[\.\s,]+/i, '').trim();
+    }
+  }
+
+  if (!title) {
+    return { valid: false, error: "Title ('Elder' or 'Sister') is required." };
+  }
+
+  cohort = title.toLowerCase();
+  maxMonths = cohort === 'sister' ? 18 : 24;
+  text = text.replace(/^[,.\s]+|[,.\s]+$/g, '').trim();
+
+  let firstName = '';
+  let lastName = '';
+
+  if (text.includes(',')) {
+    const parts = text.split(',').map(s => s.trim()).filter(Boolean);
+    lastName = toTitleCase(parts[0] || '');
+    firstName = toTitleCase(parts.slice(1).join(' ') || '');
+  } else {
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      return { valid: false, error: "Last name is required." };
+    }
+    if (words.length === 1) {
+      lastName = toTitleCase(words[0]);
+      firstName = '';
+    } else {
+      let splitIndex = -1;
+      if (words.length >= 3) {
+        const last3Prefix = `${words[words.length - 3]} ${words[words.length - 2]}`.toLowerCase();
+        if (MULTI_WORD_PREFIXES.includes(last3Prefix)) {
+          splitIndex = words.length - 3;
+        }
+      }
+      if (splitIndex === -1 && words.length >= 2) {
+        const last2Prefix = words[words.length - 2].toLowerCase();
+        if (MULTI_WORD_PREFIXES.includes(last2Prefix)) {
+          splitIndex = words.length - 2;
+        }
+      }
+
+      if (splitIndex !== -1 && splitIndex > 0) {
+        firstName = toTitleCase(words.slice(0, splitIndex).join(' '));
+        lastName = toTitleCase(words.slice(splitIndex).join(' '));
+      } else {
+        firstName = toTitleCase(words.slice(0, words.length - 1).join(' '));
+        lastName = toTitleCase(words[words.length - 1]);
+      }
+    }
+  }
+
+  const titleAndName = `${title} ${lastName}`.trim();
+  const email = generateMissionaryEmail(firstName, lastName);
+
+  return {
+    valid: true,
+    title,
+    cohort,
+    maxMonths,
+    firstName,
+    lastName,
+    name: titleAndName,
+    titleAndName,
+    email: email.toLowerCase()
+  };
+}
+
+function updateRowState(row) {
+  if (!row) return;
+  const titleInput = row.querySelector('.m-title-name');
+  const firstInput = row.querySelector('.m-first-name');
   const emailInput = row.querySelector('.m-email');
-  if (emailInput.dataset.manualEdited === "true") return;
+  const badgeContainer = row.querySelector('.row-meta-strip');
 
-  const titleName = row.querySelector('.m-title-name').value.trim();
-  const firstName = row.querySelector('.m-first-name').value.trim();
-  const cFirst = firstName.toLowerCase().split(/[\s-]+/).filter(Boolean).join('.');
-  const cLast = titleName.replace(/^(elder|sister)\s+/i, '').trim().toLowerCase().split(/[\s-]+/).filter(Boolean).join('.');
+  const rawTitle = titleInput ? titleInput.value : '';
+  const rawFirst = firstInput ? firstInput.value : '';
+  const combined = rawFirst ? `${rawTitle} ${rawFirst}` : rawTitle;
+  const parsed = parseMissionaryName(combined);
 
-  if (cFirst && cLast) emailInput.value = `${cFirst}.${cLast}@missionary.org`;
-  else if (cLast) emailInput.value = `${cLast}@missionary.org`;
-  else emailInput.value = '';
+  if (parsed.valid) {
+    if (!rawFirst && parsed.firstName && firstInput) {
+      firstInput.value = parsed.firstName;
+    }
+    if (emailInput && emailInput.dataset.manualEdited !== "true") {
+      emailInput.value = parsed.email; // strictly all lower case
+    }
+    if (badgeContainer) {
+      badgeContainer.style.display = 'flex';
+      const isSister = parsed.cohort === 'sister';
+      badgeContainer.innerHTML = `
+        <span class="badge ${isSister ? 'badge-danger' : 'badge-gold'}" style="font-size:0.65rem;">
+          ${isSister ? '🌸 Sister (18M)' : '👔 Elder (24M)'}
+        </span>
+        <span>Title &amp; Name: <strong style="color:var(--foreground);">${parsed.name}</strong></span>
+        ${parsed.firstName ? `<span>First: <strong style="color:var(--foreground);">${parsed.firstName}</strong></span>` : ''}
+        <span>Email: <code style="color:var(--gold);">${(emailInput ? emailInput.value : '') || parsed.email}</code></span>
+      `;
+    }
+  } else {
+    if (emailInput && emailInput.dataset.manualEdited !== "true") {
+      const cFirst = rawFirst.trim().toLowerCase().split(/[\s-]+/).filter(Boolean).join('.');
+      const cLast = rawTitle.replace(/^(elder|sister|e|s)\s+/i, '').trim().toLowerCase().split(/[\s-]+/).filter(Boolean).join('.');
+      if (cFirst && cLast) emailInput.value = `${cFirst}.${cLast}@missionary.org`.toLowerCase();
+      else if (cLast) emailInput.value = `${cLast}@missionary.org`.toLowerCase();
+    }
+    if (badgeContainer) {
+      if (rawTitle.trim()) {
+        badgeContainer.style.display = 'flex';
+        badgeContainer.innerHTML = `<span style="color:var(--muted); font-style:italic;">💡 Enter Title (Elder/Sister or e / s) + Last Name &amp; First Name</span>`;
+      } else {
+        badgeContainer.style.display = 'none';
+      }
+    }
+  }
 }
 
 function handleTitleInput(input) {
@@ -157,7 +340,14 @@ function handleTitleInput(input) {
   } else if (/^sister\s+/i.test(val) && !val.startsWith('Sister ')) {
     input.value = val.replace(/^sister\s+/i, 'Sister ');
   }
-  autoGenerateEmail(input.closest('.manual-card-row'));
+  updateRowState(input.closest('.manual-card-row'));
+}
+
+function handleTitleBlur(input) {
+  if (input.value) {
+    input.value = toTitleCase(input.value);
+  }
+  updateRowState(input.closest('.manual-card-row'));
 }
 
 function handleTitleKeydown(e, input) {
@@ -169,6 +359,17 @@ function handleTitleKeydown(e, input) {
   }
 }
 
+function handleFirstNameInput(input) {
+  updateRowState(input.closest('.manual-card-row'));
+}
+
+function handleFirstNameBlur(input) {
+  if (input.value) {
+    input.value = toTitleCase(input.value);
+  }
+  updateRowState(input.closest('.manual-card-row'));
+}
+
 function handleFirstNameKeydown(e, input) {
   if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
     e.preventDefault();
@@ -177,15 +378,26 @@ function handleFirstNameKeydown(e, input) {
     const currentIndex = allRows.indexOf(currentRow);
 
     if (currentIndex === allRows.length - 1) {
-      // Last row: create new row and focus directly on Title
       addManualRow(true);
     } else {
-      // Jump directly to next row's title input
       const nextRow = allRows[currentIndex + 1];
       const nextTitle = nextRow.querySelector('.m-title-name');
       if (nextTitle) nextTitle.focus();
     }
   }
+}
+
+function handleEmailInput(input) {
+  input.dataset.manualEdited = "true";
+  input.value = input.value.toLowerCase();
+  updateRowState(input.closest('.manual-card-row'));
+}
+
+function handleEmailBlur(input) {
+  if (input.value) {
+    input.value = sanitizeEmail(input.value);
+  }
+  updateRowState(input.closest('.manual-card-row'));
 }
 
 function handleEmailKeydown(e, input) {
@@ -219,10 +431,11 @@ function addManualRow(focusNew = false) {
   const div = document.createElement('div');
   div.className = 'manual-card-row';
   div.innerHTML = `
-    <input type="text" class="form-input m-title-name" placeholder="Title & Last (e.g. e Dela Cruz)" oninput="handleTitleInput(this)" onkeydown="handleTitleKeydown(event, this)"/>
-    <input type="text" class="form-input m-first-name" placeholder="First Name (e.g. Mark)" oninput="autoGenerateEmail(this.closest('.manual-card-row'))" onkeydown="handleFirstNameKeydown(event, this)"/>
-    <input type="text" class="form-input m-email" placeholder="Email (@missionary.org)" tabindex="-1" oninput="this.dataset.manualEdited='true'" onkeydown="handleEmailKeydown(event, this)"/>
+    <input type="text" class="form-input m-title-name" placeholder="Title & Last (e.g. e Dela Cruz)" oninput="handleTitleInput(this)" onblur="handleTitleBlur(this)" onkeydown="handleTitleKeydown(event, this)"/>
+    <input type="text" class="form-input m-first-name" placeholder="First Name (e.g. Charlie)" oninput="handleFirstNameInput(this)" onblur="handleFirstNameBlur(this)" onkeydown="handleFirstNameKeydown(event, this)"/>
+    <input type="text" class="form-input m-email" placeholder="Email (@missionary.org)" tabindex="-1" oninput="handleEmailInput(this)" onblur="handleEmailBlur(this)" onkeydown="handleEmailKeydown(event, this)"/>
     <button type="button" class="btn-danger" tabindex="-1" style="padding:6px; height:38px;" title="Remove row" onclick="removeManualRow(this)">✕</button>
+    <div class="row-meta-strip" style="display:none;"></div>
   `;
   container.appendChild(div);
   if (focusNew) {
@@ -237,16 +450,37 @@ async function pushManualEntries() {
   const entries = [];
 
   rows.forEach(r => {
-    let titleName = toTitleCase(r.querySelector('.m-title-name').value.trim());
-    let firstName = toTitleCase(r.querySelector('.m-first-name').value.trim());
-    let email = sanitizeEmail(r.querySelector('.m-email').value.trim());
-    if (email && titleName) {
-      entries.push({ title_name: titleName, first_name: firstName, email, batch: globalBatch });
+    const rawTitle = r.querySelector('.m-title-name')?.value?.trim() || '';
+    const rawFirst = r.querySelector('.m-first-name')?.value?.trim() || '';
+    const rawEmail = r.querySelector('.m-email')?.value?.trim() || '';
+
+    if (!rawTitle && !rawEmail) return;
+
+    const combined = rawFirst ? `${rawTitle} ${rawFirst}` : rawTitle;
+    const parsed = parseMissionaryName(combined);
+
+    if (parsed.valid) {
+      entries.push({
+        title_name: parsed.name,      // "Title & Name" (e.g. "Elder Dela Cruz")
+        first_name: parsed.firstName,
+        last_name: parsed.lastName,
+        email: rawEmail ? sanitizeEmail(rawEmail) : parsed.email, // email is basis, all lowercase
+        batch: globalBatch
+      });
+    } else if (rawTitle && rawEmail) {
+      let fallbackTitle = toTitleCase(rawTitle);
+      if (!/^elder\b|^sister\b/i.test(fallbackTitle)) fallbackTitle = 'Elder ' + fallbackTitle;
+      entries.push({
+        title_name: fallbackTitle,
+        first_name: toTitleCase(rawFirst),
+        email: sanitizeEmail(rawEmail),
+        batch: globalBatch
+      });
     }
   });
 
   if (entries.length === 0) {
-    showToast("Please fill out at least one missionary.", "error");
+    showToast("Please fill out at least one missionary with Title (Elder/Sister).", "error");
     return;
   }
 
@@ -284,14 +518,48 @@ function handleFileSelect(event) {
   const reader = new FileReader();
   reader.onload = function(e) {
     const lines = e.target.result.trim().split(/\r?\n/);
-    parsedCsvData = lines.slice(1).map(l => {
-      const p = l.split(',').map(s => s.trim().replace(/^["']|['"]$/g, ''));
-      return { title_name: p[0], first_name: p[1] || '', email: sanitizeEmail(p[2] || p[1]) };
-    }).filter(x => x.title_name && x.email);
+    parsedCsvData = [];
+    const globalBatch = document.getElementById('global-batch-input')?.value?.trim() || 'August 2026';
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const parts = line.split(',').map(s => s.trim().replace(/^["']|['"]$/g, ''));
+      if (!parts.length) continue;
+
+      const emailPart = parts.find(p => p.includes('@'));
+      const email = emailPart ? sanitizeEmail(emailPart) : '';
+      const nameParts = parts.filter(p => !p.includes('@')).filter(Boolean);
+      const combined = nameParts.join(' ');
+      const parsed = parseMissionaryName(combined);
+
+      if (parsed.valid) {
+        parsedCsvData.push({
+          title_name: parsed.name,
+          first_name: parsed.firstName,
+          last_name: parsed.lastName,
+          email: email || parsed.email,
+          batch: globalBatch
+        });
+      } else if (nameParts.length > 0) {
+        let titleName = toTitleCase(nameParts[0]);
+        if (!/^elder\b|^sister\b/i.test(titleName)) titleName = 'Elder ' + titleName;
+        const firstName = toTitleCase(nameParts.slice(1).join(' '));
+        const autoEmail = email || generateMissionaryEmail(firstName, titleName.replace(/^(elder|sister)\s+/i, ''));
+        parsedCsvData.push({
+          title_name: titleName,
+          first_name: firstName,
+          email: autoEmail,
+          batch: globalBatch
+        });
+      }
+    }
 
     if (parsedCsvData.length > 0) {
       document.getElementById('push-csv-btn').style.display = 'inline-flex';
       showToast(`Parsed ${parsedCsvData.length} records from CSV.`);
+    } else {
+      showToast("No valid missionary records found in CSV.", "error");
     }
   };
   reader.readAsText(file);
@@ -381,7 +649,7 @@ function renderHistoryList(items) {
       ? `<span class="badge" style="background:rgba(239,68,68,0.12); color:#ff6b6b; border:1px solid rgba(239,68,68,0.3); font-size:0.65rem; padding:2px 6px;">Sister (${m.max_months || 18} Mo)</span>`
       : `<span class="badge" style="background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-size:0.65rem; padding:2px 6px;">Elder (${m.max_months || 24} Mo)</span>`;
     
-    const displayName = m.full_name || m.name || `${m.last_name || ''} ${m.first_name || ''}`.trim() || 'Missionary';
+    const displayName = m.name || `${m.last_name || ''} ${m.first_name || ''}`.trim() || m.email || 'Missionary';
     const refCode = m.referral_code ? `<span class="badge" style="background:rgba(201,168,76,0.12); color:var(--gold); border:1px solid var(--border-gold); font-family:'DM Mono',monospace; font-size:0.65rem;">Code: ${m.referral_code}</span>` : '';
     const pointsBadge = `<span style="font-size:0.68rem; color:var(--gold); font-weight:600;">⭐ ${m.points || 0} pts</span>`;
     const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
@@ -423,11 +691,11 @@ function filterHistoryList() {
     if (cohort === 'sister' && !isSister) return false;
 
     if (!q) return true;
-    const nameMatch = (m.name || '').toLowerCase().includes(q) || (m.full_name || '').toLowerCase().includes(q);
     const emailMatch = (m.email || '').toLowerCase().includes(q);
+    const nameMatch = (m.name || '').toLowerCase().includes(q) || (m.first_name || '').toLowerCase().includes(q) || (m.last_name || '').toLowerCase().includes(q);
     const batchMatch = (m.batch_month || '').toLowerCase().includes(q);
     const refMatch = (m.referral_code || '').toLowerCase().includes(q);
-    return nameMatch || emailMatch || batchMatch || refMatch;
+    return emailMatch || nameMatch || batchMatch || refMatch;
   });
 
   renderHistoryList(filtered);

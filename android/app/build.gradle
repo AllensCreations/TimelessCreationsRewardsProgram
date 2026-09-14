@@ -9,8 +9,8 @@ android {
         applicationId "com.allenscreations.timelessrewards"
         minSdkVersion 21
         targetSdkVersion 34
-        versionCode 96
-        versionName "4.4.0"
+        versionCode 97
+        versionName "4.5.0"
 
         resValue "string", "appName", "Timeless Rewards"
         resValue "string", "launcherName", "Timeless Rewards"

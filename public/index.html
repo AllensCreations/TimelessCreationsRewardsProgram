@@ -233,6 +233,7 @@
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span class="year-total-badge" id="bento-open-rate-badge" style="background:rgba(59,130,246,0.12); color:#60a5fa; border-color:rgba(59,130,246,0.3); font-size:clamp(0.60rem, 1.8vw, 0.72rem);">📬 0% Open Rate</span>
         <span class="year-total-badge" id="bento-sent-month-badge" style="font-size:clamp(0.60rem, 1.8vw, 0.72rem);">🗓️ 0 Sent This Month</span>
         <span class="year-total-badge" style="background:var(--green-dim); color:var(--green); border-color:var(--green-border); font-size:clamp(0.60rem, 1.8vw, 0.72rem);" id="bento-sent-today-badge">⚡ 0 Today</span>
         <span class="year-toggle-arrow">▼</span>
@@ -596,6 +597,27 @@
           </div>
         </div>
       </div>
+
+      <!-- Live Brevo Email Telemetry Stream (Compact Real-Time Telemetry) -->
+      <div class="bento-card-wrap" style="margin-top:clamp(10px, 2vw, 14px); padding:clamp(10px, 1.5vw, 14px);">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:8px; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="eyebrow-tag" style="margin-bottom:0; font-size:0.54rem; font-family:var(--font-mono); background:rgba(59,130,246,0.12); color:#60a5fa; border-color:rgba(59,130,246,0.3);">[ LIVE // BREVO_STREAM ]</span>
+            <h3 style="font-size:clamp(0.80rem, 1.8vw, 0.88rem); color:var(--text); font-family:var(--font-display); font-weight:800; margin:0;">Live Brevo Email Telemetry</h3>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.62rem; font-family:var(--font-mono); color:var(--green);">
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green);"></span> LIVE FEED
+            </span>
+            <span style="font-family:var(--font-mono); font-size:clamp(0.60rem, 1.5vw, 0.68rem); color:var(--gold); font-weight:700;" id="bento-events-count">0 events</span>
+          </div>
+        </div>
+        <div id="bento-email-events-stream" style="max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px;">
+          <div style="text-align:center; padding:12px; font-size:0.70rem; color:var(--muted); font-family:var(--font-mono);">
+            Listening for Brevo delivery &amp; open webhooks...
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -757,8 +779,12 @@ function renderBentoAnalytics(payload) {
   const emailsToday = Number(s.emails_today) || 0;
   const totalOrders = Number(s.total_orders) || 0;
   const activeMissionaries = Number(s.active_missionaries || s.total_missionaries) || 0;
+  const openRate = Number(payload?.open_rate !== undefined ? payload.open_rate : (s.open_rate || 0));
 
   // 1. Update Header Badges
+  const badgeOpenRate = document.getElementById('bento-open-rate-badge');
+  if (badgeOpenRate) badgeOpenRate.textContent = `📬 ${openRate}% Open Rate`;
+
   const badgeMonth = document.getElementById('bento-sent-month-badge');
   if (badgeMonth) badgeMonth.textContent = `🗓️ ${emailsMonth.toLocaleString()} Sent This Month`;
 
@@ -775,6 +801,80 @@ function renderBentoAnalytics(payload) {
 
   // 3. Monthly Load Donut Chart
   renderBentoDonutChart(s, emailsMonth, emailsToday, totalOrders, activeMissionaries);
+
+  // 4. Live Brevo Telemetry Stream
+  const events = payload?.email_events || s.email_events || [];
+  renderBentoEmailStream(events);
+}
+
+function renderBentoEmailStream(events) {
+  const container = document.getElementById('bento-email-events-stream');
+  const countBadge = document.getElementById('bento-events-count');
+  if (!container) return;
+
+  if (countBadge) {
+    countBadge.textContent = `${events?.length || 0} events`;
+  }
+
+  if (!events || !events.length) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:12px; font-size:0.70rem; color:var(--muted); font-family:var(--font-mono);">
+        No Brevo telemetry events recorded yet. Webhook listener active.
+      </div>
+    `;
+    return;
+  }
+
+  const safeEscape = (str) => typeof escapeHtml === 'function' ? escapeHtml(str || '') : String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+
+  container.innerHTML = events.map(evt => {
+    const type = (evt.event_type || 'event').toLowerCase();
+    let badgeBg = 'rgba(59, 130, 246, 0.12)';
+    let badgeColor = '#60a5fa';
+    let badgeIcon = '🚀';
+    let label = 'DELIVERED';
+
+    if (type.includes('open')) {
+      badgeBg = 'rgba(34, 197, 94, 0.12)';
+      badgeColor = '#22c55e';
+      badgeIcon = '📬';
+      label = type.includes('unique') ? 'UNIQUE OPEN' : 'OPENED';
+    } else if (type.includes('click')) {
+      badgeBg = 'rgba(168, 85, 247, 0.12)';
+      badgeColor = '#c084fc';
+      badgeIcon = '🔗';
+      label = 'CLICKED';
+    } else if (type.includes('bounce') || type.includes('spam') || type.includes('fail')) {
+      badgeBg = 'rgba(239, 68, 68, 0.12)';
+      badgeColor = '#f87171';
+      badgeIcon = '⚠️';
+      label = type.toUpperCase().replace('_', ' ');
+    }
+
+    const displayName = safeEscape(evt.name || evt.email || 'Missionary');
+    const emailSub = evt.subject ? `• ${safeEscape(evt.subject)}` : (evt.email && evt.name ? `• ${safeEscape(evt.email)}` : '');
+    const timeStr = evt.created_at ? (typeof formatPhtShortTime === 'function' ? formatPhtShortTime(evt.created_at) : evt.created_at.slice(11, 16)) : '';
+
+    return `
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; border-radius:4px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;">
+          <span style="background:${badgeBg}; color:${badgeColor}; font-size:0.55rem; font-family:var(--font-mono); font-weight:700; padding:2px 6px; border-radius:3px; white-space:nowrap;">
+            ${badgeIcon} ${label}
+          </span>
+          <span style="font-size:0.70rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${displayName}
+          </span>
+          ${evt.cohort ? `<span style="font-size:0.55rem; font-family:var(--font-mono); color:var(--gold); background:rgba(212,175,55,0.1); padding:1px 4px; border-radius:2px;">${safeEscape(evt.cohort)}</span>` : ''}
+          <span style="font-size:0.62rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${emailSub}
+          </span>
+        </div>
+        <span style="font-family:var(--font-mono); font-size:0.60rem; color:var(--muted); white-space:nowrap; flex-shrink:0;">
+          ${timeStr}
+        </span>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderBentoBarChart(payload) {

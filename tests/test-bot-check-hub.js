@@ -41,6 +41,9 @@ async function runCheckHubTester() {
       [verifiedEmail, 'Elder Test Runner', 'elder', 'September 2026', 'HUB123', verifiedPsid]
     );
 
+    await runSql("INSERT OR REPLACE INTO product_catalog (id, name, price, type, image_url) VALUES (1, 'Test Key Chain', 1, 'reward', 'https://example.com/item1.webp')");
+    await runSql("INSERT OR REPLACE INTO product_catalog (id, name, price, type, image_url) VALUES (2, 'Test Scripture Case', 2, 'reward', 'https://example.com/item2.webp')");
+
     // ----------------------------------------------------
     // TEST 1: Verified missionary sends "Check" (payload: ACTION_CHECK)
     // ----------------------------------------------------
@@ -178,7 +181,11 @@ async function runCheckHubTester() {
     assert(msgs2.length === 1, `Second check produces 1 warning notice (got ${msgs2.length})`);
     assert(msgs2[0].message.includes("8:00 AM PHT"), "Warning notice mentions 8:00 AM PHT reset");
 
-    const warnedLogs = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_WARNED%' ORDER BY id DESC LIMIT 1", [verifiedPsid]);
+    // Flush buffered logs to ensure check limit warning is in DB
+    const { flushLogBuffer: flushWarnLogs } = await import('../lib/logger.js');
+    await flushWarnLogs();
+
+    const warnedLogs = await runSql("SELECT message FROM system_logs WHERE message LIKE ? AND message LIKE '%CHECK_LIMIT_WARNED%' ORDER BY id DESC LIMIT 1", [`%${verifiedPsid}%`]);
     assert(warnedLogs.length > 0, "Warning logged in system_logs with [CHECK_LIMIT_WARNED]");
 
     // Third check: MUST SILENTLY DROP (0 messages)
@@ -188,8 +195,12 @@ async function runCheckHubTester() {
     let msgs3 = await runSql("SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC", [verifiedPsid]);
     assert(msgs3.length === 0, "Third check produces 0 replies (silent drop until 8:00 AM PHT)");
 
+    // Flush buffered logs to ensure silent drop is in DB
+    const { flushLogBuffer } = await import('../lib/logger.js');
+    await flushLogBuffer();
+
     // Verify silent drop was logged in system_logs
-    const silentLogs = await runSql("SELECT message FROM system_logs WHERE psid = ? AND message LIKE '%CHECK_LIMIT_SILENT%' ORDER BY id DESC LIMIT 1", [verifiedPsid]);
+    const silentLogs = await runSql("SELECT message FROM system_logs WHERE message LIKE ? AND message LIKE '%CHECK_LIMIT_SILENT%' ORDER BY id DESC LIMIT 1", [`%${verifiedPsid}%`]);
     assert(silentLogs.length > 0, "Silent drop logged in system_logs with [CHECK_LIMIT_SILENT]");
 
   } catch (err) {
@@ -205,6 +216,7 @@ async function runCheckHubTester() {
     await runSql("DELETE FROM bot_rate_limits WHERE psid IN (?, ?)", [verifiedPsid, unverifiedPsid]);
     await runSql("DELETE FROM bot_daily_user_quotas WHERE psid IN (?, ?)", [verifiedPsid, unverifiedPsid]);
     await runSql("DELETE FROM bot_daily_views WHERE sender_id IN (?, ?)", [verifiedPsid, unverifiedPsid]);
+    await runSql("DELETE FROM product_catalog WHERE id IN (1, 2)");
   }
 
   console.log("\n==================================================");

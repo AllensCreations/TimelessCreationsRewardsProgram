@@ -69,8 +69,12 @@ async function runTests() {
   // --------------------------------------------------------------------------
   const today = new Date().toISOString().slice(0, 10);
   await runSql(
-    "INSERT OR REPLACE INTO bot_rate_limits (identifier, action, window_start, count) VALUES (?, 'daily_view', ?, 1)",
+    "INSERT INTO bot_daily_views (sender_id, view_date, view_count, warned) VALUES (?, ?, 1, 1) ON CONFLICT(sender_id, view_date) DO UPDATE SET view_count = 1",
     [referrerPsid, today]
+  );
+  await runSql(
+    "INSERT OR REPLACE INTO bot_rate_limits (psid, identifier, action, window_start, count) VALUES (?, ?, 'daily_view', ?, 1)",
+    [referrerPsid, referrerPsid, today]
   );
 
   // Now Referrer clicks "Check" - despite daily check limit, pending notice must be delivered!

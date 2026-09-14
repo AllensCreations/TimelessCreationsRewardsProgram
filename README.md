@@ -255,16 +255,14 @@ To guarantee that all active installations run the latest business rules, securi
 -- Active and Prelisted Missionaries
 CREATE TABLE IF NOT EXISTS missionaries (
   email TEXT PRIMARY KEY,
-  name TEXT,
+  name TEXT, -- "Title & Name" (e.g. 'Elder Dela Cruz', 'Sister Mamon')
   last_name TEXT,
   first_name TEXT,
-  full_name TEXT,
   cohort TEXT,
   batch_month TEXT,
   months_sent INTEGER DEFAULT 0,
   max_months INTEGER DEFAULT 24,
   psid TEXT UNIQUE,
-  fb_sender_id TEXT,
   points INTEGER DEFAULT 0,
   referral_code TEXT UNIQUE,
   is_prelisted INTEGER DEFAULT 1,

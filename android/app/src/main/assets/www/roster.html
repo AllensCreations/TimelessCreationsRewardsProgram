@@ -786,9 +786,9 @@ let state = {
   state.isOnline = String(powerVal).toLowerCase() !== 'offline';
 
   if (cached) {
-    if (Array.isArray(cached)) {
+    if (Array.isArray(cached) && cached.length > 0) {
       state.missionaries = cached;
-    } else if (cached && Array.isArray(cached.missionaries)) {
+    } else if (cached && Array.isArray(cached.missionaries) && cached.missionaries.length > 0) {
       state.missionaries = cached.missionaries;
       if (cached.is_online !== undefined) state.isOnline = cached.is_online;
       if (cached.stats) updateHeaderStats(cached.stats);
@@ -852,10 +852,29 @@ async function submitBulkPusher() {
 }
 
 async function loadRoster(force = false) {
-  await TCRPSync.fetchWithCache('/api/main?action=get_pending_emails', {}, {
+  if (force) {
+    TCRPSync.invalidate('missionaries_with_pending_data');
+    LocalStore.remove('missionaries_with_pending_data');
+    LocalStore.remove('pending_emails_data');
+    LocalStore.remove('tcrp_sync_missionaries_with_pending_data');
+  }
+
+  const container = document.getElementById('roster-container');
+  if (state.missionaries.length === 0 && container) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:36px 16px; color:var(--gold); font-size:0.8rem; background:var(--surface2); border-radius:var(--radius-sm); border:1px dashed var(--border-gold);">
+        <div style="font-size:1.6rem; margin-bottom:8px;">⏳</div>
+        <strong>Loading active missionary roster from Turso database...</strong>
+        <div style="font-size:0.7rem; color:var(--muted); margin-top:4px;">Retrieving live records and schedule queue...</div>
+      </div>
+    `;
+  }
+
+  const syncUrl = '/api/main?action=get_pending_emails' + (force ? '&t=' + Date.now() : '');
+  await TCRPSync.fetchWithCache(syncUrl, {}, {
     cacheKey: 'missionaries_with_pending_data',
     onCached: (cached) => {
-      if (cached && cached.ok) {
+      if (cached && cached.ok && Array.isArray(cached.missionaries) && cached.missionaries.length > 0) {
         state.missionaries = cached.missionaries || [];
         state.isOnline = cached.is_online !== false;
         updateHeaderStats(cached.stats);
@@ -1265,11 +1284,14 @@ function applyFilterAndRender() {
   }
 
   if (state.searchQuery) {
+    const q = state.searchQuery.toLowerCase().trim();
     list = list.filter(m =>
-      (m.name || '').toLowerCase().includes(state.searchQuery) ||
-      (m.email || '').toLowerCase().includes(state.searchQuery) ||
-      (m.referral_code || '').toLowerCase().includes(state.searchQuery) ||
-      (m.batch_month || '').toLowerCase().includes(state.searchQuery)
+      (m.email || '').toLowerCase().includes(q) ||
+      (m.name || '').toLowerCase().includes(q) ||
+      (m.first_name || '').toLowerCase().includes(q) ||
+      (m.last_name || '').toLowerCase().includes(q) ||
+      (m.referral_code || '').toLowerCase().includes(q) ||
+      (m.batch_month || '').toLowerCase().includes(q)
     );
   }
 

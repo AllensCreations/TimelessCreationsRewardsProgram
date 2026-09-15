@@ -1549,6 +1549,13 @@ window.addEventListener("DOMContentLoaded", () => {
   initAppLayout('dashboard', 'Admin Cockpit');
   initBentoAnalyticsState();
   renderFromCache();
+  // Immediately refresh live stats in background so overview is always up-to-date
+  fetch("/api/main?action=get_stats").then(r => r.json()).then(res => {
+    if (res && res.ok) {
+      LocalStore.set('stats_payload', res);
+      renderFromCache();
+    }
+  }).catch(() => {});
 });
 </script>
 </body>

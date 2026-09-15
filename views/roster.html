@@ -30,6 +30,17 @@
       background: linear-gradient(180deg, rgba(212,175,55,0.12) 0%, rgba(20, 22, 34, 0.96) 100%); 
       box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 22px rgba(212,175,55,0.22);
     }
+    .missionary-card.card-selected {
+      border-color: var(--gold) !important;
+      background: linear-gradient(180deg, rgba(201, 168, 76, 0.16) 0%, rgba(20, 22, 34, 0.98) 100%) !important;
+      box-shadow: 0 0 16px rgba(201, 168, 76, 0.35), inset 0 0 0 1px var(--gold) !important;
+    }
+    .select-mode-active .missionary-card {
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .select-mode-active .card-main-row:hover {
+      background: rgba(201, 168, 76, 0.05);
+    }
     .missionary-card.offline-paused { 
       border-color: var(--red-border); 
       background: linear-gradient(180deg, rgba(248,113,113,0.08) 0%, rgba(20, 22, 34, 0.96) 100%); 
@@ -298,168 +309,6 @@
       }
     }
 
-    /* Share File Dialog Component (uvaishmohamedn/share-file-dialog spec) */
-    .share-dialog-card {
-      max-width: 540px !important;
-      width: 95vw !important;
-      padding: 0 !important;
-      border: 1px solid var(--border-gold) !important;
-      border-radius: var(--radius) !important;
-      overflow: hidden !important;
-      background: var(--surface) !important;
-      box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.75) !important;
-    }
-    .share-dialog-header {
-      padding: 16px 20px 14px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      background: linear-gradient(180deg, rgba(201, 168, 76, 0.08) 0%, transparent 100%);
-    }
-    .share-file-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.65rem;
-      font-family: var(--font-mono);
-      font-weight: 700;
-      color: var(--gold);
-      background: rgba(201, 168, 76, 0.15);
-      border: 1px solid rgba(201, 168, 76, 0.3);
-      padding: 2px 7px;
-      border-radius: 4px;
-    }
-    .share-dialog-body {
-      padding: 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      max-height: calc(85vh - 140px);
-      overflow-y: auto;
-    }
-    .share-invite-box {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      transition: border-color var(--duration-fast) var(--ease-out);
-    }
-    .share-invite-box:focus-within {
-      border-color: var(--border-gold);
-    }
-    .share-chips-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-      min-height: 38px;
-    }
-    .share-email-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      font-size: 0.72rem;
-      font-family: var(--font-mono);
-      color: var(--gold);
-      background: rgba(201, 168, 76, 0.12);
-      border: 1px solid rgba(201, 168, 76, 0.35);
-      border-radius: 4px;
-      animation: chipFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes chipFadeIn {
-      from { opacity: 0; transform: scale(0.92); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .share-email-chip button {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 0.75rem;
-      padding: 0;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-    }
-    .share-email-chip button:hover {
-      color: var(--red);
-    }
-    .share-chip-input {
-      flex: 1;
-      min-width: 160px;
-      border: none;
-      background: transparent;
-      color: var(--text);
-      font-size: 0.78rem;
-      outline: none;
-      padding: 4px 0;
-    }
-    .share-chip-input::placeholder {
-      color: var(--muted);
-      font-size: 0.75rem;
-    }
-    .share-invite-controls {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      padding-top: 6px;
-      border-top: 1px dashed var(--border);
-    }
-    .share-people-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .collaborator-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 10px;
-      border-radius: var(--radius-sm);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      transition: border-color var(--duration-fast) var(--ease-out);
-    }
-    .collaborator-item:hover {
-      border-color: rgba(201, 168, 76, 0.3);
-    }
-    .collab-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(201, 168, 76, 0.4) 0%, rgba(201, 168, 76, 0.1) 100%);
-      border: 1px solid var(--border-gold);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 0.72rem;
-      color: var(--gold);
-      flex-shrink: 0;
-    }
-    .share-dialog-footer {
-      padding: 14px 20px;
-      border-top: 1px solid var(--border);
-      background: #090a12;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .share-link-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
   </style>
 </head>
 <body id="body-root">
@@ -481,9 +330,7 @@
       </p>
     </div>
     <div class="roster-header-actions">
-      <button class="btn btn-secondary" onclick="openShareRosterModal()" style="padding:6px 12px; font-size:0.72rem; display:inline-flex; align-items:center; gap:6px;">🔗 Share Roster</button>
-      <button class="btn btn-secondary" onclick="openPusherModal()" style="padding:6px 12px; font-size:0.72rem;">📥 CSV Importer</button>
-      <button class="btn btn-dark" id="toggle-select-mode" onclick="toggleSelectMode()" style="padding:6px 10px; font-size:0.72rem;">☑️ Select Mode</button>
+      <button class="btn btn-dark" id="toggle-select-mode" onclick="toggleSelectMode()" style="padding:6px 12px; font-size:0.72rem; display:inline-flex; align-items:center; gap:6px;">☑️ Select Mode</button>
       <button class="btn btn-gold" onclick="loadRoster(true)" style="padding:6px 12px; font-size:0.72rem;">↻ Sync</button>
     </div>
   </div>
@@ -541,13 +388,15 @@
 
 <!-- Floating Batch Toolbar -->
 <div class="batch-toolbar" id="batch-toolbar">
-  <div style="display:flex; gap:8px; align-items:center;">
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
     <span style="font-size:0.74rem; color:var(--gold); font-weight:bold;" id="selected-count-label">0 Selected</span>
-    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="selectAllVisible()">All Page</button>
+    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="selectAllVisible()">Page (<span id="select-page-count">0</span>)</button>
+    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="selectAllFiltered()">All Filtered (<span id="select-filtered-count">0</span>)</button>
     <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.68rem;" onclick="deselectAll()">None</button>
   </div>
-  <div class="batch-toolbar-actions" style="display:flex; gap:6px; flex-wrap:wrap;">
-    <button class="btn btn-gold" style="padding:5px 10px; font-size:0.68rem;" onclick="promptBulkAddPoints()">⭐ Add Points</button>
+  <div class="batch-toolbar-actions" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+    <button class="btn btn-gold" id="batch-send-now-btn" style="padding:6px 14px; font-size:0.72rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; box-shadow:0 0 12px rgba(201,168,76,0.35);" onclick="promptBulkSendNow()">✉️ Send Now</button>
+    <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.68rem;" onclick="promptBulkAddPoints()">⭐ Add Points</button>
     <button class="btn-danger" style="padding:5px 10px; font-size:0.68rem; border-radius:4px;" onclick="promptBulkDelete()">🗑️ Delete</button>
   </div>
 </div>
@@ -598,103 +447,53 @@
   </div>
 </div>
 
-<!-- Share File Dialog Modal (uvaishmohamedn/share-file-dialog spec) -->
-<div class="modal-overlay" id="share-file-dialog-modal" style="display:none;" onclick="if(event.target===this)closeShareRosterModal()">
-  <div class="modal-content share-dialog-card">
-    <div class="share-dialog-header">
-      <div>
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-          <span style="font-size:1.15rem;">📁</span>
-          <h3 style="font-family:'Syne',sans-serif; color:var(--gold); font-size:1.05rem; margin:0; font-weight:800;">Missionary Roster</h3>
-          <span class="share-file-badge">CSV • Active</span>
-        </div>
-        <p style="font-size:0.70rem; color:var(--muted); margin:0;">Invite team coordinators, grant access roles, or copy secure roster links.</p>
-      </div>
-      <button type="button" onclick="closeShareRosterModal()" class="modal-close-btn" aria-label="Close">✕</button>
+<!-- Bulk Send Confirmation & Progress Modal -->
+<div class="modal-overlay" id="bulk-send-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+  <div class="modal-content" style="max-width:520px; width:100%; background:#12131c; border:1px solid var(--border-gold); border-radius:var(--radius); padding:20px; box-sizing:border-box;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+      <h3 style="color:var(--gold); font-size:1.05rem; margin:0; display:flex; align-items:center; gap:8px;">
+        <span>✉️</span> Bulk Email Dispatch
+      </h3>
+      <button onclick="closeBulkSendModal()" id="bulk-send-close-btn" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
     </div>
-
-    <div class="share-dialog-body">
-      <!-- Invite Input with Tag Chips -->
-      <div class="share-invite-box">
-        <label class="form-label" style="margin:0; font-size:0.70rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px;">Add Collaborators by Email</label>
-        <div class="share-chips-wrap" onclick="document.getElementById('share-email-chip-input').focus()">
-          <div id="share-chips-container" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-          <input type="email" id="share-email-chip-input" class="share-chip-input" placeholder="Type email and press Enter or comma..." onkeydown="handleShareInputKeyDown(event)" onblur="addCurrentShareEmail()">
-        </div>
-        <div class="share-invite-controls">
-          <select id="share-invite-role" class="form-select" style="width:auto; padding:6px 10px; font-size:0.72rem; min-height:44px;">
-            <option value="editor">Can edit (Admin/POS)</option>
-            <option value="viewer" selected>Can view (Read only)</option>
-          </select>
-          <button type="button" class="btn btn-gold" onclick="submitShareInvites()" style="padding:6px 14px; font-size:0.75rem; min-height:44px; display:inline-flex; align-items:center; gap:6px;">
-            ✉️ Invite
-          </button>
-        </div>
-      </div>
-
-      <!-- People with Access List -->
-      <div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:0.72rem; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.5px;">👥 People with access</span>
-          <span id="share-collab-count" style="font-size:0.68rem; color:var(--muted); font-family:var(--font-mono);">1 member</span>
-        </div>
-        <div class="share-people-list" id="share-collaborators-list"></div>
-      </div>
-
-      <!-- General Access Link Settings -->
-      <div style="padding:12px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:1.1rem;" id="general-access-icon">🔒</span>
-            <div>
-              <div style="font-size:0.75rem; font-weight:700; color:#fff;">General access</div>
-              <div style="font-size:0.65rem; color:var(--muted);" id="general-access-hint">Only people invited can access with this link.</div>
-            </div>
-          </div>
-          <select id="share-general-access-select" class="form-select" style="width:auto; font-size:0.72rem; min-height:44px; padding:6px 10px;" onchange="updateGeneralAccess(this.value)">
-            <option value="restricted">Restricted</option>
-            <option value="anyone">Anyone with link</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dialog Footer with Actions & Link Copy -->
-    <div class="share-dialog-footer">
-      <div class="share-link-row">
-        <input type="text" id="share-link-display" class="form-input" readonly style="flex:1; font-family:var(--font-mono); font-size:0.70rem; min-height:44px; background:#000; border-color:var(--border);" value="">
-        <button type="button" class="btn btn-secondary" onclick="copyShareRosterLink()" style="min-height:44px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
-          📋 Copy Link
-        </button>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:6px; border-top:1px solid var(--border);">
-        <button type="button" class="btn btn-dark" onclick="exportRosterCsv()" style="font-size:0.72rem; min-height:44px; display:inline-flex; align-items:center; gap:6px;">
-          📥 Download CSV
-        </button>
-        <button type="button" class="btn btn-gold" onclick="closeShareRosterModal()" style="font-size:0.72rem; min-height:44px; padding:8px 18px;">
-          Done
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Embedded Pusher CSV Importer Modal -->
-<div class="modal-overlay" id="pusher-modal" style="display:none;">
-  <div class="modal-content" style="max-width:540px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h3 style="color:var(--gold); font-size:1.05rem; margin:0;">📥 Bulk Missionary CSV Importer</h3>
-      <button onclick="closePusherModal()" style="background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;">✕</button>
-    </div>
-    <p style="font-size:0.72rem; color:var(--muted); margin-bottom:10px;">Paste raw CSV or missionary records below (e.g. <code>Elder Smith, August 2026, john@missionary.org</code>).</p>
     
-    <div class="form-group">
-      <textarea id="pusher-raw-input" class="form-input" rows="7" style="font-family:'DM Mono',monospace; font-size:0.72rem;" placeholder="Elder Smith, August 2026, john.smith@missionary.org&#10;Sister Santos, September 2026, maria.santos@missionary.org"></textarea>
+    <!-- State 1: Confirmation & Summary -->
+    <div id="bulk-send-confirm-state">
+      <p style="font-size:0.75rem; color:#e2e8f0; margin:0 0 12px 0;">
+        You have selected <strong id="bulk-send-total-count" style="color:var(--gold);">0</strong> missionary(s) for immediate dispatch.
+      </p>
+      
+      <div id="bulk-send-breakdown-box" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; margin-bottom:12px; max-height:180px; overflow-y:auto; font-size:0.72rem;">
+        <!-- Drip breakdown rendered dynamically -->
+      </div>
+
+      <div id="bulk-send-warning-box" style="font-size:0.70rem; color:var(--muted); margin-bottom:14px; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.25); border-radius:var(--radius-sm); padding:10px;">
+        ⚡ <strong>Live Brevo Dispatch:</strong> Each email will be sent with their respective monthly theme and template, advancing their tenure and updating their Last Sent timestamp to PHT today.
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-secondary" onclick="closeBulkSendModal()">Cancel</button>
+        <button type="button" class="btn btn-gold" id="bulk-send-execute-btn" onclick="executeBulkSend()">🚀 Start Dispatch</button>
+      </div>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-      <button class="btn btn-secondary" onclick="closePusherModal()">Cancel</button>
-      <button class="btn btn-gold" id="btn-submit-push" onclick="submitBulkPusher()">🚀 Import Roster</button>
+    <!-- State 2: Progress & Results -->
+    <div id="bulk-send-progress-state" style="display:none;">
+      <div style="margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; font-size:0.72rem; margin-bottom:6px;">
+          <span id="bulk-send-status-text" style="color:var(--gold); font-weight:bold;">Dispatching 1 of N...</span>
+          <span id="bulk-send-pct-text" style="font-family:'DM Mono',monospace; color:#fff;">0%</span>
+        </div>
+        <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:99px; overflow:hidden;">
+          <div id="bulk-send-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, var(--gold) 0%, #4caf82 100%); transition:width 0.2s ease;"></div>
+        </div>
+      </div>
+      <div id="bulk-send-log" style="background:#090a12; border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; height:140px; overflow-y:auto; font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--muted);">
+        <!-- Live log entries -->
+      </div>
+      <div id="bulk-send-done-actions" style="display:none; justify-content:flex-end; margin-top:14px;">
+        <button type="button" class="btn btn-gold" onclick="finishBulkSend()">Done</button>
+      </div>
     </div>
   </div>
 </div>
@@ -795,61 +594,6 @@ let state = {
     }
   }
 })();
-
-function openPusherModal() {
-  document.getElementById('pusher-raw-input').value = '';
-  document.getElementById('pusher-modal').style.display = 'flex';
-}
-function closePusherModal() {
-  document.getElementById('pusher-modal').style.display = 'none';
-}
-
-async function submitBulkPusher() {
-  const text = document.getElementById('pusher-raw-input').value.trim();
-  if (!text) {
-    showToast("Please enter missionary entries", "error");
-    return;
-  }
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const entries = [];
-
-  for (const line of lines) {
-    const parts = line.split(/[,\t]+/).map(p => p.trim());
-    if (parts.length >= 2) {
-      const email = parts.find(p => p.includes('@')) || '';
-      const nonEmails = parts.filter(p => !p.includes('@'));
-      const name = nonEmails[0] || 'Elder Missionary';
-      const batch = nonEmails[1] || 'August 2026';
-      if (email) entries.push({ title_name: name, batch, email });
-    }
-  }
-
-  if (!entries.length) {
-    showToast("No valid email addresses found in input", "error");
-    return;
-  }
-
-  document.getElementById('btn-submit-push').textContent = '⏳ Importing...';
-  try {
-    const res = await fetch("/api/main", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "push_missionaries", entries })
-    }).then(r => r.json());
-
-    if (res.ok) {
-      showToast(`Successfully imported ${res.added || entries.length} missionaries!`);
-      closePusherModal();
-      loadRoster(true);
-    } else {
-      showToast(res.error || "Import failed", "error");
-    }
-  } catch (err) {
-    showToast("Network error importing roster", "error");
-  } finally {
-    document.getElementById('btn-submit-push').textContent = '🚀 Import Roster';
-  }
-}
 
 async function loadRoster(force = false) {
   if (force) {
@@ -964,13 +708,25 @@ function toggleSelectMode() {
     root.classList.remove("select-mode-active");
     toolbar.classList.remove("active");
     state.selectedEmails.clear();
-    updateSelectedCount();
   }
+  updateSelectedCount();
   renderPaginatedCards();
 }
 
 function selectAllVisible() {
-  state.filteredList.forEach(m => state.selectedEmails.add(m.email.toLowerCase()));
+  const startIdx = (state.page - 1) * state.pageSize;
+  const pageItems = (state.filteredList || []).slice(startIdx, startIdx + state.pageSize);
+  pageItems.forEach(m => {
+    if (m.email) state.selectedEmails.add(m.email.toLowerCase());
+  });
+  renderPaginatedCards();
+  updateSelectedCount();
+}
+
+function selectAllFiltered() {
+  (state.filteredList || []).forEach(m => {
+    if (m.email) state.selectedEmails.add(m.email.toLowerCase());
+  });
   renderPaginatedCards();
   updateSelectedCount();
 }
@@ -983,15 +739,46 @@ function deselectAll() {
 
 function toggleCheckbox(email, e) {
   if (e) e.stopPropagation();
-  const cleanEmail = email.toLowerCase();
-  if (state.selectedEmails.has(cleanEmail)) state.selectedEmails.delete(cleanEmail);
-  else state.selectedEmails.add(cleanEmail);
+  const cleanEmail = (email || '').toLowerCase();
+  if (state.selectedEmails.has(cleanEmail)) {
+    state.selectedEmails.delete(cleanEmail);
+  } else {
+    state.selectedEmails.add(cleanEmail);
+  }
+  
+  // Instant visual feedback on rendered cards
+  const isSel = state.selectedEmails.has(cleanEmail);
+  document.querySelectorAll(`.missionary-card[data-email="${cleanEmail}"]`).forEach(card => {
+    card.classList.toggle('card-selected', isSel);
+    const cb = card.querySelector('.select-checkbox');
+    if (cb) cb.checked = isSel;
+  });
   updateSelectedCount();
+}
+
+function handleCardRowClick(email, e) {
+  if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('a')) {
+    return;
+  }
+  if (state.selectMode) {
+    toggleCheckbox(email, e);
+  } else {
+    const card = e.currentTarget.closest('.missionary-card');
+    if (card) card.classList.toggle('open');
+  }
 }
 
 function updateSelectedCount() {
   const el = document.getElementById('selected-count-label');
   if (el) el.textContent = `${state.selectedEmails.size} Selected`;
+
+  const startIdx = (state.page - 1) * state.pageSize;
+  const pageItems = (state.filteredList || []).slice(startIdx, startIdx + state.pageSize);
+  const pageCountEl = document.getElementById('select-page-count');
+  if (pageCountEl) pageCountEl.textContent = pageItems.length;
+
+  const filteredCountEl = document.getElementById('select-filtered-count');
+  if (filteredCountEl) filteredCountEl.textContent = (state.filteredList || []).length;
 }
 
 function filterType(type, btn) {
@@ -1376,6 +1163,7 @@ function renderPaginatedCards() {
   if (prevBtn) prevBtn.disabled = state.page <= 1;
   const nextBtn = document.getElementById('next-page-btn');
   if (nextBtn) nextBtn.disabled = state.page >= totalPages;
+  updateSelectedCount();
 
   const container = document.getElementById('roster-container');
   if (!container) return;
@@ -1394,7 +1182,9 @@ function renderPaginatedCards() {
     const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
     const progressPct = Math.round((sentCount / totalMonths) * 100);
     const batchInfo = getFirstMonthInfo(m.batch_month || 'August 2026');
-    const isChecked = state.selectedEmails.has(m.email.toLowerCase()) ? 'checked' : '';
+    const isSelected = state.selectedEmails.has((m.email || '').toLowerCase());
+    const isChecked = isSelected ? 'checked' : '';
+    const selectedClass = isSelected ? 'card-selected' : '';
 
     const upcomingInfo = (typeof getUpcomingDripInfo === 'function')
       ? getUpcomingDripInfo(m.batch_month || 'August 2026', sentCount, totalMonths)
@@ -1479,9 +1269,9 @@ function renderPaginatedCards() {
       : '📅 Next Estimated Dispatch';
 
     return `
-      <div class="missionary-card ${isDue && state.isOnline ? 'due-highlight' : (!state.isOnline && isDue ? 'offline-paused' : '')}">
-        <div class="card-main-row" onclick="this.closest('.missionary-card').classList.toggle('open')">
-          <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${m.email}', event)"/>
+      <div class="missionary-card ${isDue && state.isOnline ? 'due-highlight' : (!state.isOnline && isDue ? 'offline-paused' : '')} ${selectedClass}" data-email="${escapeHtml((m.email || '').toLowerCase())}">
+        <div class="card-main-row" onclick="handleCardRowClick('${escapeHtml(m.email)}', event)">
+          <input type="checkbox" class="select-checkbox" ${isChecked} onclick="toggleCheckbox('${escapeHtml(m.email)}', event)"/>
           <div style="font-size:1.35rem; flex-shrink:0;">${isSister ? '👗' : '👔'}</div>
           <div class="card-main-info" style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
@@ -1754,6 +1544,17 @@ async function dispatchMissionaryEmail(email, name, month) {
 
     if (res && res.ok) {
       showToast(res.message || `✓ ${calLabel} email sent to ${name}!`);
+      LocalStore.remove('stats_payload');
+      LocalStore.remove('missionaries_with_pending_data');
+      LocalStore.remove('pending_emails_data');
+      LocalStore.remove('tcrp_sync_missionaries_with_pending_data');
+      if (window.TCRPSync) {
+        TCRPSync.invalidate('missionaries_with_pending_data');
+        TCRPSync.invalidate('stats_payload');
+      }
+      fetch('/api/main?action=get_stats').then(r => r.json()).then(stats => {
+        if (stats && stats.ok) LocalStore.set('stats_payload', stats);
+      }).catch(() => {});
       loadRoster(true);
     } else {
       showToast(res.error || "Dispatch failed", "error");
@@ -1761,6 +1562,187 @@ async function dispatchMissionaryEmail(email, name, month) {
   } catch (_) {
     showToast("Network error executing dispatch", "error");
   }
+}
+
+let bulkSendQueue = [];
+let bulkSendRunning = false;
+
+function closeBulkSendModal() {
+  if (bulkSendRunning) return;
+  const modal = document.getElementById('bulk-send-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function promptBulkSendNow() {
+  if (state.selectedEmails.size === 0) {
+    showToast("Please select at least one missionary to dispatch.", "error");
+    return;
+  }
+  if (!state.isOnline) {
+    showToast("System is currently OFFLINE. Switch to ONLINE in Settings to send emails.", "error");
+    return;
+  }
+
+  const phtNowIso = getPhtNow().toISOString().slice(0, 10);
+  const selectedList = state.missionaries.filter(m => state.selectedEmails.has((m.email || '').toLowerCase()));
+
+  const eligible = [];
+  const skipped = [];
+
+  selectedList.forEach(m => {
+    const isSentToday = m.schedule_status === 'SENT_TODAY' || (m.last_sent_at && m.last_sent_at.slice(0, 10) === phtNowIso);
+    if (m.is_completed) {
+      skipped.push({ email: m.email, name: m.name, reason: 'Completed' });
+      return;
+    }
+    if (isSentToday) {
+      skipped.push({ email: m.email, name: m.name, reason: 'Already sent today' });
+      return;
+    }
+
+    const isSister = (m.cohort || '').toLowerCase().includes('sister') || (m.name || '').toLowerCase().startsWith('sister');
+    const totalMonths = Number(m.max_months) || (isSister ? 18 : 24);
+    const sentCount = Math.min(Number(m.months_sent) || 0, totalMonths);
+    const upcomingInfo = (typeof getUpcomingDripInfo === 'function')
+      ? getUpcomingDripInfo(m.batch_month || 'August 2026', sentCount, totalMonths)
+      : null;
+    const nextMonthNum = upcomingInfo ? upcomingInfo.monthNum : (m.next_drip ? m.next_drip.month_num : 9);
+    const nextLabel = upcomingInfo ? upcomingInfo.displayLabel : (m.next_drip ? m.next_drip.display_label : `Month ${nextMonthNum}`);
+    const theme = (state.dripThemeMap && state.dripThemeMap[nextMonthNum]) || (m.next_drip ? m.next_drip.theme : 'Encouragement');
+
+    eligible.push({
+      email: m.email,
+      name: m.name || 'Missionary',
+      month: nextMonthNum,
+      displayLabel: nextLabel,
+      theme
+    });
+  });
+
+  if (eligible.length === 0) {
+    showToast("No eligible missionaries to send. Selected missionaries were already dispatched today or completed.", "error");
+    return;
+  }
+
+  bulkSendQueue = eligible;
+
+  // Breakdown summary by drip
+  const breakdown = {};
+  eligible.forEach(item => {
+    const key = `${item.displayLabel}: ${item.theme}`;
+    breakdown[key] = (breakdown[key] || 0) + 1;
+  });
+
+  let breakdownHtml = `<div style="font-weight:bold; color:var(--text); margin-bottom:8px;">Target Drips Breakdown (${eligible.length} to dispatch):</div>`;
+  for (const [key, count] of Object.entries(breakdown)) {
+    breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed rgba(255,255,255,0.06);">
+      <span style="color:var(--gold);">${escapeHtml(key)}</span>
+      <span style="font-weight:bold; color:#fff; font-family:'DM Mono',monospace;">${count}</span>
+    </div>`;
+  }
+
+  if (skipped.length > 0) {
+    breakdownHtml += `<div style="margin-top:10px; color:var(--muted); font-size:0.68rem;">⚠️ ${skipped.length} selected missionary(s) will be skipped (already sent today or completed).</div>`;
+  }
+
+  const countEl = document.getElementById('bulk-send-total-count');
+  if (countEl) countEl.textContent = eligible.length;
+  const breakdownEl = document.getElementById('bulk-send-breakdown-box');
+  if (breakdownEl) breakdownEl.innerHTML = breakdownHtml;
+
+  document.getElementById('bulk-send-confirm-state').style.display = 'block';
+  document.getElementById('bulk-send-progress-state').style.display = 'none';
+  document.getElementById('bulk-send-close-btn').style.display = 'block';
+  document.getElementById('bulk-send-modal').style.display = 'flex';
+}
+
+async function executeBulkSend() {
+  if (!bulkSendQueue || bulkSendQueue.length === 0) return;
+  bulkSendRunning = true;
+
+  document.getElementById('bulk-send-confirm-state').style.display = 'none';
+  document.getElementById('bulk-send-progress-state').style.display = 'block';
+  document.getElementById('bulk-send-close-btn').style.display = 'none';
+  document.getElementById('bulk-send-done-actions').style.display = 'none';
+
+  const total = bulkSendQueue.length;
+  let successCount = 0;
+  let failCount = 0;
+
+  const logBox = document.getElementById('bulk-send-log');
+  const pBar = document.getElementById('bulk-send-progress-bar');
+  const pctText = document.getElementById('bulk-send-pct-text');
+  const statusText = document.getElementById('bulk-send-status-text');
+
+  logBox.innerHTML = '';
+
+  for (let i = 0; i < total; i++) {
+    const item = bulkSendQueue[i];
+    const current = i + 1;
+    const pct = Math.round((current / total) * 100);
+
+    statusText.textContent = `Dispatching ${current} of ${total}: ${item.name}...`;
+    pctText.textContent = `${pct}%`;
+    pBar.style.width = `${pct}%`;
+
+    const logEntry = document.createElement('div');
+    logEntry.style.marginBottom = '4px';
+    logEntry.textContent = `[${current}/${total}] Sending ${item.displayLabel} to ${item.email}...`;
+    logBox.appendChild(logEntry);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    try {
+      const res = await fetch('/api/main', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dispatch_single_pending', email: item.email, month: item.month })
+      }).then(r => r.json());
+
+      if (res && res.ok) {
+        successCount++;
+        logEntry.textContent += ' ✓ Sent';
+        logEntry.style.color = 'var(--green)';
+      } else {
+        failCount++;
+        logEntry.textContent += ` ✗ Failed: ${res?.error || 'Unknown error'}`;
+        logEntry.style.color = '#ff6b6b';
+      }
+    } catch (err) {
+      failCount++;
+      logEntry.textContent += ` ✗ Network error`;
+      logEntry.style.color = '#ff6b6b';
+    }
+
+    if (i < total - 1) {
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+  }
+
+  bulkSendRunning = false;
+  statusText.textContent = `Completed: ${successCount} sent, ${failCount} failed.`;
+  document.getElementById('bulk-send-done-actions').style.display = 'flex';
+  document.getElementById('bulk-send-close-btn').style.display = 'block';
+
+  // Invalidate caches & refresh overview stats
+  LocalStore.remove('stats_payload');
+  LocalStore.remove('missionaries_with_pending_data');
+  LocalStore.remove('pending_emails_data');
+  LocalStore.remove('tcrp_sync_missionaries_with_pending_data');
+  if (window.TCRPSync) {
+    TCRPSync.invalidate('missionaries_with_pending_data');
+    TCRPSync.invalidate('stats_payload');
+  }
+
+  fetch('/api/main?action=get_stats').then(r => r.json()).then(stats => {
+    if (stats && stats.ok) LocalStore.set('stats_payload', stats);
+  }).catch(() => {});
+}
+
+function finishBulkSend() {
+  closeBulkSendModal();
+  state.selectedEmails.clear();
+  updateSelectedCount();
+  loadRoster(true);
 }
 
 async function promptBulkAddPoints() {
@@ -1886,205 +1868,6 @@ function tickLiveCountdowns() {
         el.textContent = 'Soon';
       }
     }
-  });
-}
-
-// Share File Dialog State & Logic (uvaishmohamedn/share-file-dialog)
-let shareChipEmails = [];
-let rosterCollaborators = LocalStore.get('roster_collaborators', [
-  { name: 'TCRP Administrator', email: 'admin@timelesscreations.com', role: 'owner', isOwner: true }
-]);
-let generalAccessSetting = LocalStore.get('roster_general_access', 'restricted');
-
-function openShareRosterModal() {
-  const modal = document.getElementById('share-file-dialog-modal');
-  if (!modal) return;
-  const linkInput = document.getElementById('share-link-display');
-  if (linkInput) linkInput.value = window.location.origin + '/roster.html';
-  
-  const generalSelect = document.getElementById('share-general-access-select');
-  if (generalSelect) generalSelect.value = generalAccessSetting;
-  updateGeneralAccessUI(generalAccessSetting);
-
-  shareChipEmails = [];
-  renderShareChips();
-  renderCollaboratorsList();
-
-  modal.style.display = 'flex';
-  const input = document.getElementById('share-email-chip-input');
-  if (input) setTimeout(() => input.focus(), 50);
-}
-
-function closeShareRosterModal() {
-  const modal = document.getElementById('share-file-dialog-modal');
-  if (modal) modal.style.display = 'none';
-}
-
-function handleShareInputKeyDown(e) {
-  if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
-    e.preventDefault();
-    addCurrentShareEmail();
-  } else if (e.key === 'Backspace') {
-    const input = document.getElementById('share-email-chip-input');
-    if (input && input.value === '' && shareChipEmails.length > 0) {
-      shareChipEmails.pop();
-      renderShareChips();
-    }
-  }
-}
-
-function addCurrentShareEmail() {
-  const input = document.getElementById('share-email-chip-input');
-  if (!input) return;
-  const raw = input.value.trim();
-  if (!raw) return;
-
-  const emails = raw.split(/[\s,]+/).filter(Boolean);
-  emails.forEach(em => {
-    const clean = em.trim().toLowerCase();
-    if (clean && !shareChipEmails.includes(clean)) {
-      shareChipEmails.push(clean);
-    }
-  });
-  input.value = '';
-  renderShareChips();
-}
-
-function removeShareChip(email) {
-  shareChipEmails = shareChipEmails.filter(e => e !== email);
-  renderShareChips();
-}
-
-function renderShareChips() {
-  const container = document.getElementById('share-chips-container');
-  if (!container) return;
-  container.innerHTML = shareChipEmails.map(email => `
-    <span class="share-email-chip">
-      <span>✉</span>
-      <span>${email}</span>
-      <button type="button" onclick="removeShareChip('${email}')" title="Remove">✕</button>
-    </span>
-  `).join('');
-}
-
-function submitShareInvites() {
-  addCurrentShareEmail();
-  if (!shareChipEmails.length) {
-    showToast('Please enter at least one email address', 'error');
-    return;
-  }
-  const role = document.getElementById('share-invite-role')?.value || 'viewer';
-  let addedCount = 0;
-  shareChipEmails.forEach(email => {
-    const existing = rosterCollaborators.find(c => c.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      existing.role = role;
-    } else {
-      const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
-      const name = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-      rosterCollaborators.push({ name, email, role, isOwner: false });
-      addedCount++;
-    }
-  });
-
-  LocalStore.set('roster_collaborators', rosterCollaborators);
-  shareChipEmails = [];
-  renderShareChips();
-  renderCollaboratorsList();
-  showToast(`✓ Invited ${addedCount > 0 ? addedCount : 'updated'} collaborator(s)!`);
-}
-
-function renderCollaboratorsList() {
-  const container = document.getElementById('share-collaborators-list');
-  const countBadge = document.getElementById('share-collab-count');
-  if (!container) return;
-
-  if (countBadge) {
-    countBadge.textContent = `${rosterCollaborators.length} member${rosterCollaborators.length === 1 ? '' : 's'}`;
-  }
-
-  container.innerHTML = rosterCollaborators.map(c => {
-    const initials = (c.name || c.email || 'TC')
-      .split(' ')
-      .map(p => p[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
-
-    const isOwner = c.isOwner || c.role === 'owner';
-
-    return `
-      <div class="collaborator-item">
-        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-          <div class="collab-avatar">${initials}</div>
-          <div style="min-width:0;">
-            <div style="font-size:0.76rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              ${c.name} ${isOwner ? '<span style="font-size:0.62rem; color:var(--gold); margin-left:4px;">(Owner)</span>' : ''}
-            </div>
-            <div style="font-size:0.68rem; color:var(--muted); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              ${c.email}
-            </div>
-          </div>
-        </div>
-        <div>
-          ${isOwner ? `
-            <span style="font-size:0.70rem; color:var(--gold); font-weight:bold; padding:4px 8px; font-family:var(--font-mono);">Owner</span>
-          ` : `
-            <select class="form-select" style="width:auto; font-size:0.70rem; padding:4px 8px; min-height:40px;" onchange="updateCollaboratorRole('${c.email}', this.value)">
-              <option value="editor" ${c.role === 'editor' ? 'selected' : ''}>Can edit</option>
-              <option value="viewer" ${c.role === 'viewer' ? 'selected' : ''}>Can view</option>
-              <option value="remove" style="color:var(--red);">Remove</option>
-            </select>
-          `}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function updateCollaboratorRole(email, newRole) {
-  if (newRole === 'remove') {
-    rosterCollaborators = rosterCollaborators.filter(c => c.email.toLowerCase() !== email.toLowerCase());
-    LocalStore.set('roster_collaborators', rosterCollaborators);
-    renderCollaboratorsList();
-    showToast(`✓ Removed access for ${email}`);
-    return;
-  }
-  const target = rosterCollaborators.find(c => c.email.toLowerCase() === email.toLowerCase());
-  if (target) {
-    target.role = newRole;
-    LocalStore.set('roster_collaborators', rosterCollaborators);
-    renderCollaboratorsList();
-    showToast(`✓ Updated permissions for ${email}`);
-  }
-}
-
-function updateGeneralAccess(val) {
-  generalAccessSetting = val;
-  LocalStore.set('roster_general_access', val);
-  updateGeneralAccessUI(val);
-  showToast(`✓ General access set to: ${val === 'anyone' ? 'Anyone with link' : 'Restricted'}`);
-}
-
-function updateGeneralAccessUI(val) {
-  const icon = document.getElementById('general-access-icon');
-  const hint = document.getElementById('general-access-hint');
-  if (val === 'anyone') {
-    if (icon) icon.textContent = '🌐';
-    if (hint) hint.textContent = 'Anyone on the internet with this link can view the roster.';
-  } else {
-    if (icon) icon.textContent = '🔒';
-    if (hint) hint.textContent = 'Only people invited can access with this link.';
-  }
-}
-
-function copyShareRosterLink() {
-  const linkInput = document.getElementById('share-link-display');
-  const url = linkInput ? linkInput.value : window.location.origin + '/roster.html';
-  navigator.clipboard.writeText(url).then(() => {
-    showToast('✓ Roster link copied to clipboard!');
-  }).catch(() => {
-    showToast('Link copied!');
   });
 }
 

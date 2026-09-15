@@ -69,21 +69,17 @@ async function runTests() {
   // --------------------------------------------------------------------------
   const today = new Date().toISOString().slice(0, 10);
   await runSql(
-    "INSERT INTO bot_daily_views (sender_id, view_date, view_count, warned) VALUES (?, ?, 1, 1) ON CONFLICT(sender_id, view_date) DO UPDATE SET view_count = 1",
+    "INSERT INTO bot_limits (psid, limit_date, daily_view_count, daily_view_warned) VALUES (?, ?, 1, 1) ON CONFLICT(psid, limit_date) DO UPDATE SET daily_view_count = 1, daily_view_warned = 1",
     [referrerPsid, today]
-  );
-  await runSql(
-    "INSERT OR REPLACE INTO bot_rate_limits (psid, identifier, action, window_start, count) VALUES (?, ?, 'daily_view', ?, 1)",
-    [referrerPsid, referrerPsid, today]
   );
 
   // Now Referrer clicks "Check" - despite daily check limit, pending notice must be delivered!
   clearDebounce(referrerPsid);
-  await runSql("DELETE FROM chat_messages WHERE psid = ?", [referrerPsid]);
+  await runSql("DELETE FROM system_logs WHERE source = 'CHAT_MESSENGER' AND psid = ?", [referrerPsid]);
   await handleBotMessage(referrerPsid, 'Check', 'ACTION_CHECK');
 
   const referrerMsgs = await runSql(
-    "SELECT message FROM chat_messages WHERE psid = ? AND sender = 'bot' ORDER BY id ASC",
+    "SELECT message FROM system_logs WHERE source = 'CHAT_MESSENGER' AND psid = ? AND sender = 'bot' ORDER BY id ASC",
     [referrerPsid]
   );
 
@@ -128,9 +124,9 @@ async function runTests() {
   assert.strictEqual(webhookResult.status, 200, "Webhook must return 200 OK");
   assert.strictEqual(webhookResult.json.recorded, 2, "Must record 2 email events");
 
-  const recordedEvents = await runSql("SELECT * FROM email_events WHERE email = ?", [companionEmail]);
+  const recordedEvents = await runSql("SELECT * FROM system_logs WHERE source = 'EMAIL_BREVO' AND email = ?", [companionEmail]);
   assert.strictEqual(recordedEvents.length, 2, "Database must have 2 email_events recorded");
-  console.log("  ✅ [PASS] 3. Brevo webhook ingests delivered & opened events into email_events");
+  console.log("  ✅ [PASS] 3. Brevo webhook ingests delivered & opened events into system_logs");
   passed++;
 
   // --------------------------------------------------------------------------

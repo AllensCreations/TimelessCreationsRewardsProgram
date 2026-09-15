@@ -661,7 +661,18 @@ function updateHeaderStats(stats = {}) {
   const total = stats.total_roster || state.missionaries.length || 0;
   const due = stats.due_today || 0;
   const sent = stats.sent_today || 0;
-  const up7 = stats.upcoming_7d || 0;
+  const up7 = state.missionaries && state.missionaries.length > 0
+    ? state.missionaries.filter(m => 
+        !m.is_completed && 
+        !m.sent_today && 
+        !m.sent_this_month && 
+        m.schedule_status !== 'SENT_TODAY' && 
+        m.schedule_status !== 'SENT_THIS_MONTH' && 
+        m.schedule_status !== 'DUE_TODAY' && 
+        m.days_until_next >= 1 && 
+        m.days_until_next <= 7
+      ).length
+    : (stats.upcoming_7d || 0);
 
   const rosterEl = document.getElementById('roster-count');
   if (rosterEl) rosterEl.textContent = total.toLocaleString();
@@ -988,6 +999,13 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
     const inBatchPos = (cleanRank % batchCapacity) + 1;
 
     if (isWithin24h) {
+      const labelText = slot.isToday
+        ? `⏳ Est: ~${escapeHtml(slot.label)} (${cd})`
+        : `⏳ Next Batch: ${escapeHtml(slot.label)} (or Send Now)`;
+      const intelHtml = slot.isToday
+        ? `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; Slot #${inBatchPos} of ${batchCapacity} &bull; <span class="est-countdown-text" data-target="${slot.targetTime}" style="color:var(--gold); font-weight:bold;">${cd}</span>`
+        : `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; Queued for next automated run (or use Send Now) &bull; <span class="est-countdown-text" data-target="${slot.targetTime}" style="color:var(--gold); font-weight:bold;">${cd}</span>`;
+
       return {
         tier: 1,
         statusType: 'DUE_ESTIMATE',
@@ -997,8 +1015,8 @@ function getMissionaryEstimate(m, dueQueue, phtNowIso) {
         inBatchPos,
         isWithin24h: true,
         timeLabel: slot.label,
-        badgeHtml: `<span class="est-countdown-pill today" data-target="${slot.targetTime}" data-label="${escapeHtml(slot.label)}">⏳ Est: ~${escapeHtml(slot.label)} (${cd})</span>`,
-        intelHtml: `Batch #${batchOffset + 1} (~${escapeHtml(slot.label)}) &bull; Slot #${inBatchPos} of ${batchCapacity} &bull; <span class="est-countdown-text" data-target="${slot.targetTime}" style="color:var(--gold); font-weight:bold;">${cd}</span>`
+        badgeHtml: `<span class="est-countdown-pill today" data-target="${slot.targetTime}" data-label="${escapeHtml(slot.label)}" data-is-today="${slot.isToday ? 'true' : 'false'}">${labelText}</span>`,
+        intelHtml: intelHtml
       };
     } else {
       return {
@@ -1063,7 +1081,16 @@ function applyFilterAndRender() {
   } else if (state.currentFilter === 'sent') {
     list = list.filter(m => m.schedule_status === 'SENT_TODAY');
   } else if (state.currentFilter === 'upcoming7') {
-    list = list.filter(m => !m.is_completed && m.schedule_status !== 'SENT_TODAY' && (m.days_until_next <= 7));
+    list = list.filter(m => 
+      !m.is_completed && 
+      !m.sent_today && 
+      !m.sent_this_month && 
+      m.schedule_status !== 'SENT_TODAY' && 
+      m.schedule_status !== 'SENT_THIS_MONTH' && 
+      m.schedule_status !== 'DUE_TODAY' && 
+      m.days_until_next >= 1 && 
+      m.days_until_next <= 7
+    );
   } else if (state.currentFilter === 'elder') {
     list = list.filter(m => (m.cohort || '').toLowerCase().includes('elder') || (m.name || '').toLowerCase().startsWith('elder'));
   } else if (state.currentFilter === 'sister') {
@@ -1847,10 +1874,15 @@ function tickLiveCountdowns() {
   document.querySelectorAll('.est-countdown-pill.today').forEach(el => {
     const target = Number(el.getAttribute('data-target'));
     const label = el.getAttribute('data-label') || '';
+    const isToday = el.getAttribute('data-is-today') !== 'false';
     if (target) {
       const diff = target - nowPht;
       if (diff <= 24 * 3600 * 1000 && diff > -60000) {
-        el.textContent = `⏳ Est: ~${label} (${formatCountdown(target)})`;
+        if (isToday) {
+          el.textContent = `⏳ Est: ~${label} (${formatCountdown(target)})`;
+        } else {
+          el.textContent = `⏳ Next Batch: ${label} (or Send Now)`;
+        }
       } else {
         el.textContent = '📅 Soon';
         el.className = 'est-countdown-pill scheduled';
